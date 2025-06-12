@@ -16,7 +16,7 @@ jobs:
         uses: hmarr/auto-approve-action@v3
         continue-on-error: true
         with:
-          github-token: ${{ secrets.AUTO_APPROVE_PAT || secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout base branch
         uses: actions/checkout@v3
         with:
