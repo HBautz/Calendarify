@@ -1,0 +1,31 @@
+name: Auto merge pull requests
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto approve
+        uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout base branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Fetch pull request branch
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr
+      - name: Merge pull request preferring theirs
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git merge pr -X theirs -m "Auto merge PR #${{ github.event.pull_request.number }}"
+      - name: Push changes
+        run: git push origin HEAD:${{ github.event.pull_request.base.ref }}
+
