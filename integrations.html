@@ -61,7 +61,7 @@
             <div class="nav-container flex items-center gap-9 relative">
               <a class="nav-link active text-white text-sm font-medium leading-normal" href="dashboard.html">Dashboard</a>
               <a class="nav-link text-white text-sm font-medium leading-normal" href="availability.html">Availability</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="integrations.html">Integrations</a>
+              <a class="nav-link active text-white text-sm font-medium leading-normal" href="integrations.html">Integrations</a>
               <a class="nav-link text-white text-sm font-medium leading-normal" href="help.html">Help</a>
               <button
                 class="flex max-w-[480px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full h-10 bg-gray-500 text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"
@@ -83,83 +83,29 @@
             </div>
           </div>
         </header>
-        <div class="px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
-            <div class="flex flex-wrap gap-2 p-4">
-              <a class="text-[#9eb7a8] text-base font-medium leading-normal" href="#">Event Types</a>
-              <span class="text-[#9eb7a8] text-base font-medium leading-normal">/</span>
-              <span class="text-white text-base font-medium leading-normal">New event type</span>
+          <div class="px-40 flex flex-1 justify-center py-5">
+            <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+              <div class="@container">
+                <div class="@[480px]:p-4">
+                  <div
+                    class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
+                    style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuC7QzwX_vXirEdYSCn4TP0_Y8wGouVp21HbFA7HA9Xt6mqIHG2wgYCtIhX4uP1N1pAVccawJgN9zeps2sonMSKcwk5Y8ZndKyG-LU9pYNCXSQ");'>
+                    <div class="flex flex-col gap-2 text-center">
+                      <h1 class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                        Integrations
+                      </h1>
+                      <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                        Connect Calendarify with the tools you already use.
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
+                Disclaimer: This is a demo website for Calendarify, a non-existent company. All functionality is for demonstration purposes only and not intended for actual use.
+              </p>
             </div>
-            <h2 class="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-left pb-3 pt-5">What kind of event is this?</h2>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Name</p>
-                <input
-                  placeholder="e.g., 30 Minute Meeting"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Event type</p>
-                <select
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 bg-[image:--select-button-svg] placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
-                >
-                  <option value="one"></option>
-                  <option value="two">two</option>
-                  <option value="three">three</option>
-                </select>
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Description/instructions</p>
-                <input
-                  placeholder="Provide any details your invitees should know"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Event link</p>
-                <select
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 bg-[image:--select-button-svg] placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
-                >
-                  <option value="one"></option>
-                  <option value="two">two</option>
-                  <option value="three">three</option>
-                </select>
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Color</p>
-                <select
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 bg-[image:--select-button-svg] placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
-                >
-                  <option value="one"></option>
-                  <option value="two">two</option>
-                  <option value="three">three</option>
-                </select>
-              </label>
-            </div>
-            <div class="flex px-4 py-3 justify-end">
-              <button
-                class="flex min-w-[84px] max-w-[480px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-gray-500 text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-                disabled
-              >
-                <span class="truncate">Next</span>
-              </button>
-            </div>
-            <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4">
-              Disclaimer: This is a demo application for design purposes only. All functionality is simulated and not intended for actual use.
-            </p>
           </div>
-        </div>
       </div>
     </div>
     <script>
