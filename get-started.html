@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
@@ -17,7 +18,7 @@
     <div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark group/design-root overflow-x-hidden" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
       <div class="layout-container flex h-full grow flex-col">
         <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3">
-          <div class="flex items-center gap-4 text-white">
+          <a href="index.html" class="flex items-center gap-4 text-white">
             <div class="size-4">
               <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -27,24 +28,25 @@
               </svg>
             </div>
             <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Calendarify</h2>
-          </div>
+          </a>
           <div class="flex flex-1 justify-end gap-8">
             <div class="flex items-center gap-9">
-              <a class="text-white text-sm font-medium leading-normal" href="#">Individuals</a>
-              <a class="text-white text-sm font-medium leading-normal" href="#">Teams</a>
-              <a class="text-white text-sm font-medium leading-normal" href="#">Enterprise</a>
+              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Individuals</span>
+              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Teams</span>
+              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Enterprise</span>
             </div>
-            <button
+            <a
+              href="log-in.html"
               class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
             >
               <span class="truncate">Log in</span>
-            </button>
+            </a>
           </div>
         </header>
         <div class="px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 max-w-[960px] flex-1">
+          <div class="layout-content-container flex flex-col w-full max-w-[640px] border border-[#3d5245] rounded-2xl p-8 mx-auto">
             <h2 class="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Get started</h2>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+            <div class="flex max-w-[560px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
               <label class="flex flex-col min-w-40 flex-1">
                 <input
                   placeholder="Email"
@@ -53,7 +55,7 @@
                 />
               </label>
             </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+            <div class="flex max-w-[560px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
               <label class="flex flex-col min-w-40 flex-1">
                 <input
                   placeholder="Name"
@@ -62,7 +64,7 @@
                 />
               </label>
             </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+            <div class="flex max-w-[560px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
               <label class="flex flex-col min-w-40 flex-1">
                 <input
                   placeholder="Password"
@@ -71,7 +73,7 @@
                 />
               </label>
             </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+            <div class="flex max-w-[560px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
               <label class="flex flex-col min-w-40 flex-1">
                 <input
                   placeholder="Confirm Password"
@@ -80,12 +82,13 @@
                 />
               </label>
             </div>
-            <div class="flex px-4 py-3">
-              <button
+            <div class="flex px-4 py-3 mx-auto">
+              <a
+                href="dashboard.html"
                 class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
               >
                 <span class="truncate">Sign up</span>
-              </button>
+              </a>
             </div>
             <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">By signing up, you agree to our Terms of Service and Privacy Policy.</p>
             <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">
