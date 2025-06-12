@@ -56,7 +56,7 @@
           </a>
           <div class="flex flex-1 justify-end gap-8">
             <div class="nav-container flex items-center gap-9 relative">
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="individuals.html">Individuals</a>
+              <a class="nav-link active text-white text-sm font-medium leading-normal" href="individuals.html">Individuals</a>
               <a class="nav-link text-white text-sm font-medium leading-normal" href="teams.html">Teams</a>
               <a class="nav-link text-white text-sm font-medium leading-normal" href="enterprise.html">Enterprise</a>
               <a
@@ -67,7 +67,7 @@
               </a>
               <a
                 href="log-in.html"
-                class="nav-link active flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
+                class="nav-link flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
               >
                 <span class="truncate text-[#111714]">Log in</span>
               </a>
@@ -75,38 +75,34 @@
             </div>
           </div>
         </header>
-        <div class="px-4 sm:px-40 flex flex-col items-center flex-1 justify-center py-5 space-y-4">
-          <div class="layout-content-container flex flex-col w-full max-w-[400px] border border-[#3d5245] rounded-2xl p-8 mx-auto">
-            <h2 class="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Log in</h2>
-            <div class="flex max-w-[400px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Email"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
+        <div class="px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+            <div class="@container">
+              <div class="@[480px]:p-4">
+                <div
+                  class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
+                  style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=1200&q=80");'>
+                  <div class="flex flex-col gap-2 text-center">
+                    <h1
+                      class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]"
+                    >
+                      For Individuals
+                    </h1>
+                    <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                      Calendarify helps you manage your personal schedule with ease.
+                    </h2>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="flex max-w-[400px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Password"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex px-4 py-3 mx-auto">
-              <a
-                href="dashboard.html"
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate">Log in</span>
-              </a>
-            </div>
+              <div class="text-[#9eb7a8] text-base font-normal leading-normal space-y-4 px-4 py-6">
+                <p>Organize personal meetings, interviews or coffee chats with a single shareable link.</p>
+                <p>Calendarify works with all major calendar providers so you never miss an event.</p>
+              </div>
+              <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
+                Disclaimer: This is a demo website for Calendarify, a non-existent company. All functionality is for demonstration purposes only and not intended for actual use.
+              </p>
           </div>
-          <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">By logging in, you agree to our Terms of Service and Privacy Policy.</p>
-          <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.</p>
         </div>
       </div>
     </div>

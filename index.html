@@ -13,11 +13,36 @@
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+      .nav-indicator {
+        position: absolute;
+        bottom: -3px;
+        height: 2px;
+        background-color: #38e07b;
+        transition: all 0.3s ease;
+        left: 0;
+        width: 0;
+      }
+      .nav-link {
+        position: relative;
+        color: #9eb7a8;
+        transition: color 0.3s ease;
+      }
+      .nav-link:hover {
+        color: #38e07b;
+      }
+      .nav-link.active {
+        color: #38e07b;
+      }
+      .nav-container {
+        position: relative;
+      }
+    </style>
   </head>
   <body>
     <div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark group/design-root overflow-x-hidden" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
       <div class="layout-container flex h-full grow flex-col">
-        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3">
+        <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3 bg-[#111714]">
           <a href="index.html" class="flex items-center gap-4 text-white">
             <div class="size-4">
               <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -30,25 +55,24 @@
             <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Calendarify</h2>
           </a>
           <div class="flex flex-1 justify-end gap-8">
-            <div class="flex items-center gap-9">
-              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Product</span>
-              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Solutions</span>
-              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Resources</span>
-              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Pricing</span>
-            </div>
-            <div class="flex gap-2">
+            <div class="nav-container flex items-center gap-9 relative">
+              <a class="nav-link text-white text-sm font-medium leading-normal" href="product.html">Product</a>
+              <a class="nav-link text-white text-sm font-medium leading-normal" href="solutions.html">Solutions</a>
+              <a class="nav-link text-white text-sm font-medium leading-normal" href="resources.html">Resources</a>
+              <a class="nav-link text-white text-sm font-medium leading-normal" href="pricing.html">Pricing</a>
               <a
                 href="get-started.html"
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
+                class="nav-link active flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
               >
-                <span class="truncate">Sign up</span>
+                <span class="truncate text-[#111714]">Sign up</span>
               </a>
               <a
                 href="log-in.html"
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#29382f] text-white text-sm font-bold leading-normal tracking-[0.015em]"
+                class="nav-link flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-transparent border border-[#38e07b] text-[#38e07b] text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#38e07b] hover:text-[#111714] transition-colors"
               >
                 <span class="truncate">Log in</span>
               </a>
+              <div class="nav-indicator" id="navIndicator"></div>
             </div>
           </div>
         </header>
@@ -86,5 +110,52 @@
         </div>
       </div>
     </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const indicator = document.getElementById('navIndicator');
+        let activeLink = document.querySelector('.nav-link.active');
+        let hoveredLink = null;
+
+        function updateIndicator(element) {
+          if (!element) return;
+
+          const rect = element.getBoundingClientRect();
+          const container = element.closest('.nav-container');
+          const containerRect = container.getBoundingClientRect();
+
+          indicator.style.width = `${rect.width}px`;
+          indicator.style.left = `${rect.left - containerRect.left}px`;
+        }
+
+        if (activeLink) {
+          requestAnimationFrame(() => {
+            updateIndicator(activeLink);
+          });
+        }
+
+        navLinks.forEach(link => {
+          link.addEventListener('mouseenter', () => {
+            hoveredLink = link;
+            updateIndicator(link);
+          });
+
+          link.addEventListener('mouseleave', () => {
+            hoveredLink = null;
+            if (activeLink) {
+              updateIndicator(activeLink);
+            }
+          });
+        });
+
+        window.addEventListener('resize', () => {
+          if (hoveredLink) {
+            updateIndicator(hoveredLink);
+          } else if (activeLink) {
+            updateIndicator(activeLink);
+          }
+        });
+      });
+    </script>
   </body>
 </html>
