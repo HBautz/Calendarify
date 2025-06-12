@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
@@ -20,7 +21,7 @@
     >
       <div class="layout-container flex h-full grow flex-col">
         <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3">
-          <div class="flex items-center gap-4 text-white">
+          <a href="index.html" class="flex items-center gap-4 text-white">
             <div class="size-4">
               <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -30,29 +31,32 @@
               </svg>
             </div>
             <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Calendarify</h2>
-          </div>
+          </a>
           <div class="flex flex-1 justify-end gap-8">
             <div class="flex items-center gap-9">
-              <a class="text-white text-sm font-medium leading-normal" href="#">Dashboard</a>
-              <a class="text-white text-sm font-medium leading-normal" href="#">Availability</a>
-              <a class="text-white text-sm font-medium leading-normal" href="#">Integrations</a>
-              <a class="text-white text-sm font-medium leading-normal" href="#">Help</a>
+              <a class="text-white text-sm font-medium leading-normal" href="dashboard.html">Dashboard</a>
+              <a class="text-white text-sm font-medium leading-normal" href="availability.html">Availability</a>
+              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Integrations</span>
+              <span class="text-gray-500 text-sm font-medium leading-normal cursor-not-allowed">Help</span>
             </div>
-            <button
-              class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 bg-[#29382f] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"
-            >
-              <div class="text-white" data-icon="Question" data-size="20px" data-weight="regular">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 256 256">
-                  <path
-                    d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
-                  ></path>
-                </svg>
-              </div>
-            </button>
-            <div
-              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuChybXieopZjwcb06x0zQJJYv4ArW6S5ZDXb8p6FzbFSewKq4HKFMTZb8HwI0t4fq-CZqmU6HqNgrqLtKWwmF5x-625SwT2T2pPdf8m3IBD8HiW4L36YJMr3DMRKxzCqjcJfYqNkHn8bOCX48cv7IiRfEvsvyX6f0fd7u8ypT1iwqMiejwjGmWvu5YC4THluaEDH1KpHGhw_lQv-5o4SqSGWkL3gjOgiEUqbPSjYuc9YOT3S-v3_hQCvRL2kMkgKOfhX0BxBui0fpYK");'
-            ></div>
+            <div class="flex items-center gap-2">
+              <button
+                class="flex max-w-[480px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full h-10 bg-gray-500 text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"
+                disabled
+              >
+                <div class="text-white" data-icon="Question" data-size="20px" data-weight="regular">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
+              <div
+                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuChybXieopZjwcb06x0zQJJYv4ArW6S5ZDXb8p6FzbFSewKq4HKFMTZb8HwI0t4fq-CZqmU6HqNgrqLtKWwmF5x-625SwT2T2pPdf8m3IBD8HiW4L36YJMr3DMRKxzCqjcJfYqNkHn8bOCX48cv7IiRfEvsvyX6f0fd7u8ypT1iwqMiejwjGmWvu5YC4THluaEDH1KpHGhw_lQv-5o4SqSGWkL3gjOgiEUqbPSjYuc9YOT3S-v3_hQCvRL2kMkgKOfhX0BxBui0fpYK");'
+              ></div>
+            </div>
           </div>
         </header>
         <div class="px-40 flex flex-1 justify-center py-5">
@@ -121,7 +125,8 @@
             </div>
             <div class="flex px-4 py-3 justify-end">
               <button
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
+                class="flex min-w-[84px] max-w-[480px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-gray-500 text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
+                disabled
               >
                 <span class="truncate">Next</span>
               </button>
