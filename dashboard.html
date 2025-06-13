@@ -69,66 +69,27 @@
             </div>
           </div>
         </header>
-        <div class="px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 max-w-[960px] flex-1">
-            <h2 class="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Get started</h2>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Email"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
+        <div class="px-4 sm:px-40 flex flex-col flex-1 py-5 space-y-6">
+          <h2 class="text-white text-2xl font-bold text-center">Welcome, <span id="username"></span></h2>
+          <div id="calendar" class="grid grid-cols-7 gap-2 text-white"></div>
+        </div>
+        <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+          <div class="bg-[#111714] p-6 rounded-xl text-white">
+            <p id="modal-date" class="mb-4"></p>
+            <input id="modal-time" type="time" class="form-input bg-[#29382f] text-white" />
+            <div class="mt-4 text-right">
+              <button id="close-modal" class="bg-[#38e07b] text-[#111714] rounded px-4 py-2">Close</button>
             </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Name"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Password"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Confirm Password"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex px-4 py-3">
-              <button
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate">Sign up</span>
-              </button>
-            </div>
-            <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">By signing up, you agree to our Terms of Service and Privacy Policy.</p>
-            <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">
-              This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
-            </p>
           </div>
         </div>
       </div>
     </div>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        const indicator = document.getElementById('navIndicator');
-        let activeLink = document.querySelector('.nav-link.active');
-        let hoveredLink = null;
+        document.addEventListener('DOMContentLoaded', function() {
+          const navLinks = document.querySelectorAll('.nav-link');
+          const indicator = document.getElementById('navIndicator');
+          let activeLink = document.querySelector('.nav-link.active');
+          let hoveredLink = null;
 
         function updateIndicator(element) {
           if (!element) return;
@@ -161,14 +122,69 @@
           });
         });
 
-        window.addEventListener('resize', () => {
-          if (hoveredLink) {
-            updateIndicator(hoveredLink);
-          } else if (activeLink) {
-            updateIndicator(activeLink);
+          window.addEventListener('resize', () => {
+            if (hoveredLink) {
+              updateIndicator(hoveredLink);
+            } else if (activeLink) {
+              updateIndicator(activeLink);
+            }
+          });
+
+          const params = new URLSearchParams(window.location.search);
+          document.getElementById('username').textContent = params.get('user') || 'test user';
+
+          const calendarEl = document.getElementById('calendar');
+          const modal = document.getElementById('modal');
+          const modalDate = document.getElementById('modal-date');
+          const modalTime = document.getElementById('modal-time');
+          const closeModal = document.getElementById('close-modal');
+
+          function fetchAvailability(date) {
+            // Placeholder: later fetch availability from server
+            return Promise.resolve();
           }
+
+          function openModal(date) {
+            modalDate.textContent = date.toDateString();
+            modalTime.value = '';
+            modal.classList.remove('hidden');
+          }
+
+          closeModal.addEventListener('click', () => {
+            modal.classList.add('hidden');
+          });
+
+          function buildCalendar() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            calendarEl.innerHTML = '';
+            dayNames.forEach(n => {
+              const div = document.createElement('div');
+              div.textContent = n;
+              div.className = 'text-center font-bold';
+              calendarEl.appendChild(div);
+            });
+            for (let i = 0; i < firstDay.getDay(); i++) {
+              calendarEl.appendChild(document.createElement('div'));
+            }
+            for (let d = 1; d <= lastDay.getDate(); d++) {
+              const date = new Date(year, month, d);
+              const cell = document.createElement('div');
+              cell.textContent = d;
+              cell.className = 'p-2 text-center rounded cursor-pointer hover:bg-[#29382f]';
+              cell.addEventListener('click', () => {
+                fetchAvailability(date).then(() => openModal(date));
+              });
+              calendarEl.appendChild(cell);
+            }
+          }
+
+          buildCalendar();
         });
-      });
-    </script>
+      </script>
   </body>
 </html>
