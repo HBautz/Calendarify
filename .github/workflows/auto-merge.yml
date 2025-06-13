@@ -30,7 +30,12 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git merge pr -X theirs -m "Auto merge PR #${{ github.event.pull_request.number }}"
+          git merge pr -X theirs -m "Auto merge PR #${{ github.event.pull_request.number }}" || {
+            git merge --abort
+            git checkout pr -- .
+            git add -A
+            git commit -m "Auto merge PR #${{ github.event.pull_request.number }} (resolved with PR contents)"
+          }
       - name: Push changes
         run: git push origin HEAD:${{ github.event.pull_request.base.ref }}
 
