@@ -26,11 +26,16 @@ jobs:
       - name: Fetch pull request branch
         run: |
           git fetch origin pull/${{ github.event.pull_request.number }}/head:pr
-      - name: Merge pull request preferring theirs
+      - name: Merge pull request preferring PR contents
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git merge pr -X theirs -m "Auto merge PR #${{ github.event.pull_request.number }}"
+          if ! git merge pr -X theirs -m "Auto merge PR #${{ github.event.pull_request.number }}"; then
+            git merge --abort
+            git checkout pr -- .
+            git add -A
+            git commit -m "Auto merge PR #${{ github.event.pull_request.number }} (resolved with PR contents)"
+          fi
       - name: Push changes
         run: git push origin HEAD:${{ github.event.pull_request.base.ref }}
 
