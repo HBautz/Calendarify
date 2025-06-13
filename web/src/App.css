@@ -1,0 +1,21 @@
+.calendar-selector {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 1em 0;
+}
+
+.calendar-day {
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  text-align: center;
+}
+
+.calendar-day:hover {
+  background-color: #e0e0e0;
+}
+
+.appointment-form {
+  margin-top: 1em;
+}
