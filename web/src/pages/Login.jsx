@@ -13,16 +13,16 @@ export default function Login() {
   }
 
   return (
-    <div className="form-container">
-      <h2>Log In</h2>
-      <form onSubmit={handleSubmit} className="form">
+    <div className="max-w-md mx-auto bg-[#1c2420] rounded-xl p-8">
+      <h2 className="text-xl font-bold mb-4 text-center">Log In</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <input type="email" placeholder="Email" required />
+          <input className="w-full p-3 rounded bg-[#29382f]" type="email" placeholder="Email" required />
         </div>
         <div>
-          <input type="password" placeholder="Password" required />
+          <input className="w-full p-3 rounded bg-[#29382f]" type="password" placeholder="Password" required />
         </div>
-        <button className="signup-btn" type="submit">Log In</button>
+        <button className="bg-[#34D399] text-[#1A2E29] w-full py-2 rounded-lg hover:bg-[#2C4A43]" type="submit">Log In</button>
       </form>
     </div>
   )
