@@ -1,190 +1,325 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
-    <link
-      rel="stylesheet"
-      as="style"
-      onload="this.rel='stylesheet'"
-      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Spline+Sans%3Awght%40400%3B500%3B700"
-    />
-
-    <title>Stitch Design</title>
-    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
-
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calendarify - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
     <style>
-      .nav-indicator {
-        position: absolute;
-        bottom: -3px;
-        height: 2px;
-        background-color: #38e07b;
-        transition: all 0.3s ease;
-        left: 0;
-        width: 0;
-      }
-      .nav-link {
-        position: relative;
-        color: #9eb7a8;
-        transition: color 0.3s ease;
-      }
-      .nav-link:hover {
-        color: #38e07b;
-      }
-      .nav-link.active {
-        color: #38e07b;
-      }
-      .nav-container {
-        position: relative;
-      }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A2E29;
+            color: #E0E0E0;
+        }
+        .primary-button {
+            background-color: #34D399;
+            color: #1A2E29;
+        }
+        .primary-button:hover {
+            background-color: #2BB98A;
+        }
+        .secondary-button {
+            border: 1px solid #34D399;
+            color: #34D399;
+        }
+        .secondary-button:hover {
+            background-color: #34D399;
+            color: #1A2E29;
+        }
+        .date-picker-day.selected {
+            background-color: #34D399;
+            color: #1A2E29;
+        }
+        .time-slot.selected {
+            background-color: #34D399;
+            color: #1A2E29;
+            border-color: #34D399;
+        }
+        .nav-link {
+            color: #A3B3AF;
+        }
+        .nav-link:hover {
+            color: #E0E0E0;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            transition: all 0.2s ease;
+        }
+        .calendar-day:hover {
+            background-color: #2C4A43;
+        }
+        .calendar-day.today {
+            background-color: #34D399;
+            color: #1A2E29;
+            font-weight: bold;
+        }
+        .calendar-day.has-events {
+            position: relative;
+        }
+        .calendar-day.has-events::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background-color: #34D399;
+            border-radius: 50%;
+        }
+        /* Custom scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1A2E29;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2C4A43;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #34D399;
+        }
     </style>
-  </head>
-  <body>
-    <div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark group/design-root overflow-x-hidden" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
-      <div class="layout-container flex h-full grow flex-col">
-        <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3 bg-[#111714]">
-          <a href="index.html" class="flex items-center gap-4 text-white">
-            <div class="size-4">
-              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
+</head>
+<body class="flex flex-col min-h-screen">
+    <header class="bg-[#111f1c] py-4 px-6 md:px-12">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
+                <h1 class="text-2xl font-bold text-white">Calendarify</h1>
             </div>
-            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Calendarify</h2>
-          </a>
-          <div class="flex flex-1 justify-end gap-8">
-            <div class="nav-container flex items-center gap-9 relative">
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="individuals.html">Individuals</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="teams.html">Teams</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="enterprise.html">Enterprise</a>
-              <a
-                href="log-in.html"
-                class="nav-link active flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate text-[#111714]">Log in</span>
-              </a>
-              <div class="nav-indicator" id="navIndicator"></div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a class="nav-link" href="individuals.html">Individuals</a>
+                <a class="nav-link" href="teams.html">Teams</a>
+                <a class="nav-link" href="enterprise.html">Enterprise</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button class="primary-button px-6 py-2 rounded-lg font-semibold text-sm">Sign up</button>
+                <button class="text-sm nav-link">Log In</button>
             </div>
-          </div>
-        </header>
-        <div class="px-4 sm:px-40 flex flex-col flex-1 py-5 space-y-6">
-          <h2 class="text-white text-2xl font-bold text-center">Welcome, <span id="username"></span></h2>
-          <div id="calendar" class="grid grid-cols-7 gap-2 text-white"></div>
         </div>
-        <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
-          <div class="bg-[#111714] p-6 rounded-xl text-white">
-            <p id="modal-date" class="mb-4"></p>
-            <input id="modal-time" type="time" class="form-input bg-[#29382f] text-white" />
-            <div class="mt-4 text-right">
-              <button id="close-modal" class="bg-[#38e07b] text-[#111714] rounded px-4 py-2">Close</button>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
+        <div class="bg-[#1E3A34] p-8 rounded-xl shadow-2xl w-full max-w-4xl mx-auto">
+            <div class="flex flex-col md:flex-row md:space-x-8">
+                <div class="md:w-1/2">
+                    <p class="text-sm text-gray-400">Welcome back, <span id="username" class="text-[#34D399]"></span></p>
+                    <h2 class="text-3xl font-bold text-white mt-1 mb-4">Your Calendar</h2>
+                    <div class="flex items-center text-gray-400 mb-2">
+                        <span class="material-icons-outlined mr-2">schedule</span>
+                        <span>Manage your availability</span>
+                    </div>
+                    <div class="flex items-center text-gray-400">
+                        <span class="material-icons-outlined mr-2">videocam</span>
+                        <span>Set up your meeting preferences</span>
+                    </div>
+                </div>
+                <div class="md:w-1/2 mt-8 md:mt-0">
+                    <h3 class="text-xl font-semibold text-white mb-4 text-center">Select a Date</h3>
+                    <div class="bg-[#1A2E29] p-4 rounded-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <button id="prevMonth" class="p-2 rounded-full hover:bg-[#2C4A43]">
+                                <span class="material-icons-outlined text-gray-300">chevron_left</span>
+                            </button>
+                            <div id="currentMonth" class="text-lg font-medium text-white"></div>
+                            <button id="nextMonth" class="p-2 rounded-full hover:bg-[#2C4A43]">
+                                <span class="material-icons-outlined text-gray-300">chevron_right</span>
+                            </button>
+                        </div>
+                        <div id="calendar" class="grid grid-cols-7 gap-1 text-center"></div>
+                    </div>
+                    <div id="timeSlots" class="mt-6">
+                        <h4 id="selectedDate" class="text-lg font-medium text-white mb-3 text-center"></h4>
+                        <div class="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar" id="timeSlotsContainer"></div>
+                    </div>
+                    <button class="primary-button w-full py-3 rounded-lg font-semibold mt-6">
+                        Confirm
+                    </button>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
+    </main>
+
+    <footer class="py-8 text-center">
+        <p class="text-xs text-gray-500">
+            This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
+        </p>
+    </footer>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-          const navLinks = document.querySelectorAll('.nav-link');
-          const indicator = document.getElementById('navIndicator');
-          let activeLink = document.querySelector('.nav-link.active');
-          let hoveredLink = null;
+            const params = new URLSearchParams(window.location.search);
+            document.getElementById('username').textContent = params.get('user') || 'User';
+            
+            let currentDate = new Date();
+            let selectedDate = new Date(); // Initialize with current date
+            let timeSlots = {};
 
-        function updateIndicator(element) {
-          if (!element) return;
-
-          const rect = element.getBoundingClientRect();
-          const container = element.closest('.nav-container');
-          const containerRect = container.getBoundingClientRect();
-
-          indicator.style.width = `${rect.width}px`;
-          indicator.style.left = `${rect.left - containerRect.left}px`;
-        }
-
-        if (activeLink) {
-          requestAnimationFrame(() => {
-            updateIndicator(activeLink);
-          });
-        }
-
-        navLinks.forEach(link => {
-          link.addEventListener('mouseenter', () => {
-            hoveredLink = link;
-            updateIndicator(link);
-          });
-
-          link.addEventListener('mouseleave', () => {
-            hoveredLink = null;
-            if (activeLink) {
-              updateIndicator(activeLink);
+            function formatDate(date) {
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
             }
-          });
-        });
 
-          window.addEventListener('resize', () => {
-            if (hoveredLink) {
-              updateIndicator(hoveredLink);
-            } else if (activeLink) {
-              updateIndicator(activeLink);
+            function formatTime(time) {
+                return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
             }
-          });
 
-          const params = new URLSearchParams(window.location.search);
-          document.getElementById('username').textContent = params.get('user') || 'test user';
+            function generateTimeSlots() {
+                const slots = [];
+                const startHour = 9; // 9 AM
+                const endHour = 17; // 5 PM
+                
+                for (let hour = startHour; hour < endHour; hour++) {
+                    for (let minute = 0; minute < 60; minute += 15) {
+                        const time = new Date();
+                        time.setHours(hour, minute, 0);
+                        slots.push(time.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        }));
+                    }
+                }
+                return slots;
+            }
 
-          const calendarEl = document.getElementById('calendar');
-          const modal = document.getElementById('modal');
-          const modalDate = document.getElementById('modal-date');
-          const modalTime = document.getElementById('modal-time');
-          const closeModal = document.getElementById('close-modal');
+            function updateTimeSlots() {
+                const container = document.getElementById('timeSlotsContainer');
+                const dateHeader = document.getElementById('selectedDate');
+                
+                if (!selectedDate) {
+                    container.innerHTML = '';
+                    dateHeader.textContent = '';
+                    return;
+                }
 
-          function fetchAvailability(date) {
-            // Placeholder: later fetch availability from server
-            return Promise.resolve();
-          }
+                dateHeader.textContent = formatDate(selectedDate);
+                container.innerHTML = '';
 
-          function openModal(date) {
-            modalDate.textContent = date.toDateString();
-            modalTime.value = '';
-            modal.classList.remove('hidden');
-          }
+                const timeSlots = generateTimeSlots();
+                timeSlots.forEach(time => {
+                    const button = document.createElement('button');
+                    button.className = 'time-slot w-full text-center py-3 rounded-lg border border-gray-600 hover:border-[#34D399] transition-colors duration-150';
+                    button.textContent = time;
+                    
+                    button.addEventListener('click', () => {
+                        // Remove selected class from all time slots
+                        container.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        // Add selected class to clicked time slot
+                        button.classList.add('selected');
+                    });
+                    
+                    container.appendChild(button);
+                });
+            }
 
-          closeModal.addEventListener('click', () => {
-            modal.classList.add('hidden');
-          });
+            function buildCalendar() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+                
+                document.getElementById('currentMonth').textContent = 
+                    firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                
+                const calendarEl = document.getElementById('calendar');
+                calendarEl.innerHTML = '';
+                
+                // Add day names
+                dayNames.forEach(n => {
+                    const div = document.createElement('div');
+                    div.textContent = n;
+                    div.className = 'text-sm text-gray-400 mb-2';
+                    calendarEl.appendChild(div);
+                });
 
-          function buildCalendar() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-            calendarEl.innerHTML = '';
-            dayNames.forEach(n => {
-              const div = document.createElement('div');
-              div.textContent = n;
-              div.className = 'text-center font-bold';
-              calendarEl.appendChild(div);
+                // Add empty cells for days before the first day of the month
+                for (let i = 0; i < firstDay.getDay(); i++) {
+                    const div = document.createElement('div');
+                    div.className = 'text-gray-500 p-2';
+                    calendarEl.appendChild(div);
+                }
+
+                const today = new Date();
+                for (let d = 1; d <= lastDay.getDate(); d++) {
+                    const date = new Date(year, month, d);
+                    const button = document.createElement('button');
+                    button.textContent = d;
+                    button.className = 'calendar-day';
+                    
+                    if (date.toDateString() === today.toDateString()) {
+                        button.classList.add('today');
+                    }
+                    
+                    if (timeSlots[date.toDateString()]) {
+                        button.classList.add('has-events');
+                    }
+                    
+                    if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+                        button.classList.add('selected');
+                    }
+                    
+                    button.addEventListener('click', () => {
+                        selectedDate = date;
+                        updateTimeSlots();
+                        buildCalendar();
+                    });
+                    
+                    calendarEl.appendChild(button);
+                }
+
+                // Add empty cells for days after the last day of the month
+                const remainingCells = 42 - (firstDay.getDay() + lastDay.getDate());
+                for (let i = 0; i < remainingCells; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'text-gray-500 p-2';
+                    calendarEl.appendChild(div);
+                }
+            }
+
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                buildCalendar();
             });
-            for (let i = 0; i < firstDay.getDay(); i++) {
-              calendarEl.appendChild(document.createElement('div'));
-            }
-            for (let d = 1; d <= lastDay.getDate(); d++) {
-              const date = new Date(year, month, d);
-              const cell = document.createElement('div');
-              cell.textContent = d;
-              cell.className = 'p-2 text-center rounded cursor-pointer hover:bg-[#29382f]';
-              cell.addEventListener('click', () => {
-                fetchAvailability(date).then(() => openModal(date));
-              });
-              calendarEl.appendChild(cell);
-            }
-          }
 
-          buildCalendar();
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                buildCalendar();
+            });
+
+            // Add confirm button functionality
+            document.querySelector('.primary-button').addEventListener('click', () => {
+                const selectedTimeSlot = document.querySelector('.time-slot.selected');
+                if (selectedDate && selectedTimeSlot) {
+                    alert(`Meeting confirmed for ${formatDate(selectedDate)} at ${selectedTimeSlot.textContent}`);
+                } else {
+                    alert('Please select a date and time slot');
+                }
+            });
+
+            // Initialize the calendar and time slots
+            buildCalendar();
+            updateTimeSlots();
         });
-      </script>
-  </body>
+    </script>
+</body>
 </html>

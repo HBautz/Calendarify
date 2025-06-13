@@ -1,161 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
-    <link
-      rel="stylesheet"
-      as="style"
-      onload="this.rel='stylesheet'"
-      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Spline+Sans%3Awght%40400%3B500%3B700"
-    />
-
-    <title>Stitch Design</title>
-    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
-
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calendarify - Easy Scheduling Ahead</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
     <style>
-      .nav-indicator {
-        position: absolute;
-        bottom: -3px;
-        height: 2px;
-        background-color: #38e07b;
-        transition: all 0.3s ease;
-        left: 0;
-        width: 0;
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #1A2E29;
+        color: #E0E0E0;
       }
       .nav-link {
-        position: relative;
-        color: #9eb7a8;
-        transition: color 0.3s ease;
+        color: #A3B3AF;
       }
       .nav-link:hover {
-        color: #38e07b;
-      }
-      .nav-link.active {
-        color: #38e07b;
-      }
-      .nav-container {
-        position: relative;
+        color: #E0E0E0;
       }
     </style>
   </head>
-  <body>
-    <div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark group/design-root overflow-x-hidden" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
-      <div class="layout-container flex h-full grow flex-col">
-        <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3 bg-[#111714]">
-          <a href="index.html" class="flex items-center gap-4 text-white">
-            <div class="size-4">
-              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Calendarify</h2>
-          </a>
-          <div class="flex flex-1 justify-end gap-8">
-            <div class="nav-container flex items-center gap-9 relative">
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="product.html">Product</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="solutions.html">Solutions</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="resources.html">Resources</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="pricing.html">Pricing</a>
-              <a
-                href="get-started.html"
-                class="nav-link active flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate text-[#111714]">Sign up</span>
+  <body class="flex flex-col min-h-screen">
+    <header class="bg-[#111f1c] py-4 px-6 md:px-12">
+      <div class="container mx-auto flex justify-between items-center">
+        <a href="index.html" class="flex items-center">
+          <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
+          <h1 class="text-2xl font-bold text-white">Calendarify</h1>
+        </a>
+        <nav class="hidden md:flex items-center space-x-6">
+          <a class="nav-link" href="product.html">Product</a>
+          <a class="nav-link" href="solutions.html">Solutions</a>
+          <a class="nav-link" href="resources.html">Resources</a>
+          <a class="nav-link" href="pricing.html">Pricing</a>
+        </nav>
+        <div class="flex items-center space-x-4">
+          <a href="log-in.html" class="text-[#A3B3AF] hover:text-white">Log in</a>
+          <a href="sign-up.html" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
+      <div class="max-w-[960px] mx-auto">
+        <div class="@container">
+          <div class="@[480px]:p-4">
+            <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4 rounded-xl"
+              style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1531973576160-7125cd663d86?auto=format&fit=crop&w=1200&q=80");'>
+              <div class="flex flex-col gap-2 text-center">
+                <h1 class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                  Easy scheduling ahead
+                </h1>
+                <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                  Calendarify is the modern scheduling platform that makes scheduling easy. Say goodbye to phone and email tag for finding the perfect time.
+                </h2>
+              </div>
+              <a href="sign-up.html" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold">
+                Get started
               </a>
-              <a
-                href="log-in.html"
-                class="nav-link flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-transparent border border-[#38e07b] text-[#38e07b] text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#38e07b] hover:text-[#111714] transition-colors"
-              >
-                <span class="truncate">Log in</span>
-              </a>
-              <div class="nav-indicator" id="navIndicator"></div>
             </div>
           </div>
-        </header>
-        <div class="px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
-            <div class="@container">
-              <div class="@[480px]:p-4">
-                <div
-                  class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
-                  style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAsPdsxwAi7WuRzZ9VtTU4-Cm-_VvEzk7R7iWAJSTDfZGkFeJ0fIyzq3cVcK613H4Pp-XMVLd1kAs2YAj4jOu6UmimgzxNIkWOhUN9dJ18Huyc59diz7IT_HPzf_LLFXQtMNcbabjNDT1I9RA0WCGaHr_nDJFLxLcvohbBo_zT536oEWMxYgkKPPVlWt9YXxqPWcOj2QtqKDSZjdytQ-cknIN7HKbMboHIYlFwPSyc1PXLrAOwjRaYrJsmFt0OSzyO09cWIfr65YC6g");'
-                >
-                  <div class="flex flex-col gap-2 text-center">
-                    <h1
-                      class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]"
-                    >
-                      Easy scheduling ahead
-                    </h1>
-                    <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
-                      Calendarify is the modern scheduling platform that makes scheduling easy. Say goodbye to phone and email tag for finding the perfect time.
-                    </h2>
-                  </div>
-                  <a
-                    href="get-started.html"
-                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
-                  >
-                    <span class="truncate">Get started</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-            <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
-              Disclaimer: This is a demo website for Calendarify, a non-existent company. All functionality is for demonstration purposes only and not intended for actual use.
-            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 px-4">
+          <div class="bg-[#1E3A34] p-6 rounded-xl">
+            <span class="material-icons-outlined text-3xl text-[#34D399] mb-4">schedule</span>
+            <h3 class="text-xl font-bold text-white mb-2">Smart Scheduling</h3>
+            <p class="text-[#A3B3AF]">Let AI find the perfect meeting time for everyone. No more back-and-forth emails.</p>
+          </div>
+          <div class="bg-[#1E3A34] p-6 rounded-xl">
+            <span class="material-icons-outlined text-3xl text-[#34D399] mb-4">sync</span>
+            <h3 class="text-xl font-bold text-white mb-2">Calendar Sync</h3>
+            <p class="text-[#A3B3AF]">Seamlessly sync with Google Calendar, Outlook, and other popular calendar apps.</p>
+          </div>
+          <div class="bg-[#1E3A34] p-6 rounded-xl">
+            <span class="material-icons-outlined text-3xl text-[#34D399] mb-4">groups</span>
+            <h3 class="text-xl font-bold text-white mb-2">Team Collaboration</h3>
+            <p class="text-[#A3B3AF]">Coordinate team schedules, manage resources, and keep everyone in sync.</p>
+          </div>
+        </div>
+
+        <div class="mt-12 px-4">
+          <h2 class="text-2xl font-bold text-white mb-6">Trusted by teams worldwide</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
+            <div class="text-[#A3B3AF] text-center">TechCorp</div>
+            <div class="text-[#A3B3AF] text-center">Global Solutions</div>
+            <div class="text-[#A3B3AF] text-center">Innovate Inc</div>
+            <div class="text-[#A3B3AF] text-center">Future Systems</div>
           </div>
         </div>
       </div>
-    </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        const indicator = document.getElementById('navIndicator');
-        let activeLink = document.querySelector('.nav-link.active');
-        let hoveredLink = null;
+    </main>
 
-        function updateIndicator(element) {
-          if (!element) return;
-
-          const rect = element.getBoundingClientRect();
-          const container = element.closest('.nav-container');
-          const containerRect = container.getBoundingClientRect();
-
-          indicator.style.width = `${rect.width}px`;
-          indicator.style.left = `${rect.left - containerRect.left}px`;
-        }
-
-        if (activeLink) {
-          requestAnimationFrame(() => {
-            updateIndicator(activeLink);
-          });
-        }
-
-        navLinks.forEach(link => {
-          link.addEventListener('mouseenter', () => {
-            hoveredLink = link;
-            updateIndicator(link);
-          });
-
-          link.addEventListener('mouseleave', () => {
-            hoveredLink = null;
-            if (activeLink) {
-              updateIndicator(activeLink);
-            }
-          });
-        });
-
-        window.addEventListener('resize', () => {
-          if (hoveredLink) {
-            updateIndicator(hoveredLink);
-          } else if (activeLink) {
-            updateIndicator(activeLink);
-          }
-        });
-      });
-    </script>
+    <footer class="py-8 text-center">
+      <div class="container mx-auto max-w-[960px]">
+        <div class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+          <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="privacy-policy.html">Privacy Policy</a>
+          <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="terms.html">Terms of Service</a>
+          <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="contact.html">Contact Us</a>
+        </div>
+        <p class="text-[#A3B3AF] text-base font-normal leading-normal mt-6">
+          This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
+        </p>
+      </div>
+    </footer>
   </body>
 </html>

@@ -1,165 +1,159 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
-    <link
-      rel="stylesheet"
-      as="style"
-      onload="this.rel='stylesheet'"
-      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Spline+Sans%3Awght%40400%3B500%3B700"
-    />
-
-    <title>Stitch Design</title>
-    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
-
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calendarify - Resources</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
     <style>
-      .nav-indicator {
-        position: absolute;
-        bottom: -3px;
-        height: 2px;
-        background-color: #38e07b;
-        transition: all 0.3s ease;
-        left: 0;
-        width: 0;
-      }
-      .nav-link {
-        position: relative;
-        color: #9eb7a8;
-        transition: color 0.3s ease;
-      }
-      .nav-link:hover {
-        color: #38e07b;
-      }
-      .nav-link.active {
-        color: #38e07b;
-      }
-      .nav-container {
-        position: relative;
-      }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A2E29;
+            color: #E0E0E0;
+        }
+        .nav-link {
+            color: #A3B3AF;
+        }
+        .nav-link:hover {
+            color: #E0E0E0;
+        }
     </style>
-  </head>
-  <body>
-    <div class="relative flex size-full min-h-screen flex-col bg-[#111714] dark group/design-root overflow-x-hidden" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
-      <div class="layout-container flex h-full grow flex-col">
-        <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#29382f] px-10 py-3 bg-[#111714]">
-          <a href="index.html" class="flex items-center gap-4 text-white">
-            <div class="size-4">
-              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
+</head>
+<body class="flex flex-col min-h-screen">
+    <header class="bg-[#111f1c] py-4 px-6 md:px-12">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="flex items-center">
+                <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
+                <h1 class="text-2xl font-bold text-white">Calendarify</h1>
+            </a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a class="nav-link" href="product.html">Product</a>
+                <a class="nav-link" href="solutions.html">Solutions</a>
+                <a class="nav-link" href="resources.html">Resources</a>
+                <a class="nav-link" href="pricing.html">Pricing</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <a href="log-in.html" class="text-[#A3B3AF] hover:text-white">Log in</a>
+                <a href="sign-up.html" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors">Sign up</a>
             </div>
-            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Calendarify</h2>
-          </a>
-          <div class="flex flex-1 justify-end gap-8">
-            <div class="nav-container flex items-center gap-9 relative">
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="product.html">Product</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="solutions.html">Solutions</a>
-              <a class="nav-link active text-white text-sm font-medium leading-normal" href="resources.html">Resources</a>
-              <a class="nav-link text-white text-sm font-medium leading-normal" href="pricing.html">Pricing</a>
-              <a
-                href="get-started.html"
-                class="nav-link flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate text-[#111714]">Sign up</span>
-              </a>
-              <a
-                href="log-in.html"
-                class="nav-link flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-transparent border border-[#38e07b] text-[#38e07b] text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#38e07b] hover:text-[#111714] transition-colors"
-              >
-                <span class="truncate">Log in</span>
-              </a>
-              <div class="nav-indicator" id="navIndicator"></div>
-            </div>
-          </div>
-        </header>
-        <div class="px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
-            <div class="@container">
-              <div class="@[480px]:p-4">
-                <div
-                  class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
-                  style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80");'
-                >
-                  <div class="flex flex-col gap-2 text-center">
-                    <h1
-                      class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]"
-                    >
-                      Resources
-                    </h1>
-                    <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
-                      Browse guides, tutorials and best practices to make the most of Calendarify.
-                    </h2>
-                  </div>
-                  <a
-                    href="get-started.html"
-                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
-                  >
-                    <span class="truncate">Get started</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-              <div class="text-[#9eb7a8] text-base font-normal leading-normal space-y-4 px-4 py-6">
-                <p>Our resource center contains guides, video tutorials and best practices to help you master scheduling.</p>
-                <p>Stay up to date with product announcements and discover tips for improving your meeting workflows.</p>
-              </div>
-              <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
-                Disclaimer: This is a demo website for Calendarify, a non-existent company. All functionality is for demonstration purposes only and not intended for actual use.
-              </p>
-          </div>
         </div>
-      </div>
-    </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        const indicator = document.getElementById('navIndicator');
-        let activeLink = document.querySelector('.nav-link.active');
-        let hoveredLink = null;
+    </header>
 
-        function updateIndicator(element) {
-          if (!element) return;
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
+        <div class="max-w-[960px] mx-auto">
+            <div class="@container">
+                <div class="@[480px]:p-4">
+                    <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4 rounded-xl"
+                        style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80");'>
+                        <div class="flex flex-col gap-2 text-center">
+                            <h1 class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                                Resources & Guides
+                            </h1>
+                            <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                                Learn how to make the most of Calendarify with our comprehensive guides and tutorials
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-          const rect = element.getBoundingClientRect();
-          const container = element.closest('.nav-container');
-          const containerRect = container.getBoundingClientRect();
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 px-4">
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">menu_book</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Getting Started</h3>
+                    <p class="text-[#A3B3AF] mb-4">Essential guides to help you get up and running with Calendarify.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Quick start guide
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Calendar setup
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Team onboarding
+                        </li>
+                    </ul>
+                </div>
 
-          indicator.style.width = `${rect.width}px`;
-          indicator.style.left = `${rect.left - containerRect.left}px`;
-        }
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">school</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Tutorials</h3>
+                    <p class="text-[#A3B3AF] mb-4">Step-by-step tutorials for advanced features and workflows.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Advanced scheduling
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Integration setup
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Custom workflows
+                        </li>
+                    </ul>
+                </div>
 
-        if (activeLink) {
-          requestAnimationFrame(() => {
-            updateIndicator(activeLink);
-          });
-        }
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">tips_and_updates</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Best Practices</h3>
+                    <p class="text-[#A3B3AF] mb-4">Learn from our experts about optimizing your scheduling process.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Time management
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Team coordination
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Productivity tips
+                        </li>
+                    </ul>
+                </div>
 
-        navLinks.forEach(link => {
-          link.addEventListener('mouseenter', () => {
-            hoveredLink = link;
-            updateIndicator(link);
-          });
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">campaign</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Product Updates</h3>
+                    <p class="text-[#A3B3AF] mb-4">Stay informed about new features and improvements.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Release notes
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Feature announcements
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Roadmap updates
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
 
-          link.addEventListener('mouseleave', () => {
-            hoveredLink = null;
-            if (activeLink) {
-              updateIndicator(activeLink);
-            }
-          });
-        });
-
-        window.addEventListener('resize', () => {
-          if (hoveredLink) {
-            updateIndicator(hoveredLink);
-          } else if (activeLink) {
-            updateIndicator(activeLink);
-          }
-        });
-      });
-    </script>
-  </body>
+    <footer class="py-8 text-center">
+        <div class="container mx-auto max-w-[960px]">
+            <div class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="privacy-policy.html">Privacy Policy</a>
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="terms.html">Terms of Service</a>
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="contact.html">Contact Us</a>
+            </div>
+            <p class="text-[#A3B3AF] text-base font-normal leading-normal mt-6">
+                This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
+            </p>
+        </div>
+    </footer>
+</body>
 </html>
