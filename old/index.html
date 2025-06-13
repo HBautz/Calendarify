@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calendarify - Easy Scheduling Ahead</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #1A2E29;
+        color: #E0E0E0;
+      }
+      .nav-link {
+        color: #A3B3AF;
+      }
+      .nav-link:hover {
+        color: #E0E0E0;
+      }
+    </style>
+  </head>
+  <body class="flex flex-col min-h-screen">
+    <header class="bg-[#111f1c] py-4 px-6 md:px-12">
+      <div class="container mx-auto flex justify-between items-center">
+        <a href="index.html" class="flex items-center">
+          <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
+          <h1 class="text-2xl font-bold text-white">Calendarify</h1>
+        </a>
+        <nav class="hidden md:flex items-center space-x-6">
+          <a class="nav-link" href="product.html">Product</a>
+          <a class="nav-link" href="../static/solutions.html">Solutions</a>
+          <a class="nav-link" href="../static/resources.html">Resources</a>
+          <a class="nav-link" href="pricing.html">Pricing</a>
+        </nav>
+        <div class="flex items-center space-x-4">
+          <a href="log-in.html" class="text-[#A3B3AF] hover:text-white">Log in</a>
+          <a href="sign-up.html" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors">Sign up</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
+      <div class="max-w-[960px] mx-auto">
+        <div class="@container">
+          <div class="@[480px]:p-4">
+            <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4 rounded-xl"
+              style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1531973576160-7125cd663d86?auto=format&fit=crop&w=1200&q=80");'>
+              <div class="flex flex-col gap-2 text-center">
+                <h1 class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                  Easy scheduling ahead
+                </h1>
+                <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                  Calendarify is the modern scheduling platform that makes scheduling easy. Say goodbye to phone and email tag for finding the perfect time.
+                </h2>
+              </div>
+              <a href="sign-up.html" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold">
+                Get started
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 px-4">
+          <div class="bg-[#1E3A34] p-6 rounded-xl">
+            <span class="material-icons-outlined text-3xl text-[#34D399] mb-4">schedule</span>
+            <h3 class="text-xl font-bold text-white mb-2">Smart Scheduling</h3>
+            <p class="text-[#A3B3AF]">Let AI find the perfect meeting time for everyone. No more back-and-forth emails.</p>
+          </div>
+          <div class="bg-[#1E3A34] p-6 rounded-xl">
+            <span class="material-icons-outlined text-3xl text-[#34D399] mb-4">sync</span>
+            <h3 class="text-xl font-bold text-white mb-2">Calendar Sync</h3>
+            <p class="text-[#A3B3AF]">Seamlessly sync with Google Calendar, Outlook, and other popular calendar apps.</p>
+          </div>
+          <div class="bg-[#1E3A34] p-6 rounded-xl">
+            <span class="material-icons-outlined text-3xl text-[#34D399] mb-4">groups</span>
+            <h3 class="text-xl font-bold text-white mb-2">Team Collaboration</h3>
+            <p class="text-[#A3B3AF]">Coordinate team schedules, manage resources, and keep everyone in sync.</p>
+          </div>
+        </div>
+
+        <div class="mt-12 px-4">
+          <h2 class="text-2xl font-bold text-white mb-6">Trusted by teams worldwide</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
+            <div class="text-[#A3B3AF] text-center">TechCorp</div>
+            <div class="text-[#A3B3AF] text-center">Global Solutions</div>
+            <div class="text-[#A3B3AF] text-center">Innovate Inc</div>
+            <div class="text-[#A3B3AF] text-center">Future Systems</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="py-8 text-center">
+      <div class="container mx-auto max-w-[960px]">
+        <div class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+          <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="privacy-policy.html">Privacy Policy</a>
+          <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="terms.html">Terms of Service</a>
+          <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="../static/contact.html">Contact Us</a>
+        </div>
+        <p class="text-[#A3B3AF] text-base font-normal leading-normal mt-6">
+          This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
