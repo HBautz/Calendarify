@@ -1,10 +1,38 @@
 # Calendarify
-Production Grade Calendly Clone
 
-This repository now includes a React frontend located in the `web` folder. To start the development server:
+Calendarify is a **demo** Calendly clone. The repository started with static
+marketing pages and now features a more complete React frontend built with
+[Vite](https://vitejs.dev/) and Tailwind CSS. The React app includes pages for
+product features, pricing, authentication and a simple dashboard. All pages are
+demonstration only and do not implement real scheduling functionality.
+Legacy marketing pages that were replaced by React now live in the `unused/` directory.
+Additional static prototypes reside in the `static/` folder.
+Opening `/index` in a browser will automatically load the React frontend.
+
+## Running the React app
 
 ```bash
 cd web
-npm install
-npm run dev
+npm install       # install dependencies
+npm run dev       # start Vite development server
 ```
+
+Additional scripts:
+
+```bash
+npm run build     # build production files into web/dist
+npm run preview   # preview the production build
+```
+
+## Repository layout
+
+```
+web/              React/Vite application
+web/src/          Components and pages
+web/public/       Static assets
+.github/workflows Auto merge workflow
+unused/           Archived pages replaced by React
+static/           Current static prototypes
+```
+
+All assets in this repository are for demonstration purposes only.
