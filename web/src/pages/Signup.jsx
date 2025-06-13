@@ -13,19 +13,19 @@ export default function Signup() {
   }
 
   return (
-    <div>
+    <div className="form-container">
       <h2>Sign Up</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="form">
         <div>
-          <label>Name: <input type="text" required /></label>
+          <input type="text" placeholder="Name" required />
         </div>
         <div>
-          <label>Email: <input type="email" required /></label>
+          <input type="email" placeholder="Email" required />
         </div>
         <div>
-          <label>Password: <input type="password" required /></label>
+          <input type="password" placeholder="Password" required />
         </div>
-        <button type="submit">Sign Up</button>
+        <button className="signup-btn" type="submit">Sign Up</button>
       </form>
     </div>
   )

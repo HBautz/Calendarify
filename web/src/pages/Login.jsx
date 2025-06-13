@@ -13,16 +13,16 @@ export default function Login() {
   }
 
   return (
-    <div>
+    <div className="form-container">
       <h2>Log In</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="form">
         <div>
-          <label>Email: <input type="email" required /></label>
+          <input type="email" placeholder="Email" required />
         </div>
         <div>
-          <label>Password: <input type="password" required /></label>
+          <input type="password" placeholder="Password" required />
         </div>
-        <button type="submit">Log In</button>
+        <button className="signup-btn" type="submit">Log In</button>
       </form>
     </div>
   )

@@ -1,10 +1,12 @@
+import { Link } from 'react-router-dom'
+
 export default function Home() {
   return (
-    <div>
-      <h1>Calendarify</h1>
-      <p>Production Grade Calendly Clone</p>
+    <div className="text-center space-y-4">
+      <h1>Easy scheduling ahead</h1>
+      <p>Calendarify is the modern scheduling platform that makes scheduling easy.</p>
       <div>
-        <a href="/login">Log In</a> | <a href="/signup">Sign Up</a>
+        <Link to="/signup" className="signup-btn">Get Started</Link>
       </div>
     </div>
   )

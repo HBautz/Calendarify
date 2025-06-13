@@ -36,8 +36,19 @@ export default function Dashboard() {
       {selectedDate && (
         <div className="appointment-form">
           <h3>{selectedDate.toDateString()}</h3>
-          <input type="time" value={time} onChange={e => setTime(e.target.value)} />
-          <button style={{ marginLeft: '1em' }} onClick={() => {setSelectedDate(null); setTime('')}}>
+          <input
+            type="time"
+            value={time}
+            onChange={e => setTime(e.target.value)}
+          />
+          <button
+            className="signup-btn"
+            style={{ marginLeft: '1em' }}
+            onClick={() => {
+              setSelectedDate(null)
+              setTime('')
+            }}
+          >
             Close
           </button>
         </div>
