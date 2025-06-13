@@ -1,8 +1,8 @@
 :root {
-  --accent-color: #38e07b;
+  --accent-color: #34D399;
   --bg-color: #111714;
   --text-color: #ffffff;
-  font-family: 'Spline Sans', 'Noto Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 body {
