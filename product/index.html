@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calendarify - Product Features</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A2E29;
+            color: #E0E0E0;
+        }
+        .nav-link {
+            color: #A3B3AF;
+        }
+        .nav-link:hover {
+            color: #E0E0E0;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <header class="bg-[#111f1c] py-4 px-6 md:px-12">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="flex items-center">
+                <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
+                <h1 class="text-2xl font-bold text-white">Calendarify</h1>
+            </a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a class="nav-link" href="/product">Product</a>
+                <a class="nav-link" href="/solutions">Solutions</a>
+                <a class="nav-link" href="/resources">Resources</a>
+                <a class="nav-link" href="/pricing">Pricing</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <a href="/log-in" class="text-[#A3B3AF] hover:text-white">Log in</a>
+                <a href="/sign-up" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors">Sign up</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
+        <div class="max-w-[960px] mx-auto">
+            <div class="@container">
+                <div class="@[480px]:p-4">
+                    <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4 rounded-xl"
+                        style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1522199710521-72d69614c702?auto=format&fit=crop&w=1200&q=80");'>
+                        <div class="flex flex-col gap-2 text-center">
+                            <h1 class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                                Powerful Features for Modern Teams
+                            </h1>
+                            <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                                Discover how Calendarify's innovative features can transform your scheduling experience
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 px-4">
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">smart_toy</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">AI-Powered Scheduling</h3>
+                    <p class="text-[#A3B3AF] mb-4">Our advanced AI analyzes team availability, meeting patterns, and preferences to suggest optimal meeting times. No more scheduling conflicts or time zone confusion.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Smart time slot suggestions
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Time zone optimization
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Meeting pattern learning
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">sync</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Seamless Integration</h3>
+                    <p class="text-[#A3B3AF] mb-4">Connect with your favorite tools and platforms. Calendarify works with all major calendar systems and productivity apps.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Google Calendar & Outlook
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Slack & Microsoft Teams
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Zoom & Google Meet
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">groups</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Team Collaboration</h3>
+                    <p class="text-[#A3B3AF] mb-4">Keep your team in sync with powerful collaboration features designed for modern workplaces.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Shared team calendars
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Resource management
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Meeting analytics
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-[#1E3A34] p-8 rounded-xl">
+                    <span class="material-icons-outlined text-4xl text-[#34D399] mb-4">security</span>
+                    <h3 class="text-2xl font-bold text-white mb-4">Enterprise Security</h3>
+                    <p class="text-[#A3B3AF] mb-4">Built with enterprise-grade security to protect your team's data and privacy.</p>
+                    <ul class="text-[#A3B3AF] space-y-2">
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            End-to-end encryption
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            SSO & MFA support
+                        </li>
+                        <li class="flex items-center">
+                            <span class="material-icons-outlined text-[#34D399] mr-2">check_circle</span>
+                            Compliance ready
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-8 text-center">
+        <div class="container mx-auto max-w-[960px]">
+            <div class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="/privacy-policy">Privacy Policy</a>
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="/terms">Terms of Service</a>
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="/contact">Contact Us</a>
+            </div>
+            <p class="text-[#A3B3AF] text-base font-normal leading-normal mt-6">
+                This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
