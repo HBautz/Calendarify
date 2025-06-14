@@ -27,6 +27,11 @@ folders, you can also open the HTML files directly in a browser if preferred.
 server.js           Simple Node server for clean URLs
 package.json        Start script for the server
 */index.html        Static pages, one per folder for extensionless URLs
+index.html          Homepage served at `/`
+
+The repository does not include a separate `static/` directory or duplicate
+HTML files. All pages live within their own folders directly at the project
+root.
 ```
 
 Pull requests are automatically approved and merged. The workflow resolves
