@@ -15,7 +15,7 @@ npm install
 npm start
 ```
 
-The site will be served at `http://localhost:3000`. Navigate to `/index` or
+The site will be served at `http://localhost:3000`. Navigate to `/` or
 any page such as `/pricing` without the `.html` extension.
 
 ## Repository layout
