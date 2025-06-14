@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calendarify - Teams</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A2E29;
+            color: #E0E0E0;
+        }
+        .primary-button {
+            background-color: #34D399;
+            color: #1A2E29;
+        }
+        .primary-button:hover {
+            background-color: #2BB98A;
+        }
+        .secondary-button {
+            border: 1px solid #34D399;
+            color: #34D399;
+        }
+        .secondary-button:hover {
+            background-color: #34D399;
+            color: #1A2E29;
+        }
+        .nav-link {
+            color: #A3B3AF;
+        }
+        .nav-link:hover {
+            color: #E0E0E0;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <header class="bg-[#111f1c] py-4 px-6 md:px-12">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="flex items-center">
+                <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
+                <h1 class="text-2xl font-bold text-white">Calendarify</h1>
+            </a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a class="nav-link" href="/individuals">Individuals</a>
+                <a class="nav-link" href="/teams">Teams</a>
+                <a class="nav-link" href="/enterprise">Enterprise</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <a href="/login" class="text-[#A3B3AF] hover:text-white">Log in</a>
+                <a href="/signup" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors">Sign up</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
+        <div class="max-w-[960px] mx-auto">
+            <div class="@container">
+                <div class="@[480px]:p-4">
+                    <div class="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4 rounded-xl"
+                        style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=1200&q=80");'>
+                        <div class="flex flex-col gap-2 text-center">
+                            <h1 class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                                For Teams
+                            </h1>
+                            <h2 class="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                                Coordinate your team schedules and stay in sync effortlessly with Calendarify.
+                            </h2>
+                        </div>
+                        <button class="primary-button flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base" onclick="window.location.href='dashboard'">
+                            <span class="truncate">Get Started</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-10 px-4 py-10 @container">
+                <div class="flex flex-col gap-4">
+                    <h1 class="text-white tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]">
+                        Key Features
+                    </h1>
+                    <p class="text-[#A3B3AF] text-base font-normal leading-normal max-w-[720px]">
+                        Calendarify offers a comprehensive suite of tools designed to boost team collaboration and productivity.
+                    </p>
+                </div>
+                <div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
+                    <div class="flex flex-1 gap-3 rounded-lg border border-[#2C4A43] bg-[#1E3A34] p-4 flex-col">
+                        <div class="text-[#34D399]" data-icon="Users" data-size="24px" data-weight="regular">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                                <path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <h2 class="text-white text-base font-bold leading-tight">Team Management</h2>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Easily manage team members, roles, and permissions with our intuitive interface.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-1 gap-3 rounded-lg border border-[#2C4A43] bg-[#1E3A34] p-4 flex-col">
+                        <div class="text-[#34D399]" data-icon="Calendar" data-size="24px" data-weight="regular">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                                <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <h2 class="text-white text-base font-bold leading-tight">Shared Calendars</h2>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Keep everyone in sync with shared team calendars and availability tracking.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-1 gap-3 rounded-lg border border-[#2C4A43] bg-[#1E3A34] p-4 flex-col">
+                        <div class="text-[#34D399]" data-icon="ChatCircleDots" data-size="24px" data-weight="regular">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                                <path d="M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128ZM84,116a12,12,0,1,0,12,12A12,12,0,0,0,84,116Zm88,0a12,12,0,1,0,12,12A12,12,0,0,0,172,116Zm60,12A104,104,0,0,1,79.12,219.82L45.07,231.17a16,16,0,0,1-20.24-20.24l11.35-34.05A104,104,0,1,1,232,128Zm-16,0A88,88,0,1,0,51.81,172.06a8,8,0,0,1,.66,6.54L40,216,77.4,203.53a7.85,7.85,0,0,1,2.53-.42,8,8,0,0,1,4,1.08A88,88,0,0,0,216,128Z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <h2 class="text-white text-base font-bold leading-tight">Team Communication</h2>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Built-in chat and notification system for seamless team communication.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-1 gap-3 rounded-lg border border-[#2C4A43] bg-[#1E3A34] p-4 flex-col">
+                        <div class="text-[#34D399]" data-icon="File" data-size="24px" data-weight="regular">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                                <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <h2 class="text-white text-base font-bold leading-tight">Resource Sharing</h2>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Share and collaborate on documents and resources within your team.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-10 px-4 py-10 @container">
+                <div class="flex flex-col gap-4">
+                    <h1 class="text-white tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]">
+                        Seamless Integrations
+                    </h1>
+                    <p class="text-[#A3B3AF] text-base font-normal leading-normal max-w-[720px]">
+                        Calendarify integrates with your favorite productivity tools, ensuring a smooth and connected workflow.
+                    </p>
+                </div>
+                <div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3">
+                    <div class="flex flex-col gap-3 pb-3">
+                        <div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl"
+                            style='background-image: url("https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80");'>
+                        </div>
+                        <div>
+                            <p class="text-white text-base font-medium leading-normal">Productivity Suite</p>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Connect with your preferred productivity suite for document management and collaboration.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 pb-3">
+                        <div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl"
+                            style='background-image: url("https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80");'>
+                        </div>
+                        <div>
+                            <p class="text-white text-base font-medium leading-normal">Project Management</p>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Integrate with leading project management tools to keep projects on track.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 pb-3">
+                        <div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl"
+                            style='background-image: url("https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=1200&q=80");'>
+                        </div>
+                        <div>
+                            <p class="text-white text-base font-medium leading-normal">Communication Tools</p>
+                            <p class="text-[#A3B3AF] text-sm font-normal leading-normal">Link your communication platforms for instant notifications and updates.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-8 text-center">
+        <div class="container mx-auto max-w-[960px]">
+            <div class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="/privacy-policy">Privacy Policy</a>
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="/terms">Terms of Service</a>
+                <a class="text-[#A3B3AF] text-base font-normal leading-normal min-w-40" href="/contact">Contact Us</a>
+            </div>
+            <p class="text-[#A3B3AF] text-base font-normal leading-normal mt-6">
+                This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

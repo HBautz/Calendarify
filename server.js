@@ -21,24 +21,23 @@ http.createServer((req, res) => {
   if (reqPath === '/' || reqPath === '') {
     reqPath = '/index.html';
   }
+
   let filePath = path.join(rootDir, reqPath);
+
+  if (!path.extname(filePath)) {
+    const dirFile = path.join(filePath, 'index.html');
+    if (fs.existsSync(dirFile)) {
+      filePath = dirFile;
+    } else {
+      filePath = filePath + '.html';
+    }
+  }
 
   fs.readFile(filePath, (err, data) => {
     if (!err) {
       const ext = path.extname(filePath);
       res.setHeader('Content-Type', mime[ext] || 'text/plain');
       res.end(data);
-    } else if (!path.extname(reqPath)) {
-      filePath = path.join(rootDir, reqPath + '.html');
-      fs.readFile(filePath, (err2, data2) => {
-        if (!err2) {
-          res.setHeader('Content-Type', 'text/html');
-          res.end(data2);
-        } else {
-          res.writeHead(404);
-          res.end('Not found');
-        }
-      });
     } else {
       res.writeHead(404);
       res.end('Not found');
