@@ -24,8 +24,7 @@ any page such as `/pricing` without the `.html` extension.
 .github/workflows/  Auto merge workflow
 server.js           Simple Node server for clean URLs
 package.json        Start script for the server
-*.html              Static site pages
-static/             Additional prototypes
+*.html              Static pages served directly at the repo root
 ```
 
 Pull requests are automatically approved and merged. The workflow resolves
