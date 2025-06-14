@@ -1,10 +1,34 @@
 # Calendarify
-Production Grade Calendly Clone
 
-This repository now includes a React frontend located in the `web` folder. To start the development server:
+Calendarify is a **demo** Calendly clone built with plain HTML and Tailwind CSS.
+All pages are static prototypes used to showcase layouts and styling; no real
+scheduling functionality exists.
+The included Node server lets you visit routes such as `/pricing` or `/product`
+without the `.html` extension.
+
+## Running locally
+
+Install dependencies and start the server:
 
 ```bash
-cd web
 npm install
-npm run dev
+npm start
 ```
+
+The site will be served at `http://localhost:3000`. Navigate to `/` or
+any page such as `/pricing` without the `.html` extension.
+
+## Repository layout
+
+```
+.github/workflows/  Auto merge workflow
+server.js           Simple Node server for clean URLs
+package.json        Start script for the server
+*.html              Static pages served directly at the repo root
+```
+
+Pull requests are automatically approved and merged. The workflow resolves
+conflicts by preferring the PR's version of each file so the main branch stays
+up to date without manual review.
+
+All assets in this repository are for demonstration purposes only.
