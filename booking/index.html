@@ -55,7 +55,12 @@
             background-color: #2C4A43;
         }
         .calendar-day.today {
-            background-color: #34D399;
+            background-color: #F97316; /* Orange color */
+            color: #1A2E29;
+            font-weight: bold;
+        }
+        .calendar-day.selected {
+            background-color: #34D399; /* Theme green color */
             color: #1A2E29;
             font-weight: bold;
         }
@@ -96,9 +101,9 @@
                 <h1 class="text-2xl font-bold text-white">Calendarify</h1>
             </div>
             <nav class="hidden md:flex items-center space-x-6">
-                <a class="nav-link" href="individuals">Individuals</a>
-                <a class="nav-link" href="teams">Teams</a>
-                <a class="nav-link" href="enterprise">Enterprise</a>
+                <a class="nav-link" href="/individuals">Individuals</a>
+                <a class="nav-link" href="/teams">Teams</a>
+                <a class="nav-link" href="/enterprise">Enterprise</a>
             </nav>
             <div class="flex items-center space-x-4">
                 <button class="primary-button px-6 py-2 rounded-lg font-semibold text-sm">Sign up</button>
@@ -248,50 +253,49 @@
                 dayNames.forEach(n => {
                     const div = document.createElement('div');
                     div.textContent = n;
-                    div.className = 'text-sm text-gray-400 mb-2';
+                    div.className = 'text-sm text-gray-400 py-2';
                     calendarEl.appendChild(div);
                 });
-
+                
                 // Add empty cells for days before the first day of the month
                 for (let i = 0; i < firstDay.getDay(); i++) {
                     const div = document.createElement('div');
-                    div.className = 'text-gray-500 p-2';
+                    div.className = 'calendar-day';
                     calendarEl.appendChild(div);
                 }
-
-                const today = new Date();
-                for (let d = 1; d <= lastDay.getDate(); d++) {
-                    const date = new Date(year, month, d);
-                    const button = document.createElement('button');
-                    button.textContent = d;
-                    button.className = 'calendar-day';
+                
+                // Add days of the month
+                for (let day = 1; day <= lastDay.getDate(); day++) {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    div.className = 'calendar-day cursor-pointer';
                     
-                    if (date.toDateString() === today.toDateString()) {
-                        button.classList.add('today');
+                    const currentDay = new Date(year, month, day);
+                    
+                    // Check if it's today
+                    if (currentDay.toDateString() === new Date().toDateString()) {
+                        div.classList.add('today');
                     }
                     
-                    if (timeSlots[date.toDateString()]) {
-                        button.classList.add('has-events');
+                    // Check if it's selected
+                    if (selectedDate && currentDay.toDateString() === selectedDate.toDateString()) {
+                        div.classList.add('selected');
                     }
                     
-                    if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
-                        button.classList.add('selected');
-                    }
-                    
-                    button.addEventListener('click', () => {
-                        selectedDate = date;
+                    // Add click event
+                    div.addEventListener('click', () => {
+                        // Remove selected class from all days
+                        calendarEl.querySelectorAll('.calendar-day').forEach(day => {
+                            day.classList.remove('selected');
+                        });
+                        // Add selected class to clicked day
+                        div.classList.add('selected');
+                        // Update selected date
+                        selectedDate = new Date(year, month, day);
+                        // Update time slots
                         updateTimeSlots();
-                        buildCalendar();
                     });
                     
-                    calendarEl.appendChild(button);
-                }
-
-                // Add empty cells for days after the last day of the month
-                const remainingCells = 42 - (firstDay.getDay() + lastDay.getDate());
-                for (let i = 0; i < remainingCells; i++) {
-                    const div = document.createElement('div');
-                    div.className = 'text-gray-500 p-2';
                     calendarEl.appendChild(div);
                 }
             }
