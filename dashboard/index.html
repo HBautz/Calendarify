@@ -1,234 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendarify - Settings</title>
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
-    <link rel="stylesheet" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#34D399',
-                        'primary-dark': '#1A2E29',
-                        'primary-darker': '#111f1c',
-                        'primary-light': '#ECFDF5',
-                        secondary: '#F97316',
-                        'secondary-light': '#FFF7ED',
-                        gray: {
-                            50: '#F9FAFB',
-                            100: '#F3F4F6',
-                            200: '#E5E7EB',
-                            300: '#D1D5DB',
-                            400: '#9CA3AF',
-                            500: '#6B7280',
-                            600: '#4B5563',
-                            700: '#374151',
-                            800: '#1F2937',
-                            900: '#111827'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendarify Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <style>
+    body {font-family: 'Inter', sans-serif;}
+    .nav-item { @apply text-sm text-[#A3B3AF] px-3 py-2 rounded-lg flex items-center gap-2 cursor-pointer hover:bg-[#1E3A34]; }
+    .nav-item.active { @apply bg-[#1E3A34] text-[#34D399]; }
+    .section { @apply hidden; }
+  </style>
 </head>
-<body class="bg-[#111f1c]">
-    <div class="relative flex min-h-screen flex-col" style="font-family: Inter, 'Noto Sans', sans-serif;">
-        <!-- Global Navbar -->
-        <header class="bg-[#0a1513] py-4 px-6 md:px-12">
-            <div class="container mx-auto flex justify-between items-center">
-                <a href="/" class="flex items-center">
-                    <span class="material-icons-outlined text-3xl text-[#34D399] mr-2">calendar_month</span>
-                    <h1 class="text-2xl font-bold text-white">Calendarify</h1>
-                </a>
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-[#34D399] flex items-center justify-center text-[#1A2E29] font-bold">
-                        JD
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <div class="layout-container flex h-full grow flex-col">
-            <div class="flex h-full">
-                <!-- Sidebar -->
-                <div class="w-80 border-r border-[#1E3A34] bg-[#0a1513] p-4">
-                    <div class="flex flex-col gap-4">
-                        <div class="flex flex-col gap-2">
-                            <a href="/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#1E3A34]">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#34D399" viewBox="0 0 256 256">
-                                    <path d="M218.83,103.77l-80-75.48a1.14,1.14,0,0,1-.11-.11,16,16,0,0,0-21.53,0l-.11.11L37.17,103.77A16,16,0,0,0,32,115.55V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V160h32v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V115.55A16,16,0,0,0,218.83,103.77ZM208,208H160V160a16,16,0,0,0-16-16H112a16,16,0,0,0-16,16v48H48V115.55l.11-.1L128,40l79.9,75.43.11.1Z"></path>
-                                </svg>
-                                <p class="text-[#34D399] text-sm font-medium">Dashboard</p>
-                            </a>
-                            <a href="/availability" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1E3A34]">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#34D399" viewBox="0 0 256 256">
-                                    <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM112,184a8,8,0,0,1-16,0V132.94l-4.42,2.22a8,8,0,0,1-7.16-14.32l16-8A8,8,0,0,1,112,120Zm56-8a8,8,0,0,1,0,16H136a8,8,0,0,1-6.4-12.8l28.78-38.37A8,8,0,1,0,145.07,132a8,8,0,1,1-13.85-8A24,24,0,0,1,176,136a23.76,23.76,0,0,1-4.84,14.45L152,176ZM48,80V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80Z"></path>
-                                </svg>
-                                <p class="text-[#34D399] text-sm font-medium">Availability</p>
-                            </a>
-                            <a href="/settings" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1E3A34]">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#34D399" viewBox="0 0 256 256">
-                                    <path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Z"></path>
-                                </svg>
-                                <p class="text-[#34D399] text-sm font-medium">Settings</p>
-                            </a>
-                            <a href="/help" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#1E3A34]">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#34D399" viewBox="0 0 256 256">
-                                    <path d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path>
-                                </svg>
-                                <p class="text-[#34D399] text-sm font-medium">Help</p>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Main Content -->
-                <div class="flex-1 p-8">
-                    <div class="max-w-4xl">
-                        <h1 class="text-3xl font-bold text-white mb-8">Booking Preferences</h1>
-                        
-                        <!-- Event Types Section -->
-                        <section class="mb-8">
-                            <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-bold text-white">Event Types</h2>
-                                <button class="px-4 py-2 bg-[#34D399] text-[#1A2E29] rounded-full text-sm font-medium hover:bg-[#2BB98A]">
-                                    New Event Type
-                                </button>
-                            </div>
-                            <div class="bg-[#0a1513] rounded-lg border border-[#1E3A34] overflow-hidden">
-                                <table class="min-w-full divide-y divide-[#1E3A34]">
-                                    <thead class="bg-[#111f1c]">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-[#34D399] uppercase tracking-wider">Event Type</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-[#34D399] uppercase tracking-wider">Duration</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-[#34D399] uppercase tracking-wider">Booking Link</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-[#34D399] uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-[#1E3A34]">
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-white">1:1 Meeting</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-[#34D399]">30 minutes</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                <div class="flex items-center gap-2">
-                                                    <input type="text" readonly value="calendarify.com/meet/john/1on1" class="bg-[#111f1c] text-[#34D399] px-3 py-1 rounded border border-[#1E3A34] text-sm w-64" />
-                                                    <button class="text-[#34D399] hover:text-[#2BB98A]">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-                                                            <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V200H40V56H216ZM176,88a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,88Zm0,40a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,128Zm0,40a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,168Z"></path>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-[#34D399] font-medium cursor-pointer hover:text-[#2BB98A]">Edit</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-white">Team Sync</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-[#34D399]">60 minutes</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                <div class="flex items-center gap-2">
-                                                    <input type="text" readonly value="calendarify.com/meet/john/team" class="bg-[#111f1c] text-[#34D399] px-3 py-1 rounded border border-[#1E3A34] text-sm w-64" />
-                                                    <button class="text-[#34D399] hover:text-[#2BB98A]">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-                                                            <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V200H40V56H216ZM176,88a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,88Zm0,40a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,128Zm0,40a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,168Z"></path>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-[#34D399] font-medium cursor-pointer hover:text-[#2BB98A]">Edit</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-
-                        <!-- Default Settings Section -->
-                        <section class="mb-8">
-                            <h2 class="text-xl font-bold text-white mb-4">Default Settings</h2>
-                            <div class="bg-[#0a1513] rounded-lg border border-[#1E3A34] p-6">
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-[#34D399] mb-1">Buffer Time</label>
-                                        <select class="w-full rounded-lg border border-[#1E3A34] bg-[#111f1c] px-4 py-2 text-white focus:border-[#34D399] focus:ring-[#34D399]">
-                                            <option>No buffer</option>
-                                            <option>5 minutes</option>
-                                            <option>10 minutes</option>
-                                            <option>15 minutes</option>
-                                            <option>30 minutes</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-[#34D399] mb-1">Minimum Notice</label>
-                                        <select class="w-full rounded-lg border border-[#1E3A34] bg-[#111f1c] px-4 py-2 text-white focus:border-[#34D399] focus:ring-[#34D399]">
-                                            <option>No minimum</option>
-                                            <option>1 hour</option>
-                                            <option>2 hours</option>
-                                            <option>4 hours</option>
-                                            <option>1 day</option>
-                                            <option>2 days</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-[#34D399] mb-1">Maximum Bookings Per Day</label>
-                                        <input type="number" class="w-full rounded-lg border border-[#1E3A34] bg-[#111f1c] px-4 py-2 text-white focus:border-[#34D399] focus:ring-[#34D399]" value="8" min="1" max="24" />
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- Save Button -->
-                        <div class="flex justify-end">
-                            <button class="px-6 py-2 bg-[#34D399] text-[#1A2E29] rounded-full text-sm font-medium hover:bg-[#2BB98A]">
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<body class="bg-[#111f1c] text-white flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-[#0a1513] flex-shrink-0">
+    <div class="p-4 flex items-center gap-2 border-b border-[#1E3A34]">
+      <span class="material-icons-outlined text-3xl text-[#34D399]">calendar_month</span>
+      <h1 class="text-xl font-bold">Calendarify</h1>
     </div>
+    <nav class="p-4 space-y-2">
+      <div class="nav-item active" data-section="event-types"><span class="material-icons-outlined">view_quilt</span>Event Types</div>
+      <div class="nav-item" data-section="meetings"><span class="material-icons-outlined">event</span>Meetings</div>
+      <div class="nav-item" data-section="availability"><span class="material-icons-outlined">schedule</span>Availability</div>
+      <div class="nav-item" data-section="contacts"><span class="material-icons-outlined">contacts</span>Contacts</div>
+      <div class="nav-item" data-section="workflows"><span class="material-icons-outlined">tune</span>Workflows</div>
+      <div class="nav-item" data-section="integrations"><span class="material-icons-outlined">apps</span>Integrations</div>
+      <div class="nav-item" data-section="routing"><span class="material-icons-outlined">share</span>Routing</div>
+      <div class="nav-item" data-section="oneoff"><span class="material-icons-outlined">link</span>One-Off Meeting</div>
+    </nav>
+  </aside>
 
-    <script>
-        // Event Types Functionality
-        document.querySelectorAll('.text-[#34D399].font-medium').forEach(editButton => {
-            editButton.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const eventType = row.cells[0].textContent;
-                const duration = row.cells[1].textContent;
-                const bookingLink = row.cells[2].querySelector('input').value;
-                
-                // Here you would typically open an edit modal or form
-                console.log('Editing event type:', { eventType, duration, bookingLink });
-            });
-        });
+  <!-- Main Content -->
+  <main class="flex-1 p-6 overflow-y-auto">
+    <!-- Event Types Section -->
+    <section id="event-types" class="section block">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Event Types</h2>
+        <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-full text-sm font-medium">+ Create</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-2">
+          <h3 class="font-semibold">30-min Intro Call</h3>
+          <p class="text-sm text-[#A3B3AF]">1-on-1 • 30 min</p>
+          <div class="flex justify-end gap-2">
+            <button class="copy-link text-[#34D399] text-sm" data-link="calendarify.com/jane/intro">Copy link</button>
+            <button class="text-[#34D399] text-sm">Share</button>
+          </div>
+        </div>
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-2">
+          <h3 class="font-semibold">Team Sync</h3>
+          <p class="text-sm text-[#A3B3AF]">Group • 60 min</p>
+          <div class="flex justify-end gap-2">
+            <button class="copy-link text-[#34D399] text-sm" data-link="calendarify.com/team/sync">Copy link</button>
+            <button class="text-[#34D399] text-sm">Share</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        // Copy Link Buttons
-        document.querySelectorAll('button svg').forEach(button => {
-            button.addEventListener('click', function() {
-                const input = this.closest('div').querySelector('input');
-                input.select();
-                document.execCommand('copy');
-                // Here you would typically show a success message
-                console.log('Link copied:', input.value);
-            });
-        });
+    <!-- Meetings Section -->
+    <section id="meetings" class="section">
+      <h2 class="text-2xl font-bold mb-4">Scheduled Events</h2>
+      <div class="bg-[#0a1513] rounded-lg border border-[#1E3A34] overflow-hidden">
+        <table class="min-w-full divide-y divide-[#1E3A34] text-sm">
+          <thead class="bg-[#1A2E29]">
+            <tr>
+              <th class="px-4 py-2 text-left">Invitee</th>
+              <th class="px-4 py-2 text-left">Event Type</th>
+              <th class="px-4 py-2 text-left">Date</th>
+              <th class="px-4 py-2 text-left">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1E3A34]">
+            <tr>
+              <td class="px-4 py-2">Jane Doe</td>
+              <td class="px-4 py-2">Intro Call</td>
+              <td class="px-4 py-2">Jun 14, 3:00PM</td>
+              <td class="px-4 py-2">Confirmed</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">Acme Corp</td>
+              <td class="px-4 py-2">Team Sync</td>
+              <td class="px-4 py-2">Jun 16, 1:00PM</td>
+              <td class="px-4 py-2">Pending</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-        // New Event Type Button
-        document.querySelector('button:contains("New Event Type")').addEventListener('click', function() {
-            // Here you would typically open a new event type form
-            console.log('Creating new event type');
-        });
+    <!-- Availability Section -->
+    <section id="availability" class="section">
+      <h2 class="text-2xl font-bold mb-4">Availability</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <h3 class="font-semibold">Weekly Hours</h3>
+          <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-2">
+            <div class="flex justify-between items-center">
+              <span>Monday</span>
+              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Tuesday</span>
+              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Wednesday</span>
+              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Thursday</span>
+              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Friday</span>
+              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2">Calendar</h3>
+          <div class="bg-[#0a1513] h-64 rounded-lg border border-[#1E3A34] flex items-center justify-center text-[#A3B3AF]">
+            Monthly calendar placeholder
+          </div>
+        </div>
+      </div>
+    </section>
 
-        // Save Changes Button
-        document.querySelector('button:contains("Save Changes")').addEventListener('click', function() {
-            // Here you would typically save all changes to your backend
-            console.log('Saving all changes');
-            alert('Changes saved successfully!');
-        });
-    </script>
+    <!-- Contacts Section -->
+    <section id="contacts" class="section">
+      <h2 class="text-2xl font-bold mb-4">Contacts</h2>
+      <div class="bg-[#0a1513] rounded-lg border border-[#1E3A34] overflow-hidden">
+        <table class="min-w-full divide-y divide-[#1E3A34] text-sm">
+          <thead class="bg-[#1A2E29]">
+            <tr>
+              <th class="px-4 py-2 text-left">Name</th>
+              <th class="px-4 py-2 text-left">Email</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1E3A34]">
+            <tr>
+              <td class="px-4 py-2">Jane Doe</td>
+              <td class="px-4 py-2">jane@example.com</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">John Smith</td>
+              <td class="px-4 py-2">john@example.com</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Workflows Section -->
+    <section id="workflows" class="section">
+      <h2 class="text-2xl font-bold mb-4">Workflows</h2>
+      <div class="space-y-4">
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex justify-between items-center">
+          <div>
+            <h3 class="font-semibold">Reminder Email</h3>
+            <p class="text-sm text-[#A3B3AF]">1 hour before event</p>
+          </div>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="form-checkbox text-[#34D399]" checked>
+          </label>
+        </div>
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex justify-between items-center">
+          <div>
+            <h3 class="font-semibold">Follow-up SMS</h3>
+            <p class="text-sm text-[#A3B3AF]">1 day after event</p>
+          </div>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="form-checkbox text-[#34D399]">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Integrations Section -->
+    <section id="integrations" class="section">
+      <h2 class="text-2xl font-bold mb-4">Integrations & Apps</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-[#34D399]">videocam</span>
+            <span>Zoom</span>
+          </div>
+          <button class="bg-[#34D399] text-[#1A2E29] text-xs font-medium px-2 py-1 rounded">Connect</button>
+        </div>
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-[#34D399]">payment</span>
+            <span>Stripe</span>
+          </div>
+          <button class="bg-[#34D399] text-[#1A2E29] text-xs font-medium px-2 py-1 rounded">Connect</button>
+        </div>
+        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-[#34D399]">assessment</span>
+            <span>Analytics</span>
+          </div>
+          <button class="bg-[#34D399] text-[#1A2E29] text-xs font-medium px-2 py-1 rounded">Connect</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Routing Section -->
+    <section id="routing" class="section">
+      <h2 class="text-2xl font-bold mb-4">Routing Form</h2>
+      <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-4">
+        <p class="text-sm text-[#A3B3AF]">Create rules to send invitees to the right event type.</p>
+        <div class="flex flex-col gap-2">
+          <input type="text" placeholder="Question" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" />
+          <input type="text" placeholder="If answer is..." class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" />
+          <input type="text" placeholder="Then route to..." class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" />
+        </div>
+        <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded text-sm">Publish</button>
+      </div>
+    </section>
+
+    <!-- One-Off Meeting Section -->
+    <section id="oneoff" class="section">
+      <h2 class="text-2xl font-bold mb-4">Create One-Off Meeting</h2>
+      <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-4">
+        <div class="flex flex-col gap-2">
+          <label class="text-sm">Choose Time Slots</label>
+          <input type="text" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" placeholder="e.g. Jun 20, 2pm" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="text-sm">Meeting Details</label>
+          <input type="text" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" placeholder="Meeting name" />
+        </div>
+        <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded text-sm">Generate Link</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // navigation between sections
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+        const id = btn.getAttribute('data-section');
+        document.getElementById(id).classList.remove('hidden');
+      });
+    });
+
+    // copy link functionality
+    document.querySelectorAll('.copy-link').forEach(btn => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.link);
+        alert('Link copied');
+      });
+    });
+  </script>
 </body>
 </html>
