@@ -4,260 +4,2010 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendarify Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
-    body {font-family: 'Inter', sans-serif;}
-    .nav-item { @apply text-sm text-[#A3B3AF] px-3 py-2 rounded-lg flex items-center gap-2 cursor-pointer hover:bg-[#1E3A34]; }
-    .nav-item.active { @apply bg-[#1E3A34] text-[#34D399]; }
-    .section { @apply hidden; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #1A2E29;
+      color: #E0E0E0;
+    }
+    .sidebar {
+      background: #111f1c;
+      border-right: 1px solid #1E3A34;
+      min-height: 100vh;
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 0 0 0;
+    }
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 24px;
+    }
+    .nav-divider {
+      border: none;
+      border-top: 1px solid #1E3A34;
+      margin: 24px 0 16px 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 1.08rem;
+      font-weight: 500;
+      color: #E0E0E0;
+      background: none;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-item.active { 
+      background: #19342e;
+      color: #34D399;
+    }
+    .nav-item.active .nav-icon {
+      color: #34D399;
+    }
+    .nav-item .nav-icon {
+      width: 24px;
+      height: 24px;
+      color: #A3B3AF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+    .nav-item:not(.active):hover {
+      background: #1E3A34;
+    }
+    .nav-item:not(.active):hover .nav-icon {
+      color: #34D399;
+    }
+    .nav-item .badge {
+      @apply ml-auto px-2 py-0.5 text-xs font-medium rounded-full transition-all duration-300;
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.1));
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.1);
+    }
+    .nav-item .badge.warning {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.1));
+      @apply text-yellow-500;
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.1);
+    }
+    .nav-item .badge.error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+      @apply text-red-500;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+    }
+    .nav-group {
+      @apply space-y-1;
+    }
+    .nav-group-title {
+      @apply text-xs font-medium text-[#94A3B8] px-4 py-2 uppercase tracking-wider;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+    }
+    .nav-item::after {
+      content: '';
+      @apply absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), transparent);
+    }
+    .nav-item:hover::after {
+      @apply opacity-100;
+    }
+    .nav-item:active {
+      @apply transform scale-[0.98];
+    }
+    .section { 
+      @apply hidden;
+    }
+    .card {
+      background: #1E3A34;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      color: #E0E0E0;
+      box-shadow: none;
+      transition: box-shadow 0.2s;
+    }
+    .card:hover {
+      box-shadow: 0 2px 16px 0 rgba(52, 211, 153, 0.08);
+    }
+    .card-title {
+      color: #E0E0E0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .card-subtitle {
+      color: #A3B3AF;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .btn-primary {
+      @apply bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold;
+    }
+    .btn-secondary {
+      @apply text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm;
+    }
+    .input-field {
+      background: transparent;
+      border: 1px solid #1E3A34;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: #E0E0E0;
+      transition: border 0.2s;
+    }
+    .input-field:focus {
+      border-color: #34D399;
+      outline: none;
+    }
+    .search-field {
+      background: #1E3A34 !important;
+      border: 1px solid #2C4A43 !important;
+      border-radius: 0.75rem !important;
+      padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+      color: #E0E0E0 !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+    .search-field:focus {
+      border-color: #34D399 !important;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1) !important;
+      outline: none !important;
+    }
+    .search-field::placeholder {
+      color: #A3B3AF !important;
+    }
+    .time-input {
+      background-color: #19342e;
+      border: 1px solid #2C4A43;
+      color: #E0E0E0;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+    .time-input:focus {
+      outline: none;
+      border-color: #34D399;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+    }
+    .time-input:hover {
+      border-color: #34D399;
+    }
+    .time-input:disabled {
+      background-color: #111f1c;
+      color: #6B7C78;
+      cursor: not-allowed;
+    }
+    .time-input::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(0.8);
+      cursor: pointer;
+    }
+    .time-input::-webkit-calendar-picker-indicator:hover {
+      filter: invert(1) brightness(1);
+    }
+    .custom-checkbox {
+      @apply bg-[#19342e] border border-[#34D399] text-[#34D399] rounded;
+    }
+    .custom-checkbox:checked {
+      @apply bg-[#34D399] border-[#34D399];
+    }
+    .custom-checkbox:checked::after {
+      content: '✓' !important;
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      color: #1A2E29 !important;
+      font-size: 0.875rem !important;
+      font-weight: bold !important;
+    }
+    .custom-checkbox:hover {
+      border-color: #34D399 !important;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.1) !important;
+    }
+    .select-field {
+      background: #1E3A34 !important;
+      border: 1px solid #2C4A43 !important;
+      border-radius: 0.5rem !important;
+      padding: 0.5rem 0.75rem !important;
+      color: #E0E0E0 !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease !important;
+      cursor: pointer !important;
+    }
+    .select-field:focus {
+      border-color: #34D399 !important;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.1) !important;
+      outline: none !important;
+    }
+    .select-field option {
+      background: #1E3A34 !important;
+      color: #E0E0E0 !important;
+    }
+    .table-header {
+      background: #1A2E29;
+      color: #E0E0E0;
+      font-weight: 600;
+    }
+    .table-row {
+      background: none;
+      transition: background 0.2s;
+    }
+    .table-row:hover {
+      background: #1E3A34;
+    }
+    .badge {
+      @apply px-2 py-1 rounded-full text-xs font-medium;
+    }
+    .badge-success {
+      background: #34D39933;
+      color: #34D399;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-warning {
+      background: #facc1533;
+      color: #facc15;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-error {
+      background: #ef444433;
+      color: #ef4444;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .loading {
+      @apply animate-pulse bg-[#1E3A34] rounded;
+    }
+    .notification-dot {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 0.5rem;
+      height: 0.5rem;
+      background: #ef4444;
+      border-radius: 9999px;
+    }
+    .calendar-day {
+      @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-[#34D399]/20 transition-colors;
+    }
+    .calendar-day.active {
+      @apply bg-[#34D399] text-[#1A2E29];
+    }
+    .calendar-day.has-event {
+      @apply border-2 border-[#34D399];
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 51px;
+      height: 31px;
+      background-color: #19342e;
+      border-radius: 31px;
+      cursor: pointer;
+      border: 1px solid #34D399;
+      transition: background-color 0.3s ease;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .toggle-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #19342e;
+      border-radius: 31px;
+      border: 1px solid #34D399;
+      transition: background-color 0.3s ease;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 25px;
+      width: 25px;
+      left: 3px;
+      top: 3px;
+      background-color: #34D399;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #34D399;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+      background-color: white;
+    }
+    .nav-link {
+      color: #A3B3AF;
+    }
+    .nav-link:hover {
+      color: #E0E0E0;
+    }
+    
+    /* Time input styling */
+    .time-input {
+      background-color: #19342e;
+      border: 1px solid #2C4A43;
+      color: #E0E0E0;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+    
+    .time-input:focus {
+      outline: none;
+      border-color: #34D399;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+    }
+    
+    .time-input:hover {
+      border-color: #34D399;
+    }
+    
+    .time-input:disabled {
+      background-color: #111f1c;
+      color: #6B7C78;
+      cursor: not-allowed;
+    }
+    
+    /* Ensure time picker dropdown works */
+    .time-input::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(0.8);
+      cursor: pointer;
+    }
+    
+    .time-input::-webkit-calendar-picker-indicator:hover {
+      filter: invert(1) brightness(1);
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 1024px) {
+      .time-input {
+        width: 100% !important;
+        max-width: 7rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .time-input {
+        width: 100% !important;
+        max-width: 6rem;
+      }
+    }
+    
+    /* Dashboard responsive improvements */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .time-dropdown { background-color: #1E3A34 !important; opacity: 1 !important; }
+    /* Remove native select arrows for custom time picker */
+    .custom-time-picker select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: none !important;
+      padding-right: 0.5rem;
+    }
+    .custom-time-picker select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #34D39944;
+    }
+    /* Optionally, add a custom arrow if you want */
+    /* .custom-time-picker select { background: url('data:image/svg+xml;...') no-repeat right center/1em; } */
   </style>
 </head>
-<body class="bg-[#111f1c] text-white flex min-h-screen">
+<body class="flex min-h-screen">
   <!-- Sidebar -->
-  <aside class="w-64 bg-[#0a1513] flex-shrink-0">
-    <div class="p-4 flex items-center gap-2 border-b border-[#1E3A34]">
+  <aside class="sidebar">
+    <div class="px-6 pb-8">
+      <a href="/" class="flex items-center gap-2">
       <span class="material-icons-outlined text-3xl text-[#34D399]">calendar_month</span>
-      <h1 class="text-xl font-bold">Calendarify</h1>
+        <h1 class="text-2xl font-bold text-[#34D399] tracking-tight">Calendarify</h1>
+      </a>
     </div>
-    <nav class="p-4 space-y-2">
-      <div class="nav-item active" data-section="event-types"><span class="material-icons-outlined">view_quilt</span>Event Types</div>
-      <div class="nav-item" data-section="meetings"><span class="material-icons-outlined">event</span>Meetings</div>
-      <div class="nav-item" data-section="availability"><span class="material-icons-outlined">schedule</span>Availability</div>
-      <div class="nav-item" data-section="contacts"><span class="material-icons-outlined">contacts</span>Contacts</div>
-      <div class="nav-item" data-section="workflows"><span class="material-icons-outlined">tune</span>Workflows</div>
-      <div class="nav-item" data-section="integrations"><span class="material-icons-outlined">apps</span>Integrations</div>
-      <div class="nav-item" data-section="routing"><span class="material-icons-outlined">share</span>Routing</div>
-      <div class="nav-item" data-section="oneoff"><span class="material-icons-outlined">link</span>One-Off Meeting</div>
+    <nav class="flex-1">
+      <div class="nav-list">
+        <div class="nav-item active" data-section="event-types" onclick="showSection('event-types', this)">
+          <span class="nav-icon"> <!-- link icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6.75h3.75A2.25 2.25 0 0120 9v6a2.25 2.25 0 01-2.25 2.25h-3.75m-3-12H6.75A2.25 2.25 0 004.5 9v6a2.25 2.25 0 002.25 2.25h3.75" /></svg>
+          </span>
+          Event types
+        </div>
+        <div class="nav-item" data-section="meetings" onclick="showSection('meetings', this)">
+          <span class="nav-icon"> <!-- calendar icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 3v4M8 3v4M3 9h18"/></svg>
+          </span>
+          Meetings
+        </div>
+        <div class="nav-item" data-section="availability" onclick="showSection('availability', this)">
+          <span class="nav-icon"> <!-- clock icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/></svg>
+          </span>
+          Availability
+        </div>
+      </div>
+      <hr class="nav-divider">
+      <div class="nav-list">
+        <div class="nav-item" data-section="contacts" onclick="showSection('contacts', this)">
+          <span class="nav-icon"> <!-- users icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-7a4 4 0 11-8 0 4 4 0 018 0zm6 4v6m-6-6v6"/></svg>
+          </span>
+          Contacts
+        </div>
+        <div class="nav-item" data-section="workflows" onclick="showSection('workflows', this)">
+          <span class="nav-icon"> <!-- workflow icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h8M6 8v8m12-8v8M8 18h8"/></svg>
+          </span>
+          Workflows
+        </div>
+        <div class="nav-item" data-section="integrations" onclick="showSection('integrations', this)">
+          <span class="nav-icon"> <!-- apps icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+          </span>
+          Integrations & apps
+        </div>
+        <div class="nav-item" data-section="routing" onclick="showSection('routing', this)">
+          <span class="nav-icon"> <!-- routing icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17l4-4m0 0l-4-4m4 4H7a4 4 0 01-4-4V5"/></svg>
+          </span>
+          Routing
+        </div>
+      </div>
     </nav>
   </aside>
 
   <!-- Main Content -->
-  <main class="flex-1 p-6 overflow-y-auto">
-    <!-- Event Types Section -->
-    <section id="event-types" class="section block">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">Event Types</h2>
-        <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-full text-sm font-medium">+ Create</button>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-2">
-          <h3 class="font-semibold">30-min Intro Call</h3>
-          <p class="text-sm text-[#A3B3AF]">1-on-1 • 30 min</p>
-          <div class="flex justify-end gap-2">
-            <button class="copy-link text-[#34D399] text-sm" data-link="calendarify.com/jane/intro">Copy link</button>
-            <button class="text-[#34D399] text-sm">Share</button>
+  <div class="flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-[#111f1c] border-b border-[#1E3A34] p-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-bold text-white" id="section-title">Event Types</h2>
+          <div class="relative">
+            <input type="text" placeholder="Search..." class="search-field w-64">
+            <span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#A3B3AF]">search</span>
           </div>
         </div>
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-2">
-          <h3 class="font-semibold">Team Sync</h3>
-          <p class="text-sm text-[#A3B3AF]">Group • 60 min</p>
-          <div class="flex justify-end gap-2">
-            <button class="copy-link text-[#34D399] text-sm" data-link="calendarify.com/team/sync">Copy link</button>
-            <button class="text-[#34D399] text-sm">Share</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Meetings Section -->
-    <section id="meetings" class="section">
-      <h2 class="text-2xl font-bold mb-4">Scheduled Events</h2>
-      <div class="bg-[#0a1513] rounded-lg border border-[#1E3A34] overflow-hidden">
-        <table class="min-w-full divide-y divide-[#1E3A34] text-sm">
-          <thead class="bg-[#1A2E29]">
-            <tr>
-              <th class="px-4 py-2 text-left">Invitee</th>
-              <th class="px-4 py-2 text-left">Event Type</th>
-              <th class="px-4 py-2 text-left">Date</th>
-              <th class="px-4 py-2 text-left">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-[#1E3A34]">
-            <tr>
-              <td class="px-4 py-2">Jane Doe</td>
-              <td class="px-4 py-2">Intro Call</td>
-              <td class="px-4 py-2">Jun 14, 3:00PM</td>
-              <td class="px-4 py-2">Confirmed</td>
-            </tr>
-            <tr>
-              <td class="px-4 py-2">Acme Corp</td>
-              <td class="px-4 py-2">Team Sync</td>
-              <td class="px-4 py-2">Jun 16, 1:00PM</td>
-              <td class="px-4 py-2">Pending</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Availability Section -->
-    <section id="availability" class="section">
-      <h2 class="text-2xl font-bold mb-4">Availability</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="space-y-4">
-          <h3 class="font-semibold">Weekly Hours</h3>
-          <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-2">
-            <div class="flex justify-between items-center">
-              <span>Monday</span>
-              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
-            </div>
-            <div class="flex justify-between items-center">
-              <span>Tuesday</span>
-              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
-            </div>
-            <div class="flex justify-between items-center">
-              <span>Wednesday</span>
-              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
-            </div>
-            <div class="flex justify-between items-center">
-              <span>Thursday</span>
-              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
-            </div>
-            <div class="flex justify-between items-center">
-              <span>Friday</span>
-              <input type="text" value="9:00 - 17:00" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1 w-32" />
+        <div class="flex items-center gap-4">
+          <button class="relative p-2 text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined">notifications</span>
+            <span class="notification-dot"></span>
+          </button>
+          <button class="relative p-2 text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined">help_outline</span>
+          </button>
+          <div class="relative">
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="toggleCreateMenu()">
+            <span class="material-icons-outlined">add</span>
+              Create
+          </button>
+            <div id="create-menu" class="absolute right-0 mt-2 w-48 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden">
+              <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="openCreateEventTypeModal()">New Event Type</button>
+              <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">One-Off Meeting</button>
+              <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Routing Form</button>
             </div>
           </div>
         </div>
-        <div>
-          <h3 class="font-semibold mb-2">Calendar</h3>
-          <div class="bg-[#0a1513] h-64 rounded-lg border border-[#1E3A34] flex items-center justify-center text-[#A3B3AF]">
-            Monthly calendar placeholder
+      </div>
+    </header>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+      <!-- Event Types Section -->
+      <section id="event-types-section">
+        <div class="dashboard-grid">
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-white">30-min Intro Call</h3>
+                <div class="text-[#A3B3AF] text-sm">1-on-1 • 30 min</div>
+            </div>
+              <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
+          </div>
+            <div class="flex gap-2 mt-2">
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('https://cal.example/intro')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('30-min Intro Call')"><span class="material-icons-outlined text-base">share</span>Share</button>
+              <div class="relative">
+                <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
+                <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Edit</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Clone</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Add Note</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Mark Secret</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Delete</button>
+            </div>
+          </div>
+            </div>
+          </div>
+          <!-- Add more event type cards as needed -->
+            </div>
+      </section>
+
+      <!-- Meetings Section -->
+      <section id="meetings-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Meetings</h2>
+          <div class="flex items-center gap-4">
+            <input type="text" class="search-field w-64" placeholder="Search meetings...">
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold" onclick="exportCSV()">Export CSV</button>
           </div>
         </div>
-      </div>
-    </section>
+        <div class="bg-[#1E3A34] rounded-xl overflow-hidden">
+          <div class="flex border-b border-[#1A2E29]">
+            <button class="px-6 py-3 bg-[#34D399] text-[#1A2E29] font-medium" onclick="showMeetingsTab('upcoming')">Upcoming</button>
+            <button class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('past')">Past</button>
+            <button class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('pending')">Pending</button>
+          </div>
+          <div class="p-4">
+            <table class="w-full">
+              <thead class="table-header">
+                <tr>
+                  <th class="text-left py-2">Invitee</th>
+                  <th class="text-left py-2">Event Type</th>
+                  <th class="text-left py-2">Date/Time</th>
+                  <th class="text-left py-2">Status</th>
+                  <th class="text-left py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table-row">
+                  <td class="py-2">
+                    <div class="flex items-center gap-2">
+                      <img src="https://ui-avatars.com/api/?name=Jane+Doe&background=34D399&color=1A2E29" alt="Jane Doe" class="w-8 h-8 rounded-full">
+                      <div>
+                        <div class="text-white font-medium">Jane Doe</div>
+                        <div class="text-[#A3B3AF] text-sm">jane@example.com</div>
+                </div>
+                </div>
+                  </td>
+                  <td class="py-2">30-min Intro Call</td>
+                  <td class="py-2">Today, 2:00 PM</td>
+                  <td class="py-2"><span class="badge-success">Confirmed</span></td>
+                  <td class="py-2 flex gap-2">
+                    <button class="btn-secondary">Join</button>
+                    <button class="btn-secondary">Reschedule</button>
+                    <button class="btn-secondary">Cancel</button>
+                  </td>
+                </tr>
+                <tr class="table-row">
+                  <td class="py-2">
+                    <div class="flex items-center gap-2">
+                      <img src="https://ui-avatars.com/api/?name=John+Smith&background=34D399&color=1A2E29" alt="John Smith" class="w-8 h-8 rounded-full">
+                      <div>
+                        <div class="text-white font-medium">John Smith</div>
+                        <div class="text-[#A3B3AF] text-sm">john@company.com</div>
+              </div>
+                </div>
+                  </td>
+                  <td class="py-2">1-hour Consultation</td>
+                  <td class="py-2">Tomorrow, 10:00 AM</td>
+                  <td class="py-2"><span class="badge-warning">Pending</span></td>
+                  <td class="py-2 flex gap-2">
+                    <button class="btn-secondary">Join</button>
+                    <button class="btn-secondary">Reschedule</button>
+                    <button class="btn-secondary">Cancel</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+                </div>
+              </div>
+      </section>
 
-    <!-- Contacts Section -->
-    <section id="contacts" class="section">
-      <h2 class="text-2xl font-bold mb-4">Contacts</h2>
-      <div class="bg-[#0a1513] rounded-lg border border-[#1E3A34] overflow-hidden">
-        <table class="min-w-full divide-y divide-[#1E3A34] text-sm">
-          <thead class="bg-[#1A2E29]">
-            <tr>
-              <th class="px-4 py-2 text-left">Name</th>
-              <th class="px-4 py-2 text-left">Email</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-[#1E3A34]">
-            <tr>
-              <td class="px-4 py-2">Jane Doe</td>
-              <td class="px-4 py-2">jane@example.com</td>
-            </tr>
-            <tr>
-              <td class="px-4 py-2">John Smith</td>
-              <td class="px-4 py-2">john@example.com</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+      <!-- Availability Section -->
+      <section id="availability-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Availability</h2>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <label for="clock-format-toggle" class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-[#A3B3AF] text-sm">12h format</span>
+                <button id="clock-format-toggle" type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleClockFormat()">
+                  <div id="toggle-circle" class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s;"></div>
+                </button>
+              </label>
+          </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card">
+            <h3 class="text-lg font-bold text-white mb-4">Weekly Hours</h3>
+            <div class="space-y-3">
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Monday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="monday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                </div>
+              </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                </div>
+              </div>
+                    </span>
+            </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('monday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+          </div>
+        </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Tuesday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="tuesday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+          </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+              </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+            </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+              </div>
+                    </span>
+            </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('tuesday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+          </div>
+        </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Wednesday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="wednesday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('wednesday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+          </button>
+        </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Thursday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="thursday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('thursday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                </button>
+              </div>
+            </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Friday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="friday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+            </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+          </div>
+        </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('friday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Saturday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2 opacity-50" id="saturday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM">
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM">
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('saturday', this)">
+                    <div class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(0);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Sunday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2 opacity-50" id="sunday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM">
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM">
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('sunday', this)">
+                    <div class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(0);"></div>
+                  </button>
+                </div>
+              </div>
+          </div>
+            </div>
+          <div class="card">
+            <h3 class="text-lg font-bold text-white mb-4">Calendar Overrides</h3>
+            <div class="flex items-center justify-between mb-4">
+              <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="previousMonth()">
+                <span class="material-icons-outlined">chevron_left</span>
+              </button>
+              <h4 class="font-medium text-white" id="calendar-month-year">June 2024</h4>
+              <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="nextMonth()">
+                <span class="material-icons-outlined">chevron_right</span>
+              </button>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center text-sm mb-4">
+              <div class="text-[#A3B3AF] py-2">Sun</div>
+              <div class="text-[#A3B3AF] py-2">Mon</div>
+              <div class="text-[#A3B3AF] py-2">Tue</div>
+              <div class="text-[#A3B3AF] py-2">Wed</div>
+              <div class="text-[#A3B3AF] py-2">Thu</div>
+              <div class="text-[#A3B3AF] py-2">Fri</div>
+              <div class="text-[#A3B3AF] py-2">Sat</div>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center text-sm" id="calendar-days">
+              <!-- Calendar days will be generated by JavaScript -->
+            </div>
+            
+            <!-- Override List -->
+            <div class="mt-6">
+              <h4 class="text-white font-medium mb-3">Active Overrides</h4>
+              <div id="override-list" class="space-y-2">
+                <!-- Override items will be generated by JavaScript -->
+            </div>
+          </div>
+        </div>
+          </div>
+        <div class="card mt-6">
+          <h3 class="text-lg font-bold text-white mb-2">Active on</h3>
+          <div class="text-[#A3B3AF]">This schedule is used by: 30-min Intro Call, 1-hour Consultation</div>
+        </div>
+      </section>
 
-    <!-- Workflows Section -->
-    <section id="workflows" class="section">
-      <h2 class="text-2xl font-bold mb-4">Workflows</h2>
-      <div class="space-y-4">
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex justify-between items-center">
+      <!-- Contacts Section -->
+      <section id="contacts-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Contacts</h2>
+          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="addContact()">
+            <span class="material-icons-outlined">person_add</span>
+            Add Contact
+          </button>
+            </div>
+        <div class="mb-4 flex items-center gap-4">
+          <input type="text" class="search-field w-64" placeholder="Search contacts...">
+          <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm"><span class="material-icons-outlined text-base">star</span>Favorites</button>
+          </div>
+        <div class="bg-[#1E3A34] rounded-xl p-4">
+          <table class="w-full">
+            <thead class="table-header">
+              <tr>
+                <th class="text-left py-2">Name</th>
+                <th class="text-left py-2">Email</th>
+                <th class="text-left py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row">
+                <td class="py-2">Jane Doe</td>
+                <td class="py-2">jane@example.com</td>
+                <td class="py-2 flex gap-2">
+                  <button class="btn-secondary">View</button>
+                  <button class="btn-secondary">Book</button>
+                  <button class="btn-secondary">Remove</button>
+                </td>
+              </tr>
+              <tr class="table-row">
+                <td class="py-2">John Smith</td>
+                <td class="py-2">john@company.com</td>
+                <td class="py-2 flex gap-2">
+                  <button class="btn-secondary">View</button>
+                  <button class="btn-secondary">Book</button>
+                  <button class="btn-secondary">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Workflows Section -->
+      <section id="workflows-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Workflows</h2>
+          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openCreateWorkflowModal()">
+            <span class="material-icons-outlined">add</span>
+            Create Workflow
+                    </button>
+                  </div>
+        <div class="bg-[#1E3A34] rounded-xl p-4">
+          <table class="w-full">
+            <thead class="table-header">
+              <tr>
+                <th class="text-left py-2">Name</th>
+                <th class="text-left py-2">Status</th>
+                <th class="text-left py-2">Event Types</th>
+                <th class="text-left py-2">Last Edited</th>
+                <th class="text-left py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row">
+                <td class="py-2">Reminder Email</td>
+                <td class="py-2"><input type="checkbox" class="custom-checkbox" checked></td>
+                <td class="py-2">Intro Call</td>
+                <td class="py-2">2 days ago</td>
+                <td class="py-2 flex gap-2">
+                  <button class="btn-secondary">Edit</button>
+                  <button class="btn-secondary">Clone</button>
+                  <button class="btn-secondary">Delete</button>
+                </td>
+              </tr>
+              <tr class="table-row">
+                <td class="py-2">Follow-up SMS</td>
+                <td class="py-2"><input type="checkbox" class="custom-checkbox"></td>
+                <td class="py-2">All</td>
+                <td class="py-2">1 week ago</td>
+                <td class="py-2 flex gap-2">
+                  <button class="btn-secondary">Edit</button>
+                  <button class="btn-secondary">Clone</button>
+                  <button class="btn-secondary">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Integrations & Apps Section -->
+      <section id="integrations-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Integrations</h2>
+          <input type="text" class="search-field w-64" placeholder="Search integrations...">
+            </div>
+        <div class="flex gap-4 mb-4">
+          <button class="btn-secondary">All</button>
+          <button class="btn-secondary">Video</button>
+          <button class="btn-secondary">CRM</button>
+          <button class="btn-secondary">Payments</button>
+          <button class="btn-secondary">Analytics</button>
+                </div>
+        <div class="dashboard-grid">
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">videocam</span>
+              <div>
+                <div class="text-white font-bold">Zoom</div>
+                <div class="text-[#A3B3AF] text-sm">Video</div>
+              </div>
+            </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">payments</span>
           <div>
-            <h3 class="font-semibold">Reminder Email</h3>
-            <p class="text-sm text-[#A3B3AF]">1 hour before event</p>
+                <div class="text-white font-bold">Stripe</div>
+                <div class="text-[#A3B3AF] text-sm">Payments</div>
+              </div>
+              </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">analytics</span>
+              <div>
+                <div class="text-white font-bold">Google Analytics</div>
+                <div class="text-[#A3B3AF] text-sm">Analytics</div>
+              </div>
+            </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
-          <label class="inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="form-checkbox text-[#34D399]" checked>
-          </label>
         </div>
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex justify-between items-center">
-          <div>
-            <h3 class="font-semibold">Follow-up SMS</h3>
-            <p class="text-sm text-[#A3B3AF]">1 day after event</p>
-          </div>
-          <label class="inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="form-checkbox text-[#34D399]">
-          </label>
-        </div>
-      </div>
-    </section>
+      </section>
+    </main>
+  </div>
 
-    <!-- Integrations Section -->
-    <section id="integrations" class="section">
-      <h2 class="text-2xl font-bold mb-4">Integrations & Apps</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="material-icons-outlined text-[#34D399]">videocam</span>
-            <span>Zoom</span>
-          </div>
-          <button class="bg-[#34D399] text-[#1A2E29] text-xs font-medium px-2 py-1 rounded">Connect</button>
-        </div>
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="material-icons-outlined text-[#34D399]">payment</span>
-            <span>Stripe</span>
-          </div>
-          <button class="bg-[#34D399] text-[#1A2E29] text-xs font-medium px-2 py-1 rounded">Connect</button>
-        </div>
-        <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="material-icons-outlined text-[#34D399]">assessment</span>
-            <span>Analytics</span>
-          </div>
-          <button class="bg-[#34D399] text-[#1A2E29] text-xs font-medium px-2 py-1 rounded">Connect</button>
-        </div>
-      </div>
-    </section>
+  <!-- Modals -->
+  <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden"></div>
+  <div id="share-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <h3 class="text-lg font-bold text-white mb-4">Share "<span id="share-modal-title"></span>"</h3>
+    <div class="flex gap-2 mb-4">
+      <input type="text" class="input-field flex-1" value="https://cal.example/intro" readonly>
+      <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold" onclick="copyLink('https://cal.example/intro')">Copy</button>
+    </div>
+    <button class="btn-secondary" onclick="closeShareModal()">Close</button>
+  </div>
 
-    <!-- Routing Section -->
-    <section id="routing" class="section">
-      <h2 class="text-2xl font-bold mb-4">Routing Form</h2>
-      <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-4">
-        <p class="text-sm text-[#A3B3AF]">Create rules to send invitees to the right event type.</p>
-        <div class="flex flex-col gap-2">
-          <input type="text" placeholder="Question" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" />
-          <input type="text" placeholder="If answer is..." class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" />
-          <input type="text" placeholder="Then route to..." class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" />
-        </div>
-        <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded text-sm">Publish</button>
+  <!-- Calendar Override Modal -->
+  <div id="override-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <h3 class="text-lg font-bold text-white mb-4">Set Custom Availability</h3>
+    <div class="mb-4">
+      <p class="text-[#A3B3AF] mb-2">Date: <span id="override-date" class="text-white font-medium"></span></p>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="flex items-center gap-2">
+        <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleOverrideAvailability(this)">
+          <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+        </button>
+        <span class="text-[#A3B3AF] text-sm">Available on this date</span>
       </div>
-    </section>
-
-    <!-- One-Off Meeting Section -->
-    <section id="oneoff" class="section">
-      <h2 class="text-2xl font-bold mb-4">Create One-Off Meeting</h2>
-      <div class="bg-[#0a1513] p-4 rounded-lg border border-[#1E3A34] space-y-4">
-        <div class="flex flex-col gap-2">
-          <label class="text-sm">Choose Time Slots</label>
-          <input type="text" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" placeholder="e.g. Jun 20, 2pm" />
+      
+      <div id="override-times" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="custom-time-picker relative inline-flex items-center w-28">
+            <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+            <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+              <div class="flex gap-2 items-center justify-center">
+                <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <span class="text-[#A3B3AF]">:</span>
+                <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+              <div class="flex justify-end mt-2 gap-2 w-full">
+                <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+          </span>
+          <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+          <span class="custom-time-picker relative inline-flex items-center w-28">
+            <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+            <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+              <div class="flex gap-2 items-center justify-center">
+                <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <span class="text-[#A3B3AF]">:</span>
+                <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+              <div class="flex justify-end mt-2 gap-2 w-full">
+                <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+          </span>
+          <button class="text-[#A3B3AF] hover:text-[#34D399] transition-colors duration-200 p-1 rounded hover:bg-[#19342e] flex-shrink-0" onclick="addOverrideTimeSlot()">
+            <span class="material-icons-outlined text-lg">add</span>
+          </button>
         </div>
-        <div class="flex flex-col gap-2">
-          <label class="text-sm">Meeting Details</label>
-          <input type="text" class="bg-transparent border border-[#1E3A34] rounded px-2 py-1" placeholder="Meeting name" />
-        </div>
-        <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded text-sm">Generate Link</button>
       </div>
-    </section>
-  </main>
+    </div>
+    
+    <div class="flex justify-end gap-3 mt-6">
+      <button class="btn-secondary" onclick="closeOverrideModal()">Cancel</button>
+      <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43] transition-colors" onclick="saveOverride()">Save Override</button>
+    </div>
+  </div>
 
   <script>
-    // navigation between sections
-    document.querySelectorAll('.nav-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
-        const id = btn.getAttribute('data-section');
-        document.getElementById(id).classList.remove('hidden');
+    // Navigation functionality
+    function showSection(section, el) {
+      // Remove active class from all nav items
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      
+      // Add active class to clicked item
+      el.classList.add('active');
+      
+      // Update section title
+      document.getElementById('section-title').textContent = el.textContent.trim();
+      
+      // Hide all sections
+      document.querySelectorAll('section').forEach(sec => sec.style.display = 'none');
+      
+      // Show the selected section
+      const secEl = document.getElementById(section + '-section');
+      if (secEl) secEl.style.display = 'block';
+      
+      // Save the active section to localStorage
+      localStorage.setItem('calendarify-active-section', section);
+      
+      // Initialize section-specific functionality
+      if (section === 'meetings') {
+        showMeetingsTab('upcoming');
+      } else if (section === 'availability') {
+        initializeCalendar();
+      }
+    }
+
+    // Meetings tab functionality
+    function showMeetingsTab(tab) {
+      // Update tab buttons
+      document.querySelectorAll('#meetings-section .flex button').forEach(btn => {
+        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+        btn.classList.add('text-[#A3B3AF]');
+      });
+      event.target.classList.remove('text-[#A3B3AF]');
+      event.target.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
+      
+      // Update table content based on tab
+      updateMeetingsTable(tab);
+    }
+
+    function updateMeetingsTable(tab) {
+      const tbody = document.querySelector('#meetings-section tbody');
+      const meetings = getMeetingsData(tab);
+      
+      tbody.innerHTML = meetings.map(meeting => `
+        <tr class="table-row">
+          <td class="py-2">
+            <div class="flex items-center gap-2">
+              <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(meeting.invitee)}&background=34D399&color=1A2E29" alt="${meeting.invitee}" class="w-8 h-8 rounded-full">
+              <div>
+                <div class="text-white font-medium">${meeting.invitee}</div>
+                <div class="text-[#A3B3AF] text-sm">${meeting.email}</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-2">${meeting.eventType}</td>
+          <td class="py-2">${meeting.date}</td>
+          <td class="py-2"><span class="badge-${meeting.status === 'Confirmed' ? 'success' : meeting.status === 'Pending' ? 'warning' : 'error'}">${meeting.status}</span></td>
+          <td class="py-2 flex gap-2">
+            <button class="btn-secondary" onclick="meetingAction('join', ${meeting.id})">Join</button>
+            <button class="btn-secondary" onclick="meetingAction('reschedule', ${meeting.id})">Reschedule</button>
+            <button class="btn-secondary" onclick="meetingAction('cancel', ${meeting.id})">Cancel</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getMeetingsData(tab) {
+      const meetings = {
+        upcoming: [
+          { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' },
+          { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
+        ],
+        past: [
+          { id: 3, invitee: 'Alice Johnson', email: 'alice@test.com', eventType: '30-min Intro Call', date: 'Yesterday, 3:00 PM', status: 'Completed' }
+        ],
+        pending: []
+      };
+      return meetings[tab] || [];
+    }
+
+    // Meeting actions
+    function meetingAction(action, meetingId) {
+      const meeting = getMeetingsData('upcoming').find(m => m.id === meetingId) || 
+                     getMeetingsData('past').find(m => m.id === meetingId);
+      
+      switch(action) {
+        case 'join':
+          alert(`Joining meeting with ${meeting.invitee}`);
+          break;
+        case 'reschedule':
+          alert(`Rescheduling meeting with ${meeting.invitee}`);
+          break;
+        case 'cancel':
+          if (confirm(`Cancel meeting with ${meeting.invitee}?`)) {
+            alert('Meeting cancelled');
+          }
+          break;
+      }
+    }
+
+    // Utility functions
+    function copyLink(link) {
+      navigator.clipboard.writeText(link);
+      showNotification('Link copied to clipboard');
+    }
+
+    function openShareModal(title) {
+      document.getElementById('share-modal-title').textContent = title;
+      document.getElementById('share-modal').classList.remove('hidden');
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+    }
+
+    function closeShareModal() {
+      document.getElementById('share-modal').classList.add('hidden');
+      document.getElementById('modal-backdrop').classList.add('hidden');
+    }
+
+    function toggleCreateMenu() {
+      const menu = document.getElementById('create-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function toggleCardMenu(button) {
+      const menu = button.nextElementSibling;
+      menu.classList.toggle('hidden');
+    }
+
+    function openCreateEventTypeModal() {
+      alert('Create Event Type modal would open here');
+      document.getElementById('create-menu').classList.add('hidden');
+    }
+
+    function openCreateWorkflowModal() {
+      alert('Create Workflow modal would open here');
+    }
+
+    function addContact() {
+      alert('Add Contact modal would open here');
+    }
+
+    function exportCSV() {
+      alert('CSV export functionality would run here');
+    }
+
+    function showNotification(message) {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg shadow-lg z-50';
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Close modals when clicking backdrop
+    document.getElementById('modal-backdrop').addEventListener('click', function() {
+      document.querySelectorAll('.hidden').forEach(el => {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal') {
+          el.classList.add('hidden');
+        }
       });
     });
 
-    // copy link functionality
-    document.querySelectorAll('.copy-link').forEach(btn => {
-      btn.addEventListener('click', () => {
-        navigator.clipboard.writeText(btn.dataset.link);
-        alert('Link copied');
-      });
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.relative')) {
+        document.querySelectorAll('.card-menu, #create-menu').forEach(menu => {
+          menu.classList.add('hidden');
+        });
+      }
     });
+
+    // --- 12h/24h Toggle Functionality ---
+    function toggleClockFormat() {
+      const is12h = getClockFormat() === '12h';
+      const newFormat = is12h ? '24h' : '12h';
+      
+      // Store current time values before switching
+      const timeInputs = document.querySelectorAll('input[type="time"]');
+      const currentValues = Array.from(timeInputs).map(input => ({
+        element: input,
+        value: input.value,
+        format: is12h ? '12h' : '24h'
+      }));
+      
+      // Update format preference
+      setClockFormat(newFormat);
+      updateClockFormatUI();
+      
+      // Convert all time inputs to new format
+      currentValues.forEach(({ element, value, format }) => {
+        if (value) {
+          const newValue = convertTimeFormat(value, format, newFormat);
+          element.value = newValue;
+        }
+      });
+      addAMPMDisplay();
+    }
+
+    function getClockFormat() {
+      let stored = localStorage.getItem('calendarify-clock-format');
+      if (!stored) {
+        localStorage.setItem('calendarify-clock-format', '24h');
+        return '24h';
+      }
+      return stored;
+    }
+
+    function setClockFormat(format) {
+      localStorage.setItem('calendarify-clock-format', format);
+    }
+
+    function updateClockFormatUI() {
+      const is12h = getClockFormat() === '12h';
+      const toggle = document.getElementById('clock-format-toggle');
+      const circle = document.getElementById('toggle-circle');
+      if (toggle && circle) {
+        toggle.setAttribute('aria-pressed', is12h ? 'true' : 'false');
+        toggle.classList.toggle('bg-[#34D399]', is12h);
+        toggle.classList.toggle('bg-[#19342e]', !is12h);
+        circle.style.transform = is12h ? 'translateX(20px)' : 'translateX(0)';
+        circle.style.backgroundColor = is12h ? '#fff' : '#34D399';
+      }
+    }
+
+    function updateAllTimeInputs() {
+      const is12h = getClockFormat() === '12h';
+      document.querySelectorAll('input[type="time"]').forEach(input => {
+        if (input.value) {
+          // Convert from 24h (input default) to current format
+          const newValue = convertTimeFormat(input.value, '24h', is12h ? '12h' : '24h');
+          input.value = newValue;
+        }
+      });
+      addAMPMDisplay();
+    }
+
+    // Converts time between formats, preserving the actual time
+    function convertTimeFormat(value, fromFormat, toFormat) {
+      if (!value || !/^\d{2}:\d{2}$/.test(value)) return value;
+      
+      let [hours, minutes] = value.split(':').map(Number);
+      
+      if (fromFormat === toFormat) {
+        return value; // No conversion needed
+      }
+      
+      if (fromFormat === '24h' && toFormat === '12h') {
+        // Convert 24h to 12h
+        if (hours === 0) {
+          return `12:${minutes.toString().padStart(2, '0')}`;
+        } else if (hours > 12) {
+          return `${(hours - 12).toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        } else {
+          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+      } else if (fromFormat === '12h' && toFormat === '24h') {
+        // Convert 12h to 24h
+        // We need to determine AM/PM from context or assume AM for 1-11, PM for 12
+        if (hours === 12) {
+          return `12:${minutes.toString().padStart(2, '0')}`; // 12 PM
+        } else if (hours >= 1 && hours <= 11) {
+          return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`; // AM
+        } else {
+          // This shouldn't happen with valid 12h input, but fallback
+          return value;
+        }
+      }
+      
+      return value;
+    }
+
+    // Add AM/PM display to time inputs
+    function addAMPMDisplay() {
+      const is12h = getClockFormat() === '12h';
+      document.querySelectorAll('.time-input-wrap').forEach(wrapper => {
+        const input = wrapper.querySelector('input[type="time"]');
+        if (!input) return;
+        let ampmSpan = wrapper.querySelector('.ampm-indicator');
+        if (!ampmSpan) {
+          ampmSpan = document.createElement('span');
+          ampmSpan.className = 'ampm-indicator text-[#A3B3AF] text-sm ml-1';
+          input.after(ampmSpan);
+        }
+        if (!is12h) {
+          ampmSpan.textContent = '';
+          ampmSpan.style.display = 'none';
+          return;
+        }
+        ampmSpan.style.display = '';
+        if (input.value) {
+          let [hours] = input.value.split(':').map(Number);
+          ampmSpan.textContent = (hours >= 12 ? 'PM' : 'AM');
+        } else {
+          ampmSpan.textContent = '';
+        }
+      });
+    }
+
+    // Update AM/PM display when time inputs change
+    function setupTimeInputListeners() {
+    document.querySelectorAll('input[type="time"]').forEach(input => {
+        input.removeEventListener('change', addAMPMDisplay);
+        input.removeEventListener('input', addAMPMDisplay);
+        input.addEventListener('change', addAMPMDisplay);
+        input.addEventListener('input', addAMPMDisplay);
+      });
+    }
+
+    // Initialize the dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      updateClockFormatUI();
+      updateAllCustomTimePickers();
+      setupTimeInputListeners();
+      
+      // Restore the last active section from localStorage
+      const activeSection = localStorage.getItem('calendarify-active-section');
+      const navItem = activeSection ? document.querySelector(`.nav-item[data-section="${activeSection}"]`) : null;
+      
+      if (activeSection && navItem) {
+        // Restore the last active section
+        showSection(activeSection, navItem);
+      } else {
+        // Default to event-types if no stored section or invalid section
+        showSection('event-types', document.querySelector('.nav-item.active'));
+      }
+    });
+
+    // --- Custom Time Picker ---
+    function showTimeDropdown(input) {
+      const picker = input.closest('.custom-time-picker');
+      const dropdown = picker.querySelector('.time-dropdown');
+      if (dropdown.classList.contains('open')) return; // Don't re-open if already open
+      closeAllTimeDropdowns();
+      const hourSel = dropdown.querySelector('.hour-select');
+      const minSel = dropdown.querySelector('.minute-select');
+      const ampmSel = dropdown.querySelector('.ampm-select');
+      const is12h = getClockFormat() === '12h';
+      // Populate hours
+      hourSel.innerHTML = '';
+      if (is12h) {
+        for (let h = 1; h <= 12; h++) {
+          hourSel.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h.toString().padStart(2, '0')}</option>`;
+        }
+        ampmSel.style.display = '';
+      } else {
+        for (let h = 0; h < 24; h++) {
+          hourSel.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h.toString().padStart(2, '0')}</option>`;
+        }
+        ampmSel.style.display = 'none';
+      }
+      // Populate minutes
+      minSel.innerHTML = '';
+      for (let m = 0; m < 60; m += 5) {
+        minSel.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m.toString().padStart(2, '0')}</option>`;
+      }
+      // Set current value
+      let val = input.value || input.placeholder || (is12h ? '09:00 AM' : '09:00');
+      let [h, m, ap] = parseTimeString(val, is12h);
+      hourSel.value = h;
+      minSel.value = m;
+      if (is12h) ampmSel.value = ap;
+      dropdown.classList.remove('hidden');
+      setTimeout(() => { dropdown.classList.add('open'); }, 10);
+    }
+
+    function setTimeFromDropdown(btn, setValue) {
+      const dropdown = btn.closest('.time-dropdown');
+      const picker = dropdown.closest('.custom-time-picker');
+      const input = picker.querySelector('input');
+      const hourSel = dropdown.querySelector('.hour-select');
+      const minSel = dropdown.querySelector('.minute-select');
+      const ampmSel = dropdown.querySelector('.ampm-select');
+      const is12h = getClockFormat() === '12h';
+      let h = hourSel.value;
+      let m = minSel.value;
+      let ap = is12h ? ampmSel.value : '';
+      let display = is12h ? `${h}:${m} ${ap}` : `${h}:${m}`;
+      if (setValue) input.value = display;
+      closeTimeDropdown(btn);
+    }
+
+    function closeTimeDropdown(el) {
+      const dropdown = el.closest('.time-dropdown');
+      dropdown.classList.remove('open');
+      setTimeout(() => { dropdown.classList.add('hidden'); }, 150);
+    }
+
+    function closeAllTimeDropdowns() {
+      document.querySelectorAll('.time-dropdown.open').forEach(dd => {
+        dd.classList.remove('open');
+        setTimeout(() => { dd.classList.add('hidden'); }, 150);
+      });
+    }
+
+    function parseTimeString(val, is12h) {
+      val = val.trim();
+      let h = '09', m = '00', ap = 'AM';
+      if (is12h) {
+        let match = val.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+        if (match) {
+          h = match[1].padStart(2, '0');
+          m = match[2];
+          ap = (match[3] || 'AM').toUpperCase();
+        }
+      } else {
+        let match = val.match(/^(\d{2}):(\d{2})$/);
+        if (match) {
+          h = match[1];
+          m = match[2];
+        }
+      }
+      return [h, m, ap];
+    }
+
+    // When toggling 12h/24h, update all custom pickers
+    function updateAllCustomTimePickers() {
+      document.querySelectorAll('.custom-time-picker input').forEach(input => {
+        let val = input.value || input.placeholder || '09:00';
+        let is12h = getClockFormat() === '12h';
+        let [h, m, ap] = parseTimeString(val, !is12h);
+        if (is12h) {
+          // Convert 24h to 12h
+          let hour = parseInt(h, 10);
+          ap = hour >= 12 ? 'PM' : 'AM';
+          hour = hour % 12 || 12;
+          input.value = `${hour.toString().padStart(2, '0')}:${m} ${ap}`;
+        } else {
+          // Convert 12h to 24h
+          let hour = parseInt(h, 10);
+          if (ap === 'PM' && hour < 12) hour += 12;
+          if (ap === 'AM' && hour === 12) hour = 0;
+          input.value = `${hour.toString().padStart(2, '0')}:${m}`;
+        }
+      });
+    }
+
+    // Update all pickers on toggle
+    const origToggleClockFormat = toggleClockFormat;
+    toggleClockFormat = function() {
+      origToggleClockFormat.apply(this, arguments);
+      updateAllCustomTimePickers();
+    };
+
+    // Close dropdowns on outside click
+    document.addEventListener('mousedown', function(e) {
+      if (!e.target.closest('.custom-time-picker')) closeAllTimeDropdowns();
+    });
+
+    // --- Day Availability Toggle ---
+    function toggleDayAvailability(day, button) {
+      const isAvailable = button.getAttribute('aria-pressed') === 'true';
+      const timeContainer = document.getElementById(day + '-times');
+      const circle = button.querySelector('div');
+      
+      if (isAvailable) {
+        // Disable the day (unavailable)
+        button.setAttribute('aria-pressed', 'false');
+        button.classList.remove('bg-[#34D399]');
+        button.classList.add('bg-[#19342e]');
+        circle.style.transform = 'translateX(0)';
+        circle.style.backgroundColor = '#34D399';
+        
+        // Disable time inputs
+        timeContainer.classList.add('opacity-50');
+        timeContainer.querySelectorAll('input').forEach(input => {
+          input.disabled = true;
+          input.classList.add('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
+          input.classList.remove('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
+        });
+      } else {
+        // Enable the day (available)
+        button.setAttribute('aria-pressed', 'true');
+        button.classList.remove('bg-[#19342e]');
+        button.classList.add('bg-[#34D399]');
+        circle.style.transform = 'translateX(20px)';
+        circle.style.backgroundColor = '#fff';
+        
+        // Enable time inputs
+        timeContainer.classList.remove('opacity-50');
+        timeContainer.querySelectorAll('input').forEach(input => {
+          input.disabled = false;
+          input.classList.remove('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
+          input.classList.add('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
+        });
+      }
+    }
+
+    // --- Calendar Override System ---
+    let currentDate = new Date();
+    let selectedDate = null;
+    let calendarOverrides = JSON.parse(localStorage.getItem('calendarify-overrides') || '{}');
+
+    function initializeCalendar() {
+      renderCalendar();
+      updateOverrideList();
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      
+      // Update month/year display
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                         'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${year}`;
+      
+      // Get first day of month and number of days
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      // Generate calendar days
+      let calendarHTML = '';
+      
+      // Add empty cells for days before the first day of the month
+      for (let i = 0; i < firstDay; i++) {
+        calendarHTML += '<div class="py-2"></div>';
+      }
+      
+      // Add days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const hasOverride = calendarOverrides[dateString];
+        const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+        
+        let dayClasses = 'py-2 text-white cursor-pointer hover:bg-[#34D399]/20 transition-colors rounded-full w-8 h-8 flex items-center justify-center mx-auto';
+        
+        if (hasOverride) {
+          dayClasses += ' bg-[#34D399] text-[#1A2E29]';
+        } else if (isToday) {
+          dayClasses += ' border-2 border-[#34D399]';
+        }
+        
+        calendarHTML += `<div class="${dayClasses}" onclick="selectDate('${dateString}')">${day}</div>`;
+      }
+      
+      document.getElementById('calendar-days').innerHTML = calendarHTML;
+    }
+
+    function previousMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    }
+
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    }
+
+    function selectDate(dateString) {
+      selectedDate = dateString;
+      const date = new Date(dateString);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      document.getElementById('override-date').textContent = formattedDate;
+      
+      // Load existing override data if it exists
+      const existingOverride = calendarOverrides[dateString];
+      if (existingOverride) {
+        loadOverrideData(existingOverride);
+      } else {
+        resetOverrideForm();
+      }
+      
+      openOverrideModal();
+    }
+
+    function openOverrideModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('override-modal').classList.remove('hidden');
+    }
+
+    function closeOverrideModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('override-modal').classList.add('hidden');
+      selectedDate = null;
+    }
+
+    function toggleOverrideAvailability(button) {
+      const isAvailable = button.getAttribute('aria-pressed') === 'true';
+      const timesContainer = document.getElementById('override-times');
+      const circle = button.querySelector('div');
+      
+      if (isAvailable) {
+        // Disable availability
+        button.setAttribute('aria-pressed', 'false');
+        button.classList.remove('bg-[#34D399]');
+        button.classList.add('bg-[#19342e]');
+        circle.style.transform = 'translateX(0)';
+        circle.style.backgroundColor = '#34D399';
+        
+        timesContainer.style.opacity = '0.5';
+        timesContainer.style.pointerEvents = 'none';
+      } else {
+        // Enable availability
+        button.setAttribute('aria-pressed', 'true');
+        button.classList.remove('bg-[#19342e]');
+        button.classList.add('bg-[#34D399]');
+        circle.style.transform = 'translateX(20px)';
+        circle.style.backgroundColor = '#fff';
+        
+        timesContainer.style.opacity = '1';
+        timesContainer.style.pointerEvents = 'auto';
+      }
+    }
+
+    function addOverrideTimeSlot() {
+      const container = document.getElementById('override-times');
+      const newSlot = document.createElement('div');
+      newSlot.className = 'flex items-center gap-2';
+      newSlot.innerHTML = `
+        <span class="custom-time-picker relative inline-flex items-center w-28">
+          <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+          <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+            <div class="flex gap-2 items-center justify-center">
+              <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+              <span class="text-[#A3B3AF]">:</span>
+              <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+              <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+            </div>
+            <div class="flex justify-end mt-2 gap-2 w-full">
+              <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+              <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+            </div>
+          </div>
+        </span>
+        <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+        <span class="custom-time-picker relative inline-flex items-center w-28">
+          <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+          <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+            <div class="flex gap-2 items-center justify-center">
+              <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+              <span class="text-[#A3B3AF]">:</span>
+              <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+              <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+            </div>
+            <div class="flex justify-end mt-2 gap-2 w-full">
+              <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+              <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+            </div>
+          </div>
+        </span>
+        <button class="text-[#A3B3AF] hover:text-[#34D399] transition-colors duration-200 p-1 rounded hover:bg-[#19342e] flex-shrink-0" onclick="removeOverrideTimeSlot(this)">
+          <span class="material-icons-outlined text-lg">remove</span>
+        </button>
+      `;
+      container.appendChild(newSlot);
+    }
+
+    function removeOverrideTimeSlot(button) {
+      button.closest('.flex').remove();
+    }
+
+    function loadOverrideData(override) {
+      const toggleButton = document.querySelector('#override-modal button[onclick="toggleOverrideAvailability(this)"]');
+      const timesContainer = document.getElementById('override-times');
+      
+      if (override.available) {
+        toggleButton.setAttribute('aria-pressed', 'true');
+        toggleButton.classList.add('bg-[#34D399]');
+        toggleButton.classList.remove('bg-[#19342e]');
+        toggleButton.querySelector('div').style.transform = 'translateX(20px)';
+        toggleButton.querySelector('div').style.backgroundColor = '#fff';
+        timesContainer.style.opacity = '1';
+        timesContainer.style.pointerEvents = 'auto';
+        
+        // Load time slots
+        timesContainer.innerHTML = '';
+        if (override.timeSlots && override.timeSlots.length > 0) {
+          override.timeSlots.forEach(slot => {
+            addOverrideTimeSlot();
+            const lastSlot = timesContainer.lastElementChild;
+            const inputs = lastSlot.querySelectorAll('input');
+            if (inputs && inputs.length >= 2) {
+              inputs[0].value = slot.start || '';
+              inputs[1].value = slot.end || '';
+            }
+          });
+        } else {
+          // Add default empty time slot
+          addOverrideTimeSlot();
+        }
+      } else {
+        toggleButton.setAttribute('aria-pressed', 'false');
+        toggleButton.classList.remove('bg-[#34D399]');
+        toggleButton.classList.add('bg-[#19342e]');
+        toggleButton.querySelector('div').style.transform = 'translateX(0)';
+        toggleButton.querySelector('div').style.backgroundColor = '#34D399';
+        timesContainer.style.opacity = '0.5';
+        timesContainer.style.pointerEvents = 'none';
+      }
+    }
+
+    function resetOverrideForm() {
+      const toggleButton = document.querySelector('#override-modal button[onclick="toggleOverrideAvailability(this)"]');
+      const timesContainer = document.getElementById('override-times');
+      
+      toggleButton.setAttribute('aria-pressed', 'true');
+      toggleButton.classList.add('bg-[#34D399]');
+      toggleButton.classList.remove('bg-[#19342e]');
+      toggleButton.querySelector('div').style.transform = 'translateX(20px)';
+      toggleButton.querySelector('div').style.backgroundColor = '#fff';
+      timesContainer.style.opacity = '1';
+      timesContainer.style.pointerEvents = 'auto';
+      
+      // Reset to single time slot with proper structure
+      timesContainer.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="custom-time-picker relative inline-flex items-center w-28">
+            <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+            <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+              <div class="flex gap-2 items-center justify-center">
+                <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <span class="text-[#A3B3AF]">:</span>
+                <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+              <div class="flex justify-end mt-2 gap-2 w-full">
+                <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+          </span>
+          <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+          <span class="custom-time-picker relative inline-flex items-center w-28">
+            <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+            <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+              <div class="flex gap-2 items-center justify-center">
+                <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <span class="text-[#A3B3AF]">:</span>
+                <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+              <div class="flex justify-end mt-2 gap-2 w-full">
+                <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+          </span>
+          <button class="text-[#A3B3AF] hover:text-[#34D399] transition-colors duration-200 p-1 rounded hover:bg-[#19342e] flex-shrink-0" onclick="addOverrideTimeSlot()">
+            <span class="material-icons-outlined text-lg">add</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function saveOverride() {
+      if (!selectedDate) return;
+      
+      const toggleButton = document.querySelector('#override-modal button[onclick="toggleOverrideAvailability(this)"]');
+      const isAvailable = toggleButton.getAttribute('aria-pressed') === 'true';
+      
+      if (isAvailable) {
+        const timeSlots = [];
+        const timeSlotElements = document.querySelectorAll('#override-times .flex');
+        
+        timeSlotElements.forEach(slot => {
+          const inputs = slot.querySelectorAll('input');
+          if (inputs && inputs.length >= 2 && inputs[0] && inputs[1] && inputs[0].value && inputs[1].value) {
+            timeSlots.push({
+              start: inputs[0].value,
+              end: inputs[1].value
+            });
+          }
+        });
+        
+        calendarOverrides[selectedDate] = {
+          available: true,
+          timeSlots: timeSlots
+        };
+      } else {
+        calendarOverrides[selectedDate] = {
+          available: false,
+          timeSlots: []
+        };
+      }
+      
+      localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
+      renderCalendar();
+      updateOverrideList();
+      closeOverrideModal();
+      showNotification('Override saved successfully!');
+    }
+
+    function updateOverrideList() {
+      const overrideList = document.getElementById('override-list');
+      const overrides = Object.entries(calendarOverrides);
+      
+      if (overrides.length === 0) {
+        overrideList.innerHTML = '<p class="text-[#A3B3AF] text-sm">No overrides set</p>';
+        return;
+      }
+      
+      const overrideHTML = overrides.map(([date, override]) => {
+        const dateObj = new Date(date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        });
+        
+        let statusText = override.available ? 'Available' : 'Unavailable';
+        let statusClass = override.available ? 'text-[#34D399]' : 'text-[#A3B3AF]';
+        
+        if (override.available && override.timeSlots.length > 0) {
+          const timeText = override.timeSlots.map(slot => `${slot.start} - ${slot.end}`).join(', ');
+          statusText = timeText;
+        }
+        
+        return `
+          <div class="flex items-center justify-between p-3 bg-[#19342e] rounded-lg">
+            <div>
+              <div class="text-white font-medium">${formattedDate}</div>
+              <div class="${statusClass} text-sm">${statusText}</div>
+            </div>
+            <div class="flex gap-2">
+              <button class="text-[#A3B3AF] hover:text-[#34D399] transition-colors" onclick="editOverride('${date}')">
+                <span class="material-icons-outlined text-lg">edit</span>
+              </button>
+              <button class="text-[#A3B3AF] hover:text-red-400 transition-colors" onclick="deleteOverride('${date}')">
+                <span class="material-icons-outlined text-lg">delete</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      overrideList.innerHTML = overrideHTML;
+    }
+
+    function editOverride(dateString) {
+      selectedDate = dateString;
+      const date = new Date(dateString);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      document.getElementById('override-date').textContent = formattedDate;
+      loadOverrideData(calendarOverrides[dateString]);
+      openOverrideModal();
+    }
+
+    function deleteOverride(dateString) {
+      if (confirm('Are you sure you want to delete this override?')) {
+        delete calendarOverrides[dateString];
+        localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
+        renderCalendar();
+        updateOverrideList();
+        showNotification('Override deleted successfully!');
+      }
+    }
   </script>
 </body>
 </html>
+
