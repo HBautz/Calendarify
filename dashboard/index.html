@@ -699,8 +699,6 @@
           <div class="flex items-center gap-4">
             <input type="text" class="search-field w-64" placeholder="Search meetings..." oninput="handleMeetingsSearch(event)">
             <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold" onclick="exportCSV()">Export CSV</button>
-            <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-bold" onclick="testTableUpdate()">Test Table Update</button>
-            <button class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-bold" onclick="testCancelMeeting()">Test Cancel</button>
           </div>
         </div>
         <div class="bg-[#1E3A34] rounded-xl">
@@ -1480,13 +1478,14 @@
     // Store meetings data in a variable that can be modified
     let meetingsData = {
       upcoming: [
-        { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' },
-        { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
+        { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' }
       ],
       past: [
         { id: 3, invitee: 'Alice Johnson', email: 'alice@test.com', eventType: '30-min Intro Call', date: 'Yesterday, 3:00 PM', status: 'Completed' }
       ],
-      pending: []
+      pending: [
+        { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
+      ]
     };
 
     function getMeetingsData(tab) {
