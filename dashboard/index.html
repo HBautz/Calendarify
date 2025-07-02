@@ -242,6 +242,14 @@
       font-size: 0.85em;
       font-weight: 600;
     }
+    .badge-completed {
+      background: none;
+      color: #A3B3AF;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
     .notification-dot {
       position: absolute;
       top: 0.5rem;
@@ -430,15 +438,18 @@
       white-space: nowrap;
     }
     .meeting-menu {
-      min-width: 9rem;
+      z-index: 9999;
+      min-width: 140px;
       right: 0;
-      left: auto;
-      top: 2.5rem;
-      z-index: 100;
-      display: none;
+      top: 100%;
+      margin-top: 4px;
+      position: absolute;
     }
     .meeting-menu.open {
       display: block;
+    }
+    .meeting-menu:not(.open) {
+      display: none;
     }
     .meeting-menu button {
       text-align: left;
@@ -447,11 +458,111 @@
     .meeting-menu .material-icons-outlined {
       font-size: 1.1em;
     }
-    .meeting-menu {
-      box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
-    }
     .kebab-btn {
       cursor: pointer;
+    }
+    .btn-secondary {
+      background: #19342e;
+      color: #A3B3AF;
+      border: 1px solid #2C4A43;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background: #2C4A43;
+      color: #E0E0E0;
+      border-color: #34D399;
+    }
+    .btn-join {
+      background: #34D399;
+      color: #1A2E29;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-join:hover {
+      background: #2C4A43;
+    }
+    .btn-reschedule {
+      background: #19342e;
+      color: #A3B3AF;
+      border: 1px solid #2C4A43;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-reschedule:hover {
+      background: #2C4A43;
+      color: #E0E0E0;
+      border-color: #34D399;
+    }
+    .btn-cancel {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-cancel:hover {
+      background: #dc2626;
+    }
+    .contact-menu {
+      z-index: 9999;
+      min-width: 140px;
+      right: 0;
+      top: 100%;
+      margin-top: 4px;
+      position: absolute;
+    }
+    .contact-menu.open {
+      display: block;
+    }
+    .contact-menu:not(.open) {
+      display: none;
+    }
+    .contact-menu button {
+      text-align: left;
+      width: 100%;
+    }
+    .contact-menu .material-icons-outlined {
+      font-size: 1.1em;
+    }
+    .favorite-btn {
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      transition: all 0.2s ease;
+    }
+    .favorite-btn:hover {
+      background-color: rgba(52, 211, 153, 0.1);
+    }
+    .favorite-btn.favorited {
+      color: #34D399 !important;
+    }
+    .favorite-btn.favorited:hover {
+      color: #A3B3AF !important;
+    }
+    .favorites-filter-active {
+      background: #34D399 !important;
+      color: #1A2E29 !important;
+    }
+    .favorites-filter-active:hover {
+      background: #2C4A43 !important;
     }
   </style>
 </head>
@@ -586,11 +697,13 @@
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-2xl font-bold text-white">Meetings</h2>
           <div class="flex items-center gap-4">
-            <input type="text" class="search-field w-64" placeholder="Search meetings...">
+            <input type="text" class="search-field w-64" placeholder="Search meetings..." oninput="handleMeetingsSearch(event)">
             <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold" onclick="exportCSV()">Export CSV</button>
+            <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-bold" onclick="testTableUpdate()">Test Table Update</button>
+            <button class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-bold" onclick="testCancelMeeting()">Test Cancel</button>
           </div>
         </div>
-        <div class="bg-[#1E3A34] rounded-xl overflow-hidden">
+        <div class="bg-[#1E3A34] rounded-xl">
           <div class="flex border-b border-[#1A2E29]">
             <button data-tab="upcoming" class="px-6 py-3 bg-[#34D399] text-[#1A2E29] font-medium" onclick="showMeetingsTab('upcoming', this)">Upcoming</button>
             <button data-tab="past" class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('past', this)">Past</button>
@@ -600,65 +713,15 @@
             <table class="w-full">
               <thead class="table-header">
                 <tr>
-                  <th class="text-left py-2">Invitee</th>
-                  <th class="text-left py-2">Event Type</th>
-                  <th class="text-left py-2">Date/Time</th>
-                  <th class="text-left py-2">Status</th>
-                  <th class="text-left py-2">Actions</th>
+                  <th class="text-center py-2 w-1/4">Invitee</th>
+                  <th class="text-center py-2 w-1/5">Event Type</th>
+                  <th class="text-center py-2 w-1/5">Date/Time</th>
+                  <th class="text-center py-2 w-1/6">Status</th>
+                  <th class="text-center py-2 w-1/6">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr class="table-row">
-                  <td class="py-2">
-                    <div class="flex items-center gap-2">
-                      <img src="https://ui-avatars.com/api/?name=Jane+Doe&background=34D399&color=1A2E29" alt="Jane Doe" class="w-8 h-8 rounded-full">
-                      <div>
-                        <div class="text-white font-medium">Jane Doe</div>
-                        <div class="text-[#A3B3AF] text-sm">jane@example.com</div>
-                </div>
-                </div>
-                  </td>
-                  <td class="py-2">30-min Intro Call</td>
-                  <td class="py-2">Today, 2:00 PM</td>
-                  <td class="py-2"><span class="badge-success">Confirmed</span></td>
-                  <td class="py-2 actions-col">
-                    <div class="relative inline-block text-left">
-                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleMeetingMenu(this)">
-                        <span class="material-icons-outlined">more_vert</span>
-                      </button>
-                      <div class="meeting-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg">
-                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="joinMeeting('${meeting.id}')">
-                          <span class="material-icons-outlined text-xs">video_call</span>Join
-                        </button>
-                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#A3B3AF] hover:bg-[#223c36] text-sm font-semibold" onclick="rescheduleMeeting('${meeting.id}')">
-                          <span class="material-icons-outlined text-xs">schedule</span>Reschedule
-                        </button>
-                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="cancelMeeting('${meeting.id}')">
-                          <span class="material-icons-outlined text-xs">close</span>Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr class="table-row">
-                  <td class="py-2">
-                    <div class="flex items-center gap-2">
-                      <img src="https://ui-avatars.com/api/?name=John+Smith&background=34D399&color=1A2E29" alt="John Smith" class="w-8 h-8 rounded-full">
-                      <div>
-                        <div class="text-white font-medium">John Smith</div>
-                        <div class="text-[#A3B3AF] text-sm">john@company.com</div>
-              </div>
-                </div>
-                  </td>
-                  <td class="py-2">1-hour Consultation</td>
-                  <td class="py-2">Tomorrow, 10:00 AM</td>
-                  <td class="py-2"><span class="badge-warning">Pending</span></td>
-                  <td class="py-2 flex gap-2">
-                    <button class="btn-join">Join</button>
-                    <button class="btn-reschedule">Reschedule</button>
-                    <button class="btn-cancel" onclick="cancelMeeting('${meeting.id}')">Cancel</button>
-                  </td>
-                </tr>
+                <!-- Table content will be dynamically populated by JavaScript -->
               </tbody>
             </table>
                 </div>
@@ -971,35 +1034,72 @@
           </button>
             </div>
         <div class="mb-4 flex items-center gap-4">
-          <input type="text" class="search-field w-64" placeholder="Search contacts...">
-          <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm"><span class="material-icons-outlined text-base">star</span>Favorites</button>
+          <input type="text" class="search-field w-64" placeholder="Search contacts..." oninput="handleSearch(event)">
+          <button id="favorites-filter-btn" class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm hover:bg-[#2C4A43] transition-colors" onclick="toggleFavorites()"><span class="material-icons-outlined text-base">star</span>Favorites</button>
           </div>
         <div class="bg-[#1E3A34] rounded-xl p-4">
           <table class="w-full">
             <thead class="table-header">
               <tr>
-                <th class="text-left py-2">Name</th>
-                <th class="text-left py-2">Email</th>
-                <th class="text-left py-2">Actions</th>
+                <th class="text-center py-2 w-1/8">Favorite</th>
+                <th class="text-center py-2 w-1/4">Name</th>
+                <th class="text-center py-2 w-1/3">Email</th>
+                <th class="text-center py-2 w-1/4">Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr class="table-row">
-                <td class="py-2">Jane Doe</td>
-                <td class="py-2">jane@example.com</td>
-                <td class="py-2 flex gap-2">
-                  <button class="btn-secondary">View</button>
-                  <button class="btn-secondary">Book</button>
-                  <button class="btn-secondary">Remove</button>
+                <td class="py-2 text-center">
+                  <button class="favorite-btn text-[#A3B3AF] hover:text-[#34D399] transition-colors" onclick="toggleFavorite('jane@example.com', this)">
+                    <span class="material-icons-outlined text-xl">star_border</span>
+                  </button>
+                </td>
+                <td class="py-2 text-center">Jane Doe</td>
+                <td class="py-2 text-center">jane@example.com</td>
+                <td class="py-2 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button class="btn-secondary" onclick="viewContact('jane@example.com')">View</button>
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('jane@example.com')">
+                          <span class="material-icons-outlined text-xs">event</span>Book
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('jane@example.com')">
+                          <span class="material-icons-outlined text-xs">delete</span>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </td>
               </tr>
               <tr class="table-row">
-                <td class="py-2">John Smith</td>
-                <td class="py-2">john@company.com</td>
-                <td class="py-2 flex gap-2">
-                  <button class="btn-secondary">View</button>
-                  <button class="btn-secondary">Book</button>
-                  <button class="btn-secondary">Remove</button>
+                <td class="py-2 text-center">
+                  <button class="favorite-btn text-[#34D399] hover:text-[#A3B3AF] transition-colors" onclick="toggleFavorite('john@company.com', this)">
+                    <span class="material-icons-outlined text-xl">star</span>
+                  </button>
+                </td>
+                <td class="py-2 text-center">John Smith</td>
+                <td class="py-2 text-center">john@company.com</td>
+                <td class="py-2 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button class="btn-secondary" onclick="viewContact('john@company.com')">View</button>
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('john@company.com')">
+                          <span class="material-icons-outlined text-xs">event</span>Book
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('john@company.com')">
+                          <span class="material-icons-outlined text-xs">delete</span>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1202,6 +1302,64 @@
     </div>
   </div>
 
+  <!-- Add Contact Modal -->
+  <div id="add-contact-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-md">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Add New Contact</h2>
+          <button onclick="closeAddContactModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-4">
+          <div>
+            <label for="contact-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Full Name *</label>
+            <input type="text" id="contact-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter full name">
+          </div>
+          
+          <div>
+            <label for="contact-email" class="block text-[#A3B3AF] text-sm font-medium mb-2">Email Address *</label>
+            <input type="email" id="contact-email" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter email address">
+          </div>
+          
+          <div>
+            <label for="contact-phone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Phone Number</label>
+            <input type="tel" id="contact-phone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter phone number">
+          </div>
+          
+          <div>
+            <label for="contact-company" class="block text-[#A3B3AF] text-sm font-medium mb-2">Company</label>
+            <input type="text" id="contact-company" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter company name">
+          </div>
+          
+          <div>
+            <label for="contact-notes" class="block text-[#A3B3AF] text-sm font-medium mb-2">Notes</label>
+            <textarea id="contact-notes" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Add any notes about this contact"></textarea>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <input type="checkbox" id="contact-favorite" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <label for="contact-favorite" class="text-[#E0E0E0] text-sm">Add to favorites</label>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeAddContactModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+            Cancel
+          </button>
+          <button onclick="saveContact()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+            Add Contact
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Navigation functionality
     function showSection(section, el) {
@@ -1233,6 +1391,8 @@
 
     // Meetings tab functionality
     function showMeetingsTab(tab, btn) {
+      console.log('showMeetingsTab called with tab:', tab);
+      
       // Update tab buttons
       document.querySelectorAll('#meetings-section .flex button').forEach(button => {
         button.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
@@ -1245,6 +1405,7 @@
       if (btn) {
         btn.classList.remove('text-[#A3B3AF]');
         btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
+        console.log('Active button classes:', btn.className);
       }
 
       // Update table content based on tab
@@ -1252,13 +1413,28 @@
     }
 
     function updateMeetingsTable(tab) {
+      console.log('updateMeetingsTable called with tab:', tab);
       const tbody = document.querySelector('#meetings-section tbody');
-      const meetings = getMeetingsData(tab);
+      console.log('Found tbody:', tbody);
       
-      tbody.innerHTML = meetings.map(meeting => `
+      if (!tbody) {
+        console.error('Could not find tbody element!');
+        return;
+      }
+      
+      const meetings = getMeetingsData(tab);
+      console.log('Meetings for tab', tab, ':', meetings);
+      
+      const tableHTML = meetings.map(meeting => {
+        let badgeClass =
+          meeting.status === 'Confirmed' ? 'badge-success' :
+          meeting.status === 'Pending' ? 'badge-warning' :
+          meeting.status === 'Completed' ? 'badge-completed' :
+          'badge-error';
+        return `
         <tr class="table-row">
           <td class="py-2">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 justify-center">
               <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(meeting.invitee)}&background=34D399&color=1A2E29" alt="${meeting.invitee}" class="w-8 h-8 rounded-full">
               <div>
                 <div class="text-white font-medium">${meeting.invitee}</div>
@@ -1266,10 +1442,10 @@
               </div>
             </div>
           </td>
-          <td class="py-2">${meeting.eventType}</td>
-          <td class="py-2">${meeting.date}</td>
-          <td class="py-2"><span class="badge-${meeting.status === 'Confirmed' ? 'success' : meeting.status === 'Pending' ? 'warning' : 'error'}">${meeting.status}</span></td>
-          <td class="py-2 actions-col">
+          <td class="py-2 text-center">${meeting.eventType}</td>
+          <td class="py-2 text-center">${meeting.date}</td>
+          <td class="py-2 text-center"><span class="${badgeClass}">${meeting.status}</span></td>
+          <td class="py-2 text-center">
             <div class="relative inline-block text-left">
               <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleMeetingMenu(this)">
                 <span class="material-icons-outlined">more_vert</span>
@@ -1278,31 +1454,50 @@
                 <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="joinMeeting('${meeting.id}')">
                   <span class="material-icons-outlined text-xs">video_call</span>Join
                 </button>
-                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#A3B3AF] hover:bg-[#223c36] text-sm font-semibold" onclick="rescheduleMeeting('${meeting.id}')">
-                  <span class="material-icons-outlined text-xs">schedule</span>Reschedule
-                </button>
-                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="cancelMeeting('${meeting.id}')">
-                  <span class="material-icons-outlined text-xs">close</span>Cancel
-                </button>
+                ${tab === 'past' ? 
+                  `<button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="deleteMeeting('${meeting.id}')">
+                    <span class="material-icons-outlined text-xs">delete_forever</span>Delete
+                  </button>` :
+                  `<button class="w-full flex items-center gap-2 px-4 py-2 text-[#A3B3AF] hover:bg-[#223c36] text-sm font-semibold" onclick="rescheduleMeeting('${meeting.id}')">
+                    <span class="material-icons-outlined text-xs">schedule</span>Reschedule
+                  </button>
+                  <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="cancelMeeting('${meeting.id}')">
+                    <span class="material-icons-outlined text-xs">close</span>Cancel
+                  </button>`
+                }
               </div>
             </div>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
+      
+      console.log('Generated table HTML:', tableHTML);
+      tbody.innerHTML = tableHTML;
+      console.log('Table updated successfully');
     }
 
+    // Store meetings data in a variable that can be modified
+    let meetingsData = {
+      upcoming: [
+        { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' },
+        { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
+      ],
+      past: [
+        { id: 3, invitee: 'Alice Johnson', email: 'alice@test.com', eventType: '30-min Intro Call', date: 'Yesterday, 3:00 PM', status: 'Completed' }
+      ],
+      pending: []
+    };
+
     function getMeetingsData(tab) {
-      const meetings = {
-        upcoming: [
-          { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' },
-          { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
-        ],
-        past: [
-          { id: 3, invitee: 'Alice Johnson', email: 'alice@test.com', eventType: '30-min Intro Call', date: 'Yesterday, 3:00 PM', status: 'Completed' }
-        ],
-        pending: []
-      };
-      return meetings[tab] || [];
+      return meetingsData[tab] || [];
+    }
+
+    function removeMeetingFromData(meetingId) {
+      // Remove from all tabs
+      Object.keys(meetingsData).forEach(tab => {
+        meetingsData[tab] = meetingsData[tab].filter(meeting => meeting.id !== meetingId);
+      });
     }
 
     // Meeting actions
@@ -1358,12 +1553,11 @@
     }
 
     function addContact() {
-      alert('Add Contact modal would open here');
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('add-contact-modal').classList.remove('hidden');
     }
 
-    function exportCSV() {
-      alert('CSV export functionality would run here');
-    }
+
 
     function showNotification(message) {
       // Create notification element
@@ -1382,10 +1576,13 @@
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal') {
           el.classList.add('hidden');
         }
       });
+      // Clear any stored meeting data
+      window.meetingToCancel = null;
+      window.meetingToDelete = null;
     });
 
     // Close dropdowns when clicking outside
@@ -2716,27 +2913,7 @@
       document.getElementById('cancel-meeting-confirm-modal').classList.remove('hidden');
     }
 
-    function confirmCancelMeeting() {
-      const meeting = window.meetingToCancel;
-      if (meeting) {
-        // Remove from meetings array
-        let meetings = JSON.parse(localStorage.getItem('calendarify-meetings') || '[]');
-        meetings = meetings.filter(m => m.id !== meeting.id);
-        localStorage.setItem('calendarify-meetings', JSON.stringify(meetings));
-        
-        // Update UI
-        renderMeetings();
-        showNotification('Meeting cancelled successfully!');
-        closeCancelMeetingConfirmModal();
-        window.meetingToCancel = null;
-      }
-    }
-
-    function closeCancelMeetingConfirmModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('cancel-meeting-confirm-modal').classList.add('hidden');
-      window.meetingToCancel = null;
-    }
+    // Removed duplicate confirmCancelMeeting function - using the updated version below
 
     // --- Meeting 3-dots menu logic ---
     function toggleMeetingMenu(btn) {
@@ -2752,6 +2929,553 @@
         document.querySelectorAll('.meeting-menu').forEach(menu => menu.classList.remove('open'));
       }
     });
+
+    // --- Contact menu logic ---
+    function toggleContactMenu(btn) {
+      // Close all other menus
+      document.querySelectorAll('.contact-menu').forEach(menu => menu.classList.remove('open'));
+      // Toggle this one
+      const menu = btn.nextElementSibling;
+      if (menu) menu.classList.toggle('open');
+    }
+    
+    // Contact actions
+    function viewContact(email) {
+      showNotification(`Viewing contact: ${email}`);
+      // Here you would typically open a modal or navigate to contact details
+    }
+    
+    function bookContact(email) {
+      showNotification(`Booking meeting with: ${email}`);
+      // Here you would typically open the booking flow
+    }
+    
+    function removeContact(email) {
+      if (confirm(`Are you sure you want to remove ${email} from your contacts?`)) {
+        showNotification(`Contact removed: ${email}`);
+        // Here you would typically remove the contact from the list
+      }
+    }
+    
+    let favoritesFilterActive = false;
+    let searchFilter = '';
+
+    function toggleFavorites() {
+      favoritesFilterActive = !favoritesFilterActive;
+      const btn = document.getElementById('favorites-filter-btn');
+      
+      if (favoritesFilterActive) {
+        btn.classList.add('favorites-filter-active');
+        showNotification('Showing favorites only');
+      } else {
+        btn.classList.remove('favorites-filter-active');
+        showNotification('Showing all contacts');
+      }
+      
+      filterContacts();
+    }
+
+    function filterContacts() {
+      const rows = document.querySelectorAll('#contacts-section tbody tr');
+      
+      rows.forEach(row => {
+        const favoriteBtn = row.querySelector('.favorite-btn');
+        if (!favoriteBtn) return;
+        
+        const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+        const isFavorited = favoriteBtn.querySelector('.material-icons-outlined').textContent === 'star';
+        
+        let showRow = true;
+        
+        // Apply search filter
+        if (searchFilter && !name.includes(searchFilter) && !email.includes(searchFilter)) {
+          showRow = false;
+        }
+        
+        // Apply favorites filter
+        if (favoritesFilterActive && !isFavorited) {
+          showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+      });
+    }
+    
+    function toggleFavorite(email, button) {
+      const starIcon = button.querySelector('.material-icons-outlined');
+      const isFavorited = starIcon.textContent === 'star';
+      
+      if (isFavorited) {
+        // Remove from favorites
+        starIcon.textContent = 'star_border';
+        button.classList.remove('favorited');
+        button.classList.remove('text-[#34D399]');
+        button.classList.add('text-[#A3B3AF]');
+        showNotification(`${email} removed from favorites`);
+      } else {
+        // Add to favorites
+        starIcon.textContent = 'star';
+        button.classList.add('favorited');
+        button.classList.remove('text-[#A3B3AF]');
+        button.classList.add('text-[#34D399]');
+        showNotification(`${email} added to favorites`);
+      }
+      
+      // Re-apply filters after changing favorite status
+      filterContacts();
+      
+      // Here you would typically save the favorite status to a database or localStorage
+    }
+    
+    // Close contact dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.kebab-btn') && !e.target.closest('.contact-menu')) {
+        document.querySelectorAll('.contact-menu').forEach(menu => menu.classList.remove('open'));
+      }
+    });
+
+    function closeAddContactModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('add-contact-modal').classList.add('hidden');
+      // Clear form fields
+      document.getElementById('contact-name').value = '';
+      document.getElementById('contact-email').value = '';
+      document.getElementById('contact-phone').value = '';
+      document.getElementById('contact-company').value = '';
+      document.getElementById('contact-notes').value = '';
+      document.getElementById('contact-favorite').checked = false;
+    }
+
+    function saveContact() {
+      const name = document.getElementById('contact-name').value.trim();
+      const email = document.getElementById('contact-email').value.trim();
+      const phone = document.getElementById('contact-phone').value.trim();
+      const company = document.getElementById('contact-company').value.trim();
+      const notes = document.getElementById('contact-notes').value.trim();
+      const favorite = document.getElementById('contact-favorite').checked;
+
+      if (!name || !email) {
+        showNotification('Name and email are required');
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        showNotification('Please enter a valid email address');
+        return;
+      }
+
+      // Here you would typically save to a database or localStorage
+      const contact = {
+        id: Date.now().toString(),
+        name,
+        email,
+        phone,
+        company,
+        notes,
+        favorite,
+        createdAt: new Date().toISOString()
+      };
+
+      // For demo purposes, just show a success message
+      showNotification(`Contact "${name}" added successfully!`);
+      closeAddContactModal();
+    }
+
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    function handleSearch(event) {
+      searchFilter = event.target.value.toLowerCase();
+      filterContacts();
+    }
+
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    // Meetings search functionality
+    let meetingsSearchFilter = '';
+
+    function handleMeetingsSearch(event) {
+      meetingsSearchFilter = event.target.value.toLowerCase();
+      filterMeetings();
+    }
+
+    function filterMeetings() {
+      const rows = document.querySelectorAll('#meetings-section tbody tr');
+      
+      rows.forEach(row => {
+        const inviteeName = row.querySelector('td:nth-child(1) .text-white').textContent.toLowerCase();
+        const inviteeEmail = row.querySelector('td:nth-child(1) .text-\\[\\#A3B3AF\\]').textContent.toLowerCase();
+        const eventType = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const dateTime = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+        
+        let showRow = true;
+        
+        // Apply search filter
+        if (meetingsSearchFilter && 
+            !inviteeName.includes(meetingsSearchFilter) && 
+            !inviteeEmail.includes(meetingsSearchFilter) && 
+            !eventType.includes(meetingsSearchFilter) && 
+            !dateTime.includes(meetingsSearchFilter)) {
+          showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+      });
+    }
+
+    // Export CSV functionality
+    function exportCSV() {
+      console.log('exportCSV called');
+      
+      // Find the active tab button in the meetings section - try multiple selectors
+      let activeTabButton = document.querySelector('#meetings-section .flex button.bg-[#34D399]');
+      console.log('First selector result:', activeTabButton);
+      
+      if (!activeTabButton) {
+        activeTabButton = document.querySelector('#meetings-section button.bg-[#34D399]');
+        console.log('Second selector result:', activeTabButton);
+      }
+      
+      if (!activeTabButton) {
+        // Try to find any button with the green background class
+        const allButtons = document.querySelectorAll('#meetings-section button');
+        console.log('All buttons in meetings section:', allButtons);
+        allButtons.forEach(btn => {
+          console.log('Button classes:', btn.className, 'data-tab:', btn.getAttribute('data-tab'));
+          if (btn.className.includes('bg-[#34D399]')) {
+            activeTabButton = btn;
+            console.log('Found active button:', btn);
+          }
+        });
+      }
+      
+      console.log('Final active tab button:', activeTabButton);
+      
+      if (!activeTabButton) {
+        showNotification('Could not determine current tab');
+        return;
+      }
+      
+      const currentTab = activeTabButton.getAttribute('data-tab');
+      console.log('Current tab:', currentTab);
+      
+      const meetings = getMeetingsData(currentTab);
+      console.log('Meetings to export:', meetings);
+      
+      if (meetings.length === 0) {
+        showNotification('No meetings to export');
+        return;
+      }
+      
+      // Create CSV content
+      let csvContent = 'Invitee,Email,Event Type,Date/Time,Status\n';
+      
+      meetings.forEach(meeting => {
+        const row = [
+          meeting.invitee,
+          meeting.email,
+          meeting.eventType,
+          meeting.date,
+          meeting.status
+        ].map(field => `"${field}"`).join(',');
+        csvContent += row + '\n';
+      });
+      
+      console.log('CSV content:', csvContent);
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `meetings_${currentTab}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showNotification(`Exported ${meetings.length} meetings to CSV`);
+    }
+
+    // Meeting action functions
+    function joinMeeting(meetingId) {
+      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
+      const meeting = getMeetingsData('upcoming').find(m => m.id === id) || 
+                     getMeetingsData('past').find(m => m.id === id) ||
+                     getMeetingsData('pending').find(m => m.id === id);
+      
+      if (meeting) {
+        showNotification(`Joining meeting with ${meeting.invitee}`);
+        // Here you would typically open the meeting link or video call
+      }
+    }
+
+    function rescheduleMeeting(meetingId) {
+      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
+      const meeting = getMeetingsData('upcoming').find(m => m.id === id) || 
+                     getMeetingsData('pending').find(m => m.id === id);
+      
+      if (meeting) {
+        showNotification(`Opening reschedule dialog for ${meeting.invitee}`);
+        // Here you would typically open a reschedule modal
+      } else {
+        showNotification('Cannot reschedule past meetings');
+      }
+    }
+
+    function cancelMeeting(meetingId) {
+      console.log('cancelMeeting called with ID:', meetingId, 'Type:', typeof meetingId);
+      
+      // Convert to number if it's a string
+      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
+      console.log('Converted ID:', id);
+      
+      // Check all tabs to find the meeting
+      const upcomingMeeting = getMeetingsData('upcoming').find(m => m.id === id);
+      const pendingMeeting = getMeetingsData('pending').find(m => m.id === id);
+      const pastMeeting = getMeetingsData('past').find(m => m.id === id);
+      
+      console.log('Found meetings:', { upcomingMeeting, pendingMeeting, pastMeeting });
+      
+      if (pastMeeting) {
+        console.log('Past meeting found, cannot cancel');
+        showNotification('Cannot cancel past meetings');
+        return;
+      }
+      
+      const meeting = upcomingMeeting || pendingMeeting;
+      if (meeting) {
+        console.log('Valid meeting found, showing confirmation modal');
+        // Store meeting info for cancellation
+        window.meetingToCancel = { id: id, invitee: meeting.invitee };
+        
+        // Show themed confirmation modal
+        const backdrop = document.getElementById('modal-backdrop');
+        const modal = document.getElementById('cancel-meeting-confirm-modal');
+        
+        if (backdrop && modal) {
+          backdrop.classList.remove('hidden');
+          modal.classList.remove('hidden');
+          console.log('Cancel modal should be visible now');
+        } else {
+          console.error('Cancel modal elements not found:', { backdrop, modal });
+          showNotification('Error: Modal not found');
+        }
+      } else {
+        console.log('No valid meeting found');
+        showNotification('Meeting not found');
+      }
+    }
+
+    function deleteMeeting(meetingId) {
+      console.log('deleteMeeting called with ID:', meetingId, 'Type:', typeof meetingId);
+      
+      // Convert to number if it's a string
+      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
+      console.log('Converted ID:', id);
+      
+      const meeting = getMeetingsData('past').find(m => m.id === id);
+      
+      if (meeting) {
+        console.log('Found meeting to delete:', meeting);
+        // Store meeting info for deletion
+        window.meetingToDelete = { id: id, invitee: meeting.invitee };
+        
+        // Show themed confirmation modal
+        const backdrop = document.getElementById('modal-backdrop');
+        const modal = document.getElementById('delete-meeting-confirm-modal');
+        
+        if (backdrop && modal) {
+          backdrop.classList.remove('hidden');
+          modal.classList.remove('hidden');
+          console.log('Modal should be visible now');
+        } else {
+          console.error('Modal elements not found:', { backdrop, modal });
+          showNotification('Error: Modal not found');
+        }
+      } else {
+        console.log('Meeting not found in past meetings');
+        showNotification('Meeting not found');
+      }
+    }
+
+    function confirmCancelMeeting() {
+      const meetingInfo = window.meetingToCancel;
+      if (meetingInfo) {
+        console.log('Confirming cancellation for meeting:', meetingInfo);
+        
+        // First, close the modal
+        closeCancelMeetingConfirmModal();
+        window.meetingToCancel = null;
+        
+        // Then remove meeting from data (cancelled meetings are removed)
+        removeMeetingFromData(meetingInfo.id);
+        console.log('Meeting removed from data. Current data:', meetingsData);
+        
+        // Show notification
+        showNotification(`Meeting with ${meetingInfo.invitee} has been cancelled`);
+        
+        // Finally, refresh the meetings table - try multiple ways to find current tab
+        let currentTab = 'upcoming'; // default fallback
+        
+        // Method 1: Find active button
+        const activeTabButton = document.querySelector('#meetings-section .flex button.bg-[#34D399]');
+        if (activeTabButton) {
+          currentTab = activeTabButton.getAttribute('data-tab');
+          console.log('Found active tab from button:', currentTab);
+        } else {
+          // Method 2: Check all buttons for the green background
+          const allButtons = document.querySelectorAll('#meetings-section button');
+          allButtons.forEach(btn => {
+            if (btn.className.includes('bg-[#34D399]')) {
+              currentTab = btn.getAttribute('data-tab');
+              console.log('Found active tab from button classes:', currentTab);
+            }
+          });
+        }
+        
+        console.log('Refreshing table for tab:', currentTab);
+        // Use setTimeout to ensure the modal is fully closed before updating
+        setTimeout(() => {
+          updateMeetingsTable(currentTab);
+        }, 100);
+      }
+    }
+
+    function closeCancelMeetingConfirmModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('cancel-meeting-confirm-modal').classList.add('hidden');
+      window.meetingToCancel = null;
+    }
+
+    function confirmDeleteMeeting() {
+      const meetingInfo = window.meetingToDelete;
+      if (meetingInfo) {
+        console.log('Confirming deletion for meeting:', meetingInfo);
+        
+        // First, close the modal
+        closeDeleteMeetingConfirmModal();
+        window.meetingToDelete = null;
+        
+        // Then remove meeting from data
+        removeMeetingFromData(meetingInfo.id);
+        console.log('Meeting removed from data. Current data:', meetingsData);
+        
+        // Show notification
+        showNotification(`Meeting with ${meetingInfo.invitee} has been deleted`);
+        
+        // Finally, refresh the meetings table - try multiple ways to find current tab
+        let currentTab = 'past'; // default fallback for delete
+        
+        // Method 1: Find active button
+        const activeTabButton = document.querySelector('#meetings-section .flex button.bg-[#34D399]');
+        if (activeTabButton) {
+          currentTab = activeTabButton.getAttribute('data-tab');
+          console.log('Found active tab from button:', currentTab);
+        } else {
+          // Method 2: Check all buttons for the green background
+          const allButtons = document.querySelectorAll('#meetings-section button');
+          allButtons.forEach(btn => {
+            if (btn.className.includes('bg-[#34D399]')) {
+              currentTab = btn.getAttribute('data-tab');
+              console.log('Found active tab from button classes:', currentTab);
+            }
+          });
+        }
+        
+        console.log('Refreshing table for tab:', currentTab);
+        // Use setTimeout to ensure the modal is fully closed before updating
+        setTimeout(() => {
+          updateMeetingsTable(currentTab);
+        }, 100);
+      }
+    }
+
+    function closeDeleteMeetingConfirmModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('delete-meeting-confirm-modal').classList.add('hidden');
+      window.meetingToDelete = null;
+    }
+
+    // Test function to verify everything is working
+    function testMeetingsFunctionality() {
+      console.log('=== Testing Meetings Functionality ===');
+      console.log('Current meetings data:', meetingsData);
+      
+      // Test export
+      console.log('Testing export...');
+      exportCSV();
+      
+      // Test tab detection
+      const activeButton = document.querySelector('#meetings-section button.bg-[#34D399]');
+      console.log('Active button found:', activeButton);
+      if (activeButton) {
+        console.log('Active tab:', activeButton.getAttribute('data-tab'));
+      }
+      
+      // Test table update
+      console.log('Testing table update...');
+      updateMeetingsTable('upcoming');
+    }
+
+    // Simple test function to check if table updates work
+    function testTableUpdate() {
+      console.log('=== Testing Table Update ===');
+      
+      // Check if meetings section exists
+      const meetingsSection = document.getElementById('meetings-section');
+      console.log('Meetings section found:', meetingsSection);
+      
+      // Check if table exists
+      const table = document.querySelector('#meetings-section table');
+      console.log('Table found:', table);
+      
+      // Check if tbody exists
+      const tbody = document.querySelector('#meetings-section tbody');
+      console.log('Tbody found:', tbody);
+      
+      // Try to update the table
+      console.log('Attempting to update table...');
+      updateMeetingsTable('upcoming');
+      
+      // Check if content was added
+      console.log('Tbody innerHTML after update:', tbody ? tbody.innerHTML : 'No tbody');
+    }
+
+    // Test function to manually trigger a meeting cancellation
+    function testCancelMeeting() {
+      console.log('=== Testing Cancel Meeting ===');
+      
+      // Create a test meeting
+      const testMeeting = {
+        id: 999,
+        invitee: 'Test User',
+        email: 'test@example.com',
+        eventType: 'Test Meeting',
+        date: 'Today, 1:00 PM',
+        status: 'Confirmed'
+      };
+      
+      // Add to upcoming meetings
+      meetingsData.upcoming.push(testMeeting);
+      console.log('Added test meeting to data:', meetingsData);
+      
+      // Set as meeting to cancel
+      window.meetingToCancel = testMeeting;
+      
+      // Show confirmation modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('cancel-meeting-confirm-modal').classList.remove('hidden');
+      
+      console.log('Test modal should be visible now');
+    }
   </script>
 
   <!-- Create Event Type Modal -->
@@ -3409,6 +4133,19 @@
     <div class="flex gap-3">
       <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmCancelMeeting()">Cancel Meeting</button>
       <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeCancelMeetingConfirmModal()">Keep Meeting</button>
+    </div>
+  </div>
+
+  <!-- Delete Meeting Confirmation Modal -->
+  <div id="delete-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">delete_forever</span>
+      <h3 class="text-lg font-bold text-white">Delete Meeting</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this meeting from your history? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteMeeting()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteMeetingConfirmModal()">Cancel</button>
     </div>
   </div>
 </body>
