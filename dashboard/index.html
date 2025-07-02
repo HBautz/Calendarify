@@ -135,6 +135,15 @@
     .btn-secondary {
       @apply text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm;
     }
+    .btn-join {
+      @apply bg-[#34D399] text-[#1A2E29] px-3 py-1.5 rounded-lg hover:bg-[#2C4A43] transition-all text-xs font-semibold shadow-sm hover:shadow-md;
+    }
+    .btn-reschedule {
+      @apply bg-[#1E3A34] text-[#A3B3AF] border border-[#2C4A43] px-3 py-1.5 rounded-lg hover:bg-[#2C4A43] hover:text-white hover:border-[#34D399] transition-all text-xs font-semibold;
+    }
+    .btn-cancel {
+      @apply bg-[#1E3A34] text-[#EF4444] border border-[#EF4444] px-3 py-1.5 rounded-lg hover:bg-[#EF4444] hover:text-white transition-all text-xs font-semibold;
+    }
     .input-field {
       background: transparent;
       border: 1px solid #1E3A34;
@@ -285,13 +294,40 @@
       border-radius: 9999px;
     }
     .calendar-day {
-      @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-[#34D399]/20 transition-colors;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      width: 3.125rem;
+      height: 3.125rem;
+    }
+    .calendar-day:hover {
+      background-color: #2C4A43;
+    }
+    .calendar-day.today {
+      background-color: #F97316; /* Orange color */
+      color: #1A2E29;
+      font-weight: bold;
     }
     .calendar-day.active {
-      @apply bg-[#34D399] text-[#1A2E29];
+      background-color: #34D399; /* Theme green color */
+      color: #1A2E29;
+      font-weight: bold;
     }
     .calendar-day.has-event {
-      @apply border-2 border-[#34D399];
+      position: relative;
+    }
+    .calendar-day.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      background-color: #34D399;
+      border-radius: 50%;
     }
     .toggle-switch {
       position: relative;
@@ -426,6 +462,39 @@
     }
     /* Optionally, add a custom arrow if you want */
     /* .custom-time-picker select { background: url('data:image/svg+xml;...') no-repeat right center/1em; } */
+
+    /* --- Actions column alignment --- */
+    td.actions-col {
+      text-align: right;
+      vertical-align: middle;
+      position: relative;
+      width: 1%;
+      white-space: nowrap;
+    }
+    .meeting-menu {
+      min-width: 9rem;
+      right: 0;
+      left: auto;
+      top: 2.5rem;
+      z-index: 100;
+      display: none;
+    }
+    .meeting-menu.open {
+      display: block;
+    }
+    .meeting-menu button {
+      text-align: left;
+      width: 100%;
+    }
+    .meeting-menu .material-icons-outlined {
+      font-size: 1.1em;
+    }
+    .meeting-menu {
+      box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
+    }
+    .kebab-btn {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="flex min-h-screen">
@@ -509,15 +578,7 @@
             <span class="material-icons-outlined">help_outline</span>
           </button>
           <div class="relative">
-            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="toggleCreateMenu()">
-            <span class="material-icons-outlined">add</span>
-              Create
-          </button>
-            <div id="create-menu" class="absolute right-0 mt-2 w-48 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden">
-              <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="openCreateEventTypeModal()">New Event Type</button>
-              <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">One-Off Meeting</button>
-              <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Routing Form</button>
-            </div>
+            <img src="https://ui-avatars.com/api/?name=User&background=34D399&color=1A2E29" alt="Profile" class="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 transition-opacity">
           </div>
         </div>
       </div>
@@ -526,7 +587,16 @@
     <main class="flex-1 p-8 overflow-y-auto">
       <!-- Event Types Section -->
       <section id="event-types-section">
-        <div class="dashboard-grid">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Event Types</h2>
+          <div class="relative">
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openCreateEventTypeModal()">
+              <span class="material-icons-outlined">add</span>
+              Create
+            </button>
+          </div>
+        </div>
+        <div class="dashboard-grid" id="event-types-grid">
           <div class="card flex flex-col gap-3">
             <div class="flex items-center justify-between">
               <div>
@@ -545,13 +615,12 @@
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Clone</button>
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Add Note</button>
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Mark Secret</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Delete</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="deleteEventType('${eventType.id}')">Delete</button>
             </div>
           </div>
             </div>
           </div>
-          <!-- Add more event type cards as needed -->
-            </div>
+        </div>
       </section>
 
       <!-- Meetings Section -->
@@ -594,10 +663,23 @@
                   <td class="py-2">30-min Intro Call</td>
                   <td class="py-2">Today, 2:00 PM</td>
                   <td class="py-2"><span class="badge-success">Confirmed</span></td>
-                  <td class="py-2 flex gap-2">
-                    <button class="btn-secondary">Join</button>
-                    <button class="btn-secondary">Reschedule</button>
-                    <button class="btn-secondary">Cancel</button>
+                  <td class="py-2 actions-col">
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleMeetingMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="meeting-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="joinMeeting('${meeting.id}')">
+                          <span class="material-icons-outlined text-xs">video_call</span>Join
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#A3B3AF] hover:bg-[#223c36] text-sm font-semibold" onclick="rescheduleMeeting('${meeting.id}')">
+                          <span class="material-icons-outlined text-xs">schedule</span>Reschedule
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="cancelMeeting('${meeting.id}')">
+                          <span class="material-icons-outlined text-xs">close</span>Cancel
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
                 <tr class="table-row">
@@ -614,9 +696,9 @@
                   <td class="py-2">Tomorrow, 10:00 AM</td>
                   <td class="py-2"><span class="badge-warning">Pending</span></td>
                   <td class="py-2 flex gap-2">
-                    <button class="btn-secondary">Join</button>
-                    <button class="btn-secondary">Reschedule</button>
-                    <button class="btn-secondary">Cancel</button>
+                    <button class="btn-join">Join</button>
+                    <button class="btn-reschedule">Reschedule</button>
+                    <button class="btn-cancel" onclick="cancelMeeting('${meeting.id}')">Cancel</button>
                   </td>
                 </tr>
               </tbody>
@@ -680,7 +762,7 @@
               </div>
                     </span>
             </div>
-                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('monday', this)">
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('monday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
                   </button>
           </div>
@@ -721,7 +803,7 @@
               </div>
                     </span>
             </div>
-                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('tuesday', this)">
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('tuesday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
                   </button>
           </div>
@@ -762,7 +844,7 @@
                       </div>
                     </span>
                   </div>
-                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('wednesday', this)">
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('wednesday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
           </button>
         </div>
@@ -803,7 +885,7 @@
                       </div>
                     </span>
                   </div>
-                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('thursday', this)">
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('thursday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
                 </button>
               </div>
@@ -844,7 +926,7 @@
         </div>
                     </span>
                   </div>
-                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('friday', this)">
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('friday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
                   </button>
                 </div>
@@ -861,7 +943,7 @@
                       <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM">
                     </span>
                   </div>
-                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('saturday', this)">
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('saturday', this)">
                     <div class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(0);"></div>
                   </button>
                 </div>
@@ -878,7 +960,7 @@
                       <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM">
                     </span>
                   </div>
-                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('sunday', this)">
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('sunday', this)">
                     <div class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(0);"></div>
                   </button>
                 </div>
@@ -887,26 +969,28 @@
             </div>
           <div class="card">
             <h3 class="text-lg font-bold text-white mb-4">Calendar Overrides</h3>
-            <div class="flex items-center justify-between mb-4">
-              <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="previousMonth()">
-                <span class="material-icons-outlined">chevron_left</span>
-              </button>
-              <h4 class="font-medium text-white" id="calendar-month-year">June 2024</h4>
-              <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="nextMonth()">
-                <span class="material-icons-outlined">chevron_right</span>
-              </button>
-            </div>
-            <div class="grid grid-cols-7 gap-1 text-center text-sm mb-4">
-              <div class="text-[#A3B3AF] py-2">Sun</div>
-              <div class="text-[#A3B3AF] py-2">Mon</div>
-              <div class="text-[#A3B3AF] py-2">Tue</div>
-              <div class="text-[#A3B3AF] py-2">Wed</div>
-              <div class="text-[#A3B3AF] py-2">Thu</div>
-              <div class="text-[#A3B3AF] py-2">Fri</div>
-              <div class="text-[#A3B3AF] py-2">Sat</div>
-            </div>
-            <div class="grid grid-cols-7 gap-1 text-center text-sm" id="calendar-days">
-              <!-- Calendar days will be generated by JavaScript -->
+            <div class="bg-[#1A2E29] p-4 rounded-lg">
+              <div class="flex justify-between items-center mb-4">
+                <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="previousMonth()">
+                  <span class="material-icons-outlined">chevron_left</span>
+                </button>
+                <h4 class="font-medium text-white" id="calendar-month-year">June 2024</h4>
+                <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="nextMonth()">
+                  <span class="material-icons-outlined">chevron_right</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-7 gap-1 text-center text-sm mb-4">
+                <div class="text-[#A3B3AF] py-2">Su</div>
+                <div class="text-[#A3B3AF] py-2">Mo</div>
+                <div class="text-[#A3B3AF] py-2">Tu</div>
+                <div class="text-[#A3B3AF] py-2">We</div>
+                <div class="text-[#A3B3AF] py-2">Th</div>
+                <div class="text-[#A3B3AF] py-2">Fr</div>
+                <div class="text-[#A3B3AF] py-2">Sa</div>
+              </div>
+              <div class="grid grid-cols-7 gap-1 text-center text-sm" id="calendar-days">
+                <!-- Calendar days will be generated by JavaScript -->
+              </div>
             </div>
             
             <!-- Override List -->
@@ -914,15 +998,10 @@
               <h4 class="text-white font-medium mb-3">Active Overrides</h4>
               <div id="override-list" class="space-y-2">
                 <!-- Override items will be generated by JavaScript -->
+              </div>
             </div>
           </div>
-        </div>
-          </div>
-        <div class="card mt-6">
-          <h3 class="text-lg font-bold text-white mb-2">Active on</h3>
-          <div class="text-[#A3B3AF]">This schedule is used by: 30-min Intro Call, 1-hour Consultation</div>
-        </div>
-      </section>
+        </section>
 
       <!-- Contacts Section -->
       <section id="contacts-section" style="display:none;">
@@ -1131,11 +1210,37 @@
           </button>
         </div>
       </div>
+      
+      <div class="flex gap-3 pt-4">
+        <button class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg font-bold hover:bg-[#2C4A43] transition-colors" onclick="saveOverride()">Save Override</button>
+        <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeOverrideModal()">Cancel</button>
+      </div>
     </div>
-    
-    <div class="flex justify-end gap-3 mt-6">
-      <button class="btn-secondary" onclick="closeOverrideModal()">Cancel</button>
-      <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43] transition-colors" onclick="saveOverride()">Save Override</button>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Delete Override</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this override? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteOverride()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Cancel Meeting Confirmation Modal -->
+  <div id="cancel-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Cancel Meeting</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to cancel this meeting? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmCancelMeeting()">Cancel</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeCancelMeetingConfirmModal()">Close</button>
     </div>
   </div>
 
@@ -1201,10 +1306,23 @@
           <td class="py-2">${meeting.eventType}</td>
           <td class="py-2">${meeting.date}</td>
           <td class="py-2"><span class="badge-${meeting.status === 'Confirmed' ? 'success' : meeting.status === 'Pending' ? 'warning' : 'error'}">${meeting.status}</span></td>
-          <td class="py-2 flex gap-2">
-            <button class="btn-secondary" onclick="meetingAction('join', ${meeting.id})">Join</button>
-            <button class="btn-secondary" onclick="meetingAction('reschedule', ${meeting.id})">Reschedule</button>
-            <button class="btn-secondary" onclick="meetingAction('cancel', ${meeting.id})">Cancel</button>
+          <td class="py-2 actions-col">
+            <div class="relative inline-block text-left">
+              <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleMeetingMenu(this)">
+                <span class="material-icons-outlined">more_vert</span>
+              </button>
+              <div class="meeting-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg">
+                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="joinMeeting('${meeting.id}')">
+                  <span class="material-icons-outlined text-xs">video_call</span>Join
+                </button>
+                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#A3B3AF] hover:bg-[#223c36] text-sm font-semibold" onclick="rescheduleMeeting('${meeting.id}')">
+                  <span class="material-icons-outlined text-xs">schedule</span>Reschedule
+                </button>
+                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="cancelMeeting('${meeting.id}')">
+                  <span class="material-icons-outlined text-xs">close</span>Cancel
+                </button>
+              </div>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1235,11 +1353,6 @@
           break;
         case 'reschedule':
           alert(`Rescheduling meeting with ${meeting.invitee}`);
-          break;
-        case 'cancel':
-          if (confirm(`Cancel meeting with ${meeting.invitee}?`)) {
-            alert('Meeting cancelled');
-          }
           break;
       }
     }
@@ -1272,7 +1385,8 @@
     }
 
     function openCreateEventTypeModal() {
-      alert('Create Event Type modal would open here');
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('create-event-type-modal').classList.remove('hidden');
       document.getElementById('create-menu').classList.add('hidden');
     }
 
@@ -1305,7 +1419,7 @@
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal') {
           el.classList.add('hidden');
         }
       });
@@ -1664,7 +1778,7 @@
       
       // Add empty cells for days before the first day of the month
       for (let i = 0; i < firstDay; i++) {
-        calendarHTML += '<div class="py-2"></div>';
+        calendarHTML += '<div class="calendar-day"></div>';
       }
       
       // Add days of the month
@@ -1673,12 +1787,12 @@
         const hasOverride = calendarOverrides[dateString];
         const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
         
-        let dayClasses = 'py-2 text-white cursor-pointer hover:bg-[#34D399]/20 transition-colors rounded-full w-8 h-8 flex items-center justify-center mx-auto';
+        let dayClasses = 'calendar-day cursor-pointer';
         
         if (hasOverride) {
-          dayClasses += ' bg-[#34D399] text-[#1A2E29]';
+          dayClasses += ' active';
         } else if (isToday) {
-          dayClasses += ' border-2 border-[#34D399]';
+          dayClasses += ' today';
         }
         
         calendarHTML += `<div class="${dayClasses}" onclick="selectDate('${dateString}')">${day}</div>`;
@@ -1999,15 +2113,1347 @@
     }
 
     function deleteOverride(dateString) {
-      if (confirm('Are you sure you want to delete this override?')) {
+      // Store the date to delete for the confirmation
+      window.dateToDelete = dateString;
+      
+      // Show the custom confirmation modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('delete-confirm-modal').classList.remove('hidden');
+    }
+
+    function confirmDeleteOverride() {
+      const dateString = window.dateToDelete;
+      if (dateString) {
         delete calendarOverrides[dateString];
         localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
         renderCalendar();
         updateOverrideList();
         showNotification('Override deleted successfully!');
       }
+      
+      // Close the modal
+      closeDeleteConfirmModal();
+      window.dateToDelete = null;
     }
+
+    function closeDeleteConfirmModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('delete-confirm-modal').classList.add('hidden');
+      window.dateToDelete = null;
+    }
+
+    function closeCreateEventTypeModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('create-event-type-modal').classList.add('hidden');
+      resetCreateEventTypeForm();
+    }
+
+    function resetCreateEventTypeForm() {
+      document.getElementById('event-type-name').value = '';
+      document.getElementById('event-type-duration').value = '30';
+      document.getElementById('event-type-type').value = '1-on-1';
+      document.getElementById('event-type-attendee-limit').value = '10';
+      document.getElementById('event-type-description').value = '';
+      document.getElementById('event-type-location').value = 'zoom';
+      document.getElementById('event-type-custom-location').value = '';
+      document.getElementById('event-type-link').value = '';
+      document.getElementById('event-type-color').value = '#34D399';
+      document.getElementById('event-type-buffer-before').value = '0';
+      document.getElementById('event-type-buffer-after').value = '0';
+      document.getElementById('event-type-advance-notice').value = '0';
+      document.getElementById('event-type-cancellation').value = '0';
+      document.getElementById('event-type-timezone').value = 'auto';
+      document.getElementById('event-type-booking-limit').value = '0';
+      document.getElementById('event-type-custom-limit-count').value = '5';
+      document.getElementById('event-type-custom-limit-period').value = 'day';
+      document.getElementById('event-type-confirmation-message').value = '';
+      document.getElementById('event-type-questions').value = '';
+      document.getElementById('event-type-require-name').checked = true;
+      document.getElementById('event-type-require-email').checked = true;
+      document.getElementById('event-type-require-phone').checked = false;
+      document.getElementById('event-type-require-company').checked = false;
+      document.getElementById('event-type-availability').checked = true;
+      document.getElementById('event-type-reminders').checked = true;
+      document.getElementById('event-type-follow-up').checked = false;
+      document.getElementById('event-type-cancellation-notification').checked = true;
+      document.getElementById('event-type-reschedule-notification').checked = true;
+      document.getElementById('event-type-secret').value = 'public';
+      document.getElementById('event-type-priority').value = 'normal';
+      document.getElementById('event-type-tags').value = '';
+      
+      // Reset visibility
+      document.getElementById('attendee-limit-container').style.display = 'none';
+      document.getElementById('custom-location-container').style.display = 'none';
+      document.getElementById('meeting-link-container').style.display = 'block';
+      document.getElementById('custom-booking-limit-container').style.display = 'none';
+    }
+
+    function saveEventType() {
+      const name = document.getElementById('event-type-name').value.trim();
+      const duration = document.getElementById('event-type-duration').value;
+      const eventType = document.getElementById('event-type-type').value;
+      const attendeeLimit = document.getElementById('event-type-attendee-limit').value;
+      const description = document.getElementById('event-type-description').value.trim();
+      const location = document.getElementById('event-type-location').value;
+      const customLocation = document.getElementById('event-type-custom-location').value.trim();
+      const link = document.getElementById('event-type-link').value.trim();
+      const color = document.getElementById('event-type-color').value;
+      const bufferBefore = document.getElementById('event-type-buffer-before').value;
+      const bufferAfter = document.getElementById('event-type-buffer-after').value;
+      const advanceNotice = document.getElementById('event-type-advance-notice').value;
+      const cancellation = document.getElementById('event-type-cancellation').value;
+      const timezone = document.getElementById('event-type-timezone').value;
+      const bookingLimit = document.getElementById('event-type-booking-limit').value;
+      const customLimitCount = document.getElementById('event-type-custom-limit-count').value;
+      const customLimitPeriod = document.getElementById('event-type-custom-limit-period').value;
+      const confirmationMessage = document.getElementById('event-type-confirmation-message').value.trim();
+      const questions = document.getElementById('event-type-questions').value.trim();
+      const requireName = document.getElementById('event-type-require-name').checked;
+      const requireEmail = document.getElementById('event-type-require-email').checked;
+      const requirePhone = document.getElementById('event-type-require-phone').checked;
+      const requireCompany = document.getElementById('event-type-require-company').checked;
+      const availability = document.getElementById('event-type-availability').checked;
+      const reminders = document.getElementById('event-type-reminders').checked;
+      const followUp = document.getElementById('event-type-follow-up').checked;
+      const cancellationNotification = document.getElementById('event-type-cancellation-notification').checked;
+      const rescheduleNotification = document.getElementById('event-type-reschedule-notification').checked;
+      const secret = document.getElementById('event-type-secret').value;
+      const priority = document.getElementById('event-type-priority').value;
+      const tags = document.getElementById('event-type-tags').value.trim();
+
+      if (!name) {
+        showNotification('Event type name is required');
+        return;
+      }
+
+      const eventTypeData = {
+        name,
+        duration: parseInt(duration),
+        eventType,
+        attendeeLimit: eventType !== '1-on-1' ? parseInt(attendeeLimit) : 1,
+        description,
+        location,
+        customLocation: location === 'custom' ? customLocation : '',
+        link: location !== 'office' ? link : '',
+        color,
+        bufferBefore: parseInt(bufferBefore),
+        bufferAfter: parseInt(bufferAfter),
+        advanceNotice: parseInt(advanceNotice),
+        cancellation: parseInt(cancellation),
+        timezone,
+        bookingLimit: bookingLimit === 'custom' ? {
+          count: parseInt(customLimitCount),
+          period: customLimitPeriod
+        } : parseInt(bookingLimit),
+        confirmationMessage,
+        questions,
+        requiredFields: {
+          name: requireName,
+          email: requireEmail,
+          phone: requirePhone,
+          company: requireCompany
+        },
+        notifications: {
+          availability,
+          reminders,
+          followUp,
+          cancellation: cancellationNotification,
+          reschedule: rescheduleNotification
+        },
+        visibility: secret,
+        priority,
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+        id: Date.now().toString()
+      };
+
+      // Get existing event types from localStorage
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      
+      // Add new event type
+      eventTypes.push(eventTypeData);
+      
+      // Save back to localStorage
+      localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+      
+      // Update the display
+      renderEventTypes();
+      
+      showNotification('Event type created successfully!');
+      closeCreateEventTypeModal();
+    }
+
+    // Interactive form functionality
+    function handleEventTypeChange() {
+      const eventType = document.getElementById('event-type-type').value;
+      const attendeeContainer = document.getElementById('attendee-limit-container');
+      
+      if (eventType === '1-on-1') {
+        attendeeContainer.style.display = 'none';
+      } else {
+        attendeeContainer.style.display = 'block';
+      }
+    }
+
+    function handleLocationChange() {
+      const location = document.getElementById('event-type-location').value;
+      const customLocationContainer = document.getElementById('custom-location-container');
+      const meetingLinkContainer = document.getElementById('meeting-link-container');
+      
+      if (location === 'custom') {
+        customLocationContainer.style.display = 'block';
+        meetingLinkContainer.style.display = 'none';
+      } else if (location === 'office') {
+        customLocationContainer.style.display = 'none';
+        meetingLinkContainer.style.display = 'none';
+      } else {
+        customLocationContainer.style.display = 'none';
+        meetingLinkContainer.style.display = 'block';
+      }
+    }
+
+    function handleBookingLimitChange() {
+      const bookingLimit = document.getElementById('event-type-booking-limit').value;
+      const customLimitContainer = document.getElementById('custom-booking-limit-container');
+      
+      if (bookingLimit === 'custom') {
+        customLimitContainer.style.display = 'block';
+      } else {
+        customLimitContainer.style.display = 'none';
+      }
+    }
+
+    // Add event listeners for interactive form elements
+    document.addEventListener('DOMContentLoaded', function() {
+      renderEventTypes();
+      
+      // Add event listeners for form interactions
+      const eventTypeSelect = document.getElementById('event-type-type');
+      const locationSelect = document.getElementById('event-type-location');
+      const bookingLimitSelect = document.getElementById('event-type-booking-limit');
+      
+      if (eventTypeSelect) {
+        eventTypeSelect.addEventListener('change', handleEventTypeChange);
+      }
+      
+      if (locationSelect) {
+        locationSelect.addEventListener('change', handleLocationChange);
+      }
+      
+      if (bookingLimitSelect) {
+        bookingLimitSelect.addEventListener('change', handleBookingLimitChange);
+      }
+    });
+
+    function renderEventTypes() {
+      const eventTypesGrid = document.getElementById('event-types-grid');
+      const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      
+      // Start with the default event type
+      let html = '';
+      
+      // Add created event types
+      eventTypes.forEach(eventType => {
+        const durationText = eventType.duration === 60 ? '1 hour' : 
+                           eventType.duration === 90 ? '1.5 hours' : 
+                           eventType.duration === 120 ? '2 hours' : 
+                           eventType.duration === 180 ? '3 hours' :
+                           eventType.duration === 240 ? '4 hours' :
+                           `${eventType.duration} min`;
+        
+        const eventTypeText = eventType.eventType === '1-on-1' ? '1-on-1' :
+                             eventType.eventType === 'group' ? 'Group' :
+                             eventType.eventType === 'collective' ? 'Collective' :
+                             eventType.eventType === 'round-robin' ? 'Round Robin' : '1-on-1';
+        
+        const attendeeText = eventType.eventType !== '1-on-1' ? ` • Up to ${eventType.attendeeLimit} people` : '';
+        
+        const locationText = eventType.location === 'zoom' ? 'Zoom' :
+                            eventType.location === 'google-meet' ? 'Google Meet' :
+                            eventType.location === 'teams' ? 'Microsoft Teams' :
+                            eventType.location === 'skype' ? 'Skype' :
+                            eventType.location === 'phone' ? 'Phone Call' :
+                            eventType.location === 'office' ? 'In-person' :
+                            eventType.location === 'custom' ? eventType.customLocation : 'Zoom';
+        
+        const visibilityBadge = eventType.visibility === 'secret' ? 
+          '<span class="bg-[#FF6B6B] text-white px-2 py-1 rounded text-xs">Secret</span>' :
+          eventType.visibility === 'private' ? 
+          '<span class="bg-[#FFA500] text-white px-2 py-1 rounded text-xs">Private</span>' : '';
+        
+        const priorityBadge = eventType.priority === 'high' ? 
+          '<span class="bg-[#FFD93D] text-[#1A2E29] px-2 py-1 rounded text-xs ml-2">High</span>' :
+          eventType.priority === 'urgent' ? 
+          '<span class="bg-[#FF6B6B] text-white px-2 py-1 rounded text-xs ml-2">Urgent</span>' : '';
+        
+        const tagsText = eventType.tags && eventType.tags.length > 0 ? 
+          `<div class="flex flex-wrap gap-1 mt-1">${eventType.tags.map(tag => 
+            `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">${tag}</span>`
+          ).join('')}</div>` : '';
+        
+        html += `
+          <div class="card flex flex-col gap-3" style="border-left: 4px solid ${eventType.color}">
+            <div class="flex items-center justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <h3 class="text-lg font-bold text-white">${eventType.name}</h3>
+                  ${visibilityBadge}
+                  ${priorityBadge}
+                </div>
+                <div class="text-[#A3B3AF] text-sm">${eventTypeText} • ${durationText}${attendeeText}</div>
+                <div class="text-[#A3B3AF] text-sm mt-1">📍 ${locationText}</div>
+                ${eventType.description ? `<div class="text-[#A3B3AF] text-sm mt-1">${eventType.description}</div>` : ''}
+                ${tagsText}
+              </div>
+              <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
+            </div>
+            <div class="flex gap-2 mt-2">
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('https://cal.example/${eventType.id}')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('${eventType.name}')"><span class="material-icons-outlined text-base">share</span>Share</button>
+              <div class="relative">
+                <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
+                <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="editEventType('${eventType.id}')">Edit</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="cloneEventType('${eventType.id}')">Clone</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Add Note</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Mark Secret</button>
+                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="deleteEventType('${eventType.id}')">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      eventTypesGrid.innerHTML = html;
+    }
+
+    function deleteEventType(id) {
+      // Store the event type ID to delete
+      window.eventTypeToDelete = id;
+      
+      // Show custom confirmation modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('delete-event-type-confirm-modal').classList.remove('hidden');
+    }
+
+    function confirmDeleteEventType() {
+      const id = window.eventTypeToDelete;
+      if (id) {
+        let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+        eventTypes = eventTypes.filter(eventType => eventType.id !== id);
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+        renderEventTypes();
+        showNotification('Event type deleted successfully!');
+        closeDeleteEventTypeConfirmModal();
+        window.eventTypeToDelete = null;
+      }
+    }
+
+    function closeDeleteEventTypeConfirmModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('delete-event-type-confirm-modal').classList.add('hidden');
+      window.eventTypeToDelete = null;
+    }
+
+    function cloneEventType(id) {
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      const originalEventType = eventTypes.find(eventType => eventType.id === id);
+      
+      if (originalEventType) {
+        const clonedEventType = {
+          ...originalEventType,
+          name: `${originalEventType.name} (Copy)`,
+          id: Date.now().toString()
+        };
+        
+        eventTypes.push(clonedEventType);
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+        renderEventTypes();
+        showNotification('Event type cloned successfully!');
+      }
+    }
+
+    function editEventType(id) {
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      const eventType = eventTypes.find(eventType => eventType.id === id);
+      
+      if (eventType) {
+        // Store the event type being edited
+        window.editingEventType = eventType;
+        
+        // Populate the form with existing data
+        populateEditForm(eventType);
+        
+        // Show the edit modal
+        document.getElementById('modal-backdrop').classList.remove('hidden');
+        document.getElementById('edit-event-type-modal').classList.remove('hidden');
+      }
+    }
+
+    function populateEditForm(eventType) {
+      // Basic Information
+      document.getElementById('edit-event-type-name').value = eventType.name;
+      document.getElementById('edit-event-type-duration').value = eventType.duration;
+      document.getElementById('edit-event-type-type').value = eventType.eventType;
+      document.getElementById('edit-event-type-attendee-limit').value = eventType.attendeeLimit || 10;
+      document.getElementById('edit-event-type-description').value = eventType.description || '';
+      document.getElementById('edit-event-type-location').value = eventType.location;
+      document.getElementById('edit-event-type-custom-location').value = eventType.customLocation || '';
+      document.getElementById('edit-event-type-link').value = eventType.link || '';
+      document.getElementById('edit-event-type-color').value = eventType.color;
+      
+      // Scheduling
+      document.getElementById('edit-event-type-buffer-before').value = eventType.bufferBefore;
+      document.getElementById('edit-event-type-buffer-after').value = eventType.bufferAfter;
+      document.getElementById('edit-event-type-advance-notice').value = eventType.advanceNotice;
+      document.getElementById('edit-event-type-cancellation').value = eventType.cancellation;
+      document.getElementById('edit-event-type-timezone').value = eventType.timezone;
+      
+      // Booking limits
+      if (typeof eventType.bookingLimit === 'object') {
+        document.getElementById('edit-event-type-booking-limit').value = 'custom';
+        document.getElementById('edit-event-type-custom-limit-count').value = eventType.bookingLimit.count;
+        document.getElementById('edit-event-type-custom-limit-period').value = eventType.bookingLimit.period;
+      } else {
+        document.getElementById('edit-event-type-booking-limit').value = eventType.bookingLimit;
+      }
+      
+      // Booking Form
+      document.getElementById('edit-event-type-confirmation-message').value = eventType.confirmationMessage || '';
+      document.getElementById('edit-event-type-questions').value = eventType.questions || '';
+      
+      // Required Fields
+      document.getElementById('edit-event-type-require-name').checked = eventType.requiredFields?.name !== false;
+      document.getElementById('edit-event-type-require-email').checked = eventType.requiredFields?.email !== false;
+      document.getElementById('edit-event-type-require-phone').checked = eventType.requiredFields?.phone === true;
+      document.getElementById('edit-event-type-require-company').checked = eventType.requiredFields?.company === true;
+      
+      // Notifications
+      document.getElementById('edit-event-type-availability').checked = eventType.notifications?.availability !== false;
+      document.getElementById('edit-event-type-reminders').checked = eventType.notifications?.reminders !== false;
+      document.getElementById('edit-event-type-follow-up').checked = eventType.notifications?.followUp === true;
+      document.getElementById('edit-event-type-cancellation-notification').checked = eventType.notifications?.cancellation !== false;
+      document.getElementById('edit-event-type-reschedule-notification').checked = eventType.notifications?.reschedule !== false;
+      
+      // Advanced Settings
+      document.getElementById('edit-event-type-secret').value = eventType.visibility;
+      document.getElementById('edit-event-type-priority').value = eventType.priority;
+      document.getElementById('edit-event-type-tags').value = eventType.tags ? eventType.tags.join(', ') : '';
+      
+      // Update form visibility based on current values
+      handleEditEventTypeChange();
+      handleEditLocationChange();
+      handleEditBookingLimitChange();
+    }
+
+    function updateEventType() {
+      const eventType = window.editingEventType;
+      if (!eventType) return;
+      
+      // Collect all form data (same as saveEventType but with edit- prefixes)
+      const name = document.getElementById('edit-event-type-name').value.trim();
+      const duration = document.getElementById('edit-event-type-duration').value;
+      const eventTypeValue = document.getElementById('edit-event-type-type').value;
+      const attendeeLimit = document.getElementById('edit-event-type-attendee-limit').value;
+      const description = document.getElementById('edit-event-type-description').value.trim();
+      const location = document.getElementById('edit-event-type-location').value;
+      const customLocation = document.getElementById('edit-event-type-custom-location').value.trim();
+      const link = document.getElementById('edit-event-type-link').value.trim();
+      const color = document.getElementById('edit-event-type-color').value;
+      const bufferBefore = document.getElementById('edit-event-type-buffer-before').value;
+      const bufferAfter = document.getElementById('edit-event-type-buffer-after').value;
+      const advanceNotice = document.getElementById('edit-event-type-advance-notice').value;
+      const cancellation = document.getElementById('edit-event-type-cancellation').value;
+      const timezone = document.getElementById('edit-event-type-timezone').value;
+      const bookingLimit = document.getElementById('edit-event-type-booking-limit').value;
+      const customLimitCount = document.getElementById('edit-event-type-custom-limit-count').value;
+      const customLimitPeriod = document.getElementById('edit-event-type-custom-limit-period').value;
+      const confirmationMessage = document.getElementById('edit-event-type-confirmation-message').value.trim();
+      const questions = document.getElementById('edit-event-type-questions').value.trim();
+      const requireName = document.getElementById('edit-event-type-require-name').checked;
+      const requireEmail = document.getElementById('edit-event-type-require-email').checked;
+      const requirePhone = document.getElementById('edit-event-type-require-phone').checked;
+      const requireCompany = document.getElementById('edit-event-type-require-company').checked;
+      const availability = document.getElementById('edit-event-type-availability').checked;
+      const reminders = document.getElementById('edit-event-type-reminders').checked;
+      const followUp = document.getElementById('edit-event-type-follow-up').checked;
+      const cancellationNotification = document.getElementById('edit-event-type-cancellation-notification').checked;
+      const rescheduleNotification = document.getElementById('edit-event-type-reschedule-notification').checked;
+      const secret = document.getElementById('edit-event-type-secret').value;
+      const priority = document.getElementById('edit-event-type-priority').value;
+      const tags = document.getElementById('edit-event-type-tags').value.trim();
+
+      if (!name) {
+        showNotification('Event type name is required');
+        return;
+      }
+
+      // Update the event type data
+      const updatedEventType = {
+        ...eventType,
+        name,
+        duration: parseInt(duration),
+        eventType: eventTypeValue,
+        attendeeLimit: eventTypeValue !== '1-on-1' ? parseInt(attendeeLimit) : 1,
+        description,
+        location,
+        customLocation: location === 'custom' ? customLocation : '',
+        link: location !== 'office' ? link : '',
+        color,
+        bufferBefore: parseInt(bufferBefore),
+        bufferAfter: parseInt(bufferAfter),
+        advanceNotice: parseInt(advanceNotice),
+        cancellation: parseInt(cancellation),
+        timezone,
+        bookingLimit: bookingLimit === 'custom' ? {
+          count: parseInt(customLimitCount),
+          period: customLimitPeriod
+        } : parseInt(bookingLimit),
+        confirmationMessage,
+        questions,
+        requiredFields: {
+          name: requireName,
+          email: requireEmail,
+          phone: requirePhone,
+          company: requireCompany
+        },
+        notifications: {
+          availability,
+          reminders,
+          followUp,
+          cancellation: cancellationNotification,
+          reschedule: rescheduleNotification
+        },
+        visibility: secret,
+        priority,
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : []
+      };
+
+      // Update in localStorage
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      const index = eventTypes.findIndex(et => et.id === eventType.id);
+      if (index !== -1) {
+        eventTypes[index] = updatedEventType;
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+        
+        // Update the display
+        renderEventTypes();
+        
+        showNotification('Event type updated successfully!');
+        closeEditEventTypeModal();
+      }
+    }
+
+    function closeEditEventTypeModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('edit-event-type-modal').classList.add('hidden');
+      window.editingEventType = null;
+    }
+
+    // Edit form interactive functions
+    function handleEditEventTypeChange() {
+      const eventType = document.getElementById('edit-event-type-type').value;
+      const attendeeContainer = document.getElementById('edit-attendee-limit-container');
+      
+      if (eventType === '1-on-1') {
+        attendeeContainer.style.display = 'none';
+      } else {
+        attendeeContainer.style.display = 'block';
+      }
+    }
+
+    function handleEditLocationChange() {
+      const location = document.getElementById('edit-event-type-location').value;
+      const customLocationContainer = document.getElementById('edit-custom-location-container');
+      const meetingLinkContainer = document.getElementById('edit-meeting-link-container');
+      
+      if (location === 'custom') {
+        customLocationContainer.style.display = 'block';
+        meetingLinkContainer.style.display = 'none';
+      } else if (location === 'office') {
+        customLocationContainer.style.display = 'none';
+        meetingLinkContainer.style.display = 'none';
+      } else {
+        customLocationContainer.style.display = 'none';
+        meetingLinkContainer.style.display = 'block';
+      }
+    }
+
+    function handleEditBookingLimitChange() {
+      const bookingLimit = document.getElementById('edit-event-type-booking-limit').value;
+      const customLimitContainer = document.getElementById('edit-custom-booking-limit-container');
+      
+      if (bookingLimit === 'custom') {
+        customLimitContainer.style.display = 'block';
+      } else {
+        customLimitContainer.style.display = 'none';
+      }
+    }
+
+    // Initialize event types on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      if (eventTypes.length === 0) {
+        eventTypes.push({
+          name: '30-min Intro Call',
+          duration: 30,
+          eventType: '1-on-1',
+          attendeeLimit: 1,
+          description: '',
+          location: 'zoom',
+          customLocation: '',
+          link: '',
+          color: '#34D399',
+          bufferBefore: 0,
+          bufferAfter: 0,
+          advanceNotice: 0,
+          cancellation: 0,
+          timezone: 'auto',
+          bookingLimit: 0,
+          confirmationMessage: '',
+          questions: '',
+          requiredFields: { name: true, email: true, phone: false, company: false },
+          notifications: { availability: true, reminders: true, followUp: false, cancellation: true, reschedule: true },
+          visibility: 'public',
+          priority: 'normal',
+          tags: [],
+          id: Date.now().toString() + Math.floor(Math.random()*10000)
+        });
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+      }
+      renderEventTypes();
+      
+      // Add event listeners for form interactions
+      const eventTypeSelect = document.getElementById('event-type-type');
+      const locationSelect = document.getElementById('event-type-location');
+      const bookingLimitSelect = document.getElementById('event-type-booking-limit');
+      
+      if (eventTypeSelect) {
+        eventTypeSelect.addEventListener('change', handleEventTypeChange);
+      }
+      
+      if (locationSelect) {
+        locationSelect.addEventListener('change', handleLocationChange);
+      }
+      
+      if (bookingLimitSelect) {
+        bookingLimitSelect.addEventListener('change', handleBookingLimitChange);
+      }
+    });
+
+    function cancelMeeting(meetingId) {
+      // Find the meeting by ID
+      const meetings = JSON.parse(localStorage.getItem('calendarify-meetings') || '[]');
+      const meeting = meetings.find(m => m.id === meetingId);
+      
+      if (!meeting) {
+        showNotification('Meeting not found!', 'error');
+        return;
+      }
+      
+      // Store the meeting to cancel
+      window.meetingToCancel = meeting;
+      
+      // Show custom confirmation modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('cancel-meeting-confirm-modal').classList.remove('hidden');
+    }
+
+    function confirmCancelMeeting() {
+      const meeting = window.meetingToCancel;
+      if (meeting) {
+        // Remove from meetings array
+        let meetings = JSON.parse(localStorage.getItem('calendarify-meetings') || '[]');
+        meetings = meetings.filter(m => m.id !== meeting.id);
+        localStorage.setItem('calendarify-meetings', JSON.stringify(meetings));
+        
+        // Update UI
+        renderMeetings();
+        showNotification('Meeting cancelled successfully!');
+        closeCancelMeetingConfirmModal();
+        window.meetingToCancel = null;
+      }
+    }
+
+    function closeCancelMeetingConfirmModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('cancel-meeting-confirm-modal').classList.add('hidden');
+      window.meetingToCancel = null;
+    }
+
+    // --- Meeting 3-dots menu logic ---
+    function toggleMeetingMenu(btn) {
+      // Close all other menus
+      document.querySelectorAll('.meeting-menu').forEach(menu => menu.classList.remove('open'));
+      // Toggle this one
+      const menu = btn.nextElementSibling;
+      if (menu) menu.classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      // If not clicking the kebab or menu, close all
+      if (!e.target.closest('.kebab-btn') && !e.target.closest('.meeting-menu')) {
+        document.querySelectorAll('.meeting-menu').forEach(menu => menu.classList.remove('open'));
+      }
+    });
   </script>
+
+  <!-- Create Event Type Modal -->
+  <div id="create-event-type-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-2xl font-bold text-white">Create New Event Type</h2>
+          <button onclick="closeCreateEventTypeModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-6">
+          <!-- Basic Information -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Name *</label>
+                <input type="text" id="event-type-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., 30-min Intro Call">
+              </div>
+              
+              <div>
+                <label for="event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration</label>
+                <select id="event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
+                  <option value="custom">Custom duration</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-type" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Type</label>
+                <select id="event-type-type" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="1-on-1" selected>1-on-1</option>
+                  <option value="group">Group</option>
+                  <option value="collective">Collective</option>
+                  <option value="round-robin">Round Robin</option>
+                </select>
+              </div>
+              
+              <div id="attendee-limit-container" style="display: none;">
+                <label for="event-type-attendee-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Max Attendees</label>
+                <input type="number" id="event-type-attendee-limit" min="2" max="100" value="10" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+              </div>
+            </div>
+
+            <div>
+              <label for="event-type-description" class="block text-[#A3B3AF] text-sm font-medium mb-2">Description</label>
+              <textarea id="event-type-description" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Brief description of what this meeting is about"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location</label>
+                <select id="event-type-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="zoom">Zoom</option>
+                  <option value="google-meet">Google Meet</option>
+                  <option value="teams">Microsoft Teams</option>
+                  <option value="skype">Skype</option>
+                  <option value="phone">Phone Call</option>
+                  <option value="office">In-person (Office)</option>
+                  <option value="custom">Custom Location</option>
+                </select>
+              </div>
+              
+              <div id="custom-location-container" style="display: none;">
+                <label for="event-type-custom-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Location</label>
+                <input type="text" id="event-type-custom-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter location details">
+              </div>
+            </div>
+
+            <div id="meeting-link-container">
+              <label for="event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link</label>
+              <input type="url" id="event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://zoom.us/j/...">
+            </div>
+
+            <div>
+              <label for="event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color</label>
+              <div class="flex items-center gap-3">
+                <input type="color" id="event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
+                <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduling -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Scheduling</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
+                <select id="event-type-buffer-before" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No buffer</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
+                <select id="event-type-buffer-after" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No buffer</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
+                <select id="event-type-advance-notice" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No minimum</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                  <option value="240">4 hours</option>
+                  <option value="480">8 hours</option>
+                  <option value="1440">1 day</option>
+                  <option value="2880">2 days</option>
+                  <option value="10080">1 week</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="event-type-cancellation" class="block text-[#A3B3AF] text-sm font-medium mb-2">Cancellation Policy</label>
+                <select id="event-type-cancellation" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No restrictions</option>
+                  <option value="60">1 hour before</option>
+                  <option value="120">2 hours before</option>
+                  <option value="240">4 hours before</option>
+                  <option value="1440">1 day before</option>
+                  <option value="2880">2 days before</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-timezone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Timezone</label>
+                <select id="event-type-timezone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="auto">Auto-detect (recommended)</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Denver">Mountain Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                  <option value="Australia/Sydney">Sydney</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
+                <select id="event-type-booking-limit" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No limit</option>
+                  <option value="1">1 per day</option>
+                  <option value="2">2 per day</option>
+                  <option value="3">3 per day</option>
+                  <option value="5">5 per day</option>
+                  <option value="10">10 per day</option>
+                  <option value="custom">Custom limit</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="custom-booking-limit-container" style="display: none;">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="event-type-custom-limit-count" class="block text-[#A3B3AF] text-sm font-medium mb-2">Limit Count</label>
+                  <input type="number" id="event-type-custom-limit-count" min="1" max="100" value="5" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                </div>
+                <div>
+                  <label for="event-type-custom-limit-period" class="block text-[#A3B3AF] text-sm font-medium mb-2">Time Period</label>
+                  <select id="event-type-custom-limit-period" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="day">Per day</option>
+                    <option value="week">Per week</option>
+                    <option value="month">Per month</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Form -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Booking Form</h3>
+            
+            <div>
+              <label for="event-type-confirmation-message" class="block text-[#A3B3AF] text-sm font-medium mb-2">Confirmation Message</label>
+              <textarea id="event-type-confirmation-message" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Message to show after booking confirmation"></textarea>
+            </div>
+
+            <div>
+              <label for="event-type-questions" class="block text-[#A3B3AF] text-sm font-medium mb-2">Additional Questions</label>
+              <textarea id="event-type-questions" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Questions to ask invitees when they book (one per line)"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
+              <div class="space-y-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="event-type-require-name" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Name</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="event-type-require-email" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Email</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="event-type-require-phone" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Phone Number</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="event-type-require-company" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Company</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Notifications</h3>
+            
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="event-type-availability" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Show on availability calendar</span>
+              </label>
+              
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="event-type-reminders" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send reminder notifications</span>
+              </label>
+              
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="event-type-follow-up" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send follow-up email after meeting</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="event-type-cancellation-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send cancellation notifications</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="event-type-reschedule-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send reschedule notifications</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Advanced Settings -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Advanced Settings</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-secret" class="block text-[#A3B3AF] text-sm font-medium mb-2">Visibility</label>
+                <select id="event-type-secret" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="public">Public</option>
+                  <option value="secret">Secret (hidden from profile)</option>
+                  <option value="private">Private (invite only)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="event-type-priority" class="block text-[#A3B3AF] text-sm font-medium mb-2">Priority</label>
+                <select id="event-type-priority" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="normal">Normal</option>
+                  <option value="high">High Priority</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="event-type-tags" class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+              <input type="text" id="event-type-tags" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter tags separated by commas (e.g., sales, demo, consultation)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeCreateEventTypeModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+            Cancel
+          </button>
+          <button onclick="saveEventType()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+            Create Event Type
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Event Type Modal -->
+  <div id="edit-event-type-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-2xl font-bold text-white">Edit Event Type</h2>
+          <button onclick="closeEditEventTypeModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-6">
+          <!-- Basic Information -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Name *</label>
+                <input type="text" id="edit-event-type-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., 30-min Intro Call">
+              </div>
+              
+              <div>
+                <label for="edit-event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration</label>
+                <select id="edit-event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
+                  <option value="custom">Custom duration</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-type" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Type</label>
+                <select id="edit-event-type-type" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="1-on-1" selected>1-on-1</option>
+                  <option value="group">Group</option>
+                  <option value="collective">Collective</option>
+                  <option value="round-robin">Round Robin</option>
+                </select>
+              </div>
+              
+              <div id="edit-attendee-limit-container" style="display: none;">
+                <label for="edit-event-type-attendee-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Max Attendees</label>
+                <input type="number" id="edit-event-type-attendee-limit" min="2" max="100" value="10" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+              </div>
+            </div>
+
+            <div>
+              <label for="edit-event-type-description" class="block text-[#A3B3AF] text-sm font-medium mb-2">Description</label>
+              <textarea id="edit-event-type-description" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Brief description of what this meeting is about"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location</label>
+                <select id="edit-event-type-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="zoom">Zoom</option>
+                  <option value="google-meet">Google Meet</option>
+                  <option value="teams">Microsoft Teams</option>
+                  <option value="skype">Skype</option>
+                  <option value="phone">Phone Call</option>
+                  <option value="office">In-person (Office)</option>
+                  <option value="custom">Custom Location</option>
+                </select>
+              </div>
+              
+              <div id="edit-custom-location-container" style="display: none;">
+                <label for="edit-event-type-custom-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Location</label>
+                <input type="text" id="edit-event-type-custom-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter location details">
+              </div>
+            </div>
+
+            <div id="edit-meeting-link-container">
+              <label for="edit-event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link</label>
+              <input type="url" id="edit-event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://zoom.us/j/...">
+            </div>
+
+            <div>
+              <label for="edit-event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color</label>
+              <div class="flex items-center gap-3">
+                <input type="color" id="edit-event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
+                <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduling -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Scheduling</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
+                <select id="edit-event-type-buffer-before" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No buffer</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
+                <select id="edit-event-type-buffer-after" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No buffer</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
+                <select id="edit-event-type-advance-notice" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No minimum</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                  <option value="240">4 hours</option>
+                  <option value="480">8 hours</option>
+                  <option value="1440">1 day</option>
+                  <option value="2880">2 days</option>
+                  <option value="10080">1 week</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-cancellation" class="block text-[#A3B3AF] text-sm font-medium mb-2">Cancellation Policy</label>
+                <select id="edit-event-type-cancellation" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No restrictions</option>
+                  <option value="60">1 hour before</option>
+                  <option value="120">2 hours before</option>
+                  <option value="240">4 hours before</option>
+                  <option value="1440">1 day before</option>
+                  <option value="2880">2 days before</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-timezone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Timezone</label>
+                <select id="edit-event-type-timezone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="auto">Auto-detect (recommended)</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Denver">Mountain Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                  <option value="Australia/Sydney">Sydney</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
+                <select id="edit-event-type-booking-limit" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="0">No limit</option>
+                  <option value="1">1 per day</option>
+                  <option value="2">2 per day</option>
+                  <option value="3">3 per day</option>
+                  <option value="5">5 per day</option>
+                  <option value="10">10 per day</option>
+                  <option value="custom">Custom limit</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="edit-custom-booking-limit-container" style="display: none;">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="edit-event-type-custom-limit-count" class="block text-[#A3B3AF] text-sm font-medium mb-2">Limit Count</label>
+                  <input type="number" id="edit-event-type-custom-limit-count" min="1" max="100" value="5" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                </div>
+                <div>
+                  <label for="edit-event-type-custom-limit-period" class="block text-[#A3B3AF] text-sm font-medium mb-2">Time Period</label>
+                  <select id="edit-event-type-custom-limit-period" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="day">Per day</option>
+                    <option value="week">Per week</option>
+                    <option value="month">Per month</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Form -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Booking Form</h3>
+            
+            <div>
+              <label for="edit-event-type-confirmation-message" class="block text-[#A3B3AF] text-sm font-medium mb-2">Confirmation Message</label>
+              <textarea id="edit-event-type-confirmation-message" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Message to show after booking confirmation"></textarea>
+            </div>
+
+            <div>
+              <label for="edit-event-type-questions" class="block text-[#A3B3AF] text-sm font-medium mb-2">Additional Questions</label>
+              <textarea id="edit-event-type-questions" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Questions to ask invitees when they book (one per line)"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
+              <div class="space-y-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="edit-event-type-require-name" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Name</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="edit-event-type-require-email" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Email</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="edit-event-type-require-phone" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Phone Number</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="edit-event-type-require-company" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <span class="text-[#E0E0E0]">Company</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Notifications</h3>
+            
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="edit-event-type-availability" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Show on availability calendar</span>
+              </label>
+              
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="edit-event-type-reminders" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send reminder notifications</span>
+              </label>
+              
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="edit-event-type-follow-up" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send follow-up email after meeting</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="edit-event-type-cancellation-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send cancellation notifications</span>
+              </label>
+
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="edit-event-type-reschedule-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Send reschedule notifications</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Advanced Settings -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Advanced Settings</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-secret" class="block text-[#A3B3AF] text-sm font-medium mb-2">Visibility</label>
+                <select id="edit-event-type-secret" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="public">Public</option>
+                  <option value="secret">Secret (hidden from profile)</option>
+                  <option value="private">Private (invite only)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-priority" class="block text-[#A3B3AF] text-sm font-medium mb-2">Priority</label>
+                <select id="edit-event-type-priority" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="normal">Normal</option>
+                  <option value="high">High Priority</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="edit-event-type-tags" class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+              <input type="text" id="edit-event-type-tags" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter tags separated by commas (e.g., sales, demo, consultation)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeEditEventTypeModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+            Cancel
+          </button>
+          <button onclick="updateEventType()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+            Update Event Type
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Event Type Confirmation Modal -->
+  <div id="delete-event-type-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Delete Event Type</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this event type? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteEventType()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteEventTypeConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Cancel Meeting Confirmation Modal -->
+  <div id="cancel-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Cancel Meeting</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to cancel this meeting? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmCancelMeeting()">Cancel Meeting</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeCancelMeetingConfirmModal()">Keep Meeting</button>
+    </div>
+  </div>
 </body>
 </html>
 
