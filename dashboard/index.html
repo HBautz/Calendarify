@@ -1394,8 +1394,8 @@
       console.log('showMeetingsTab called with tab:', tab);
       
       // Update tab buttons
-      document.querySelectorAll('#meetings-section .flex button').forEach(button => {
-        button.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+      document.querySelectorAll('#meetings-section button[data-tab]').forEach(button => {
+        button.classList.remove('bg-[#34D399]', 'text-[#1A2E29]', 'active-tab');
         button.classList.add('text-[#A3B3AF]');
       });
 
@@ -1404,7 +1404,7 @@
       }
       if (btn) {
         btn.classList.remove('text-[#A3B3AF]');
-        btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
+        btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]', 'active-tab');
         console.log('Active button classes:', btn.className);
       }
 
@@ -3133,30 +3133,7 @@
     function exportCSV() {
       console.log('exportCSV called');
       
-      // Find the active tab button in the meetings section - try multiple selectors
-      let activeTabButton = document.querySelector('#meetings-section .flex button.bg-[#34D399]');
-      console.log('First selector result:', activeTabButton);
-      
-      if (!activeTabButton) {
-        activeTabButton = document.querySelector('#meetings-section button.bg-[#34D399]');
-        console.log('Second selector result:', activeTabButton);
-      }
-      
-      if (!activeTabButton) {
-        // Try to find any button with the green background class
-        const allButtons = document.querySelectorAll('#meetings-section button');
-        console.log('All buttons in meetings section:', allButtons);
-        allButtons.forEach(btn => {
-          console.log('Button classes:', btn.className, 'data-tab:', btn.getAttribute('data-tab'));
-          if (btn.className.includes('bg-[#34D399]')) {
-            activeTabButton = btn;
-            console.log('Found active button:', btn);
-          }
-        });
-      }
-      
-      console.log('Final active tab button:', activeTabButton);
-      
+      const activeTabButton = document.querySelector('#meetings-section button.active-tab');
       if (!activeTabButton) {
         showNotification('Could not determine current tab');
         return;
@@ -3324,21 +3301,9 @@
         
         // Finally, refresh the meetings table - try multiple ways to find current tab
         let currentTab = 'upcoming'; // default fallback
-        
-        // Method 1: Find active button
-        const activeTabButton = document.querySelector('#meetings-section .flex button.bg-[#34D399]');
+        const activeTabButton = document.querySelector('#meetings-section button.active-tab');
         if (activeTabButton) {
           currentTab = activeTabButton.getAttribute('data-tab');
-          console.log('Found active tab from button:', currentTab);
-        } else {
-          // Method 2: Check all buttons for the green background
-          const allButtons = document.querySelectorAll('#meetings-section button');
-          allButtons.forEach(btn => {
-            if (btn.className.includes('bg-[#34D399]')) {
-              currentTab = btn.getAttribute('data-tab');
-              console.log('Found active tab from button classes:', currentTab);
-            }
-          });
         }
         
         console.log('Refreshing table for tab:', currentTab);
@@ -3373,21 +3338,9 @@
         
         // Finally, refresh the meetings table - try multiple ways to find current tab
         let currentTab = 'past'; // default fallback for delete
-        
-        // Method 1: Find active button
-        const activeTabButton = document.querySelector('#meetings-section .flex button.bg-[#34D399]');
+        const activeTabButton = document.querySelector('#meetings-section button.active-tab');
         if (activeTabButton) {
           currentTab = activeTabButton.getAttribute('data-tab');
-          console.log('Found active tab from button:', currentTab);
-        } else {
-          // Method 2: Check all buttons for the green background
-          const allButtons = document.querySelectorAll('#meetings-section button');
-          allButtons.forEach(btn => {
-            if (btn.className.includes('bg-[#34D399]')) {
-              currentTab = btn.getAttribute('data-tab');
-              console.log('Found active tab from button classes:', currentTab);
-            }
-          });
         }
         
         console.log('Refreshing table for tab:', currentTab);
@@ -3414,7 +3367,7 @@
       exportCSV();
       
       // Test tab detection
-      const activeButton = document.querySelector('#meetings-section button.bg-[#34D399]');
+      const activeButton = document.querySelector('#meetings-section button.active-tab');
       console.log('Active button found:', activeButton);
       if (activeButton) {
         console.log('Active tab:', activeButton.getAttribute('data-tab'));
