@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow Editor - Calendarify</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #1A2E29;
+      color: #E0E0E0;
+    }
+    .draggable, .step {
+      background-color: #1E3A34;
+      border: 1px solid #2C4A43;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: grab;
+    }
+    .step.dragging {
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
+    <a href="/dashboard" class="flex items-center gap-2 text-[#E0E0E0] hover:text-white">
+      <span class="material-icons-outlined text-[#34D399]">arrow_back</span>
+      <span class="font-medium">Back to Dashboard</span>
+    </a>
+    <h1 class="text-xl font-bold text-white">Workflow Editor</h1>
+    <div></div>
+  </header>
+
+  <main class="flex flex-1 overflow-hidden">
+    <aside class="w-64 p-6 border-r border-[#1E3A34] bg-[#111f1c] overflow-y-auto">
+      <h2 class="text-lg font-semibold text-white mb-4">Actions</h2>
+      <div id="actions" class="space-y-4">
+        <div draggable="true" data-type="Send Email" class="draggable">
+          <span class="material-icons-outlined text-[#34D399]">email</span>
+          <span>Send Email</span>
+        </div>
+        <div draggable="true" data-type="Delay" class="draggable">
+          <span class="material-icons-outlined text-[#34D399]">hourglass_empty</span>
+          <span>Delay</span>
+        </div>
+        <div draggable="true" data-type="Create Meeting" class="draggable">
+          <span class="material-icons-outlined text-[#34D399]">calendar_today</span>
+          <span>Create Meeting</span>
+        </div>
+        <div draggable="true" data-type="Add Tag" class="draggable">
+          <span class="material-icons-outlined text-[#34D399]">label</span>
+          <span>Add Tag</span>
+        </div>
+      </div>
+    </aside>
+
+    <section class="flex-1 p-6 overflow-y-auto">
+      <div class="mb-4">
+        <label for="trigger-select" class="block text-[#A3B3AF] text-sm font-medium mb-2">Trigger Event</label>
+        <select id="trigger-select" class="bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-3 py-2">
+          <option>Intro Call</option>
+          <option>Meeting Scheduled</option>
+          <option>Meeting Canceled</option>
+          <option>Payment Received</option>
+        </select>
+      </div>
+      <h2 class="text-lg font-semibold text-white mb-4">Workflow Canvas</h2>
+      <div id="canvas" class="min-h-[400px] bg-[#1E3A34] border border-[#2C4A43] rounded-xl p-4 space-y-4"></div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+
+    document.querySelectorAll('#actions .draggable').forEach(el => {
+      el.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', el.dataset.type);
+      });
+    });
+
+    canvas.addEventListener('dragover', e => {
+      e.preventDefault();
+      const dragging = document.querySelector('.step.dragging');
+      if (dragging) {
+        const afterElement = getDragAfterElement(canvas, e.clientY);
+        if (afterElement == null) {
+          canvas.appendChild(dragging);
+        } else {
+          canvas.insertBefore(dragging, afterElement);
+        }
+      }
+    });
+
+    canvas.addEventListener('drop', e => {
+      e.preventDefault();
+      const type = e.dataTransfer.getData('text/plain');
+      if (type) {
+        const step = createStep(type);
+        canvas.appendChild(step);
+      }
+    });
+
+    function createStep(type) {
+      const div = document.createElement('div');
+      div.className = 'step';
+      div.setAttribute('draggable', 'true');
+      const icon = document.createElement('span');
+      icon.className = 'material-icons-outlined text-[#34D399]';
+      switch(type) {
+        case 'Send Email': icon.textContent = 'email'; break;
+        case 'Delay': icon.textContent = 'hourglass_empty'; break;
+        case 'Create Meeting': icon.textContent = 'calendar_today'; break;
+        case 'Add Tag': icon.textContent = 'label'; break;
+        default: icon.textContent = 'drag_indicator';
+      }
+      const text = document.createElement('span');
+      text.textContent = type;
+      div.appendChild(icon);
+      div.appendChild(text);
+
+      div.addEventListener('dragstart', () => {
+        div.classList.add('dragging');
+      });
+      div.addEventListener('dragend', () => {
+        div.classList.remove('dragging');
+      });
+      return div;
+    }
+
+    function getDragAfterElement(container, y) {
+      const elements = [...container.querySelectorAll('.step:not(.dragging)')];
+      return elements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+  </script>
+</body>
+</html>

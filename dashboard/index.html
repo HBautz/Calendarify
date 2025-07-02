@@ -1127,29 +1127,7 @@
                 <th class="text-left py-2">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              <tr class="table-row">
-                <td class="py-2">Reminder Email</td>
-                <td class="py-2"><input type="checkbox" class="custom-checkbox" checked></td>
-                <td class="py-2">Intro Call</td>
-                <td class="py-2">2 days ago</td>
-                <td class="py-2 flex gap-2">
-                  <button class="btn-secondary">Edit</button>
-                  <button class="btn-secondary">Clone</button>
-                  <button class="btn-secondary">Delete</button>
-                </td>
-              </tr>
-              <tr class="table-row">
-                <td class="py-2">Follow-up SMS</td>
-                <td class="py-2"><input type="checkbox" class="custom-checkbox"></td>
-                <td class="py-2">All</td>
-                <td class="py-2">1 week ago</td>
-                <td class="py-2 flex gap-2">
-                  <button class="btn-secondary">Edit</button>
-                  <button class="btn-secondary">Clone</button>
-                  <button class="btn-secondary">Delete</button>
-                </td>
-              </tr>
+            <tbody id="workflows-table-body">
             </tbody>
           </table>
         </div>
@@ -1548,8 +1526,87 @@
       document.getElementById('create-menu').classList.add('hidden');
     }
 
+    // --- Workflow Management ---
+    let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+    if (workflows.length === 0) {
+      workflows = [
+        { id: Date.now().toString(), name: 'Reminder Email', trigger: 'Intro Call', active: true, lastEdited: '2 days ago' },
+        { id: (Date.now()+1).toString(), name: 'Follow-up SMS', trigger: 'All', active: false, lastEdited: '1 week ago' }
+      ];
+      saveWorkflows();
+    }
+
+    function saveWorkflows() {
+      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+    }
+
+    function renderWorkflows() {
+      const tbody = document.getElementById('workflows-table-body');
+      tbody.innerHTML = workflows.map(wf => `
+        <tr class="table-row">
+          <td class="py-2">${wf.name}</td>
+          <td class="py-2"><input type="checkbox" class="custom-checkbox" ${wf.active ? 'checked' : ''} onclick="toggleWorkflowStatus('${wf.id}', this)"></td>
+          <td class="py-2">${wf.trigger}</td>
+          <td class="py-2">${wf.lastEdited}</td>
+          <td class="py-2 flex gap-2">
+            <button class="btn-secondary" onclick="editWorkflow('${wf.id}')">Edit</button>
+            <button class="btn-secondary" onclick="cloneWorkflow('${wf.id}')">Clone</button>
+            <button class="btn-secondary" onclick="deleteWorkflow('${wf.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
     function openCreateWorkflowModal() {
-      alert('Create Workflow modal would open here');
+      const name = prompt('Workflow name');
+      if (name) {
+        const trigger = prompt('Trigger event', 'Intro Call');
+        workflows.push({ id: Date.now().toString(), name, trigger: trigger || 'Intro Call', active: true, lastEdited: 'just now' });
+        saveWorkflows();
+        renderWorkflows();
+        showNotification('Workflow created');
+      }
+    }
+
+    function editWorkflow(id) {
+      const wf = workflows.find(w => w.id === id);
+      if (!wf) return;
+      const name = prompt('Workflow name', wf.name);
+      if (name === null) return;
+      const trigger = prompt('Trigger event', wf.trigger);
+      wf.name = name;
+      wf.trigger = trigger || wf.trigger;
+      wf.lastEdited = 'just now';
+      saveWorkflows();
+      renderWorkflows();
+      showNotification('Workflow updated');
+    }
+
+    function cloneWorkflow(id) {
+      const wf = workflows.find(w => w.id === id);
+      if (!wf) return;
+      const clone = { ...wf, id: Date.now().toString(), name: `${wf.name} (Copy)`, lastEdited: 'just now' };
+      workflows.push(clone);
+      saveWorkflows();
+      renderWorkflows();
+      showNotification('Workflow cloned');
+    }
+
+    function deleteWorkflow(id) {
+      if (!confirm('Delete this workflow?')) return;
+      workflows = workflows.filter(w => w.id !== id);
+      saveWorkflows();
+      renderWorkflows();
+      showNotification('Workflow deleted');
+    }
+
+    function toggleWorkflowStatus(id, checkbox) {
+      const wf = workflows.find(w => w.id === id);
+      if (wf) {
+        wf.active = checkbox.checked;
+        wf.lastEdited = 'just now';
+        saveWorkflows();
+      }
     }
 
     function addContact() {
@@ -3429,6 +3486,9 @@
       
       console.log('Test modal should be visible now');
     }
+
+    // Initialize workflows table on page load
+    renderWorkflows();
   </script>
 
   <!-- Create Event Type Modal -->
