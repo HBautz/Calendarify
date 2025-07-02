@@ -1534,17 +1534,18 @@
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
-      
+      // Remove all active classes from nav items
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
       // Restore the last active section from localStorage
       const activeSection = localStorage.getItem('calendarify-active-section');
       const navItem = activeSection ? document.querySelector(`.nav-item[data-section="${activeSection}"]`) : null;
-      
       if (activeSection && navItem) {
         // Restore the last active section
         showSection(activeSection, navItem);
       } else {
         // Default to event-types if no stored section or invalid section
-        showSection('event-types', document.querySelector('.nav-item.active'));
+        const defaultNav = document.querySelector('.nav-item[data-section="event-types"]');
+        if (defaultNav) showSection('event-types', defaultNav);
       }
     });
 
