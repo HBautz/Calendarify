@@ -47,6 +47,57 @@
       padding: 0.5rem 0.75rem;
       color: #E0E0E0;
     }
+    .html-editor {
+      background: #1E3A34;
+      border: 1px solid #2C4A43;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: #E0E0E0;
+      min-height: 6rem;
+      overflow-y: auto;
+    }
+    .multi-select {
+      position: relative;
+      width: 16rem;
+    }
+    .multi-select-button {
+      background: #1E3A34;
+      border: 1px solid #2C4A43;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: #E0E0E0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    .multi-select-options {
+      position: absolute;
+      left: 0;
+      top: 100%;
+      margin-top: 0.25rem;
+      width: 100%;
+      background: #1E3A34;
+      border: 1px solid #2C4A43;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 50;
+      max-height: 150px;
+      overflow-y: auto;
+      display: none;
+      padding: 0.25rem 0;
+    }
+    .multi-select-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.875rem;
+      color: #E0E0E0;
+    }
+    .multi-select-options input[type="checkbox"] {
+      accent-color: #34D399;
+    }
     .modal-backdrop {
       background-color: rgba(0,0,0,0.6);
     }
@@ -162,8 +213,8 @@
         props: JSON.parse(s.dataset.props || '{}')
       }));
       const trigger = triggerSelect.value;
-      const eventTypeSelect = document.getElementById('trigger-event-types');
-      const triggerEventTypes = eventTypeSelect ? Array.from(eventTypeSelect.selectedOptions).map(o => o.value) : [];
+      const optionsDiv = document.getElementById('event-type-options');
+      const triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
       if (currentWorkflow) {
         currentWorkflow.trigger = trigger;
         currentWorkflow.triggerEventTypes = triggerEventTypes;
@@ -276,16 +327,40 @@
             { name: 'Consultation' }
           ];
         }
-        const options = eventTypes.map(et => `<option>${et.name}</option>`).join('');
         triggerProps.innerHTML = `
           <label class="block text-sm text-[#A3B3AF] mb-2">Event Types</label>
-          <select id="trigger-event-types" multiple class="select-field w-64">${options}</select>`;
+          <div class="multi-select">
+            <button type="button" id="event-type-btn" class="multi-select-button">
+              <span>Select...</span>
+              <span class="material-icons-outlined">expand_more</span>
+            </button>
+            <div id="event-type-options" class="multi-select-options"></div>
+          </div>`;
+
+        const optionsDiv = document.getElementById('event-type-options');
+        optionsDiv.innerHTML = eventTypes.map(et => `
+          <label><input type="checkbox" value="${et.name}"> ${et.name}</label>
+        `).join('');
+        const btn = document.getElementById('event-type-btn');
+        const updateText = () => {
+          const selected = [...optionsDiv.querySelectorAll('input:checked')].map(c => c.value);
+          btn.firstElementChild.textContent = selected.length ? selected.join(', ') : 'Select...';
+        };
+        btn.addEventListener('click', () => {
+          optionsDiv.style.display = optionsDiv.style.display === 'none' || !optionsDiv.style.display ? 'block' : 'none';
+        });
+        document.addEventListener('click', (e) => {
+          if (!btn.contains(e.target) && !optionsDiv.contains(e.target)) {
+            optionsDiv.style.display = 'none';
+          }
+        });
+        optionsDiv.addEventListener('change', updateText);
         if (currentWorkflow && currentWorkflow.triggerEventTypes) {
-          const sel = document.getElementById('trigger-event-types');
-          [...sel.options].forEach(o => {
-            if (currentWorkflow.triggerEventTypes.includes(o.value)) o.selected = true;
+          optionsDiv.querySelectorAll('input').forEach(cb => {
+            if (currentWorkflow.triggerEventTypes.includes(cb.value)) cb.checked = true;
           });
         }
+        updateText();
       }
     }
 
@@ -301,8 +376,8 @@
         stepModalContent.innerHTML = `
           <label class="block text-sm text-[#A3B3AF] mb-1">Subject</label>
           <input id="prop-subject" class="select-field w-full" value="${props.subject || ''}">
-          <label class="block text-sm text-[#A3B3AF] mb-1 mt-3">Body</label>
-          <textarea id="prop-body" class="select-field w-full h-24">${props.body || ''}</textarea>`;
+          <label class="block text-sm text-[#A3B3AF] mb-1 mt-3">Body (HTML)</label>
+          <div id="prop-body" class="html-editor" contenteditable="true">${props.body || ''}</div>`;
       } else if (type === 'Delay') {
         stepModalContent.innerHTML = `
           <label class="block text-sm text-[#A3B3AF] mb-1">Duration (hours)</label>
@@ -328,7 +403,7 @@
       const props = {};
       if (type === 'Send Email') {
         props.subject = document.getElementById('prop-subject').value;
-        props.body = document.getElementById('prop-body').value;
+        props.body = document.getElementById('prop-body').innerHTML;
       } else if (type === 'Delay') {
         props.duration = document.getElementById('prop-duration').value;
       } else if (type === 'Create Meeting') {
