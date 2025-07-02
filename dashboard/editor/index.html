@@ -139,6 +139,10 @@
     <section class="flex-1 p-6 overflow-y-auto">
       <h2 class="text-lg font-semibold text-white mb-4">Workflow Canvas</h2>
       <div class="mb-4">
+        <label for="workflow-name" class="block text-sm text-[#A3B3AF] mb-2">Workflow Name</label>
+        <input id="workflow-name" class="select-field w-64" placeholder="Workflow name">
+      </div>
+      <div class="mb-4">
         <label for="trigger-select" class="block text-sm text-[#A3B3AF] mb-2">Trigger</label>
         <select id="trigger-select" class="select-field w-64">
           <option value="Invitee Schedules">Invitee Schedules</option>
@@ -177,6 +181,7 @@
   <script>
     const canvas = document.getElementById('canvas');
     const saveBtn = document.getElementById('save-workflow');
+    const nameInput = document.getElementById('workflow-name');
     const triggerSelect = document.getElementById('trigger-select');
     const triggerProps = document.getElementById('trigger-properties');
     const stepModal = document.getElementById('step-modal');
@@ -199,6 +204,9 @@
         if (currentWorkflow && currentWorkflow.trigger) {
           triggerSelect.value = currentWorkflow.trigger;
         }
+        if (currentWorkflow && currentWorkflow.name) {
+          nameInput.value = currentWorkflow.name;
+        }
         if (currentWorkflow && currentWorkflow.steps) {
           currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
         }
@@ -215,14 +223,15 @@
       const trigger = triggerSelect.value;
       const optionsDiv = document.getElementById('event-type-options');
       const triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
+      const name = nameInput.value || 'Untitled Workflow';
       if (currentWorkflow) {
+        currentWorkflow.name = name;
         currentWorkflow.trigger = trigger;
         currentWorkflow.triggerEventTypes = triggerEventTypes;
         currentWorkflow.steps = steps;
         currentWorkflow.lastEdited = 'just now';
         workflows = workflows.map(w => w.id === currentWorkflow.id ? currentWorkflow : w);
       } else {
-        const name = prompt('Workflow name') || 'Untitled Workflow';
         currentWorkflow = { id: Date.now().toString(), name, status: true, eventTypes: 'All Event Types', lastEdited: 'just now', trigger, triggerEventTypes, steps };
         workflows.push(currentWorkflow);
       }
@@ -318,7 +327,8 @@
 
     function renderTriggerProperties() {
       triggerProps.innerHTML = '';
-      if (triggerSelect.value === 'Invitee Schedules') {
+      const triggersWithEventTypes = ['Invitee Schedules', 'Meeting Cancelled', 'Meeting Rescheduled'];
+      if (triggersWithEventTypes.includes(triggerSelect.value)) {
         let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
         if (eventTypes.length === 0) {
           eventTypes = [
