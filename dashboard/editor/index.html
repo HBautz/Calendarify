@@ -62,6 +62,15 @@
     </aside>
 
     <section class="flex-1 p-6 overflow-y-auto">
+      <div class="mb-4">
+        <label for="trigger-select" class="block text-[#A3B3AF] text-sm font-medium mb-2">Trigger Event</label>
+        <select id="trigger-select" class="bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-3 py-2">
+          <option>Intro Call</option>
+          <option>Meeting Scheduled</option>
+          <option>Meeting Canceled</option>
+          <option>Payment Received</option>
+        </select>
+      </div>
       <h2 class="text-lg font-semibold text-white mb-4">Workflow Canvas</h2>
       <div id="canvas" class="min-h-[400px] bg-[#1E3A34] border border-[#2C4A43] rounded-xl p-4 space-y-4"></div>
     </section>
