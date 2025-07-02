@@ -592,9 +592,9 @@
         </div>
         <div class="bg-[#1E3A34] rounded-xl overflow-hidden">
           <div class="flex border-b border-[#1A2E29]">
-            <button class="px-6 py-3 bg-[#34D399] text-[#1A2E29] font-medium" onclick="showMeetingsTab('upcoming')">Upcoming</button>
-            <button class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('past')">Past</button>
-            <button class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('pending')">Pending</button>
+            <button data-tab="upcoming" class="px-6 py-3 bg-[#34D399] text-[#1A2E29] font-medium" onclick="showMeetingsTab('upcoming', this)">Upcoming</button>
+            <button data-tab="past" class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('past', this)">Past</button>
+            <button data-tab="pending" class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('pending', this)">Pending</button>
           </div>
           <div class="p-4">
             <table class="w-full">
@@ -1221,27 +1221,32 @@
       const secEl = document.getElementById(section + '-section');
       if (secEl) secEl.style.display = 'block';
       
-      // Save the active section to localStorage
-      localStorage.setItem('calendarify-active-section', section);
       
       // Initialize section-specific functionality
       if (section === 'meetings') {
-        showMeetingsTab('upcoming');
+        const defaultTab = document.querySelector('#meetings-section button[data-tab="upcoming"]');
+        showMeetingsTab('upcoming', defaultTab);
       } else if (section === 'availability') {
         initializeCalendar();
       }
     }
 
     // Meetings tab functionality
-    function showMeetingsTab(tab) {
+    function showMeetingsTab(tab, btn) {
       // Update tab buttons
-      document.querySelectorAll('#meetings-section .flex button').forEach(btn => {
-        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
-        btn.classList.add('text-[#A3B3AF]');
+      document.querySelectorAll('#meetings-section .flex button').forEach(button => {
+        button.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+        button.classList.add('text-[#A3B3AF]');
       });
-      event.target.classList.remove('text-[#A3B3AF]');
-      event.target.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
-      
+
+      if (!btn) {
+        btn = document.querySelector(`#meetings-section button[data-tab="${tab}"]`);
+      }
+      if (btn) {
+        btn.classList.remove('text-[#A3B3AF]');
+        btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
+      }
+
       // Update table content based on tab
       updateMeetingsTable(tab);
     }
@@ -1536,16 +1541,9 @@
       setupTimeInputListeners();
       // Remove all active classes from nav items
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      // Restore the last active section from localStorage
-      const activeSection = localStorage.getItem('calendarify-active-section');
-      const navItem = activeSection ? document.querySelector(`.nav-item[data-section="${activeSection}"]`) : null;
-      if (activeSection && navItem) {
-        // Restore the last active section
-        showSection(activeSection, navItem);
-      } else {
-        // Default to event-types if no stored section or invalid section
-        const defaultNav = document.querySelector('.nav-item[data-section="event-types"]');
-        if (defaultNav) showSection('event-types', defaultNav);
+      const defaultNav = document.querySelector('.nav-item[data-section="event-types"]');
+      if (defaultNav) {
+        showSection('event-types', defaultNav);
       }
     });
 
