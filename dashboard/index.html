@@ -1109,7 +1109,7 @@
       <section id="workflows-section" style="display:none;">
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-2xl font-bold text-white">Workflows</h2>
-          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openCreateWorkflowModal()">
+          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="createWorkflow()">
             <span class="material-icons-outlined">add</span>
             Create Workflow
                     </button>
@@ -1125,29 +1125,7 @@
                 <th class="text-left py-2">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              <tr class="table-row">
-                <td class="py-2">Reminder Email</td>
-                <td class="py-2"><input type="checkbox" class="custom-checkbox" checked></td>
-                <td class="py-2">Intro Call</td>
-                <td class="py-2">2 days ago</td>
-                <td class="py-2 flex gap-2">
-                  <button class="btn-secondary">Edit</button>
-                  <button class="btn-secondary">Clone</button>
-                  <button class="btn-secondary">Delete</button>
-                </td>
-              </tr>
-              <tr class="table-row">
-                <td class="py-2">Follow-up SMS</td>
-                <td class="py-2"><input type="checkbox" class="custom-checkbox"></td>
-                <td class="py-2">All</td>
-                <td class="py-2">1 week ago</td>
-                <td class="py-2 flex gap-2">
-                  <button class="btn-secondary">Edit</button>
-                  <button class="btn-secondary">Clone</button>
-                  <button class="btn-secondary">Delete</button>
-                </td>
-              </tr>
+            <tbody id="workflows-tbody">
             </tbody>
           </table>
         </div>
@@ -1547,8 +1525,68 @@
       document.getElementById('create-menu').classList.add('hidden');
     }
 
-    function openCreateWorkflowModal() {
-      alert('Create Workflow modal would open here');
+    function createWorkflow() {
+      localStorage.removeItem('calendarify-current-workflow');
+      window.location.href = '/dashboard/editor';
+    }
+
+    function editWorkflow(id) {
+      localStorage.setItem('calendarify-current-workflow', id);
+      window.location.href = '/dashboard/editor';
+    }
+
+    function cloneWorkflow(id) {
+      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      const wf = workflows.find(w => w.id === id);
+      if (!wf) return;
+      const newWf = { ...wf, id: Date.now().toString(), name: wf.name + ' Copy', lastEdited: 'just now' };
+      workflows.push(newWf);
+      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+      renderWorkflows();
+      showNotification('Workflow cloned');
+    }
+
+    function deleteWorkflow(id) {
+      if (!confirm('Delete this workflow?')) return;
+      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      workflows = workflows.filter(w => w.id !== id);
+      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+      renderWorkflows();
+      showNotification('Workflow deleted');
+    }
+
+    function toggleWorkflowStatus(id, checkbox) {
+      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      const wf = workflows.find(w => w.id === id);
+      if (wf) {
+        wf.status = checkbox.checked;
+        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+      }
+    }
+
+    function renderWorkflows() {
+      const tbody = document.getElementById('workflows-tbody');
+      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      if (workflows.length === 0) {
+        workflows = [
+          { id: 'wf1', name: 'Send Reminder Email', status: true, eventTypes: 'Intro Call', lastEdited: '2 days ago' },
+          { id: 'wf2', name: 'Post-Meeting SMS', status: false, eventTypes: 'All Event Types', lastEdited: '1 week ago' }
+        ];
+        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+      }
+      tbody.innerHTML = workflows.map(w => `
+        <tr class="table-row">
+          <td class="py-2">${w.name}</td>
+          <td class="py-2"><input type="checkbox" class="custom-checkbox" ${w.status ? 'checked' : ''} onchange="toggleWorkflowStatus('${w.id}', this)"></td>
+          <td class="py-2">${w.eventTypes}</td>
+          <td class="py-2">${w.lastEdited}</td>
+          <td class="py-2 flex gap-2">
+            <button class="btn-secondary" onclick="editWorkflow('${w.id}')">Edit</button>
+            <button class="btn-secondary" onclick="cloneWorkflow('${w.id}')">Clone</button>
+            <button class="btn-secondary" onclick="deleteWorkflow('${w.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
     }
 
     function addContact() {
@@ -1735,6 +1773,7 @@
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
+      renderWorkflows();
       // Remove all active classes from nav items
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
       const defaultNav = document.querySelector('.nav-item[data-section="event-types"]');

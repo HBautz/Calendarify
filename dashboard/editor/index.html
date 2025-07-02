@@ -26,6 +26,13 @@
     .step.dragging {
       opacity: 0.5;
     }
+    .select-field {
+      background: #1E3A34;
+      border: 1px solid #2C4A43;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: #E0E0E0;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -35,7 +42,7 @@
       <span class="font-medium">Back to Dashboard</span>
     </a>
     <h1 class="text-xl font-bold text-white">Workflow Editor</h1>
-    <div></div>
+    <button id="save-workflow" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43]">Save</button>
   </header>
 
   <main class="flex flex-1 overflow-hidden">
@@ -63,12 +70,56 @@
 
     <section class="flex-1 p-6 overflow-y-auto">
       <h2 class="text-lg font-semibold text-white mb-4">Workflow Canvas</h2>
+      <div class="mb-4">
+        <label for="trigger-select" class="block text-sm text-[#A3B3AF] mb-2">Trigger</label>
+        <select id="trigger-select" class="select-field w-64">
+          <option>Invitee Schedules</option>
+          <option>Meeting Cancelled</option>
+          <option>Meeting Rescheduled</option>
+        </select>
+      </div>
       <div id="canvas" class="min-h-[400px] bg-[#1E3A34] border border-[#2C4A43] rounded-xl p-4 space-y-4"></div>
     </section>
   </main>
 
   <script>
     const canvas = document.getElementById('canvas');
+    const saveBtn = document.getElementById('save-workflow');
+    const triggerSelect = document.getElementById('trigger-select');
+    let currentWorkflow = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      const workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      if (id) {
+        currentWorkflow = workflows.find(w => w.id === id);
+        if (currentWorkflow && currentWorkflow.trigger) {
+          triggerSelect.value = currentWorkflow.trigger;
+        }
+        if (currentWorkflow && currentWorkflow.steps) {
+          currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
+        }
+      }
+    });
+
+    saveBtn.addEventListener('click', () => {
+      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      const steps = Array.from(canvas.querySelectorAll('.step')).map(s => s.textContent.trim());
+      const trigger = triggerSelect.value;
+      if (currentWorkflow) {
+        currentWorkflow.trigger = trigger;
+        currentWorkflow.steps = steps;
+        currentWorkflow.lastEdited = 'just now';
+        workflows = workflows.map(w => w.id === currentWorkflow.id ? currentWorkflow : w);
+      } else {
+        const name = prompt('Workflow name') || 'Untitled Workflow';
+        currentWorkflow = { id: Date.now().toString(), name, status: true, eventTypes: 'All Event Types', lastEdited: 'just now', trigger, steps };
+        workflows.push(currentWorkflow);
+      }
+      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+      localStorage.removeItem('calendarify-current-workflow');
+      window.location.href = '/dashboard';
+    });
 
     document.querySelectorAll('#actions .draggable').forEach(el => {
       el.addEventListener('dragstart', e => {
