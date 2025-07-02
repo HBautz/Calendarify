@@ -72,40 +72,25 @@
       color: #34D399;
     }
     .nav-item .badge {
-      @apply ml-auto px-2 py-0.5 text-xs font-medium rounded-full transition-all duration-300;
       background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.1));
       box-shadow: 0 0 10px rgba(52, 211, 153, 0.1);
     }
     .nav-item .badge.warning {
       background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.1));
-      @apply text-yellow-500;
+      color: #eab308;
       box-shadow: 0 0 10px rgba(234, 179, 8, 0.1);
     }
     .nav-item .badge.error {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
-      @apply text-red-500;
+      color: #ef4444;
       box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
     }
-    .nav-group {
-      @apply space-y-1;
-    }
     .nav-group-title {
-      @apply text-xs font-medium text-[#94A3B8] px-4 py-2 uppercase tracking-wider;
       text-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
     }
     .nav-item::after {
       content: '';
-      @apply absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300;
       background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), transparent);
-    }
-    .nav-item:hover::after {
-      @apply opacity-100;
-    }
-    .nav-item:active {
-      @apply transform scale-[0.98];
-    }
-    .section { 
-      @apply hidden;
     }
     .card {
       background: #1E3A34;
@@ -128,21 +113,6 @@
       color: #A3B3AF;
       font-size: 1rem;
       margin-bottom: 1rem;
-    }
-    .btn-primary {
-      @apply bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold;
-    }
-    .btn-secondary {
-      @apply text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm;
-    }
-    .btn-join {
-      @apply bg-[#34D399] text-[#1A2E29] px-3 py-1.5 rounded-lg hover:bg-[#2C4A43] transition-all text-xs font-semibold shadow-sm hover:shadow-md;
-    }
-    .btn-reschedule {
-      @apply bg-[#1E3A34] text-[#A3B3AF] border border-[#2C4A43] px-3 py-1.5 rounded-lg hover:bg-[#2C4A43] hover:text-white hover:border-[#34D399] transition-all text-xs font-semibold;
-    }
-    .btn-cancel {
-      @apply bg-[#1E3A34] text-[#EF4444] border border-[#EF4444] px-3 py-1.5 rounded-lg hover:bg-[#EF4444] hover:text-white transition-all text-xs font-semibold;
     }
     .input-field {
       background: transparent;
@@ -203,12 +173,6 @@
     .time-input::-webkit-calendar-picker-indicator:hover {
       filter: invert(1) brightness(1);
     }
-    .custom-checkbox {
-      @apply bg-[#19342e] border border-[#34D399] text-[#34D399] rounded;
-    }
-    .custom-checkbox:checked {
-      @apply bg-[#34D399] border-[#34D399];
-    }
     .custom-checkbox:checked::after {
       content: '✓' !important;
       position: absolute !important;
@@ -254,9 +218,6 @@
     .table-row:hover {
       background: #1E3A34;
     }
-    .badge {
-      @apply px-2 py-1 rounded-full text-xs font-medium;
-    }
     .badge-success {
       background: #34D39933;
       color: #34D399;
@@ -280,9 +241,6 @@
       padding: 0.25em 0.75em;
       font-size: 0.85em;
       font-weight: 600;
-    }
-    .loading {
-      @apply animate-pulse bg-[#1E3A34] rounded;
     }
     .notification-dot {
       position: absolute;
