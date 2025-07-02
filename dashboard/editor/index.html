@@ -26,6 +26,30 @@
     .step.dragging {
       opacity: 0.5;
     }
+    .step-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 0.25rem;
+    }
+    .step-actions button {
+      color: #A3B3AF;
+      padding: 2px;
+      border-radius: 0.25rem;
+    }
+    .step-actions button:hover {
+      color: #34D399;
+      background-color: #19342e;
+    }
+    .select-field {
+      background: #1E3A34;
+      border: 1px solid #2C4A43;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: #E0E0E0;
+    }
+    .modal-backdrop {
+      background-color: rgba(0,0,0,0.6);
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -35,7 +59,7 @@
       <span class="font-medium">Back to Dashboard</span>
     </a>
     <h1 class="text-xl font-bold text-white">Workflow Editor</h1>
-    <div></div>
+    <button id="save-workflow" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43]">Save</button>
   </header>
 
   <main class="flex flex-1 overflow-hidden">
@@ -63,12 +87,98 @@
 
     <section class="flex-1 p-6 overflow-y-auto">
       <h2 class="text-lg font-semibold text-white mb-4">Workflow Canvas</h2>
+      <div class="mb-4">
+        <label for="trigger-select" class="block text-sm text-[#A3B3AF] mb-2">Trigger</label>
+        <select id="trigger-select" class="select-field w-64">
+          <option value="Invitee Schedules">Invitee Schedules</option>
+          <option value="Meeting Cancelled">Meeting Cancelled</option>
+          <option value="Meeting Rescheduled">Meeting Rescheduled</option>
+        </select>
+      </div>
+      <div id="trigger-properties" class="mb-4"></div>
       <div id="canvas" class="min-h-[400px] bg-[#1E3A34] border border-[#2C4A43] rounded-xl p-4 space-y-4"></div>
     </section>
   </main>
 
+  <!-- Step Edit Modal -->
+  <div id="step-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center z-50">
+    <div class="bg-[#1E3A34] p-6 rounded-lg w-96">
+      <h3 id="step-modal-title" class="text-lg font-bold text-white mb-4">Edit Step</h3>
+      <div id="step-modal-content" class="space-y-4"></div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button id="step-modal-cancel" class="select-field px-4">Cancel</button>
+        <button id="step-modal-save" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43]">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirm-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center z-50">
+    <div class="bg-[#1E3A34] p-6 rounded-lg w-80">
+      <p id="confirm-message" class="text-white mb-4">Are you sure?</p>
+      <div class="flex justify-end gap-3">
+        <button id="confirm-cancel" class="select-field px-4">Cancel</button>
+        <button id="confirm-yes" class="bg-red-500 text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-red-400">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const canvas = document.getElementById('canvas');
+    const saveBtn = document.getElementById('save-workflow');
+    const triggerSelect = document.getElementById('trigger-select');
+    const triggerProps = document.getElementById('trigger-properties');
+    const stepModal = document.getElementById('step-modal');
+    const stepModalTitle = document.getElementById('step-modal-title');
+    const stepModalContent = document.getElementById('step-modal-content');
+    const stepModalCancel = document.getElementById('step-modal-cancel');
+    const stepModalSave = document.getElementById('step-modal-save');
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmMessage = document.getElementById('confirm-message');
+    const confirmCancel = document.getElementById('confirm-cancel');
+    const confirmYes = document.getElementById('confirm-yes');
+    let currentWorkflow = null;
+    let editingStep = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      const workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      if (id) {
+        currentWorkflow = workflows.find(w => w.id === id);
+        if (currentWorkflow && currentWorkflow.trigger) {
+          triggerSelect.value = currentWorkflow.trigger;
+        }
+        if (currentWorkflow && currentWorkflow.steps) {
+          currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
+        }
+      }
+      renderTriggerProperties();
+    });
+
+    saveBtn.addEventListener('click', () => {
+      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+      const steps = Array.from(canvas.querySelectorAll('.step')).map(s => ({
+        type: s.dataset.type,
+        props: JSON.parse(s.dataset.props || '{}')
+      }));
+      const trigger = triggerSelect.value;
+      const eventTypeSelect = document.getElementById('trigger-event-types');
+      const triggerEventTypes = eventTypeSelect ? Array.from(eventTypeSelect.selectedOptions).map(o => o.value) : [];
+      if (currentWorkflow) {
+        currentWorkflow.trigger = trigger;
+        currentWorkflow.triggerEventTypes = triggerEventTypes;
+        currentWorkflow.steps = steps;
+        currentWorkflow.lastEdited = 'just now';
+        workflows = workflows.map(w => w.id === currentWorkflow.id ? currentWorkflow : w);
+      } else {
+        const name = prompt('Workflow name') || 'Untitled Workflow';
+        currentWorkflow = { id: Date.now().toString(), name, status: true, eventTypes: 'All Event Types', lastEdited: 'just now', trigger, triggerEventTypes, steps };
+        workflows.push(currentWorkflow);
+      }
+      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+      localStorage.removeItem('calendarify-current-workflow');
+      window.location.href = '/dashboard';
+    });
 
     document.querySelectorAll('#actions .draggable').forEach(el => {
       el.addEventListener('dragstart', e => {
@@ -98,10 +208,14 @@
       }
     });
 
-    function createStep(type) {
+    function createStep(data) {
+      const { type, props = {} } = typeof data === 'string' ? { type: data, props: {} } : data;
       const div = document.createElement('div');
       div.className = 'step';
       div.setAttribute('draggable', 'true');
+      div.dataset.type = type;
+      div.dataset.props = JSON.stringify(props);
+
       const icon = document.createElement('span');
       icon.className = 'material-icons-outlined text-[#34D399]';
       switch(type) {
@@ -113,8 +227,20 @@
       }
       const text = document.createElement('span');
       text.textContent = type;
+      const actions = document.createElement('div');
+      actions.className = 'step-actions';
+      const editBtn = document.createElement('button');
+      editBtn.innerHTML = '<span class="material-icons-outlined">settings</span>';
+      editBtn.addEventListener('click', () => openStepModal(div));
+      const delBtn = document.createElement('button');
+      delBtn.innerHTML = '<span class="material-icons-outlined">delete</span>';
+      delBtn.addEventListener('click', () => confirmDeleteStep(div));
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
       div.appendChild(icon);
       div.appendChild(text);
+      div.appendChild(actions);
 
       div.addEventListener('dragstart', () => {
         div.classList.add('dragging');
@@ -122,6 +248,7 @@
       div.addEventListener('dragend', () => {
         div.classList.remove('dragging');
       });
+      div.addEventListener('dblclick', () => openStepModal(div));
       return div;
     }
 
@@ -137,6 +264,94 @@
         }
       }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
+
+    function renderTriggerProperties() {
+      triggerProps.innerHTML = '';
+      if (triggerSelect.value === 'Invitee Schedules') {
+        let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+        if (eventTypes.length === 0) {
+          eventTypes = [
+            { name: '30-min Intro Call' },
+            { name: 'Product Demo' },
+            { name: 'Consultation' }
+          ];
+        }
+        const options = eventTypes.map(et => `<option>${et.name}</option>`).join('');
+        triggerProps.innerHTML = `
+          <label class="block text-sm text-[#A3B3AF] mb-2">Event Types</label>
+          <select id="trigger-event-types" multiple class="select-field w-64">${options}</select>`;
+        if (currentWorkflow && currentWorkflow.triggerEventTypes) {
+          const sel = document.getElementById('trigger-event-types');
+          [...sel.options].forEach(o => {
+            if (currentWorkflow.triggerEventTypes.includes(o.value)) o.selected = true;
+          });
+        }
+      }
+    }
+
+    triggerSelect.addEventListener('change', renderTriggerProperties);
+
+    function openStepModal(step) {
+      editingStep = step;
+      const type = step.dataset.type;
+      const props = JSON.parse(step.dataset.props || '{}');
+      stepModalTitle.textContent = 'Edit ' + type;
+      stepModalContent.innerHTML = '';
+      if (type === 'Send Email') {
+        stepModalContent.innerHTML = `
+          <label class="block text-sm text-[#A3B3AF] mb-1">Subject</label>
+          <input id="prop-subject" class="select-field w-full" value="${props.subject || ''}">
+          <label class="block text-sm text-[#A3B3AF] mb-1 mt-3">Body</label>
+          <textarea id="prop-body" class="select-field w-full h-24">${props.body || ''}</textarea>`;
+      } else if (type === 'Delay') {
+        stepModalContent.innerHTML = `
+          <label class="block text-sm text-[#A3B3AF] mb-1">Duration (hours)</label>
+          <input id="prop-duration" type="number" class="select-field w-full" value="${props.duration || 1}">`;
+      } else if (type === 'Create Meeting') {
+        stepModalContent.innerHTML = `
+          <label class="block text-sm text-[#A3B3AF] mb-1">Title</label>
+          <input id="prop-title" class="select-field w-full" value="${props.title || ''}">
+          <label class="block text-sm text-[#A3B3AF] mb-1 mt-3">Duration (min)</label>
+          <input id="prop-duration" type="number" class="select-field w-full" value="${props.duration || 30}">`;
+      } else if (type === 'Add Tag') {
+        stepModalContent.innerHTML = `
+          <label class="block text-sm text-[#A3B3AF] mb-1">Tag</label>
+          <input id="prop-tag" class="select-field w-full" value="${props.tag || ''}">`;
+      }
+      stepModal.classList.remove('hidden');
+    }
+
+    stepModalCancel.addEventListener('click', () => stepModal.classList.add('hidden'));
+    stepModalSave.addEventListener('click', () => {
+      if (!editingStep) return;
+      const type = editingStep.dataset.type;
+      const props = {};
+      if (type === 'Send Email') {
+        props.subject = document.getElementById('prop-subject').value;
+        props.body = document.getElementById('prop-body').value;
+      } else if (type === 'Delay') {
+        props.duration = document.getElementById('prop-duration').value;
+      } else if (type === 'Create Meeting') {
+        props.title = document.getElementById('prop-title').value;
+        props.duration = document.getElementById('prop-duration').value;
+      } else if (type === 'Add Tag') {
+        props.tag = document.getElementById('prop-tag').value;
+      }
+      editingStep.dataset.props = JSON.stringify(props);
+      stepModal.classList.add('hidden');
+      editingStep = null;
+    });
+
+    function confirmDeleteStep(step) {
+      confirmMessage.textContent = 'Delete this step?';
+      confirmYes.onclick = () => {
+        step.remove();
+        confirmModal.classList.add('hidden');
+      };
+      confirmModal.classList.remove('hidden');
+    }
+
+    confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
   </script>
 </body>
 </html>
