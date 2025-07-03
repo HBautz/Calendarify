@@ -1,89 +1,68 @@
-# Calendarify Demo Website
+# Calendarify
 
-Calendarify is a **mock** scheduling platform inspired by Calendly. This repository only contains the static frontend: HTML files styled with Tailwind CSS and a small Node server for local development. The project showcases design layouts and interactions but **does not provide any real booking or calendar functionality**.
+Calendarify is a sample scheduling platform built to demonstrate a full stack web application. The project contains a static marketing site served by a small Node server and a placeholder API implemented with NestJS, Prisma and PostgreSQL.
 
-## Project Goals
+## Features
 
-- Demonstrate responsive page designs using Tailwind CSS
-- Provide realistic looking flows such as sign up, log in, dashboard and event creation
-- Keep the codebase simple with one HTML file per route for clean URLs
-- Allow local exploration of the pages without any backend services
+- **Static frontend**: HTML pages styled with Tailwind CSS for pages such as booking, dashboard, pricing and more.
+- **Local server**: `server.js` serves the site with extensionless URLs so paths like `/pricing` resolve to `pricing/index.html`.
+- **API prototype**: The `backend/` directory holds a NestJS application using Prisma to model users, event types, bookings and availability.
+- **Docker setup**: `docker-compose.yml` provisions PostgreSQL, Redis and Mailpit alongside the API.
+- **Testing**: Basic Jest unit and e2e tests are included for the backend.
 
-This repository is part of a portfolio and all assets are for demonstration purposes only.
+## Requirements
 
-## Running the Site Locally
+- Node.js 20 or later
+- Docker and Docker Compose (to start the API services)
 
-1. Install Node.js (version 14 or later works well).
-2. Install dependencies and start the local server:
+## Getting Started
+
+1. Install dependencies for the root project and the backend workspace:
+   ```bash
+   npm install
+   ```
+2. Launch the static site on <http://localhost:3000>:
+   ```bash
+   npm start
+   ```
+3. Start the API and supporting services (PostgreSQL, Redis, Mailpit):
+   ```bash
+   docker compose up
+   ```
+4. During backend development you can enable hot reload:
+   ```bash
+   npm run start:dev
+   ```
+
+Environment variables are defined in `.env.example`. API documentation becomes available at <http://localhost:3001/docs> once the backend is running.
+
+## Running Tests
+
+Backend tests are executed with Jest:
 
 ```bash
-npm install
-npm start
+npm test
 ```
 
-The server from `server.js` will launch at `http://localhost:3000`. It serves the HTML files so you can visit paths like `/pricing` or `/product` without the `.html` extension. Every directory contains an `index.html` file, so you may also open them directly in your browser.
-
-## Repository Structure
+## Repository Overview
 
 ```
-server.js            Small Node server enabling extensionless URLs
-package.json         NPM script for starting the server
-.github/workflows/   GitHub Actions workflow that auto-merges pull requests
+server.js            Node server for the static site
 index.html           Landing page
-availability/        Availability management prototype
-booking/             Scheduling page for booking events
-contact/             Static contact information and disclaimer
-create-event/        UI for creating a new event type
-Dashboard/           Example dashboard with charts and contact list
-enterprise/          Marketing page targeted at enterprise teams
-get-started/         Welcome page shown after sign up
-help/                Help center with FAQ-style content
-individuals/         Marketing page for individual users
-integrations/        Showcase of integrations with other tools
-log-in/              Log in form
-pricing/             Pricing tiers comparison
-privacy-policy/      Fake privacy policy
-product/             Detailed feature overview
-resources/           Collection of guides and tutorials
-sign-up/             Sign up form
-solutions/           Industry specific solutions overview
-teams/               Marketing page for team plans
-terms/               Fake terms of service
+backend/             NestJS API (Prisma schema and modules)
+booking/             Booking flow pages
+create-event/        UI for creating event types
+dashboard/           Example user dashboard
+pricing/             Pricing information
+sign-up/, log-in/    Authentication pages
+...                  Additional marketing and help pages
 ```
 
-All HTML pages share the same header and footer for a consistent look. They include links back to the marketing pages and end with a clear disclaimer stating that the application is a demo only.
+## Contributing
 
-## About the Node Server
+Pull requests are automatically approved and merged using a GitHub Actions workflow located in `.github/workflows/auto-merge.yml`.
 
-The Node server simply resolves incoming requests to the appropriate `index.html` file. If you request `/pricing`, the server returns `pricing/index.html`. This allows clean URLs when browsing locally. There is no API layer or database included.
+## Disclaimer
 
-## Planned Hosted Backend
-
-Calendarify will eventually connect to a hosted backend that handles user accounts, availability data and event creation. This repository focuses solely on the client-side pieces so you can preview the design. When the backend is ready, these pages will be wired up to real API endpoints to provide actual scheduling functionality.
-
-## Automated Pull Requests
-
-The repository contains a GitHub Actions workflow (`auto-merge.yml`) that automatically approves and merges pull requests. If conflicts occur, the workflow favors the contents from the pull request to keep the main branch up to date with minimal manual intervention.
-
-## License and Usage
-
-Calendarify is not a real product. Feel free to explore the code and adapt the designs for your own experiments, but remember that no actual scheduling features are implemented. The site exists solely as a design prototype.
-
-## Backend Setup
-
-This repo now includes a basic NestJS API with PostgreSQL and Redis. To start all services:
-
-```bash
-docker compose up
-```
-
-During development run the API with hot reload:
-
-```bash
-npm run start:dev
-```
-
-Environment variables are defined in `.env.example`.
-
-API documentation is available at [http://localhost:3001/docs](http://localhost:3001/docs).
+Calendarify is provided for demonstration and educational purposes only. The project does not implement real scheduling functionality.
 
