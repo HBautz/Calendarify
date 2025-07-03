@@ -550,24 +550,76 @@
             </div>
           </div>`;
       } else if (type === 'Add Tag') {
+        // Get available tags from localStorage
+        let availableTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+        if (availableTags.length === 0) {
+          availableTags = ['Client', 'VIP', 'Lead', 'Follow-up', 'Qualified'];
+        }
+        
+        // Get currently selected tags
+        const selectedTags = props.tags || [];
+        
         stepModalContent.innerHTML = `
           <div class="space-y-4">
             <div class="flex items-center gap-3 mb-4">
               <span class="material-icons-outlined text-2xl text-[#34D399]">label</span>
-              <h4 class="text-lg font-semibold text-white">Configure Tag</h4>
+              <h4 class="text-lg font-semibold text-white">Configure Tags</h4>
             </div>
             
             <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Tag Name</label>
-              <div class="relative">
-                <input id="prop-tag" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.tag || ''}" placeholder="e.g., follow-up, qualified, demo-scheduled">
-                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span class="material-icons-outlined text-[#A3B3AF] text-sm">local_offer</span>
+              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Select Tags</label>
+              <div class="multi-select">
+                <button type="button" id="tag-select-button" class="multi-select-button">
+                  <span id="tag-select-text">${selectedTags.length > 0 ? selectedTags.join(', ') : 'Select tags...'}</span>
+                  <span class="material-icons-outlined text-sm">expand_more</span>
+                </button>
+                <div id="tag-select-options" class="multi-select-options" style="display:none;">
+                  ${availableTags.map(tag => `
+                    <label class="hover:bg-[#2C4A43] cursor-pointer">
+                      <span class="custom-checkbox ${selectedTags.includes(tag) ? 'checked' : ''}"></span>
+                      <span>${tag}</span>
+                    </label>
+                  `).join('')}
                 </div>
               </div>
-              <p class="text-xs text-[#A3B3AF] mt-2">This tag will be added to the contact or meeting record for easy categorization and filtering.</p>
+              <p class="text-xs text-[#A3B3AF] mt-2">These tags will be added to the contact or meeting record for easy categorization and filtering.</p>
             </div>
           </div>`;
+        // Attach dropdown and checkbox event listeners
+        setTimeout(() => {
+          const tagSelectButton = document.getElementById('tag-select-button');
+          const tagSelectOptions = document.getElementById('tag-select-options');
+          const tagSelectText = document.getElementById('tag-select-text');
+          if (tagSelectButton && tagSelectOptions) {
+            tagSelectButton.addEventListener('click', function(e) {
+              e.stopPropagation();
+              tagSelectOptions.style.display = tagSelectOptions.style.display === 'block' ? 'none' : 'block';
+            });
+            // Close dropdown when clicking outside
+            document.addEventListener('mousedown', function handler(e) {
+              if (!tagSelectButton.contains(e.target) && !tagSelectOptions.contains(e.target)) {
+                tagSelectOptions.style.display = 'none';
+                document.removeEventListener('mousedown', handler);
+              }
+            });
+          }
+          // Attach checkbox toggles
+          tagSelectOptions.querySelectorAll('.custom-checkbox').forEach(cb => {
+            cb.addEventListener('click', function(e) {
+              e.stopPropagation();
+              cb.classList.toggle('checked');
+              // Update the button text
+              const selectedTags = [];
+              tagSelectOptions.querySelectorAll('.custom-checkbox.checked').forEach(checkbox => {
+                const tagName = checkbox.closest('label').querySelector('span:last-child').textContent;
+                selectedTags.push(tagName);
+              });
+              if (tagSelectText) {
+                tagSelectText.textContent = selectedTags.length > 0 ? selectedTags.join(', ') : 'Select tags...';
+              }
+            });
+          });
+        }, 0);
       }
       stepModal.classList.remove('hidden');
       
@@ -674,7 +726,27 @@
           textElement.textContent = `Delay: ${props.duration} ${unitText}${description}`;
         }
       } else if (type === 'Add Tag') {
-        props.tag = document.getElementById('prop-tag').value;
+        // Get selected tags from the multi-select
+        const selectedTags = [];
+        document.querySelectorAll('#tag-select-options .custom-checkbox.checked').forEach(checkbox => {
+          const tagName = checkbox.closest('label').querySelector('span:last-child').textContent;
+          selectedTags.push(tagName);
+        });
+        props.tags = selectedTags;
+        
+        // Update the step text to show selected tags
+        const textElement = editingStep.querySelector('span:not(.material-icons-outlined)');
+        if (textElement) {
+          if (selectedTags.length === 0) {
+            textElement.textContent = 'Add Tag';
+          } else if (selectedTags.length === 1) {
+            textElement.textContent = `Add Tag: ${selectedTags[0]}`;
+          } else if (selectedTags.length === 2) {
+            textElement.textContent = `Add Tags: ${selectedTags.join(', ')}`;
+          } else {
+            textElement.textContent = `Add Tags: ${selectedTags.length} tags`;
+          }
+        }
       }
       editingStep.dataset.props = JSON.stringify(props);
       stepModal.classList.add('hidden');
