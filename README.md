@@ -1,6 +1,6 @@
 # Calendarify Demo Website
 
-Calendarify is a **mock** scheduling platform inspired by Calendly. It is built entirely with static HTML pages styled with Tailwind CSS and served by a minimal Node server. The project showcases design layouts and interactions but **does not provide any real booking or calendar functionality**.
+Calendarify is a **mock** scheduling platform inspired by Calendly. This repository only contains the static frontend: HTML files styled with Tailwind CSS and a small Node server for local development. The project showcases design layouts and interactions but **does not provide any real booking or calendar functionality**.
 
 ## Project Goals
 
@@ -56,6 +56,10 @@ All HTML pages share the same header and footer for a consistent look. They incl
 ## About the Node Server
 
 The Node server simply resolves incoming requests to the appropriate `index.html` file. If you request `/pricing`, the server returns `pricing/index.html`. This allows clean URLs when browsing locally. There is no API layer or database included.
+
+## Planned Hosted Backend
+
+Calendarify will eventually connect to a hosted backend that handles user accounts, availability data and event creation. This repository focuses solely on the client-side pieces so you can preview the design. When the backend is ready, these pages will be wired up to real API endpoints to provide actual scheduling functionality.
 
 ## Automated Pull Requests
 
