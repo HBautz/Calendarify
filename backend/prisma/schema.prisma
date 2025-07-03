@@ -1,0 +1,88 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String   @unique
+  password    String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  event_types EventType[]
+  bookings    Booking[]
+  availability_rules   AvailabilityRule[]
+  availability_overrides AvailabilityOverride[]
+  external_calendars ExternalCalendar[]
+}
+
+model EventType {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  slug        String   @unique
+  title       String
+  description String?
+  duration    Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  bookings    Booking[]
+}
+
+model AvailabilityRule {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  day_of_week  Int
+  start_minute Int
+  end_minute   Int
+}
+
+model AvailabilityOverride {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  date         DateTime
+  start_minute Int?
+  end_minute   Int?
+  is_busy      Boolean  @default(false)
+}
+
+model ExternalCalendar {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user          User     @relation(fields: [user_id], references: [id])
+  user_id       String   @db.Uuid
+  provider      String
+  external_id   String
+  access_token  String?
+  refresh_token String?
+}
+
+model Booking {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type   EventType @relation(fields: [event_type_id], references: [id])
+  event_type_id String   @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  name         String
+  email        String
+  starts_at    DateTime
+  ends_at      DateTime
+  notes        BookingNote[]
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id, starts_at, ends_at], type: Gist)
+}
+
+model BookingNote {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking    Booking  @relation(fields: [booking_id], references: [id])
+  booking_id String   @db.Uuid
+  note       String
+  created_at DateTime @default(now())
+}

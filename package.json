@@ -1,8 +1,16 @@
 {
-  "name": "calendarify-server",
+  "name": "calendarify",
   "private": true,
   "version": "1.0.0",
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:dev": "yarn workspace backend start:dev",
+    "test": "yarn workspace backend test"
+  },
+  "engines": {
+    "node": "^20"
   }
 }
