@@ -69,3 +69,21 @@ The repository contains a GitHub Actions workflow (`auto-merge.yml`) that automa
 
 Calendarify is not a real product. Feel free to explore the code and adapt the designs for your own experiments, but remember that no actual scheduling features are implemented. The site exists solely as a design prototype.
 
+## Backend Setup
+
+This repo now includes a basic NestJS API with PostgreSQL and Redis. To start all services:
+
+```bash
+docker compose up
+```
+
+During development run the API with hot reload:
+
+```bash
+npm run start:dev
+```
+
+Environment variables are defined in `.env.example`.
+
+API documentation is available at [http://localhost:3001/docs](http://localhost:3001/docs).
+
