@@ -3665,6 +3665,7 @@
       if (!query) {
         resultsContainer.classList.add('hidden');
         resultsContainer.innerHTML = '';
+        resultsContainer.onclick = null;
         return;
       }
       // Gather data
@@ -3688,19 +3689,19 @@
       if (workflowResults.length) {
         html += `<div class='px-4 py-2 text-[#34D399] font-bold text-sm'>Workflows</div>`;
         workflowResults.forEach(w => {
-          html += `<div class='px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' onclick="showSection('workflows', document.querySelector('.nav-item[data-section=\'workflows\']')); highlightWorkflow('${w.id}')"><span class='material-icons-outlined text-[#34D399]'>workflow</span>${w.name}</div>`;
+          html += `<div class='search-result px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' data-type='workflow' data-id='${w.id}'><span class='material-icons-outlined text-[#34D399]'>workflow</span>${w.name}</div>`;
         });
       }
       if (contactResults.length) {
         html += `<div class='px-4 py-2 text-[#34D399] font-bold text-sm'>Contacts</div>`;
         contactResults.forEach(c => {
-          html += `<div class='px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' onclick="showSection('contacts', document.querySelector('.nav-item[data-section=\'contacts\']')); highlightContact('${c.email}')"><span class='material-icons-outlined text-[#34D399]'>person</span>${c.name || ''} <span class='text-[#A3B3AF] text-xs'>${c.email || ''}</span></div>`;
+          html += `<div class='search-result px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' data-type='contact' data-email='${c.email}'><span class='material-icons-outlined text-[#34D399]'>person</span>${c.name || ''} <span class='text-[#A3B3AF] text-xs'>${c.email || ''}</span></div>`;
         });
       }
       if (meetingResults.length) {
         html += `<div class='px-4 py-2 text-[#34D399] font-bold text-sm'>Meetings</div>`;
         meetingResults.forEach(m => {
-          html += `<div class='px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' onclick="showSection('meetings', document.querySelector('.nav-item[data-section=\'meetings\']')); setTimeout(function(){showMeetingsTab(getMeetingTabById('${m.id}')); setTimeout(function(){highlightMeeting('${m.id}');},200);},200);"><span class="material-icons-outlined text-[#34D399]">event</span>${m.invitee || ''} <span class="text-[#A3B3AF] text-xs">${m.eventType || ''}</span></div>`;
+          html += `<div class='search-result px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' data-type='meeting' data-id='${m.id}'><span class="material-icons-outlined text-[#34D399]">event</span>${m.invitee || ''} <span class="text-[#A3B3AF] text-xs">${m.eventType || ''}</span></div>`;
         });
       }
       if (!html) {
@@ -3708,6 +3709,7 @@
       }
       resultsContainer.innerHTML = html;
       resultsContainer.classList.remove('hidden');
+      resultsContainer.onclick = handleSearchResultClick;
     }
     // Hide results on click outside
     window.addEventListener('click', function(e) {
@@ -3760,6 +3762,26 @@
         }
       }
       return 'upcoming'; // fallback
+    }
+
+    function handleSearchResultClick(e) {
+      const item = e.target.closest('.search-result');
+      if (!item) return;
+      const type = item.dataset.type;
+      if (type === 'workflow') {
+        showSection('workflows', document.querySelector(".nav-item[data-section='workflows']"));
+        highlightWorkflow(item.dataset.id);
+      } else if (type === 'contact') {
+        showSection('contacts', document.querySelector(".nav-item[data-section='contacts']"));
+        highlightContact(item.dataset.email);
+      } else if (type === 'meeting') {
+        showSection('meetings', document.querySelector(".nav-item[data-section='meetings']"));
+        setTimeout(function(){
+          showMeetingsTab(getMeetingTabById(item.dataset.id));
+          setTimeout(function(){highlightMeeting(item.dataset.id);}, 200);
+        }, 200);
+      }
+      document.getElementById('global-search-results').classList.add('hidden');
     }
   </script>
 
