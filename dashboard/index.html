@@ -1079,15 +1079,70 @@
           <table class="w-full">
             <thead class="table-header">
               <tr>
-                <th class="text-center py-2 px-4 w-16">Favorite</th>
-                <th class="text-center py-2 px-4 w-1/5">Name</th>
-                <th class="text-center py-2 px-4 w-1/4">Email</th>
-                <th class="text-center py-2 px-4 w-1/5">Tags</th>
-                <th class="text-center py-2 px-4 w-1/4">Actions</th>
+                <th class="text-center py-2 w-1/8">Favorite</th>
+                <th class="text-center py-2 w-1/4">Name</th>
+                <th class="text-center py-2 w-1/3">Email</th>
+                <th class="text-center py-2 w-1/4">Tags</th>
+                <th class="text-center py-2 w-1/4">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Contacts will be populated by JavaScript -->
+              <tr class="table-row" id="contact-jane@example.com">
+                <td class="py-2 text-center">
+                  <button class="favorite-btn text-[#A3B3AF] hover:text-[#34D399] transition-colors" onclick="toggleFavorite('jane@example.com', this)">
+                    <span class="material-icons-outlined text-xl">star_border</span>
+                  </button>
+                </td>
+                <td class="py-2 text-center">Jane Doe</td>
+                <td class="py-2 text-center">jane@example.com</td>
+                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">Client</span></div></td>
+                <td class="py-2 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button class="btn-secondary" onclick="viewContact('jane@example.com')">View</button>
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('jane@example.com')">
+                          <span class="material-icons-outlined text-xs">event</span>Book
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('jane@example.com')">
+                          <span class="material-icons-outlined text-xs">delete</span>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="table-row" id="contact-john@company.com">
+                <td class="py-2 text-center">
+                  <button class="favorite-btn text-[#34D399] hover:text-[#A3B3AF] transition-colors" onclick="toggleFavorite('john@company.com', this)">
+                    <span class="material-icons-outlined text-xl">star</span>
+                  </button>
+                </td>
+                <td class="py-2 text-center">John Smith</td>
+                <td class="py-2 text-center">john@company.com</td>
+                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">VIP</span></div></td>
+                <td class="py-2 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button class="btn-secondary" onclick="viewContact('john@company.com')">View</button>
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('john@company.com')">
+                          <span class="material-icons-outlined text-xs">event</span>Book
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('john@company.com')">
+                          <span class="material-icons-outlined text-xs">delete</span>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1145,6 +1200,29 @@
             </div>
             <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
+        </div>
+      </section>
+
+      <!-- Routing Section -->
+      <section id="routing-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Routing Forms</h2>
+          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openCreateRoutingModal()">
+            <span class="material-icons-outlined">add</span>
+            Create Routing Form
+          </button>
+        </div>
+        <div class="bg-[#1E3A34] rounded-xl p-4">
+          <table class="w-full">
+            <thead class="table-header">
+              <tr>
+                <th class="text-center py-2 w-1/3">Name</th>
+                <th class="text-center py-2 w-1/3">Created</th>
+                <th class="text-center py-2 w-1/3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="routing-tbody"></tbody>
+          </table>
         </div>
       </section>
     </main>
@@ -1735,7 +1813,7 @@
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'manage-tags-modal' || el.id === 'contact-tags-modal' || el.id === 'delete-tag-confirm-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal') {
           el.classList.add('hidden');
         }
       });
@@ -1899,7 +1977,7 @@
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       renderWorkflows();
-      renderContacts();
+      renderRoutingForms();
       
       // Check for redirect parameter
       const redirectTo = localStorage.getItem('calendarify-redirect-to');
@@ -3242,11 +3320,6 @@
     }
 
     function openCreateTagModal() {
-      // Close manage tags modal if it's open and set flag to reopen it
-      if (!document.getElementById('manage-tags-modal').classList.contains('hidden')) {
-        closeManageTagsModal();
-        window.wasManageTagsModalOpen = true;
-      }
       document.getElementById('modal-backdrop').classList.remove('hidden');
       document.getElementById('create-tag-modal').classList.remove('hidden');
       document.getElementById('new-tag-name').value = '';
@@ -3273,242 +3346,25 @@
       }
       closeCreateTagModal();
       renderTagOptions();
-      
-      // Reopen manage tags modal if it was open before creating the tag
-      if (window.wasManageTagsModalOpen) {
-        openManageTagsModal();
-        window.wasManageTagsModalOpen = false;
-      }
-    }
-
-    function openManageTagsModal() {
-      renderManageTagsModal();
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('manage-tags-modal').classList.remove('hidden');
-    }
-
-    function closeManageTagsModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('manage-tags-modal').classList.add('hidden');
-    }
-
-    function renderManageTagsModal() {
-      const container = document.getElementById('manage-tags-list');
-      if (!container) return;
-      
-      container.innerHTML = '';
-      const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      
-      if (tags.length === 0) {
-        container.innerHTML = '<p class="text-[#A3B3AF] text-sm">No tags available</p>';
-        return;
-      }
-      
-      tags.forEach(tag => {
-        const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg hover:border-[#34D399] transition-colors';
-        item.innerHTML = `
-          <div class="flex items-center gap-3">
-            <span class="material-icons-outlined text-[#34D399]">local_offer</span>
-            <span class="text-[#E0E0E0] font-medium">${tag}</span>
-          </div>
-          <button onclick="deleteTag('${tag}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Delete tag">
-            <span class="material-icons-outlined text-sm">delete</span>
-          </button>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function deleteTag(tagName) {
-      window.tagToDelete = tagName;
-      document.getElementById('delete-tag-message').textContent = `Are you sure you want to delete the tag "${tagName}"? This will remove it from all contacts and cannot be undone.`;
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('delete-tag-confirm-modal').classList.remove('hidden');
-    }
-
-    function confirmDeleteTag() {
-      const tagName = window.tagToDelete;
-      if (tagName) {
-        let tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-        tags = tags.filter(tag => tag !== tagName);
-        localStorage.setItem('calendarify-tags', JSON.stringify(tags));
-        
-        // Remove tag from all contacts
-        let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-        contacts = contacts.map(contact => ({
-          ...contact,
-          tags: contact.tags ? contact.tags.filter(tag => tag !== tagName) : []
-        }));
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-        
-        showNotification(`Tag "${tagName}" deleted`);
-        closeDeleteTagConfirmModal();
-        renderManageTagsModal();
-        renderContacts(); // Refresh contacts to update tag display
-      }
-    }
-
-    function closeDeleteTagConfirmModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('delete-tag-confirm-modal').classList.add('hidden');
-      window.tagToDelete = null;
-    }
-
-    function showContactTagsModal(contactEmail, currentTags) {
-      const modal = document.getElementById('contact-tags-modal');
-      const list = document.getElementById('contact-tags-list');
-      
-      // Store contact email for save operations
-      modal.setAttribute('data-contact-email', contactEmail);
-      
-      // Clear previous content
-      list.innerHTML = '';
-      
-      // Add current tags to the list
-      if (currentTags && currentTags.length > 0) {
-        currentTags.forEach((tag, index) => {
-          const item = document.createElement('div');
-          item.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg hover:border-[#34D399] transition-colors';
-          item.innerHTML = `
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
-              <span class="text-[#E0E0E0] font-medium">${tag}</span>
-            </div>
-            <button onclick="removeTagFromContact('${contactEmail}', ${index})" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
-              <span class="material-icons-outlined text-sm">delete</span>
-            </button>
-          `;
-          list.appendChild(item);
-        });
-      } else {
-        const item = document.createElement('div');
-        item.className = 'flex items-center gap-3 p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg';
-        item.innerHTML = `
-          <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
-          <span class="text-[#A3B3AF]">No tags assigned</span>
-        `;
-        list.appendChild(item);
-      }
-      
-      // Add available tags section
-      const availableTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      const assignedTags = currentTags || [];
-      const unassignedTags = availableTags.filter(tag => !assignedTags.includes(tag));
-      
-      if (unassignedTags.length > 0) {
-        const addSection = document.createElement('div');
-        addSection.className = 'mt-4';
-        addSection.innerHTML = `
-          <h4 class="text-[#A3B3AF] text-sm font-medium mb-2">Add Tags</h4>
-          <div class="space-y-2">
-            ${unassignedTags.map(tag => `
-              <button onclick="addTagToContact('${contactEmail}', '${tag}')" class="w-full flex items-center gap-3 p-2 bg-[#1E3A34] border border-[#2C4A43] rounded-lg hover:border-[#34D399] hover:bg-[#19342e] transition-colors">
-                <span class="material-icons-outlined text-[#34D399] text-sm">add</span>
-                <span class="text-[#E0E0E0] text-sm">${tag}</span>
-              </button>
-            `).join('')}
-          </div>
-        `;
-        list.appendChild(addSection);
-      }
-      
-      // Show modal
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      modal.classList.remove('hidden');
-    }
-
-    function closeContactTagsModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('contact-tags-modal').classList.add('hidden');
-    }
-
-    function removeTagFromContact(contactEmail, tagIndex) {
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      const contact = contacts.find(c => c.email === contactEmail);
-      
-      if (contact && contact.tags && contact.tags.length > tagIndex) {
-        const removedTag = contact.tags[tagIndex];
-        contact.tags.splice(tagIndex, 1);
-        
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-        showNotification(`Tag "${removedTag}" removed from contact`);
-        
-        // Refresh the modal with updated tags
-        showContactTagsModal(contactEmail, contact.tags);
-        
-        // Refresh the contacts table
-        renderContacts();
-      }
-    }
-
-    function addTagToContact(contactEmail, tagName) {
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      const contact = contacts.find(c => c.email === contactEmail);
-      
-      if (contact) {
-        if (!contact.tags) {
-          contact.tags = [];
-        }
-        
-        if (!contact.tags.includes(tagName)) {
-          contact.tags.push(tagName);
-          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-          showNotification(`Tag "${tagName}" added to contact`);
-          
-          // Refresh the modal with updated tags
-          showContactTagsModal(contactEmail, contact.tags);
-          
-          // Refresh the contacts table
-          renderContacts();
-        } else {
-          showNotification('Tag already assigned to this contact');
-        }
-      }
     }
 
     function addContactRow(contact) {
       const tbody = document.querySelector('#contacts-section tbody');
       if (!tbody) return;
-      
-      // Format tags display like workflows
-      function formatContactTags(tags) {
-        if (!tags || tags.length === 0) {
-          return '';
-        }
-        
-        if (tags.length === 1) {
-          return `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">${tags[0]}</span>`;
-        }
-        
-        if (tags.length === 2) {
-          return tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">${t}</span>`).join('');
-        }
-        
-        return `${tags.length} Tags`;
-      }
-      
-      const tagsDisplay = formatContactTags(contact.tags);
-      const hasTags = contact.tags && contact.tags.length > 0;
-      
+      const tagsHtml = contact.tags && contact.tags.length ? contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">${t}</span>`).join('') : '';
       const row = document.createElement('tr');
       row.className = 'table-row';
       row.id = `contact-${contact.email}`;
       row.innerHTML = `
-        <td class="py-2 px-4 text-center">
+        <td class="py-2 text-center">
           <button class="favorite-btn ${contact.favorite ? 'text-[#34D399]' : 'text-[#A3B3AF]'} hover:text-[#34D399] transition-colors" onclick="toggleFavorite('${contact.email}', this)">
             <span class="material-icons-outlined text-xl">${contact.favorite ? 'star' : 'star_border'}</span>
           </button>
         </td>
-        <td class="py-2 px-4 text-center">${contact.name}</td>
-        <td class="py-2 px-4 text-center">${contact.email}</td>
-        <td class="py-2 px-4 text-center">
-          <button class="inline-flex items-center gap-1 px-2 py-1 bg-[#19342e] hover:bg-[#1E3A34] border border-[#2C4A43] hover:border-[#34D399] rounded-lg text-sm text-[#E0E0E0] hover:text-[#34D399] transition-all duration-200" onclick="showContactTagsModal('${contact.email}', ${JSON.stringify(contact.tags || []).replace(/"/g, '&quot;')})">
-            ${hasTags ? tagsDisplay : 'No tags'}
-            <span class="material-icons-outlined text-xs">info</span>
-          </button>
-        </td>
-        <td class="py-2 px-4 text-center">
+        <td class="py-2 text-center">${contact.name}</td>
+        <td class="py-2 text-center">${contact.email}</td>
+        <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center">${tagsHtml}</div></td>
+        <td class="py-2 text-center">
           <div class="flex gap-2 justify-center">
             <button class="btn-secondary" onclick="viewContact('${contact.email}')">View</button>
             <div class="relative inline-block text-left">
@@ -4007,6 +3863,93 @@
         document.getElementById('global-search-results').classList.add('hidden');
       }
     });
+
+    // Routing forms functionality
+    function renderRoutingForms() {
+      const tbody = document.getElementById('routing-tbody');
+      if (!tbody) return;
+      const forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
+      tbody.innerHTML = forms.map(f => {
+        const created = new Date(f.created).toLocaleDateString();
+        return `
+          <tr id="routing-${f.id}" class="table-row">
+            <td class="py-2 text-center">${f.name}</td>
+            <td class="py-2 text-center">${created}</td>
+            <td class="py-2 text-center">
+              <div class="flex gap-2 justify-center">
+                <button class="btn-secondary" onclick="editRoutingForm('${f.id}')">Edit</button>
+                <button class="btn-secondary" onclick="deleteRoutingForm('${f.id}')">Delete</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function openCreateRoutingModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('create-routing-modal').classList.remove('hidden');
+      document.getElementById('routing-name').value = '';
+      window.editingRoutingId = null;
+    }
+
+    function closeCreateRoutingModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('create-routing-modal').classList.add('hidden');
+    }
+
+    function saveRoutingForm() {
+      const name = document.getElementById('routing-name').value.trim();
+      if (!name) {
+        showNotification('Form name required');
+        return;
+      }
+      let forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
+      if (window.editingRoutingId) {
+        const f = forms.find(r => r.id === window.editingRoutingId);
+        if (f) f.name = name;
+        window.editingRoutingId = null;
+      } else {
+        forms.push({ id: Date.now().toString(), name, created: new Date().toISOString() });
+      }
+      localStorage.setItem('calendarify-routing-forms', JSON.stringify(forms));
+      closeCreateRoutingModal();
+      renderRoutingForms();
+      showNotification('Routing form saved');
+    }
+
+    function editRoutingForm(id) {
+      const forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
+      const f = forms.find(r => r.id === id);
+      if (!f) return;
+      window.editingRoutingId = id;
+      document.getElementById('routing-name').value = f.name;
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('create-routing-modal').classList.remove('hidden');
+    }
+
+    function deleteRoutingForm(id) {
+      window.routingToDelete = id;
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('delete-routing-confirm-modal').classList.remove('hidden');
+    }
+
+    function confirmDeleteRoutingForm() {
+      const id = window.routingToDelete;
+      if (id) {
+        let forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
+        forms = forms.filter(f => f.id !== id);
+        localStorage.setItem('calendarify-routing-forms', JSON.stringify(forms));
+        renderRoutingForms();
+        showNotification('Routing form deleted');
+      }
+      closeDeleteRoutingConfirmModal();
+    }
+
+    function closeDeleteRoutingConfirmModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('delete-routing-confirm-modal').classList.add('hidden');
+      window.routingToDelete = null;
+    }
     // Highlight helpers (scroll to and flash row)
     function highlightWorkflow(id) {
       setTimeout(() => {
@@ -4771,6 +4714,19 @@
     </div>
   </div>
 
+  <!-- Delete Routing Form Confirmation Modal -->
+  <div id="delete-routing-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Delete Routing Form</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this routing form? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteRoutingForm()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteRoutingConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
   <!-- Create Tag Modal -->
   <div id="create-tag-modal" class="fixed inset-0 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
@@ -4787,6 +4743,27 @@
         <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
           <button onclick="closeCreateTagModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
           <button onclick="saveTag()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Routing Form Modal -->
+  <div id="create-routing-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Create Routing Form</h2>
+          <button onclick="closeCreateRoutingModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <input type="text" id="routing-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Form Name">
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeCreateRoutingModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="saveRoutingForm()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Save</button>
         </div>
       </div>
     </div>
@@ -4813,69 +4790,16 @@
     </div>
   </div>
 
-  <!-- Manage Tags Modal -->
-  <div id="manage-tags-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
-        <h3 class="text-lg font-bold text-white">Manage Tags</h3>
-      </div>
-      <button onclick="closeManageTagsModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-        <span class="material-icons-outlined">close</span>
-      </button>
-    </div>
-    <div id="manage-tags-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
-      <!-- Tags will be populated here -->
-    </div>
-    <div class="flex justify-between items-center">
-      <button onclick="openCreateTagModal()" class="bg-[#19342e] text-[#34D399] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2">
-        <span class="material-icons-outlined">add</span>
-        Create New Tag
-      </button>
-      <button onclick="closeManageTagsModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
-        Close
-      </button>
-    </div>
-  </div>
-
-  <!-- Contact Tags Modal -->
-  <div id="contact-tags-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
-        <h3 class="text-lg font-bold text-white">Contact Tags</h3>
-      </div>
-      <button onclick="closeContactTagsModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-        <span class="material-icons-outlined">close</span>
-      </button>
-    </div>
-    <div id="contact-tags-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
-      <!-- Contact tags will be populated here -->
-    </div>
-    <div class="flex justify-end">
-      <button onclick="closeContactTagsModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
-        Close
-      </button>
-    </div>
-  </div>
-
-  <!-- Delete Tag Confirmation Modal -->
-  <div id="delete-tag-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-      <h3 class="text-lg font-bold text-white">Delete Tag</h3>
-    </div>
-    <p id="delete-tag-message" class="text-[#A3B3AF] mb-6">Are you sure you want to delete this tag? This action cannot be undone.</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteTag()">Delete</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteTagConfirmModal()">Cancel</button>
-    </div>
-  </div>
-
   <!-- Persist default contacts and tags to localStorage if not present -->
   <script>
     if (!localStorage.getItem('calendarify-tags')) {
       localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
+    }
+    if (!localStorage.getItem('calendarify-routing-forms')) {
+      localStorage.setItem('calendarify-routing-forms', JSON.stringify([
+        { id: 'r1', name: 'Sales Routing', created: new Date().toISOString() },
+        { id: 'r2', name: 'Support Routing', created: new Date().toISOString() }
+      ]));
     }
     if (!localStorage.getItem('calendarify-contacts')) {
       localStorage.setItem('calendarify-contacts', JSON.stringify([
@@ -4887,7 +4811,7 @@
           company: '',
           notes: '',
           favorite: false,
-          tags: [],
+          tags: ['Client'],
           createdAt: new Date().toISOString()
         },
         {
@@ -4898,7 +4822,7 @@
           company: '',
           notes: '',
           favorite: true,
-          tags: [],
+          tags: ['VIP'],
           createdAt: new Date().toISOString()
         }
       ]));
