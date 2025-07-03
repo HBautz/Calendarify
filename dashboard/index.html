@@ -1076,6 +1076,7 @@
                 <th class="text-center py-2 w-1/8">Favorite</th>
                 <th class="text-center py-2 w-1/4">Name</th>
                 <th class="text-center py-2 w-1/3">Email</th>
+                <th class="text-center py-2 w-1/4">Tags</th>
                 <th class="text-center py-2 w-1/4">Actions</th>
               </tr>
             </thead>
@@ -1088,6 +1089,7 @@
                 </td>
                 <td class="py-2 text-center">Jane Doe</td>
                 <td class="py-2 text-center">jane@example.com</td>
+                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">Client</span></div></td>
                 <td class="py-2 text-center">
                   <div class="flex gap-2 justify-center">
                     <button class="btn-secondary" onclick="viewContact('jane@example.com')">View</button>
@@ -1115,6 +1117,7 @@
                 </td>
                 <td class="py-2 text-center">John Smith</td>
                 <td class="py-2 text-center">john@company.com</td>
+                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">VIP</span></div></td>
                 <td class="py-2 text-center">
                   <div class="flex gap-2 justify-center">
                     <button class="btn-secondary" onclick="viewContact('john@company.com')">View</button>
@@ -1336,6 +1339,12 @@
           <div class="flex items-center gap-3">
             <input type="checkbox" id="contact-favorite" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
             <label for="contact-favorite" class="text-[#E0E0E0] text-sm">Add to favorites</label>
+          </div>
+
+          <div>
+            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+            <div id="contact-tag-options" class="flex flex-wrap gap-2"></div>
+            <button type="button" onclick="openCreateTagModal()" class="mt-2 text-sm text-[#34D399] hover:underline">Create Tag</button>
           </div>
         </div>
 
@@ -1563,6 +1572,7 @@
       workflows.push(newWf);
       localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
       renderWorkflows();
+      renderContacts();
       showNotification('Workflow cloned');
     }
 
@@ -1752,6 +1762,7 @@
     }
 
     function addContact() {
+      renderTagOptions();
       document.getElementById('modal-backdrop').classList.remove('hidden');
       document.getElementById('add-contact-modal').classList.remove('hidden');
     }
@@ -1775,7 +1786,7 @@
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal') {
           el.classList.add('hidden');
         }
       });
@@ -3174,8 +3185,12 @@
     function confirmDeleteContact() {
       const email = window.contactToDelete;
       if (email) {
+        let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+        contacts = contacts.filter(c => c.email !== email);
+        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        const row = document.getElementById(`contact-${email}`);
+        if (row) row.remove();
         showNotification(`Contact removed: ${email}`);
-        // Here you would typically remove the contact from the list
         closeDeleteContactConfirmModal();
       }
     }
@@ -3253,8 +3268,101 @@
       
       // Re-apply filters after changing favorite status
       filterContacts();
-      
+
       // Here you would typically save the favorite status to a database or localStorage
+    }
+
+    function renderTagOptions() {
+      const container = document.getElementById('contact-tag-options');
+      if (!container) return;
+      container.innerHTML = '';
+      const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      if (tags.length === 0) {
+        container.innerHTML = '<p class="text-[#A3B3AF] text-sm">No tags available</p>';
+        return;
+      }
+      tags.forEach(tag => {
+        const id = 'tag-option-' + tag.replace(/\s+/g, '-');
+        container.innerHTML += `<label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" value="${tag}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <span class="text-[#E0E0E0] text-sm">${tag}</span>
+          </label>`;
+      });
+    }
+
+    function openCreateTagModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('create-tag-modal').classList.remove('hidden');
+      document.getElementById('new-tag-name').value = '';
+    }
+
+    function closeCreateTagModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('create-tag-modal').classList.add('hidden');
+    }
+
+    function saveTag() {
+      const name = document.getElementById('new-tag-name').value.trim();
+      if (!name) {
+        showNotification('Tag name required');
+        return;
+      }
+      let tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      if (!tags.includes(name)) {
+        tags.push(name);
+        localStorage.setItem('calendarify-tags', JSON.stringify(tags));
+        showNotification(`Tag "${name}" created`);
+      } else {
+        showNotification('Tag already exists');
+      }
+      closeCreateTagModal();
+      renderTagOptions();
+    }
+
+    function addContactRow(contact) {
+      const tbody = document.querySelector('#contacts-section tbody');
+      if (!tbody) return;
+      const tagsHtml = contact.tags && contact.tags.length ? contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">${t}</span>`).join('') : '';
+      const row = document.createElement('tr');
+      row.className = 'table-row';
+      row.id = `contact-${contact.email}`;
+      row.innerHTML = `
+        <td class="py-2 text-center">
+          <button class="favorite-btn ${contact.favorite ? 'text-[#34D399]' : 'text-[#A3B3AF]'} hover:text-[#34D399] transition-colors" onclick="toggleFavorite('${contact.email}', this)">
+            <span class="material-icons-outlined text-xl">${contact.favorite ? 'star' : 'star_border'}</span>
+          </button>
+        </td>
+        <td class="py-2 text-center">${contact.name}</td>
+        <td class="py-2 text-center">${contact.email}</td>
+        <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center">${tagsHtml}</div></td>
+        <td class="py-2 text-center">
+          <div class="flex gap-2 justify-center">
+            <button class="btn-secondary" onclick="viewContact('${contact.email}')">View</button>
+            <div class="relative inline-block text-left">
+              <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                <span class="material-icons-outlined">more_vert</span>
+              </button>
+              <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('${contact.email}')">
+                  <span class="material-icons-outlined text-xs">event</span>Book
+                </button>
+                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('${contact.email}')">
+                  <span class="material-icons-outlined text-xs">delete</span>Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </td>`;
+      tbody.appendChild(row);
+    }
+
+    function renderContacts() {
+      const tbody = document.querySelector('#contacts-section tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      contacts.forEach(c => addContactRow(c));
+      filterContacts();
     }
     
     // Close contact dropdowns when clicking outside
@@ -3274,6 +3382,8 @@
       document.getElementById('contact-company').value = '';
       document.getElementById('contact-notes').value = '';
       document.getElementById('contact-favorite').checked = false;
+      const tagContainer = document.getElementById('contact-tag-options');
+      if (tagContainer) tagContainer.innerHTML = '';
     }
 
     function saveContact() {
@@ -3294,7 +3404,8 @@
         return;
       }
 
-      // Here you would typically save to a database or localStorage
+      const tags = Array.from(document.querySelectorAll('#contact-tag-options input:checked')).map(cb => cb.value);
+
       const contact = {
         id: Date.now().toString(),
         name,
@@ -3303,10 +3414,15 @@
         company,
         notes,
         favorite,
+        tags,
         createdAt: new Date().toISOString()
       };
 
-      // For demo purposes, just show a success message
+      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      contacts.push(contact);
+      localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+      addContactRow(contact);
+
       showNotification(`Contact "${name}" added successfully!`);
       closeAddContactModal();
     }
@@ -4482,6 +4598,27 @@
     </div>
   </div>
 
+  <!-- Create Tag Modal -->
+  <div id="create-tag-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Create Tag</h2>
+          <button onclick="closeCreateTagModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <input type="text" id="new-tag-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., VIP, Lead">
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeCreateTagModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="saveTag()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Event Types Modal -->
   <div id="event-types-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
     <div class="flex items-center justify-between mb-4">
@@ -4503,8 +4640,11 @@
     </div>
   </div>
 
-  <!-- Persist default contacts to localStorage if not present -->
+  <!-- Persist default contacts and tags to localStorage if not present -->
   <script>
+    if (!localStorage.getItem('calendarify-tags')) {
+      localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
+    }
     if (!localStorage.getItem('calendarify-contacts')) {
       localStorage.setItem('calendarify-contacts', JSON.stringify([
         {
@@ -4515,6 +4655,7 @@
           company: '',
           notes: '',
           favorite: false,
+          tags: ['Client'],
           createdAt: new Date().toISOString()
         },
         {
@@ -4525,6 +4666,7 @@
           company: '',
           notes: '',
           favorite: true,
+          tags: ['VIP'],
           createdAt: new Date().toISOString()
         }
       ]));
