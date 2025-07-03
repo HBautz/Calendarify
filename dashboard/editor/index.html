@@ -96,10 +96,56 @@
       color: #E0E0E0;
     }
     .multi-select-options input[type="checkbox"] {
-      accent-color: #34D399;
+      display: none;
+    }
+    
+    .custom-checkbox {
+      position: relative;
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background: #19342e;
+      border: 2px solid #2C4A43;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .custom-checkbox:hover {
+      border-color: #34D399;
+      background: #1E3A34;
+    }
+    
+    .custom-checkbox.checked {
+      background: #34D399;
+      border-color: #34D399;
+    }
+    
+    .custom-checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #1A2E29;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1;
     }
     .modal-backdrop {
       background-color: rgba(0,0,0,0.6);
+    }
+    
+    /* Hide default number input arrows */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    input[type="number"] {
+      -moz-appearance: textfield;
     }
   </style>
 </head>
@@ -169,11 +215,15 @@
 
   <!-- Confirmation Modal -->
   <div id="confirm-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center z-50">
-    <div class="bg-[#1E3A34] p-6 rounded-lg w-80">
-      <p id="confirm-message" class="text-white mb-4">Are you sure?</p>
-      <div class="flex justify-end gap-3">
-        <button id="confirm-cancel" class="select-field px-4">Cancel</button>
-        <button id="confirm-yes" class="bg-red-500 text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-red-400">Delete</button>
+    <div class="bg-[#1E3A34] p-6 rounded-lg w-80 max-w-sm mx-auto">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+        <h3 class="text-lg font-bold text-white">Confirm Action</h3>
+      </div>
+      <p id="confirm-message" class="text-[#A3B3AF] mb-6">Are you sure?</p>
+      <div class="flex gap-3">
+        <button id="confirm-cancel" class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors">Cancel</button>
+        <button id="confirm-yes" class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors">Delete</button>
       </div>
     </div>
   </div>
@@ -237,6 +287,7 @@
       }
       localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
       localStorage.removeItem('calendarify-current-workflow');
+      localStorage.setItem('calendarify-redirect-to', 'workflows');
       window.location.href = '/dashboard';
     });
 
@@ -286,12 +337,28 @@
         default: icon.textContent = 'drag_indicator';
       }
       const text = document.createElement('span');
-      text.textContent = type;
+      if (type === 'Delay') {
+        if (props.duration) {
+          const unitText = props.unit === 'minutes' ? 'min' : props.unit === 'days' ? 'days' : 'hours';
+          const description = props.description ? ` - ${props.description}` : '';
+          text.textContent = `Delay: ${props.duration} ${unitText}${description}`;
+        } else {
+          text.textContent = 'Delay: Configure...';
+        }
+      } else {
+        text.textContent = type;
+      }
       const actions = document.createElement('div');
       actions.className = 'step-actions';
       const editBtn = document.createElement('button');
       editBtn.innerHTML = '<span class="material-icons-outlined">settings</span>';
-      editBtn.addEventListener('click', () => openStepModal(div));
+      editBtn.addEventListener('click', () => {
+        if (type === 'Create Meeting') {
+          openCreateMeetingDropdown(div);
+        } else {
+          openStepModal(div);
+        }
+      });
       const delBtn = document.createElement('button');
       delBtn.innerHTML = '<span class="material-icons-outlined">delete</span>';
       delBtn.addEventListener('click', () => confirmDeleteStep(div));
@@ -308,7 +375,13 @@
       div.addEventListener('dragend', () => {
         div.classList.remove('dragging');
       });
-      div.addEventListener('dblclick', () => openStepModal(div));
+      div.addEventListener('dblclick', () => {
+        if (type === 'Create Meeting') {
+          openCreateMeetingDropdown(div);
+        } else {
+          openStepModal(div);
+        }
+      });
       return div;
     }
 
@@ -349,7 +422,11 @@
 
         const optionsDiv = document.getElementById('event-type-options');
         optionsDiv.innerHTML = eventTypes.map(et => `
-          <label><input type="checkbox" value="${et.name}"> ${et.name}</label>
+          <label class="flex items-center gap-3 p-2 hover:bg-[#19342e] rounded cursor-pointer transition-colors">
+            <div class="custom-checkbox" data-value="${et.name}"></div>
+            <input type="checkbox" value="${et.name}" style="display: none;">
+            <span class="text-[#E0E0E0]">${et.name}</span>
+          </label>
         `).join('');
         const btn = document.getElementById('event-type-btn');
         const updateText = () => {
@@ -364,10 +441,31 @@
             optionsDiv.style.display = 'none';
           }
         });
-        optionsDiv.addEventListener('change', updateText);
+        // Handle custom checkbox interactions
+        optionsDiv.addEventListener('click', (e) => {
+          const label = e.target.closest('label');
+          if (label) {
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            const customCheckbox = label.querySelector('.custom-checkbox');
+            
+            if (checkbox && customCheckbox) {
+              checkbox.checked = !checkbox.checked;
+              customCheckbox.classList.toggle('checked', checkbox.checked);
+              updateText();
+            }
+          }
+        });
+        
+        // Set initial state for existing workflow
         if (currentWorkflow && currentWorkflow.triggerEventTypes) {
           optionsDiv.querySelectorAll('input').forEach(cb => {
-            if (currentWorkflow.triggerEventTypes.includes(cb.value)) cb.checked = true;
+            if (currentWorkflow.triggerEventTypes.includes(cb.value)) {
+              cb.checked = true;
+              const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
+              if (customCheckbox) {
+                customCheckbox.classList.add('checked');
+              }
+            }
           });
         }
         updateText();
@@ -384,26 +482,174 @@
       stepModalContent.innerHTML = '';
       if (type === 'Send Email') {
         stepModalContent.innerHTML = `
-          <label class="block text-sm text-[#A3B3AF] mb-1">Subject</label>
-          <input id="prop-subject" class="select-field w-full" value="${props.subject || ''}">
-          <label class="block text-sm text-[#A3B3AF] mb-1 mt-3">Body (HTML)</label>
-          <div id="prop-body" class="html-editor" contenteditable="true">${props.body || ''}</div>`;
+          <div class="space-y-4">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">email</span>
+              <h4 class="text-lg font-semibold text-white">Configure Email</h4>
+            </div>
+            
+            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
+              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Email Subject</label>
+              <div class="relative">
+                <input id="prop-subject" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.subject || ''}" placeholder="Enter email subject">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <span class="material-icons-outlined text-[#A3B3AF] text-sm">subject</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
+              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Email Body (HTML)</label>
+              <div id="prop-body" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors min-h-[120px] resize-none" contenteditable="true" placeholder="Enter email content...">${props.body || ''}</div>
+              <p class="text-xs text-[#A3B3AF] mt-2">You can use HTML formatting. Available variables: {{invitee_name}}, {{event_type}}, {{meeting_date}}</p>
+            </div>
+          </div>`;
       } else if (type === 'Delay') {
         stepModalContent.innerHTML = `
-          <label class="block text-sm text-[#A3B3AF] mb-1">Duration (hours)</label>
-          <input id="prop-duration" type="number" class="select-field w-full" value="${props.duration || 1}">`;
-      } else if (type === 'Create Meeting') {
-        stepModalContent.innerHTML = `
-          <label class="block text-sm text-[#A3B3AF] mb-1">Title</label>
-          <input id="prop-title" class="select-field w-full" value="${props.title || ''}">
-          <label class="block text-sm text-[#A3B3AF] mb-1 mt-3">Duration (min)</label>
-          <input id="prop-duration" type="number" class="select-field w-full" value="${props.duration || 30}">`;
+          <div class="space-y-4">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">hourglass_empty</span>
+              <h4 class="text-lg font-semibold text-white">Configure Delay</h4>
+            </div>
+            
+            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
+              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Delay Duration</label>
+              <div class="flex items-center gap-3">
+                <div class="relative flex-1">
+                  <input id="prop-duration" type="number" min="1" max="168" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-12 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.duration || 1}">
+                  <div class="absolute inset-y-0 left-0 flex items-center">
+                    <button type="button" id="decrease-duration" class="w-8 h-full flex items-center justify-center text-[#A3B3AF] hover:text-[#34D399] hover:bg-[#2C4A43] transition-colors rounded-l-lg">
+                      <span class="material-icons-outlined text-sm">remove</span>
+                    </button>
+                  </div>
+                  <div class="absolute inset-y-0 right-0 flex items-center">
+                    <button type="button" id="increase-duration" class="w-8 h-full flex items-center justify-center text-[#A3B3AF] hover:text-[#34D399] hover:bg-[#2C4A43] transition-colors rounded-r-lg">
+                      <span class="material-icons-outlined text-sm">add</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="relative w-24">
+                  <select id="prop-duration-unit" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors appearance-none cursor-pointer">
+                    <option value="hours" ${(!props.unit || props.unit === 'hours') ? 'selected' : ''}>Hours</option>
+                    <option value="minutes" ${props.unit === 'minutes' ? 'selected' : ''}>Minutes</option>
+                    <option value="days" ${props.unit === 'days' ? 'selected' : ''}>Days</option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span class="material-icons-outlined text-[#A3B3AF] text-sm">expand_more</span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-[#A3B3AF] mt-2">This delay will pause the workflow execution for the specified duration before continuing to the next step.</p>
+            </div>
+            
+            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
+              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Delay Description (Optional)</label>
+              <input id="prop-description" type="text" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.description || ''}" placeholder="e.g., Wait for business hours, Allow time for response">
+              <p class="text-xs text-[#A3B3AF] mt-2">Add a description to help identify the purpose of this delay.</p>
+            </div>
+          </div>`;
       } else if (type === 'Add Tag') {
         stepModalContent.innerHTML = `
-          <label class="block text-sm text-[#A3B3AF] mb-1">Tag</label>
-          <input id="prop-tag" class="select-field w-full" value="${props.tag || ''}">`;
+          <div class="space-y-4">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">label</span>
+              <h4 class="text-lg font-semibold text-white">Configure Tag</h4>
+            </div>
+            
+            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
+              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Tag Name</label>
+              <div class="relative">
+                <input id="prop-tag" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.tag || ''}" placeholder="e.g., follow-up, qualified, demo-scheduled">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <span class="material-icons-outlined text-[#A3B3AF] text-sm">local_offer</span>
+                </div>
+              </div>
+              <p class="text-xs text-[#A3B3AF] mt-2">This tag will be added to the contact or meeting record for easy categorization and filtering.</p>
+            </div>
+          </div>`;
       }
       stepModal.classList.remove('hidden');
+      
+      // Setup custom number input if it's a delay step
+      if (type === 'Delay') {
+        setTimeout(setupDelayNumberInput, 10);
+      }
+    }
+
+    function openCreateMeetingDropdown(step) {
+      editingStep = step;
+      const props = JSON.parse(step.dataset.props || '{}');
+      
+      // Get event types from localStorage
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      if (eventTypes.length === 0) {
+        eventTypes = [
+          { name: '30-min Intro Call' },
+          { name: 'Product Demo' },
+          { name: 'Consultation' }
+        ];
+      }
+      
+      // Create dropdown container
+      const dropdownContainer = document.createElement('div');
+      dropdownContainer.className = 'fixed inset-0 z-50 flex items-center justify-center';
+      dropdownContainer.style.backgroundColor = 'rgba(0,0,0,0.6)';
+      
+      const dropdownContent = document.createElement('div');
+      dropdownContent.className = 'bg-[#1E3A34] p-6 rounded-lg w-80 max-w-sm mx-auto';
+      dropdownContent.innerHTML = `
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-icons-outlined text-2xl text-[#34D399]">calendar_today</span>
+          <h3 class="text-lg font-bold text-white">Select Event Type</h3>
+        </div>
+        <p class="text-[#A3B3AF] mb-4">Choose the event type for the meeting to be created with the invitee running this workflow:</p>
+        <div class="relative">
+          <select id="event-type-select" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors appearance-none cursor-pointer">
+            <option value="">Select an event type...</option>
+            ${eventTypes.map(et => `<option value="${et.name}" ${props.eventType === et.name ? 'selected' : ''}>${et.name}</option>`).join('')}
+          </select>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <span class="material-icons-outlined text-[#A3B3AF] text-sm">expand_more</span>
+          </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+          <button id="cancel-event-type" class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors">Cancel</button>
+          <button id="save-event-type" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg font-bold hover:bg-[#2C4A43] transition-colors">Save</button>
+        </div>
+      `;
+      
+      dropdownContainer.appendChild(dropdownContent);
+      document.body.appendChild(dropdownContainer);
+      
+      // Add event listeners
+      document.getElementById('cancel-event-type').addEventListener('click', () => {
+        document.body.removeChild(dropdownContainer);
+        editingStep = null;
+      });
+      
+      document.getElementById('save-event-type').addEventListener('click', () => {
+        const selectedEventType = document.getElementById('event-type-select').value;
+        if (selectedEventType) {
+          const newProps = { ...props, eventType: selectedEventType };
+          step.dataset.props = JSON.stringify(newProps);
+          
+          // Update the step text to show the selected event type
+          const textElement = step.querySelector('span:not(.material-icons-outlined)');
+          if (textElement) {
+            textElement.textContent = `Create Meeting: ${selectedEventType}`;
+          }
+        }
+        document.body.removeChild(dropdownContainer);
+        editingStep = null;
+      });
+      
+      // Close on backdrop click
+      dropdownContainer.addEventListener('click', (e) => {
+        if (e.target === dropdownContainer) {
+          document.body.removeChild(dropdownContainer);
+          editingStep = null;
+        }
+      });
     }
 
     stepModalCancel.addEventListener('click', () => stepModal.classList.add('hidden'));
@@ -416,9 +662,16 @@
         props.body = document.getElementById('prop-body').innerHTML;
       } else if (type === 'Delay') {
         props.duration = document.getElementById('prop-duration').value;
-      } else if (type === 'Create Meeting') {
-        props.title = document.getElementById('prop-title').value;
-        props.duration = document.getElementById('prop-duration').value;
+        props.unit = document.getElementById('prop-duration-unit').value;
+        props.description = document.getElementById('prop-description').value;
+        
+        // Update the step text to show the delay configuration
+        const textElement = editingStep.querySelector('span:not(.material-icons-outlined)');
+        if (textElement) {
+          const unitText = props.unit === 'minutes' ? 'min' : props.unit === 'days' ? 'days' : 'hours';
+          const description = props.description ? ` - ${props.description}` : '';
+          textElement.textContent = `Delay: ${props.duration} ${unitText}${description}`;
+        }
       } else if (type === 'Add Tag') {
         props.tag = document.getElementById('prop-tag').value;
       }
@@ -426,6 +679,42 @@
       stepModal.classList.add('hidden');
       editingStep = null;
     });
+
+    // Custom number input functionality for delay duration
+    function setupDelayNumberInput() {
+      const durationInput = document.getElementById('prop-duration');
+      const decreaseBtn = document.getElementById('decrease-duration');
+      const increaseBtn = document.getElementById('increase-duration');
+      
+      if (durationInput && decreaseBtn && increaseBtn) {
+        decreaseBtn.addEventListener('click', () => {
+          const currentValue = parseInt(durationInput.value) || 1;
+          const newValue = Math.max(1, currentValue - 1);
+          durationInput.value = newValue;
+          durationInput.dispatchEvent(new Event('input'));
+        });
+        
+        increaseBtn.addEventListener('click', () => {
+          const currentValue = parseInt(durationInput.value) || 1;
+          const newValue = Math.min(168, currentValue + 1);
+          durationInput.value = newValue;
+          durationInput.dispatchEvent(new Event('input'));
+        });
+        
+        // Update button states based on current value
+        const updateButtonStates = () => {
+          const currentValue = parseInt(durationInput.value) || 1;
+          decreaseBtn.disabled = currentValue <= 1;
+          increaseBtn.disabled = currentValue >= 168;
+          
+          decreaseBtn.classList.toggle('opacity-50', currentValue <= 1);
+          increaseBtn.classList.toggle('opacity-50', currentValue >= 168);
+        };
+        
+        durationInput.addEventListener('input', updateButtonStates);
+        updateButtonStates(); // Initial state
+      }
+    }
 
     function confirmDeleteStep(step) {
       confirmMessage.textContent = 'Delete this step?';
