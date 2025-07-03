@@ -1238,16 +1238,6 @@
             </div>
             <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
-          <div class="card flex flex-col gap-3">
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
-              <div>
-                <div class="text-white font-bold">Other Calendar</div>
-                <div class="text-[#A3B3AF] text-sm">Use an iCal URL</div>
-              </div>
-            </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
-          </div>
         </div>
       </section>
     </main>
@@ -3370,6 +3360,10 @@
       }
       closeCreateTagModal();
       renderTagOptions();
+      if (window.wasManageTagsModalOpen) {
+        window.wasManageTagsModalOpen = false;
+        openManageTagsModal();
+      }
     }
 
     function addContactRow(contact) {
