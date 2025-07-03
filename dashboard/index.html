@@ -1207,7 +1207,7 @@
       <section id="routing-section" style="display:none;">
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-2xl font-bold text-white">Routing Forms</h2>
-          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openCreateRoutingModal()">
+          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="createRoutingForm()">
             <span class="material-icons-outlined">add</span>
             Create Routing Form
           </button>
@@ -3885,46 +3885,14 @@
       }).join('');
     }
 
-    function openCreateRoutingModal() {
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('create-routing-modal').classList.remove('hidden');
-      document.getElementById('routing-name').value = '';
-      window.editingRoutingId = null;
-    }
-
-    function closeCreateRoutingModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('create-routing-modal').classList.add('hidden');
-    }
-
-    function saveRoutingForm() {
-      const name = document.getElementById('routing-name').value.trim();
-      if (!name) {
-        showNotification('Form name required');
-        return;
-      }
-      let forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
-      if (window.editingRoutingId) {
-        const f = forms.find(r => r.id === window.editingRoutingId);
-        if (f) f.name = name;
-        window.editingRoutingId = null;
-      } else {
-        forms.push({ id: Date.now().toString(), name, created: new Date().toISOString() });
-      }
-      localStorage.setItem('calendarify-routing-forms', JSON.stringify(forms));
-      closeCreateRoutingModal();
-      renderRoutingForms();
-      showNotification('Routing form saved');
+    function createRoutingForm() {
+      localStorage.removeItem('calendarify-current-routing');
+      window.location.href = '/dashboard/routing-editor';
     }
 
     function editRoutingForm(id) {
-      const forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
-      const f = forms.find(r => r.id === id);
-      if (!f) return;
-      window.editingRoutingId = id;
-      document.getElementById('routing-name').value = f.name;
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('create-routing-modal').classList.remove('hidden');
+      localStorage.setItem('calendarify-current-routing', id);
+      window.location.href = '/dashboard/routing-editor';
     }
 
     function deleteRoutingForm(id) {
@@ -4748,26 +4716,6 @@
     </div>
   </div>
 
-  <!-- Create Routing Form Modal -->
-  <div id="create-routing-modal" class="fixed inset-0 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
-        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
-          <h2 class="text-xl font-bold text-white">Create Routing Form</h2>
-          <button onclick="closeCreateRoutingModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-            <span class="material-icons-outlined text-2xl">close</span>
-          </button>
-        </div>
-        <div class="p-6 space-y-4">
-          <input type="text" id="routing-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Form Name">
-        </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
-          <button onclick="closeCreateRoutingModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
-          <button onclick="saveRoutingForm()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Event Types Modal -->
   <div id="event-types-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
