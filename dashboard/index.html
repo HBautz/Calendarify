@@ -1202,27 +1202,52 @@
           </div>
         </div>
       </section>
-
       <!-- Routing Section -->
       <section id="routing-section" style="display:none;">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-white">Routing Forms</h2>
-          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="createRoutingForm()">
-            <span class="material-icons-outlined">add</span>
-            Create Routing Form
-          </button>
+          <h2 class="text-2xl font-bold text-white">Calendar Routing</h2>
         </div>
-        <div class="bg-[#1E3A34] rounded-xl p-4">
-          <table class="w-full">
-            <thead class="table-header">
-              <tr>
-                <th class="text-center py-2 w-1/3">Name</th>
-                <th class="text-center py-2 w-1/3">Created</th>
-                <th class="text-center py-2 w-1/3">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="routing-tbody"></tbody>
-          </table>
+        <div class="dashboard-grid">
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+              <div>
+                <div class="text-white font-bold">Google Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync with Google Calendar</div>
+              </div>
+            </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+              <div>
+                <div class="text-white font-bold">Outlook Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync with Outlook</div>
+              </div>
+            </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+              <div>
+                <div class="text-white font-bold">Apple Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync with iCloud</div>
+              </div>
+            </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+              <div>
+                <div class="text-white font-bold">Other Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Use an iCal URL</div>
+              </div>
+            </div>
+            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+          </div>
         </div>
       </section>
     </main>
@@ -1977,7 +2002,6 @@
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       renderWorkflows();
-      renderRoutingForms();
       
       // Check for redirect parameter
       const redirectTo = localStorage.getItem('calendarify-redirect-to');
@@ -3864,61 +3888,6 @@
       }
     });
 
-    // Routing forms functionality
-    function renderRoutingForms() {
-      const tbody = document.getElementById('routing-tbody');
-      if (!tbody) return;
-      const forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
-      tbody.innerHTML = forms.map(f => {
-        const created = new Date(f.created).toLocaleDateString();
-        return `
-          <tr id="routing-${f.id}" class="table-row">
-            <td class="py-2 text-center">${f.name}</td>
-            <td class="py-2 text-center">${created}</td>
-            <td class="py-2 text-center">
-              <div class="flex gap-2 justify-center">
-                <button class="btn-secondary" onclick="editRoutingForm('${f.id}')">Edit</button>
-                <button class="btn-secondary" onclick="deleteRoutingForm('${f.id}')">Delete</button>
-              </div>
-            </td>
-          </tr>`;
-      }).join('');
-    }
-
-    function createRoutingForm() {
-      localStorage.removeItem('calendarify-current-routing');
-      window.location.href = '/dashboard/routing-editor';
-    }
-
-    function editRoutingForm(id) {
-      localStorage.setItem('calendarify-current-routing', id);
-      window.location.href = '/dashboard/routing-editor';
-    }
-
-    function deleteRoutingForm(id) {
-      window.routingToDelete = id;
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('delete-routing-confirm-modal').classList.remove('hidden');
-    }
-
-    function confirmDeleteRoutingForm() {
-      const id = window.routingToDelete;
-      if (id) {
-        let forms = JSON.parse(localStorage.getItem('calendarify-routing-forms') || '[]');
-        forms = forms.filter(f => f.id !== id);
-        localStorage.setItem('calendarify-routing-forms', JSON.stringify(forms));
-        renderRoutingForms();
-        showNotification('Routing form deleted');
-      }
-      closeDeleteRoutingConfirmModal();
-    }
-
-    function closeDeleteRoutingConfirmModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('delete-routing-confirm-modal').classList.add('hidden');
-      window.routingToDelete = null;
-    }
-    // Highlight helpers (scroll to and flash row)
     function highlightWorkflow(id) {
       setTimeout(() => {
         const row = document.getElementById(`workflow-${id}`);
@@ -4682,18 +4651,6 @@
     </div>
   </div>
 
-  <!-- Delete Routing Form Confirmation Modal -->
-  <div id="delete-routing-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-      <h3 class="text-lg font-bold text-white">Delete Routing Form</h3>
-    </div>
-    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this routing form? This action cannot be undone.</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteRoutingForm()">Delete</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteRoutingConfirmModal()">Cancel</button>
-    </div>
-  </div>
 
   <!-- Create Tag Modal -->
   <div id="create-tag-modal" class="fixed inset-0 z-50 hidden">
@@ -4742,12 +4699,6 @@
   <script>
     if (!localStorage.getItem('calendarify-tags')) {
       localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
-    }
-    if (!localStorage.getItem('calendarify-routing-forms')) {
-      localStorage.setItem('calendarify-routing-forms', JSON.stringify([
-        { id: 'r1', name: 'Sales Routing', created: new Date().toISOString() },
-        { id: 'r2', name: 'Support Routing', created: new Date().toISOString() }
-      ]));
     }
     if (!localStorage.getItem('calendarify-contacts')) {
       localStorage.setItem('calendarify-contacts', JSON.stringify([
