@@ -1095,7 +1095,7 @@
                 </td>
                 <td class="py-2 text-center">Jane Doe</td>
                 <td class="py-2 text-center">jane@example.com</td>
-                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">Client</span></div></td>
+                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('jane@example.com')">Client</span></div></td>
                 <td class="py-2 text-center">
                   <div class="flex gap-2 justify-center">
                     <button class="btn-secondary" onclick="viewContact('jane@example.com')">View</button>
@@ -1123,7 +1123,7 @@
                 </td>
                 <td class="py-2 text-center">John Smith</td>
                 <td class="py-2 text-center">john@company.com</td>
-                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">VIP</span></div></td>
+                <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center"><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('john@company.com')">VIP</span></div></td>
                 <td class="py-2 text-center">
                   <div class="flex gap-2 justify-center">
                     <button class="btn-secondary" onclick="viewContact('john@company.com')">View</button>
@@ -1828,10 +1828,13 @@
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal') {
           el.classList.add('hidden');
         }
       });
+      // Reset backdrop z-index
+      const backdrop = document.getElementById('modal-backdrop');
+      backdrop.style.zIndex = '50';
       // Clear any stored data
       window.meetingToCancel = null;
       window.meetingToDelete = null;
@@ -3334,13 +3337,17 @@
     }
 
     function openCreateTagModal() {
-      document.getElementById('modal-backdrop').classList.remove('hidden');
+      const backdrop = document.getElementById('modal-backdrop');
+      backdrop.classList.remove('hidden');
+      backdrop.style.zIndex = '55'; // Higher than tags modal but lower than create tag modal
       document.getElementById('create-tag-modal').classList.remove('hidden');
       document.getElementById('new-tag-name').value = '';
     }
 
     function closeCreateTagModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
+      const backdrop = document.getElementById('modal-backdrop');
+      backdrop.classList.add('hidden');
+      backdrop.style.zIndex = '50'; // Reset to original z-index
       document.getElementById('create-tag-modal').classList.add('hidden');
     }
 
@@ -3360,16 +3367,327 @@
       }
       closeCreateTagModal();
       renderTagOptions();
-      if (window.wasManageTagsModalOpen) {
-        window.wasManageTagsModalOpen = false;
-        openManageTagsModal();
+      
+      // Check if tags modal is open and refresh it
+      const tagsModal = document.getElementById('tags-modal');
+      if (!tagsModal.classList.contains('hidden')) {
+        // Check if it's the manage tags modal or contact tags modal
+        const tagsList = document.getElementById('tags-list');
+        if (tagsList && tagsList.innerHTML.includes('Current Tags:')) {
+          // It's a contact tags modal, use the stored contact email
+          const currentContactEmail = tagsModal.getAttribute('data-current-contact');
+          if (currentContactEmail) {
+            // Small delay to ensure the create tag modal is fully closed
+            setTimeout(() => {
+              showContactTagsModal(currentContactEmail);
+            }, 100);
+          }
+        } else {
+          // It's the manage tags modal
+          openManageTagsModal();
+        }
+      }
+    }
+
+    function openManageTagsModal() {
+      const modal = document.getElementById('tags-modal');
+      const list = document.getElementById('tags-list');
+      const title = document.getElementById('tags-modal-title');
+      
+      // Set modal title
+      title.textContent = 'Manage Tags';
+      
+      // Clear previous content
+      list.innerHTML = '';
+      
+      // Get all tags from localStorage
+      const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      
+      // Add tags to the list
+      if (tags && tags.length > 0) {
+        tags.forEach((tag, index) => {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg hover:border-[#34D399] transition-colors';
+          item.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
+              <span class="text-[#E0E0E0] font-medium">${tag}</span>
+            </div>
+            <button onclick="removeTag('${tag}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
+              <span class="material-icons-outlined text-sm">delete</span>
+            </button>
+          `;
+          list.appendChild(item);
+        });
+      } else {
+        const item = document.createElement('div');
+        item.className = 'flex items-center gap-3 p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg';
+        item.innerHTML = `
+          <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
+          <span class="text-[#A3B3AF]">No tags available</span>
+        `;
+        list.appendChild(item);
+      }
+      
+      // Add create tag button
+      const createButton = document.createElement('div');
+      createButton.className = 'mt-4 pt-4 border-t border-[#2C4A43]';
+      createButton.innerHTML = `
+        <button onclick="openCreateTagModal()" class="w-full bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2">
+          <span class="material-icons-outlined text-sm">add</span>
+          Create New Tag
+        </button>
+      `;
+      list.appendChild(createButton);
+      
+      // Show modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      modal.classList.remove('hidden');
+    }
+
+    function closeTagsModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('tags-modal').classList.add('hidden');
+    }
+
+    function showContactTagsModal(contactEmail) {
+      const modal = document.getElementById('tags-modal');
+      const list = document.getElementById('tags-list');
+      const title = document.getElementById('tags-modal-title');
+      
+      // Store the current contact email for refresh purposes
+      modal.setAttribute('data-current-contact', contactEmail);
+      
+      // Clear previous content
+      list.innerHTML = '';
+      
+      // Get the contact
+      const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      const contact = contacts.find(c => c.email === contactEmail);
+      
+      if (!contact) {
+        showNotification('Contact not found');
+        return;
+      }
+      
+      // Set modal title
+      title.textContent = `${contact.name}'s Tags`;
+      
+      // Add contact info header
+      const contactInfo = document.createElement('div');
+      contactInfo.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg mb-4';
+      contactInfo.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="material-icons-outlined text-[#34D399]">person</span>
+          <div>
+            <span class="text-[#E0E0E0] font-medium">${contact.name}</span>
+            <div class="text-[#A3B3AF] text-sm">${contact.email}</div>
+          </div>
+        </div>
+      `;
+      list.appendChild(contactInfo);
+      
+      // Add tags section
+      const tagsHeader = document.createElement('div');
+      tagsHeader.className = 'text-[#A3B3AF] text-sm font-medium mb-2';
+      tagsHeader.textContent = 'Current Tags:';
+      list.appendChild(tagsHeader);
+      
+      if (!contact.tags || contact.tags.length === 0) {
+        const noTags = document.createElement('div');
+        noTags.className = 'flex items-center gap-3 p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg mb-4';
+        noTags.innerHTML = `
+          <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
+          <span class="text-[#A3B3AF]">No tags assigned</span>
+        `;
+        list.appendChild(noTags);
+      } else {
+        contact.tags.forEach(tag => {
+          const tagItem = document.createElement('div');
+          tagItem.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg mb-2 hover:border-[#34D399] transition-colors';
+          tagItem.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
+              <span class="text-[#E0E0E0] font-medium">${tag}</span>
+            </div>
+            <button onclick="removeTagFromContact('${contact.email}', '${tag}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
+              <span class="material-icons-outlined text-sm">remove_circle</span>
+            </button>
+          `;
+          list.appendChild(tagItem);
+        });
+      }
+      
+      // Add available tags section for adding new tags
+      const availableTagsHeader = document.createElement('div');
+      availableTagsHeader.className = 'text-[#A3B3AF] text-sm font-medium mb-2 mt-4';
+      availableTagsHeader.textContent = 'Add Tags:';
+      list.appendChild(availableTagsHeader);
+      
+      // Get all available tags
+      const allTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      const availableTags = allTags.filter(tag => !contact.tags || !contact.tags.includes(tag));
+      
+      if (availableTags.length === 0) {
+        const noAvailableTags = document.createElement('div');
+        noAvailableTags.className = 'flex items-center gap-3 p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg mb-4';
+        noAvailableTags.innerHTML = `
+          <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
+          <span class="text-[#A3B3AF]">No available tags to add</span>
+        `;
+        list.appendChild(noAvailableTags);
+      } else {
+        availableTags.forEach(tag => {
+          const tagItem = document.createElement('div');
+          tagItem.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg mb-2 hover:border-[#34D399] transition-colors';
+          tagItem.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
+              <span class="text-[#E0E0E0] font-medium">${tag}</span>
+            </div>
+            <button onclick="addTagToContact('${contact.email}', '${tag}')" class="p-1 text-[#A3B3AF] hover:text-[#34D399] hover:bg-[#34D399]/10 rounded transition-colors" title="Add tag">
+              <span class="material-icons-outlined text-sm">add_circle</span>
+            </button>
+          `;
+          list.appendChild(tagItem);
+        });
+      }
+      
+      // Add create tag button
+      const createButton = document.createElement('div');
+      createButton.className = 'mt-4 pt-4 border-t border-[#2C4A43]';
+      createButton.innerHTML = `
+        <button onclick="openCreateTagModal()" class="w-full bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2">
+          <span class="material-icons-outlined text-sm">add</span>
+          Create New Tag
+        </button>
+      `;
+      list.appendChild(createButton);
+      
+      // Show modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      modal.classList.remove('hidden');
+    }
+
+    function removeTag(tagName) {
+      // Remove tag from all contacts
+      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      contacts.forEach(contact => {
+        if (contact.tags) {
+          contact.tags = contact.tags.filter(tag => tag !== tagName);
+        }
+      });
+      localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+      
+      // Remove tag from tags list
+      let tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      tags = tags.filter(tag => tag !== tagName);
+      localStorage.setItem('calendarify-tags', JSON.stringify(tags));
+      
+      showNotification(`Tag "${tagName}" removed from all contacts`);
+      
+      // Refresh the contacts table
+      renderContacts();
+      
+      // Check if tags modal is open and refresh it instead of closing
+      const tagsModal = document.getElementById('tags-modal');
+      if (!tagsModal.classList.contains('hidden')) {
+        // Check if it's the manage tags modal or contact tags modal
+        const tagsList = document.getElementById('tags-list');
+        if (tagsList && tagsList.innerHTML.includes('Current Tags:')) {
+          // It's a contact tags modal, use the stored contact email
+          const currentContactEmail = tagsModal.getAttribute('data-current-contact');
+          if (currentContactEmail) {
+            showContactTagsModal(currentContactEmail);
+          }
+        } else {
+          // It's the manage tags modal, refresh it
+          openManageTagsModal();
+        }
+      }
+    }
+
+    function addTagToContact(contactEmail, tagName) {
+      // Add tag to specific contact
+      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      const contact = contacts.find(c => c.email === contactEmail);
+      if (contact) {
+        if (!contact.tags) {
+          contact.tags = [];
+        }
+        if (!contact.tags.includes(tagName)) {
+          contact.tags.push(tagName);
+          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+          
+          // Update the contact row in the table
+          const row = document.getElementById(`contact-${contactEmail}`);
+          if (row) {
+            const tagsCell = row.querySelector('td:nth-child(4) div');
+            if (tagsCell) {
+              let tagsHtml = '';
+              if (contact.tags.length <= 2) {
+                tagsHtml = contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
+              } else {
+                tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${contact.tags.length} Tags</span>`;
+              }
+              tagsCell.innerHTML = tagsHtml;
+            }
+          }
+          
+          showNotification(`Tag "${tagName}" added to ${contact.name}`);
+          
+          // Refresh the modal to show updated contact tags
+          showContactTagsModal(contactEmail);
+        } else {
+          showNotification(`Tag "${tagName}" is already assigned to ${contact.name}`);
+        }
+      }
+    }
+
+    function removeTagFromContact(contactEmail, tagName) {
+      // Remove tag from specific contact
+      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      const contact = contacts.find(c => c.email === contactEmail);
+      if (contact && contact.tags) {
+        contact.tags = contact.tags.filter(tag => tag !== tagName);
+        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        
+        // Update the contact row in the table
+        const row = document.getElementById(`contact-${contactEmail}`);
+        if (row) {
+          const tagsCell = row.querySelector('td:nth-child(4) div');
+          if (tagsCell) {
+            let tagsHtml = '';
+            if (!contact.tags || contact.tags.length === 0) {
+              tagsHtml = '<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal(\'' + contact.email + '\')">No Tags</span>';
+            } else if (contact.tags.length <= 2) {
+              tagsHtml = contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
+            } else {
+              tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${contact.tags.length} Tags</span>`;
+            }
+            tagsCell.innerHTML = tagsHtml;
+          }
+        }
+        
+        showNotification(`Tag "${tagName}" removed from ${contact.name}`);
+        
+        // Refresh the modal to show updated contact tags
+        showContactTagsModal(contactEmail);
       }
     }
 
     function addContactRow(contact) {
       const tbody = document.querySelector('#contacts-section tbody');
       if (!tbody) return;
-      const tagsHtml = contact.tags && contact.tags.length ? contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs">${t}</span>`).join('') : '';
+      
+      let tagsHtml = '';
+      if (!contact.tags || contact.tags.length === 0) {
+        tagsHtml = '<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal(\'' + contact.email + '\')">No Tags</span>';
+      } else if (contact.tags.length <= 2) {
+        tagsHtml = contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
+      } else {
+        tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${contact.tags.length} Tags</span>`;
+      }
       const row = document.createElement('tr');
       row.className = 'table-row';
       row.id = `contact-${contact.email}`;
@@ -4647,7 +4965,7 @@
 
 
   <!-- Create Tag Modal -->
-  <div id="create-tag-modal" class="fixed inset-0 z-50 hidden">
+  <div id="create-tag-modal" class="fixed inset-0 z-[60] hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
       <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
         <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
@@ -4684,6 +5002,27 @@
     </div>
     <div class="flex justify-end">
       <button onclick="closeEventTypesModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Tags Modal -->
+  <div id="tags-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
+        <h3 id="tags-modal-title" class="text-lg font-bold text-white">Tags</h3>
+      </div>
+      <button onclick="closeTagsModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div id="tags-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
+      <!-- Tags will be populated here -->
+    </div>
+    <div class="flex justify-end">
+      <button onclick="closeTagsModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
         Close
       </button>
     </div>
