@@ -3700,7 +3700,7 @@
       if (meetingResults.length) {
         html += `<div class='px-4 py-2 text-[#34D399] font-bold text-sm'>Meetings</div>`;
         meetingResults.forEach(m => {
-          html += `<div class='px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' onclick='console.log("search click");showSection("meetings",document.querySelector(".nav-item[data-section='meetings']"));setTimeout(function(){showMeetingsTab(getMeetingTabById("${m.id}"));setTimeout(function(){highlightMeeting("${m.id}");},200);},200);'><span class="material-icons-outlined text-[#34D399]">event</span>${m.invitee || ''} <span class="text-[#A3B3AF] text-xs">${m.eventType || ''}</span></div>`;
+          html += `<div class='px-4 py-2 hover:bg-[#19342e] cursor-pointer rounded flex items-center gap-2' onclick="showSection('meetings', document.querySelector('.nav-item[data-section=\'meetings\']')); setTimeout(function(){showMeetingsTab(getMeetingTabById('${m.id}')); setTimeout(function(){highlightMeeting('${m.id}');},200);},200);"><span class="material-icons-outlined text-[#34D399]">event</span>${m.invitee || ''} <span class="text-[#A3B3AF] text-xs">${m.eventType || ''}</span></div>`;
         });
       }
       if (!html) {
