@@ -1406,6 +1406,48 @@
   </div>
 
   <script>
+    const API_URL = 'http://localhost:3001/api';
+
+    function collectState() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('calendarify-')) {
+          try {
+            data[key] = JSON.parse(localStorage.getItem(key));
+          } catch {
+            data[key] = localStorage.getItem(key);
+          }
+        }
+      }
+      return data;
+    }
+
+    async function syncState() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      await fetch(`${API_URL}/users/me/state`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(collectState()),
+      });
+    }
+
+    const _setItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(k, v) {
+      _setItem(k, v);
+      if (k.startsWith('calendarify-')) syncState();
+    };
+    const _removeItem = localStorage.removeItem.bind(localStorage);
+    localStorage.removeItem = function(k) {
+      _removeItem(k);
+      if (k.startsWith('calendarify-')) syncState();
+    };
+    window.addEventListener('beforeunload', syncState);
+
     // Navigation functionality
     function showSection(section, el) {
       // Remove active class from all nav items

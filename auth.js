@@ -26,6 +26,18 @@ function login(data) {
   return apiRequest('/auth/login', data);
 }
 
+async function loadUserState(token) {
+  const res = await fetch(`${API_URL}/users/me/state`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.ok) {
+    const data = await res.json();
+    Object.entries(data).forEach(([k, v]) => {
+      localStorage.setItem(k, JSON.stringify(v));
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, setting up forms...');
   
@@ -55,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('User registered, logging in...');
         const { access_token } = await login({ email, password });
         localStorage.setItem('calendarify-token', access_token);
+        await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
         console.error('Signup error:', e);
@@ -74,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const { access_token } = await login({ email, password });
         localStorage.setItem('calendarify-token', access_token);
+        await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
         err.textContent = 'Invalid credentials';
