@@ -45,37 +45,45 @@
         <div class="px-4 sm:px-40 flex flex-col items-center flex-1 justify-center py-5 space-y-4">
           <div class="layout-content-container flex flex-col w-full max-w-[400px] border border-[#3d5245] rounded-2xl p-8 mx-auto">
             <h2 class="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Log in</h2>
-            <div class="flex max-w-[400px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Email"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex max-w-[400px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
-              <label class="flex flex-col min-w-40 flex-1">
-                <input
-                  placeholder="Password"
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
-                  value=""
-                />
-              </label>
-            </div>
-            <div class="flex px-4 py-3 mx-auto">
-              <a
-                href="/dashboard"
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
-              >
-                <span class="truncate">Log in</span>
-              </a>
-            </div>
+              <div class="flex max-w-[400px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    placeholder="Email"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
+                    value=""
+                  />
+                </label>
+              </div>
+              <div class="flex max-w-[400px] flex-wrap items-end gap-4 px-4 py-3 mx-auto">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <input
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border-none bg-[#29382f] focus:border-none h-14 placeholder:text-[#9eb7a8] p-4 text-base font-normal leading-normal"
+                    value=""
+                  />
+                </label>
+              </div>
+              <form id="login-form" class="flex px-4 py-3 mx-auto">
+                <button
+                  type="submit"
+                  class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#38e07b] text-[#111714] text-sm font-bold leading-normal tracking-[0.015em]"
+                >
+                  <span class="truncate">Log in</span>
+                </button>
+              </form>
+              <p id="login-error" class="text-red-500 text-sm text-center"></p>
           </div>
           <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">By logging in, you agree to our Terms of Service and Privacy Policy.</p>
           <p class="text-[#9eb7a8] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.</p>
         </div>
       </div>
     </div>
+    <script src="/auth.js"></script>
   </body>
 </html>
