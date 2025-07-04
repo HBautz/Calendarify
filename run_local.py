@@ -157,8 +157,10 @@ def serve_frontend():
     # Use the Node server that comes with the project to serve the static files
     # with extensionless URL support.
     def _run():
-        # Use npm start which runs `node server.js`
-        run('npm start')
+        # Make sure we're in the project root directory
+        os.chdir('/Users/heinebautz/portfolio-github/Calendarify')
+        # Use the custom server.js that handles clean URLs
+        run('node server.js')
     t = Thread(target=_run)
     t.daemon = True
     t.start()

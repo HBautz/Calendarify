@@ -1,16 +1,21 @@
 const API_URL = 'http://localhost:3001/api';
 
 async function apiRequest(path, data) {
+  console.log(`Making API request to: ${API_URL}${path}`, data);
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
+  console.log(`API response status: ${res.status}`);
   if (!res.ok) {
     const text = await res.text();
+    console.error(`API error: ${text}`);
     throw new Error(text || res.statusText);
   }
-  return res.json();
+  const result = await res.json();
+  console.log('API response:', result);
+  return result;
 }
 
 function register(data) {
@@ -22,26 +27,37 @@ function login(data) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, setting up forms...');
+  
   const signupForm = document.getElementById('signup-form');
+  console.log('Signup form found:', signupForm);
+  
   if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
+      console.log('Signup form submitted!');
       e.preventDefault();
       const name = signupForm.querySelector('#signup-name').value.trim();
       const email = signupForm.querySelector('#signup-email').value.trim();
       const password = signupForm.querySelector('#signup-password').value;
       const confirm = signupForm.querySelector('#signup-confirm').value;
       const err = document.getElementById('signup-error');
+      
+      console.log('Form data:', { name, email, password: '***', confirm: '***' });
+      
       err.textContent = '';
       if (password !== confirm) {
         err.textContent = 'Passwords do not match';
         return;
       }
       try {
+        console.log('Registering user...');
         await register({ name, email, password });
+        console.log('User registered, logging in...');
         const { access_token } = await login({ email, password });
         localStorage.setItem('calendarify-token', access_token);
         window.location.href = '/dashboard';
       } catch (e) {
+        console.error('Signup error:', e);
         err.textContent = e.message || 'Sign up failed';
       }
     });

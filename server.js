@@ -17,9 +17,17 @@ const mime = {
 };
 
 http.createServer((req, res) => {
+  // Log incoming request
+  console.log(`INCOMING: ${req.method} ${req.url}`);
+
   let reqPath = req.url.split('?')[0];
   if (reqPath === '/' || reqPath === '') {
     reqPath = '/index.html';
+  }
+
+  // Special handling for /sign-up and /sign-up/
+  if (reqPath === '/sign-up' || reqPath === '/sign-up/') {
+    reqPath = '/sign-up/index.html';
   }
 
   let filePath = path.join(rootDir, reqPath);
@@ -38,9 +46,13 @@ http.createServer((req, res) => {
       const ext = path.extname(filePath);
       res.setHeader('Content-Type', mime[ext] || 'text/plain');
       res.end(data);
+      // Log outgoing response
+      console.log(`OUTGOING: 200 ${req.url} (${filePath})`);
     } else {
       res.writeHead(404);
       res.end('Not found');
+      // Log outgoing response
+      console.log(`OUTGOING: 404 ${req.url} (${filePath})`);
     }
   });
 }).listen(port, () => {
