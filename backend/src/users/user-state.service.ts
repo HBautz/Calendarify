@@ -1,26 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class UserStateService {
-  private dir = join(__dirname, '..', '..', 'data');
+  constructor(private prisma: PrismaService) {}
 
   async load(userId: string): Promise<any> {
-    try {
-      const content = await fs.readFile(join(this.dir, `${userId}.json`), 'utf8');
-      return JSON.parse(content);
-    } catch (e) {
-      return {};
-    }
+    const state = await this.prisma.userState.findUnique({
+      where: { user_id: userId },
+    });
+    return state?.data || {};
   }
 
   async save(userId: string, data: any) {
-    await fs.mkdir(this.dir, { recursive: true });
-    await fs.writeFile(
-      join(this.dir, `${userId}.json`),
-      JSON.stringify(data, null, 2),
-      'utf8',
-    );
+    await this.prisma.userState.upsert({
+      where: { user_id: userId },
+      update: { data },
+      create: { user_id: userId, data },
+    });
   }
 }
