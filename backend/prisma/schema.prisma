@@ -10,6 +10,7 @@ generator client {
 model User {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email       String   @unique
+  name        String?
   password    String
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -76,7 +77,7 @@ model Booking {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  @@index([user_id, starts_at, ends_at], type: Gist)
+  @@index([user_id, starts_at, ends_at])
 }
 
 model BookingNote {
