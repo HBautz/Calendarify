@@ -9,6 +9,8 @@ import { EventTypesModule } from './event-types/event-types.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { ContactsModule } from './contacts/contacts.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { IntegrationsModule } from './integrations/integrations.module';
     BookingsModule,
     AvailabilityModule,
     IntegrationsModule,
+    ContactsModule,
+    WorkflowsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
