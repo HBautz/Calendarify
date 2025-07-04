@@ -154,17 +154,11 @@ def start_backend():
 
 
 def serve_frontend():
-    # Install and use a proper static server that supports clean URLs
+    # Use the Node server that comes with the project to serve the static files
+    # with extensionless URL support.
     def _run():
-        # Try to install serve locally if not available
-        try:
-            subprocess.run(['npx', 'serve', '--version'], capture_output=True, check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("Installing serve package locally for better static file serving...")
-            run('npm install serve')
-        
-        # Serve the project root with clean URLs
-        run('npx serve -s . -l 3000 --single')
+        # Use npm start which runs `node server.js`
+        run('npm start')
     t = Thread(target=_run)
     t.daemon = True
     t.start()
