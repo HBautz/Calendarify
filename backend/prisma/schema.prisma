@@ -19,6 +19,9 @@ model User {
   availability_rules   AvailabilityRule[]
   availability_overrides AvailabilityOverride[]
   external_calendars ExternalCalendar[]
+  user_state  UserState?
+  tags        Tag[]
+  contacts    Contact[]
 }
 
 model EventType {
@@ -92,4 +95,44 @@ model UserState {
   user_id String @id @db.Uuid
   data    Json?
   user    User  @relation(fields: [user_id], references: [id])
+}
+
+model Tag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  name        String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  contacts    ContactTag[]
+
+  @@unique([user_id, name])
+}
+
+model Contact {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  name        String
+  email       String
+  phone       String?
+  company     String?
+  notes       String?
+  favorite    Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  tags        ContactTag[]
+
+  @@unique([user_id, email])
+}
+
+model ContactTag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contact     Contact  @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  contact_id  String   @db.Uuid
+  tag         Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  tag_id      String   @db.Uuid
+  created_at  DateTime @default(now())
+
+  @@unique([contact_id, tag_id])
 }

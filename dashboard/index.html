@@ -1862,8 +1862,8 @@
       }).join('');
     }
 
-    function addContact() {
-      renderTagOptions();
+    async function addContact() {
+      await renderTagOptions();
       document.getElementById('modal-backdrop').classList.remove('hidden');
       document.getElementById('add-contact-modal').classList.remove('hidden');
     }
@@ -3375,22 +3375,40 @@
       // Here you would typically save the favorite status to a database or localStorage
     }
 
-    function renderTagOptions() {
+    async function renderTagOptions() {
       const container = document.getElementById('contact-tag-options');
       if (!container) return;
       container.innerHTML = '';
-      const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      if (tags.length === 0) {
-        container.innerHTML = '<p class="text-[#A3B3AF] text-sm">No tags available</p>';
-        return;
+      
+      try {
+        const response = await fetch('/api/tags', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tags');
+        }
+        
+        const tags = await response.json();
+        
+        if (tags.length === 0) {
+          container.innerHTML = '<p class="text-[#A3B3AF] text-sm">No tags available</p>';
+          return;
+        }
+        
+        tags.forEach(tag => {
+          const id = 'tag-option-' + tag.name.replace(/\s+/g, '-');
+          container.innerHTML += `<label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" value="${tag.name}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+              <span class="text-[#E0E0E0] text-sm">${tag.name}</span>
+            </label>`;
+        });
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+        container.innerHTML = '<p class="text-red-400 text-sm">Error loading tags</p>';
       }
-      tags.forEach(tag => {
-        const id = 'tag-option-' + tag.replace(/\s+/g, '-');
-        container.innerHTML += `<label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" value="${tag}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-            <span class="text-[#E0E0E0] text-sm">${tag}</span>
-          </label>`;
-      });
     }
 
     function openCreateTagModal() {
@@ -3408,45 +3426,58 @@
       document.getElementById('create-tag-modal').classList.add('hidden');
     }
 
-    function saveTag() {
+    async function saveTag() {
       const name = document.getElementById('new-tag-name').value.trim();
       if (!name) {
         showNotification('Tag name required');
         return;
       }
-      let tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      if (!tags.includes(name)) {
-        tags.push(name);
-        localStorage.setItem('calendarify-tags', JSON.stringify(tags));
-        showNotification(`Tag "${name}" created`);
-      } else {
-        showNotification('Tag already exists');
-      }
-      closeCreateTagModal();
-      renderTagOptions();
       
-      // Check if tags modal is open and refresh it
-      const tagsModal = document.getElementById('tags-modal');
-      if (!tagsModal.classList.contains('hidden')) {
-        // Check if it's the manage tags modal or contact tags modal
-        const tagsList = document.getElementById('tags-list');
-        if (tagsList && tagsList.innerHTML.includes('Current Tags:')) {
-          // It's a contact tags modal, use the stored contact email
-          const currentContactEmail = tagsModal.getAttribute('data-current-contact');
-          if (currentContactEmail) {
-            // Small delay to ensure the create tag modal is fully closed
-            setTimeout(() => {
-              showContactTagsModal(currentContactEmail);
-            }, 100);
-          }
-        } else {
-          // It's the manage tags modal
-          openManageTagsModal();
+      try {
+        const response = await fetch('/api/tags', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          },
+          body: JSON.stringify({ name })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to create tag');
         }
+        
+        showNotification(`Tag "${name}" created`);
+        closeCreateTagModal();
+        await renderTagOptions();
+        
+        // Check if tags modal is open and refresh it
+        const tagsModal = document.getElementById('tags-modal');
+        if (!tagsModal.classList.contains('hidden')) {
+          // Check if it's the manage tags modal or contact tags modal
+          const tagsList = document.getElementById('tags-list');
+          if (tagsList && tagsList.innerHTML.includes('Current Tags:')) {
+            // It's a contact tags modal, use the stored contact email
+            const currentContactEmail = tagsModal.getAttribute('data-current-contact');
+            if (currentContactEmail) {
+              // Small delay to ensure the create tag modal is fully closed
+              setTimeout(async () => {
+                await showContactTagsModal(currentContactEmail);
+              }, 100);
+            }
+          } else {
+            // It's the manage tags modal
+            openManageTagsModal();
+          }
+        }
+      } catch (error) {
+        console.error('Error creating tag:', error);
+        showNotification(error.message || 'Failed to create tag');
       }
     }
 
-    function openManageTagsModal() {
+    async function openManageTagsModal() {
       const modal = document.getElementById('tags-modal');
       const list = document.getElementById('tags-list');
       const title = document.getElementById('tags-modal-title');
@@ -3457,49 +3488,64 @@
       // Clear previous content
       list.innerHTML = '';
       
-      // Get all tags from localStorage
-      const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      
-      // Add tags to the list
-      if (tags && tags.length > 0) {
-        tags.forEach((tag, index) => {
+      try {
+        // Get all tags from backend
+        const response = await fetch('/api/tags', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tags');
+        }
+        
+        const tags = await response.json();
+        
+        // Add tags to the list
+        if (tags && tags.length > 0) {
+          tags.forEach((tag, index) => {
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg hover:border-[#34D399] transition-colors';
+            item.innerHTML = `
+              <div class="flex items-center gap-3">
+                <span class="material-icons-outlined text-[#34D399]">local_offer</span>
+                <span class="text-[#E0E0E0] font-medium">${tag.name}</span>
+              </div>
+              <button onclick="removeTag('${tag.id}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
+                <span class="material-icons-outlined text-sm">delete</span>
+              </button>
+            `;
+            list.appendChild(item);
+          });
+        } else {
           const item = document.createElement('div');
-          item.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg hover:border-[#34D399] transition-colors';
+          item.className = 'flex items-center gap-3 p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg';
           item.innerHTML = `
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
-              <span class="text-[#E0E0E0] font-medium">${tag}</span>
-            </div>
-            <button onclick="removeTag('${tag}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
-              <span class="material-icons-outlined text-sm">delete</span>
-            </button>
+            <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
+            <span class="text-[#A3B3AF]">No tags available</span>
           `;
           list.appendChild(item);
-        });
-      } else {
-        const item = document.createElement('div');
-        item.className = 'flex items-center gap-3 p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg';
-        item.innerHTML = `
-          <span class="material-icons-outlined text-[#A3B3AF]">local_offer</span>
-          <span class="text-[#A3B3AF]">No tags available</span>
+        }
+        
+        // Add create tag button
+        const createButton = document.createElement('div');
+        createButton.className = 'mt-4 pt-4 border-t border-[#2C4A43]';
+        createButton.innerHTML = `
+          <button onclick="openCreateTagModal()" class="w-full bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2">
+            <span class="material-icons-outlined text-sm">add</span>
+            Create New Tag
+          </button>
         `;
-        list.appendChild(item);
+        list.appendChild(createButton);
+        
+        // Show modal
+        document.getElementById('modal-backdrop').classList.remove('hidden');
+        modal.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+        showNotification('Error loading tags');
       }
-      
-      // Add create tag button
-      const createButton = document.createElement('div');
-      createButton.className = 'mt-4 pt-4 border-t border-[#2C4A43]';
-      createButton.innerHTML = `
-        <button onclick="openCreateTagModal()" class="w-full bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2">
-          <span class="material-icons-outlined text-sm">add</span>
-          Create New Tag
-        </button>
-      `;
-      list.appendChild(createButton);
-      
-      // Show modal
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      modal.classList.remove('hidden');
     }
 
     function closeTagsModal() {
@@ -3507,7 +3553,7 @@
       document.getElementById('tags-modal').classList.add('hidden');
     }
 
-    function showContactTagsModal(contactEmail) {
+    async function showContactTagsModal(contactEmail) {
       const modal = document.getElementById('tags-modal');
       const list = document.getElementById('tags-list');
       const title = document.getElementById('tags-modal-title');
@@ -3518,14 +3564,25 @@
       // Clear previous content
       list.innerHTML = '';
       
-      // Get the contact
-      const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      const contact = contacts.find(c => c.email === contactEmail);
-      
-      if (!contact) {
-        showNotification('Contact not found');
-        return;
-      }
+      try {
+        // Get the contact from backend
+        const response = await fetch('/api/contacts', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch contacts');
+        }
+        
+        const contacts = await response.json();
+        const contact = contacts.find(c => c.email === contactEmail);
+        
+        if (!contact) {
+          showNotification('Contact not found');
+          return;
+        }
       
       // Set modal title
       title.textContent = `${contact.name}'s Tags`;
@@ -3581,9 +3638,19 @@
       availableTagsHeader.textContent = 'Add Tags:';
       list.appendChild(availableTagsHeader);
       
-      // Get all available tags
-      const allTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      const availableTags = allTags.filter(tag => !contact.tags || !contact.tags.includes(tag));
+      // Get all available tags from backend
+      const tagsResponse = await fetch('/api/tags', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+        }
+      });
+      
+      if (!tagsResponse.ok) {
+        throw new Error('Failed to fetch tags');
+      }
+      
+      const allTags = await tagsResponse.json();
+      const availableTags = allTags.filter(tag => !contact.tags || !contact.tags.includes(tag.name)).map(tag => tag.name);
       
       if (availableTags.length === 0) {
         const noAvailableTags = document.createElement('div');
@@ -3624,112 +3691,145 @@
       // Show modal
       document.getElementById('modal-backdrop').classList.remove('hidden');
       modal.classList.remove('hidden');
+    } catch (error) {
+      console.error('Error showing contact tags modal:', error);
+      showNotification('Failed to load contact tags');
+    }
     }
 
-    function removeTag(tagName) {
-      // Remove tag from all contacts
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      contacts.forEach(contact => {
-        if (contact.tags) {
-          contact.tags = contact.tags.filter(tag => tag !== tagName);
-        }
-      });
-      localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-      
-      // Remove tag from tags list
-      let tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-      tags = tags.filter(tag => tag !== tagName);
-      localStorage.setItem('calendarify-tags', JSON.stringify(tags));
-      
-      showNotification(`Tag "${tagName}" removed from all contacts`);
-      
-      // Refresh the contacts table
-      renderContacts();
-      
-      // Check if tags modal is open and refresh it instead of closing
-      const tagsModal = document.getElementById('tags-modal');
-      if (!tagsModal.classList.contains('hidden')) {
-        // Check if it's the manage tags modal or contact tags modal
-        const tagsList = document.getElementById('tags-list');
-        if (tagsList && tagsList.innerHTML.includes('Current Tags:')) {
-          // It's a contact tags modal, use the stored contact email
-          const currentContactEmail = tagsModal.getAttribute('data-current-contact');
-          if (currentContactEmail) {
-            showContactTagsModal(currentContactEmail);
+    async function removeTag(tagId) {
+      try {
+        const response = await fetch(`/api/tags/${tagId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
           }
-        } else {
-          // It's the manage tags modal, refresh it
-          openManageTagsModal();
-        }
-      }
-    }
-
-    function addTagToContact(contactEmail, tagName) {
-      // Add tag to specific contact
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      const contact = contacts.find(c => c.email === contactEmail);
-      if (contact) {
-        if (!contact.tags) {
-          contact.tags = [];
-        }
-        if (!contact.tags.includes(tagName)) {
-          contact.tags.push(tagName);
-          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-          
-          // Update the contact row in the table
-          const row = document.getElementById(`contact-${contactEmail}`);
-          if (row) {
-            const tagsCell = row.querySelector('td:nth-child(4) div');
-            if (tagsCell) {
-              let tagsHtml = '';
-              if (contact.tags.length <= 2) {
-                tagsHtml = contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
-              } else {
-                tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${contact.tags.length} Tags</span>`;
-              }
-              tagsCell.innerHTML = tagsHtml;
-            }
-          }
-          
-          showNotification(`Tag "${tagName}" added to ${contact.name}`);
-          
-          // Refresh the modal to show updated contact tags
-          showContactTagsModal(contactEmail);
-        } else {
-          showNotification(`Tag "${tagName}" is already assigned to ${contact.name}`);
-        }
-      }
-    }
-
-    function removeTagFromContact(contactEmail, tagName) {
-      // Remove tag from specific contact
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      const contact = contacts.find(c => c.email === contactEmail);
-      if (contact && contact.tags) {
-        contact.tags = contact.tags.filter(tag => tag !== tagName);
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        });
         
-        // Update the contact row in the table
-        const row = document.getElementById(`contact-${contactEmail}`);
-        if (row) {
-          const tagsCell = row.querySelector('td:nth-child(4) div');
-          if (tagsCell) {
-            let tagsHtml = '';
-            if (!contact.tags || contact.tags.length === 0) {
-              tagsHtml = '<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal(\'' + contact.email + '\')">No Tags</span>';
-            } else if (contact.tags.length <= 2) {
-              tagsHtml = contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
-            } else {
-              tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${contact.tags.length} Tags</span>`;
+        if (!response.ok) {
+          throw new Error('Failed to remove tag');
+        }
+        
+        showNotification('Tag removed successfully');
+        
+        // Refresh the contacts table
+        await renderContacts();
+        
+        // Check if tags modal is open and refresh it instead of closing
+        const tagsModal = document.getElementById('tags-modal');
+        if (!tagsModal.classList.contains('hidden')) {
+          // Check if it's the manage tags modal or contact tags modal
+          const tagsList = document.getElementById('tags-list');
+          if (tagsList && tagsList.innerHTML.includes('Current Tags:')) {
+            // It's a contact tags modal, use the stored contact email
+            const currentContactEmail = tagsModal.getAttribute('data-current-contact');
+            if (currentContactEmail) {
+              await showContactTagsModal(currentContactEmail);
             }
-            tagsCell.innerHTML = tagsHtml;
+          } else {
+            // It's the manage tags modal, refresh it
+            openManageTagsModal();
           }
+        }
+      } catch (error) {
+        console.error('Error removing tag:', error);
+        showNotification('Failed to remove tag');
+      }
+    }
+
+    async function addTagToContact(contactEmail, tagName) {
+      try {
+        // First, get the contact ID from the backend
+        const contactsResponse = await fetch('/api/contacts', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!contactsResponse.ok) {
+          throw new Error('Failed to fetch contacts');
+        }
+        
+        const contacts = await contactsResponse.json();
+        const contact = contacts.find(c => c.email === contactEmail);
+        
+        if (!contact) {
+          showNotification('Contact not found');
+          return;
+        }
+        
+        // Add tag to contact via backend API
+        const response = await fetch(`/api/contacts/${contact.id}/tags`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          },
+          body: JSON.stringify({ tagName })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to add tag to contact');
+        }
+        
+        showNotification(`Tag "${tagName}" added to ${contact.name}`);
+        
+        // Refresh the contacts table to show updated tags
+        await renderContacts();
+        
+        // Refresh the modal to show updated contact tags
+        await showContactTagsModal(contactEmail);
+      } catch (error) {
+        console.error('Error adding tag to contact:', error);
+        showNotification(error.message || 'Failed to add tag to contact');
+      }
+    }
+
+    async function removeTagFromContact(contactEmail, tagName) {
+      try {
+        // First, get the contact ID from the backend
+        const contactsResponse = await fetch('/api/contacts', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!contactsResponse.ok) {
+          throw new Error('Failed to fetch contacts');
+        }
+        
+        const contacts = await contactsResponse.json();
+        const contact = contacts.find(c => c.email === contactEmail);
+        
+        if (!contact) {
+          showNotification('Contact not found');
+          return;
+        }
+        
+        // Remove tag from contact via backend API
+        const response = await fetch(`/api/contacts/${contact.id}/tags/${encodeURIComponent(tagName)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to remove tag from contact');
         }
         
         showNotification(`Tag "${tagName}" removed from ${contact.name}`);
         
+        // Refresh the contacts table to show updated tags
+        await renderContacts();
+        
         // Refresh the modal to show updated contact tags
-        showContactTagsModal(contactEmail);
+        await showContactTagsModal(contactEmail);
+      } catch (error) {
+        console.error('Error removing tag from contact:', error);
+        showNotification(error.message || 'Failed to remove tag from contact');
       }
     }
 
@@ -3778,13 +3878,29 @@
       tbody.appendChild(row);
     }
 
-    function renderContacts() {
+    async function renderContacts() {
       const tbody = document.querySelector('#contacts-section tbody');
       if (!tbody) return;
       tbody.innerHTML = '';
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      contacts.forEach(c => addContactRow(c));
-      filterContacts();
+      
+      try {
+        const response = await fetch('/api/contacts', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch contacts');
+        }
+        
+        const contacts = await response.json();
+        contacts.forEach(c => addContactRow(c));
+        filterContacts();
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+        showNotification('Error loading contacts');
+      }
     }
     
     // Close contact dropdowns when clicking outside
@@ -3808,7 +3924,7 @@
       if (tagContainer) tagContainer.innerHTML = '';
     }
 
-    function saveContact() {
+    async function saveContact() {
       const name = document.getElementById('contact-name').value.trim();
       const email = document.getElementById('contact-email').value.trim();
       const phone = document.getElementById('contact-phone').value.trim();
@@ -3828,25 +3944,38 @@
 
       const tags = Array.from(document.querySelectorAll('#contact-tag-options input:checked')).map(cb => cb.value);
 
-      const contact = {
-        id: Date.now().toString(),
-        name,
-        email,
-        phone,
-        company,
-        notes,
-        favorite,
-        tags,
-        createdAt: new Date().toISOString()
-      };
+      try {
+        const response = await fetch('/api/contacts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            company,
+            notes,
+            favorite,
+            tags
+          })
+        });
 
-      let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-      contacts.push(contact);
-      localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-      addContactRow(contact);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to create contact');
+        }
 
-      showNotification(`Contact "${name}" added successfully!`);
-      closeAddContactModal();
+        const contact = await response.json();
+        addContactRow(contact);
+
+        showNotification(`Contact "${name}" added successfully!`);
+        closeAddContactModal();
+      } catch (error) {
+        console.error('Error creating contact:', error);
+        showNotification(error.message || 'Failed to create contact');
+      }
     }
 
     function isValidEmail(email) {
