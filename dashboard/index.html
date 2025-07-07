@@ -496,6 +496,486 @@
       color: #E0E0E0;
       border-color: #34D399;
     }
+    .sidebar {
+      background: #111f1c;
+      border-right: 1px solid #1E3A34;
+      min-height: 100vh;
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 0 0 0;
+    }
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 24px;
+    }
+    .nav-divider {
+      border: none;
+      border-top: 1px solid #1E3A34;
+      margin: 24px 0 16px 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 1.08rem;
+      font-weight: 500;
+      color: #E0E0E0;
+      background: none;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-item.active { 
+      background: #19342e;
+      color: #34D399;
+    }
+    .nav-item.active .nav-icon {
+      color: #34D399;
+    }
+    .nav-item .nav-icon {
+      width: 24px;
+      height: 24px;
+      color: #A3B3AF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+    .nav-item:not(.active):hover {
+      background: #1E3A34;
+    }
+    .nav-item:not(.active):hover .nav-icon {
+      color: #34D399;
+    }
+    .nav-item .badge {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.1));
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.1);
+    }
+    .nav-item .badge.warning {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.1));
+      color: #eab308;
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.1);
+    }
+    .nav-item .badge.error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+      color: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+    }
+    .nav-group-title {
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+    }
+    .nav-item::after {
+      content: '';
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), transparent);
+    }
+    .card {
+      background: #1E3A34;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      color: #E0E0E0;
+      box-shadow: none;
+      transition: box-shadow 0.2s;
+    }
+    .card:hover {
+      box-shadow: 0 2px 16px 0 rgba(52, 211, 153, 0.08);
+    }
+    .card-title {
+      color: #E0E0E0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .card-subtitle {
+      color: #A3B3AF;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .input-field {
+      background: transparent;
+      border: 1px solid #1E3A34;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: #E0E0E0;
+      transition: border 0.2s;
+    }
+    .input-field:focus {
+      border-color: #34D399;
+      outline: none;
+    }
+    .search-field {
+      background: #1E3A34 !important;
+      border: 1px solid #2C4A43 !important;
+      border-radius: 0.75rem !important;
+      padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+      color: #E0E0E0 !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+    .search-field:focus {
+      border-color: #34D399 !important;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1) !important;
+      outline: none !important;
+    }
+    .search-field::placeholder {
+      color: #A3B3AF !important;
+    }
+    .time-input {
+      background-color: #19342e;
+      border: 1px solid #2C4A43;
+      color: #E0E0E0;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+    .time-input:focus {
+      outline: none;
+      border-color: #34D399;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+    }
+    .time-input:hover {
+      border-color: #34D399;
+    }
+    .time-input:disabled {
+      background-color: #111f1c;
+      color: #6B7C78;
+      cursor: not-allowed;
+    }
+    .time-input::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(0.8);
+      cursor: pointer;
+    }
+    .time-input::-webkit-calendar-picker-indicator:hover {
+      filter: invert(1) brightness(1);
+    }
+    .custom-checkbox:checked::after {
+      content: '✓' !important;
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      color: #1A2E29 !important;
+      font-size: 0.875rem !important;
+      font-weight: bold !important;
+    }
+    .custom-checkbox:hover {
+      border-color: #34D399 !important;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.1) !important;
+    }
+    .select-field {
+      background: #1E3A34 !important;
+      border: 1px solid #2C4A43 !important;
+      border-radius: 0.5rem !important;
+      padding: 0.5rem 0.75rem !important;
+      color: #E0E0E0 !important;
+      font-size: 0.875rem !important;
+      transition: all 0.2s ease !important;
+      cursor: pointer !important;
+    }
+    .select-field:focus {
+      border-color: #34D399 !important;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.1) !important;
+      outline: none !important;
+    }
+    .select-field option {
+      background: #1E3A34 !important;
+      color: #E0E0E0 !important;
+    }
+    .table-header {
+      background: #1A2E29;
+      color: #E0E0E0;
+      font-weight: 600;
+    }
+    .table-row {
+      background: none;
+      transition: background 0.2s;
+    }
+    .table-row:hover {
+      background: #1E3A34;
+    }
+    .badge-success {
+      background: #34D39933;
+      color: #34D399;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-warning {
+      background: #facc1533;
+      color: #facc15;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-error {
+      background: #ef444433;
+      color: #ef4444;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-completed {
+      background: none;
+      color: #A3B3AF;
+      border-radius: 9999px;
+      padding: 0.25em 0.75em;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .notification-dot {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 0.5rem;
+      height: 0.5rem;
+      background: #ef4444;
+      border-radius: 9999px;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      width: 3.125rem;
+      height: 3.125rem;
+    }
+    .calendar-day:hover {
+      background-color: #2C4A43;
+    }
+    .calendar-day.today {
+      background-color: #F97316; /* Orange color */
+      color: #1A2E29;
+      font-weight: bold;
+    }
+    .calendar-day.active {
+      background-color: #34D399; /* Theme green color */
+      color: #1A2E29;
+      font-weight: bold;
+    }
+    .calendar-day.has-event {
+      position: relative;
+    }
+    .calendar-day.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      background-color: #34D399;
+      border-radius: 50%;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 51px;
+      height: 31px;
+      background-color: #19342e;
+      border-radius: 31px;
+      cursor: pointer;
+      border: 1px solid #34D399;
+      transition: background-color 0.3s ease;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .toggle-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #19342e;
+      border-radius: 31px;
+      border: 1px solid #34D399;
+      transition: background-color 0.3s ease;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 25px;
+      width: 25px;
+      left: 3px;
+      top: 3px;
+      background-color: #34D399;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #34D399;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+      background-color: white;
+    }
+    .nav-link {
+      color: #A3B3AF;
+    }
+    .nav-link:hover {
+      color: #E0E0E0;
+    }
+    
+    /* Time input styling */
+    .time-input {
+      background-color: #19342e;
+      border: 1px solid #2C4A43;
+      color: #E0E0E0;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+    
+    .time-input:focus {
+      outline: none;
+      border-color: #34D399;
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+    }
+    
+    .time-input:hover {
+      border-color: #34D399;
+    }
+    
+    .time-input:disabled {
+      background-color: #111f1c;
+      color: #6B7C78;
+      cursor: not-allowed;
+    }
+    
+    /* Ensure time picker dropdown works */
+    .time-input::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(0.8);
+      cursor: pointer;
+    }
+    
+    .time-input::-webkit-calendar-picker-indicator:hover {
+      filter: invert(1) brightness(1);
+    }
+    
+    /* Custom scrollbar for event types modal */
+    #event-types-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    #event-types-list::-webkit-scrollbar-track {
+      background: #1E3A34;
+      border-radius: 4px;
+    }
+    
+    #event-types-list::-webkit-scrollbar-thumb {
+      background: #2C4A43;
+      border-radius: 4px;
+    }
+    
+    #event-types-list::-webkit-scrollbar-thumb:hover {
+      background: #34D399;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 1024px) {
+      .time-input {
+        width: 100% !important;
+        max-width: 7rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .time-input {
+        width: 100% !important;
+        max-width: 6rem;
+      }
+    }
+    
+    /* Dashboard responsive improvements */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .time-dropdown { background-color: #1E3A34 !important; opacity: 1 !important; }
+    /* Remove native select arrows for custom time picker */
+    .custom-time-picker select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: none !important;
+      padding-right: 0.5rem;
+    }
+    .custom-time-picker select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #34D39944;
+    }
+    /* Optionally, add a custom arrow if you want */
+    /* .custom-time-picker select { background: url('data:image/svg+xml;...') no-repeat right center/1em; } */
+
+    /* --- Actions column alignment --- */
+    td.actions-col {
+      text-align: right;
+      vertical-align: middle;
+      position: relative;
+      width: 1%;
+      white-space: nowrap;
+    }
+    .meeting-menu {
+      z-index: 9999;
+      min-width: 140px;
+      right: 0;
+      top: 100%;
+      margin-top: 4px;
+      position: absolute;
+    }
+    .meeting-menu.open {
+      display: block;
+    }
+    .meeting-menu:not(.open) {
+      display: none;
+    }
+    .meeting-menu button {
+      text-align: left;
+      width: 100%;
+    }
+    .meeting-menu .material-icons-outlined {
+      font-size: 1.1em;
+    }
+    .kebab-btn {
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: #19342e;
+      color: #A3B3AF;
+      border: 1px solid #2C4A43;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background: #2C4A43;
+      color: #E0E0E0;
+      border-color: #34D399;
+    }
     .btn-join {
       background: #34D399;
       color: #1A2E29;
@@ -899,8 +1379,8 @@
                   </div>
                   <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('wednesday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
-          </button>
-        </div>
+                  </button>
+                </div>
               </div>
               <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
                 <span class="text-[#A3B3AF] w-24 flex-shrink-0">Thursday</span>
@@ -940,9 +1420,9 @@
                   </div>
                   <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('thursday', this)">
                     <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
-                </button>
+                  </button>
+                </div>
               </div>
-            </div>
               <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
                 <span class="text-[#A3B3AF] w-24 flex-shrink-0">Friday</span>
                 <div class="flex items-center gap-2 flex-shrink-0">
@@ -2495,181 +2975,6 @@
       `;
     }
 
-    function saveOverride() {
-      if (!selectedDate) return;
-      
-      const toggleButton = document.querySelector('#override-modal button[onclick="toggleOverrideAvailability(this)"]');
-      const isAvailable = toggleButton.getAttribute('aria-pressed') === 'true';
-      
-      if (isAvailable) {
-        const timeSlots = [];
-        const timeSlotElements = document.querySelectorAll('#override-times .flex');
-        
-        timeSlotElements.forEach(slot => {
-          const inputs = slot.querySelectorAll('input');
-          if (inputs && inputs.length >= 2 && inputs[0] && inputs[1] && inputs[0].value && inputs[1].value) {
-            timeSlots.push({
-              start: inputs[0].value,
-              end: inputs[1].value
-            });
-          }
-        });
-        
-        calendarOverrides[selectedDate] = {
-          available: true,
-          timeSlots: timeSlots
-        };
-      } else {
-        calendarOverrides[selectedDate] = {
-          available: false,
-          timeSlots: []
-        };
-      }
-      
-      localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
-      renderCalendar();
-      updateOverrideList();
-      closeOverrideModal();
-      showNotification('Override saved successfully!');
-    }
-
-    function updateOverrideList() {
-      const overrideList = document.getElementById('override-list');
-      const overrides = Object.entries(calendarOverrides);
-      
-      if (overrides.length === 0) {
-        overrideList.innerHTML = '<p class="text-[#A3B3AF] text-sm">No overrides set</p>';
-        return;
-      }
-      
-      const overrideHTML = overrides.map(([date, override]) => {
-        const dateObj = new Date(date);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric' 
-        });
-        
-        let statusText = override.available ? 'Available' : 'Unavailable';
-        let statusClass = override.available ? 'text-[#34D399]' : 'text-[#A3B3AF]';
-        
-        if (override.available && override.timeSlots.length > 0) {
-          const timeText = override.timeSlots.map(slot => `${slot.start} - ${slot.end}`).join(', ');
-          statusText = timeText;
-        }
-        
-        return `
-          <div class="flex items-center justify-between p-3 bg-[#19342e] rounded-lg">
-            <div>
-              <div class="text-white font-medium">${formattedDate}</div>
-              <div class="${statusClass} text-sm">${statusText}</div>
-            </div>
-            <div class="flex gap-2">
-              <button class="text-[#A3B3AF] hover:text-[#34D399] transition-colors" onclick="editOverride('${date}')">
-                <span class="material-icons-outlined text-lg">edit</span>
-              </button>
-              <button class="text-[#A3B3AF] hover:text-red-400 transition-colors" onclick="deleteOverride('${date}')">
-                <span class="material-icons-outlined text-lg">delete</span>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      overrideList.innerHTML = overrideHTML;
-    }
-
-    function editOverride(dateString) {
-      selectedDate = dateString;
-      const date = new Date(dateString);
-      const formattedDate = date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      
-      document.getElementById('override-date').textContent = formattedDate;
-      loadOverrideData(calendarOverrides[dateString]);
-      openOverrideModal();
-    }
-
-    function deleteOverride(dateString) {
-      // Store the date to delete for the confirmation
-      window.dateToDelete = dateString;
-      
-      // Show the custom confirmation modal
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('delete-confirm-modal').classList.remove('hidden');
-    }
-
-    function confirmDeleteOverride() {
-      const dateString = window.dateToDelete;
-      if (dateString) {
-        delete calendarOverrides[dateString];
-        localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
-        renderCalendar();
-        updateOverrideList();
-        showNotification('Override deleted successfully!');
-      }
-      
-      // Close the modal
-      closeDeleteConfirmModal();
-      window.dateToDelete = null;
-    }
-
-    function closeDeleteConfirmModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('delete-confirm-modal').classList.add('hidden');
-      window.dateToDelete = null;
-    }
-
-    function closeCreateEventTypeModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('create-event-type-modal').classList.add('hidden');
-      resetCreateEventTypeForm();
-    }
-
-    function resetCreateEventTypeForm() {
-      document.getElementById('event-type-name').value = '';
-      document.getElementById('event-type-duration').value = '30';
-      document.getElementById('event-type-type').value = '1-on-1';
-      document.getElementById('event-type-attendee-limit').value = '10';
-      document.getElementById('event-type-description').value = '';
-      document.getElementById('event-type-location').value = 'zoom';
-      document.getElementById('event-type-custom-location').value = '';
-      document.getElementById('event-type-link').value = '';
-      document.getElementById('event-type-color').value = '#34D399';
-      document.getElementById('event-type-buffer-before').value = '0';
-      document.getElementById('event-type-buffer-after').value = '0';
-      document.getElementById('event-type-advance-notice').value = '0';
-      document.getElementById('event-type-cancellation').value = '0';
-      document.getElementById('event-type-timezone').value = 'auto';
-      document.getElementById('event-type-booking-limit').value = '0';
-      document.getElementById('event-type-custom-limit-count').value = '5';
-      document.getElementById('event-type-custom-limit-period').value = 'day';
-      document.getElementById('event-type-confirmation-message').value = '';
-      document.getElementById('event-type-questions').value = '';
-      document.getElementById('event-type-require-name').checked = true;
-      document.getElementById('event-type-require-email').checked = true;
-      document.getElementById('event-type-require-phone').checked = false;
-      document.getElementById('event-type-require-company').checked = false;
-      document.getElementById('event-type-availability').checked = true;
-      document.getElementById('event-type-reminders').checked = true;
-      document.getElementById('event-type-follow-up').checked = false;
-      document.getElementById('event-type-cancellation-notification').checked = true;
-      document.getElementById('event-type-reschedule-notification').checked = true;
-      document.getElementById('event-type-secret').value = 'public';
-      document.getElementById('event-type-priority').value = 'normal';
-      document.getElementById('event-type-tags').value = '';
-      
-      // Reset visibility
-      document.getElementById('attendee-limit-container').style.display = 'none';
-      document.getElementById('custom-location-container').style.display = 'none';
-      document.getElementById('meeting-link-container').style.display = 'block';
-      document.getElementById('custom-booking-limit-container').style.display = 'none';
-    }
-
     function saveEventType() {
       const name = document.getElementById('event-type-name').value.trim();
       const duration = document.getElementById('event-type-duration').value;
@@ -2897,7 +3202,6 @@
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="editEventType('${eventType.id}')">Edit</button>
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="cloneEventType('${eventType.id}')">Clone</button>
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Add Note</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Mark Secret</button>
                   <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="deleteEventType('${eventType.id}')">Delete</button>
                 </div>
               </div>
@@ -3381,17 +3685,8 @@
       container.innerHTML = '';
       
       try {
-        const response = await fetch('/api/tags', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch tags');
-        }
-        
-        const tags = await response.json();
+        // Get tags from localStorage
+        const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
         
         if (tags.length === 0) {
           container.innerHTML = '<p class="text-[#A3B3AF] text-sm">No tags available</p>';
@@ -3399,14 +3694,14 @@
         }
         
         tags.forEach(tag => {
-          const id = 'tag-option-' + tag.name.replace(/\s+/g, '-');
+          const id = 'tag-option-' + tag.replace(/\s+/g, '-');
           container.innerHTML += `<label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" value="${tag.name}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-              <span class="text-[#E0E0E0] text-sm">${tag.name}</span>
+              <input type="checkbox" value="${tag}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+              <span class="text-[#E0E0E0] text-sm">${tag}</span>
             </label>`;
         });
       } catch (error) {
-        console.error('Error fetching tags:', error);
+        console.error('Error loading tags:', error);
         container.innerHTML = '<p class="text-red-400 text-sm">Error loading tags</p>';
       }
     }
@@ -3434,19 +3729,20 @@
       }
       
       try {
-        const response = await fetch('/api/tags', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          },
-          body: JSON.stringify({ name })
-        });
+        // Get existing tags from localStorage
+        const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
         
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to create tag');
+        // Check if tag already exists
+        if (tags.includes(name)) {
+          showNotification('Tag already exists');
+          return;
         }
+        
+        // Add new tag
+        tags.push(name);
+        
+        // Save back to localStorage
+        localStorage.setItem('calendarify-tags', JSON.stringify(tags));
         
         showNotification(`Tag "${name}" created`);
         closeCreateTagModal();
@@ -3473,7 +3769,7 @@
         }
       } catch (error) {
         console.error('Error creating tag:', error);
-        showNotification(error.message || 'Failed to create tag');
+        showNotification('Failed to create tag');
       }
     }
 
@@ -3489,18 +3785,8 @@
       list.innerHTML = '';
       
       try {
-        // Get all tags from backend
-        const response = await fetch('/api/tags', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch tags');
-        }
-        
-        const tags = await response.json();
+        // Get all tags from localStorage
+        const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
         
         // Add tags to the list
         if (tags && tags.length > 0) {
@@ -3510,9 +3796,9 @@
             item.innerHTML = `
               <div class="flex items-center gap-3">
                 <span class="material-icons-outlined text-[#34D399]">local_offer</span>
-                <span class="text-[#E0E0E0] font-medium">${tag.name}</span>
+                <span class="text-[#E0E0E0] font-medium">${tag}</span>
               </div>
-              <button onclick="removeTag('${tag.id}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
+              <button onclick="removeTag('${tag}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
                 <span class="material-icons-outlined text-sm">delete</span>
               </button>
             `;
@@ -3543,7 +3829,7 @@
         document.getElementById('modal-backdrop').classList.remove('hidden');
         modal.classList.remove('hidden');
       } catch (error) {
-        console.error('Error fetching tags:', error);
+        console.error('Error loading tags:', error);
         showNotification('Error loading tags');
       }
     }
@@ -3565,18 +3851,8 @@
       list.innerHTML = '';
       
       try {
-        // Get the contact from backend
-        const response = await fetch('/api/contacts', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch contacts');
-        }
-        
-        const contacts = await response.json();
+        // Get the contact from localStorage since backend database is empty
+        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const contact = contacts.find(c => c.email === contactEmail);
         
         if (!contact) {
@@ -3638,19 +3914,9 @@
       availableTagsHeader.textContent = 'Add Tags:';
       list.appendChild(availableTagsHeader);
       
-      // Get all available tags from backend
-      const tagsResponse = await fetch('/api/tags', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-        }
-      });
-      
-      if (!tagsResponse.ok) {
-        throw new Error('Failed to fetch tags');
-      }
-      
-      const allTags = await tagsResponse.json();
-      const availableTags = allTags.filter(tag => !contact.tags || !contact.tags.includes(tag.name)).map(tag => tag.name);
+      // Get all available tags from localStorage
+      const allTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      const availableTags = allTags.filter(tag => !contact.tags || !contact.tags.includes(tag));
       
       if (availableTags.length === 0) {
         const noAvailableTags = document.createElement('div');
@@ -3697,18 +3963,16 @@
     }
     }
 
-    async function removeTag(tagId) {
+    async function removeTag(tagName) {
       try {
-        const response = await fetch(`/api/tags/${tagId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
+        // Get tags from localStorage
+        const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
         
-        if (!response.ok) {
-          throw new Error('Failed to remove tag');
-        }
+        // Remove the tag
+        const updatedTags = tags.filter(tag => tag !== tagName);
+        
+        // Save back to localStorage
+        localStorage.setItem('calendarify-tags', JSON.stringify(updatedTags));
         
         showNotification('Tag removed successfully');
         
@@ -3739,18 +4003,8 @@
 
     async function addTagToContact(contactEmail, tagName) {
       try {
-        // First, get the contact ID from the backend
-        const contactsResponse = await fetch('/api/contacts', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!contactsResponse.ok) {
-          throw new Error('Failed to fetch contacts');
-        }
-        
-        const contacts = await contactsResponse.json();
+        // Get contacts from localStorage
+        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const contact = contacts.find(c => c.email === contactEmail);
         
         if (!contact) {
@@ -3758,48 +4012,37 @@
           return;
         }
         
-        // Add tag to contact via backend API
-        const response = await fetch(`/api/contacts/${contact.id}/tags`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          },
-          body: JSON.stringify({ tagName })
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to add tag to contact');
+        // Add tag to contact in localStorage
+        if (!contact.tags) {
+          contact.tags = [];
         }
         
-        showNotification(`Tag "${tagName}" added to ${contact.name}`);
-        
-        // Refresh the contacts table to show updated tags
-        await renderContacts();
-        
-        // Refresh the modal to show updated contact tags
-        await showContactTagsModal(contactEmail);
+        if (!contact.tags.includes(tagName)) {
+          contact.tags.push(tagName);
+          
+          // Update localStorage
+          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+          
+          showNotification(`Tag "${tagName}" added to ${contact.name}`);
+          
+          // Refresh the contacts table to show updated tags
+          await renderContacts();
+          
+          // Refresh the modal to show updated contact tags
+          await showContactTagsModal(contactEmail);
+        } else {
+          showNotification(`Tag "${tagName}" is already assigned to ${contact.name}`);
+        }
       } catch (error) {
         console.error('Error adding tag to contact:', error);
-        showNotification(error.message || 'Failed to add tag to contact');
+        showNotification('Failed to add tag to contact');
       }
     }
 
     async function removeTagFromContact(contactEmail, tagName) {
       try {
-        // First, get the contact ID from the backend
-        const contactsResponse = await fetch('/api/contacts', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!contactsResponse.ok) {
-          throw new Error('Failed to fetch contacts');
-        }
-        
-        const contacts = await contactsResponse.json();
+        // Get contacts from localStorage
+        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const contact = contacts.find(c => c.email === contactEmail);
         
         if (!contact) {
@@ -3807,29 +4050,26 @@
           return;
         }
         
-        // Remove tag from contact via backend API
-        const response = await fetch(`/api/contacts/${contact.id}/tags/${encodeURIComponent(tagName)}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to remove tag from contact');
+        // Remove tag from contact in localStorage
+        if (contact.tags && contact.tags.includes(tagName)) {
+          contact.tags = contact.tags.filter(tag => tag !== tagName);
+          
+          // Update localStorage
+          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+          
+          showNotification(`Tag "${tagName}" removed from ${contact.name}`);
+          
+          // Refresh the contacts table to show updated tags
+          await renderContacts();
+          
+          // Refresh the modal to show updated contact tags
+          await showContactTagsModal(contactEmail);
+        } else {
+          showNotification(`Tag "${tagName}" is not assigned to ${contact.name}`);
         }
-        
-        showNotification(`Tag "${tagName}" removed from ${contact.name}`);
-        
-        // Refresh the contacts table to show updated tags
-        await renderContacts();
-        
-        // Refresh the modal to show updated contact tags
-        await showContactTagsModal(contactEmail);
       } catch (error) {
         console.error('Error removing tag from contact:', error);
-        showNotification(error.message || 'Failed to remove tag from contact');
+        showNotification('Failed to remove tag from contact');
       }
     }
 
@@ -3884,21 +4124,12 @@
       tbody.innerHTML = '';
       
       try {
-        const response = await fetch('/api/contacts', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch contacts');
-        }
-        
-        const contacts = await response.json();
+        // Get contacts from localStorage
+        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         contacts.forEach(c => addContactRow(c));
         filterContacts();
       } catch (error) {
-        console.error('Error fetching contacts:', error);
+        console.error('Error loading contacts:', error);
         showNotification('Error loading contacts');
       }
     }
@@ -3945,36 +4176,42 @@
       const tags = Array.from(document.querySelectorAll('#contact-tag-options input:checked')).map(cb => cb.value);
 
       try {
-        const response = await fetch('/api/contacts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('calendarify-token')}`
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            phone,
-            company,
-            notes,
-            favorite,
-            tags
-          })
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to create contact');
+        // Get existing contacts from localStorage
+        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+        
+        // Check if contact with this email already exists
+        if (contacts.find(c => c.email === email)) {
+          showNotification('A contact with this email already exists');
+          return;
         }
-
-        const contact = await response.json();
-        addContactRow(contact);
+        
+        // Create new contact
+        const newContact = {
+          id: 'c' + Date.now(),
+          name,
+          email,
+          phone,
+          company,
+          notes,
+          favorite,
+          tags,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Add to contacts array
+        contacts.push(newContact);
+        
+        // Save back to localStorage
+        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        
+        // Add to UI
+        addContactRow(newContact);
 
         showNotification(`Contact "${name}" added successfully!`);
         closeAddContactModal();
       } catch (error) {
         console.error('Error creating contact:', error);
-        showNotification(error.message || 'Failed to create contact');
+        showNotification('Failed to create contact');
       }
     }
 
