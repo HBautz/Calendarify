@@ -1905,12 +1905,27 @@
 
   <script>
     const API_URL = 'http://localhost:3001/api';
-    const token = localStorage.getItem('calendarify-token');
-    if (!token) {
-      window.location.href = '/log-in';
-    } else {
-      loadState();
-    }
+    (async function() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
+        window.location.href = '/log-in';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          loadState();
+        } else {
+          localStorage.removeItem('calendarify-token');
+          window.location.href = '/log-in';
+        }
+      } catch (e) {
+        localStorage.removeItem('calendarify-token');
+        window.location.href = '/log-in';
+      }
+    })();
 
     async function loadState() {
       const token = localStorage.getItem('calendarify-token');
