@@ -1078,8 +1078,15 @@
       background: #34D399;
     }
   </style>
+  <script>
+    const API_URL = 'http://localhost:3001/api';
+    const token = localStorage.getItem('calendarify-token');
+    if (!token) {
+      window.location.replace('/log-in');
+    }
+  </script>
 </head>
-<body class="flex min-h-screen">
+<body id="dashboard-body" class="flex min-h-screen hidden">
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="px-6 pb-8">
@@ -1904,11 +1911,11 @@
   </div>
 
   <script>
-    const API_URL = 'http://localhost:3001/api';
     (async function() {
+      const body = document.getElementById('dashboard-body');
       const token = localStorage.getItem('calendarify-token');
       if (!token) {
-        window.location.href = '/log-in';
+        window.location.replace('/log-in');
         return;
       }
       try {
@@ -1916,14 +1923,15 @@
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
+          body.classList.remove('hidden');
           loadState();
         } else {
           localStorage.removeItem('calendarify-token');
-          window.location.href = '/log-in';
+          window.location.replace('/log-in');
         }
       } catch (e) {
         localStorage.removeItem('calendarify-token');
-        window.location.href = '/log-in';
+        window.location.replace('/log-in');
       }
     })();
 
