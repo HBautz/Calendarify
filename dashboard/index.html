@@ -1078,8 +1078,15 @@
       background: #34D399;
     }
   </style>
+  <script>
+    const API_URL = 'http://localhost:3001/api';
+    const token = localStorage.getItem('calendarify-token');
+    if (!token) {
+      window.location.replace('/log-in');
+    }
+  </script>
 </head>
-<body class="flex min-h-screen">
+<body id="dashboard-body" class="flex min-h-screen hidden">
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="px-6 pb-8">
@@ -1161,7 +1168,7 @@
             <span class="material-icons-outlined">help_outline</span>
           </button>
           <div class="relative">
-            <img src="https://ui-avatars.com/api/?name=User&background=34D399&color=1A2E29" alt="Profile" class="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 transition-opacity">
+            <img id="profile-avatar" src="https://ui-avatars.com/api/?name=User&background=34D399&color=1A2E29" alt="Profile" class="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 transition-opacity">
           </div>
         </div>
       </div>
@@ -1884,10 +1891,49 @@
       </div>
     </div>
   </div>
+  
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-white">Your Profile</h3>
+      <button onclick="closeProfileModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div class="space-y-2">
+      <p><span class="text-[#A3B3AF]">Name:</span> <span id="profile-name" class="text-white"></span></p>
+      <p><span class="text-[#A3B3AF]">Email:</span> <span id="profile-email" class="text-white"></span></p>
+      <p><span class="text-[#A3B3AF]">Timezone:</span> <span id="profile-timezone" class="text-white"></span></p>
+    </div>
+    <div class="mt-6 text-right">
+      <button class="btn-secondary" onclick="closeProfileModal()">Close</button>
+    </div>
+  </div>
 
   <script>
-    const API_URL = 'http://localhost:3001/api';
-    loadState();
+    (async function() {
+      const body = document.getElementById('dashboard-body');
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
+        window.location.replace('/log-in');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          body.classList.remove('hidden');
+          loadState();
+        } else {
+          localStorage.removeItem('calendarify-token');
+          window.location.replace('/log-in');
+        }
+      } catch (e) {
+        localStorage.removeItem('calendarify-token');
+        window.location.replace('/log-in');
+      }
+    })();
 
     async function loadState() {
       const token = localStorage.getItem('calendarify-token');
@@ -2360,14 +2406,41 @@
       
       // Remove after 3 seconds
       setTimeout(() => {
-        notification.remove();
-      }, 3000);
+      notification.remove();
+    }, 3000);
+    }
+
+    async function openProfileModal() {
+      const backdrop = document.getElementById('modal-backdrop');
+      const modal = document.getElementById('profile-modal');
+      if (!modal || !backdrop) return;
+      backdrop.classList.remove('hidden');
+      modal.classList.remove('hidden');
+      document.getElementById('profile-timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const token = localStorage.getItem('calendarify-token');
+      if (token) {
+        try {
+          const res = await fetch(`${API_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const data = await res.json();
+            document.getElementById('profile-name').textContent = data.name || 'User';
+            document.getElementById('profile-email').textContent = data.email || '';
+          }
+        } catch (e) {
+          console.error('Failed to load profile', e);
+        }
+      }
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+      document.getElementById('modal-backdrop').classList.add('hidden');
     }
 
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal') {
           el.classList.add('hidden');
         }
       });
@@ -2534,6 +2607,9 @@
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       renderWorkflows();
+
+      const avatar = document.getElementById('profile-avatar');
+      if (avatar) avatar.addEventListener('click', openProfileModal);
       
       // Check for redirect parameter
       const redirectTo = localStorage.getItem('calendarify-redirect-to');
