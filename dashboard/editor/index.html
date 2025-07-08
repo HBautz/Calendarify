@@ -152,13 +152,7 @@
   <script>
     const API_URL = 'http://localhost:3001/api';
   </script>
-  <script>
-    const t = localStorage.getItem('calendarify-token');
-    if (!t) {
-      window.location.replace('/log-in');
-    }
-  </script>
-  <script src="/auth.js"></script>
+  <script src="/auth.js" defer></script>
 </head>
 <body id="dashboard-body" class="min-h-screen flex flex-col hidden">
   <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
@@ -811,11 +805,7 @@
     confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
   </script>
   <script>
-    (async () => {
-      if (await requireAuth()) {
-        document.getElementById('dashboard-body').classList.remove('hidden');
-      }
-    })();
+    initAuth('dashboard-body');
   </script>
 </body>
 </html>
