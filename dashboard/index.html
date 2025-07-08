@@ -1080,6 +1080,9 @@
   </style>
   <script>
     window.API_URL = 'http://localhost:3001/api';
+    if (!localStorage.getItem('calendarify-token')) {
+      window.location.replace('/log-in');
+    }
   </script>
   <script src="/auth.js" defer></script>
 </head>
