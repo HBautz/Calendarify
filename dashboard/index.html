@@ -1078,7 +1078,7 @@
       background: #34D399;
     }
   </style>
-  <script>
+  <script defer>
     window.API_URL = 'http://localhost:3001/api';
     if (!localStorage.getItem('calendarify-token')) {
       window.location.replace('/log-in');
@@ -1910,7 +1910,7 @@
     </div>
   </div>
 
-  <script>
+  <script defer>
 
     async function loadState() {
       const token = localStorage.getItem('calendarify-token');

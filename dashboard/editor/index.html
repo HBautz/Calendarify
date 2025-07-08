@@ -149,7 +149,7 @@
       -moz-appearance: textfield;
     }
   </style>
-  <script>
+  <script defer>
     window.API_URL = 'http://localhost:3001/api';
     if (!localStorage.getItem('calendarify-token')) {
       window.location.replace('/log-in');
@@ -236,7 +236,7 @@
     </div>
   </div>
 
-  <script>
+  <script defer>
     const canvas = document.getElementById('canvas');
     const saveBtn = document.getElementById('save-workflow');
     const nameInput = document.getElementById('workflow-name');
@@ -807,7 +807,7 @@
 
     confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
   </script>
-  <script>
+  <script defer>
     initAuth('dashboard-body');
   </script>
 </body>
