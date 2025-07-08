@@ -1,4 +1,3 @@
-const API_URL = 'http://localhost:3001/api';
 
 async function apiRequest(path, data) {
   console.log(`Making API request to: ${API_URL}${path}`, data);
