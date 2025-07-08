@@ -1,4 +1,3 @@
-const API_URL = 'http://localhost:3001/api';
 
 async function apiRequest(path, data) {
   console.log(`Making API request to: ${API_URL}${path}`, data);
@@ -95,3 +94,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+async function verifyToken() {
+  const token = localStorage.getItem('calendarify-token');
+  if (!token) return false;
+  try {
+    const res = await fetch(`${API_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) return true;
+  } catch {}
+  localStorage.removeItem('calendarify-token');
+  return false;
+}
+
+async function requireAuth() {
+  const ok = await verifyToken();
+  if (!ok) {
+    window.location.replace('/log-in');
+    return false;
+  }
+  return true;
+}
+
+window.verifyToken = verifyToken;
+window.requireAuth = requireAuth;
