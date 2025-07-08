@@ -1079,15 +1079,9 @@
     }
   </style>
   <script>
-    const API_URL = 'http://localhost:3001/api';
+    window.API_URL = 'http://localhost:3001/api';
   </script>
-  <script>
-    const t = localStorage.getItem('calendarify-token');
-    if (!t) {
-      window.location.replace('/log-in');
-    }
-  </script>
-  <script src="/auth.js"></script>
+  <script src="/auth.js" defer></script>
 </head>
 <body id="dashboard-body" class="flex min-h-screen hidden">
   <!-- Sidebar -->
@@ -4746,12 +4740,7 @@
       document.getElementById('global-search-results').classList.add('hidden');
     }
 
-    (async () => {
-      if (await requireAuth()) {
-        document.getElementById('dashboard-body').classList.remove('hidden');
-        loadState();
-      }
-    })();
+    initAuth('dashboard-body', loadState);
   </script>
 
   <!-- Create Event Type Modal -->

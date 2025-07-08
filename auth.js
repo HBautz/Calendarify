@@ -117,5 +117,21 @@ async function requireAuth() {
   return true;
 }
 
+async function initAuth(bodyId, onSuccess) {
+  const t = localStorage.getItem('calendarify-token');
+  if (!t) {
+    window.location.replace('/log-in');
+    return;
+  }
+  if (await requireAuth()) {
+    if (bodyId) {
+      const el = document.getElementById(bodyId);
+      if (el) el.classList.remove('hidden');
+    }
+    if (typeof onSuccess === 'function') onSuccess();
+  }
+}
+
 window.verifyToken = verifyToken;
 window.requireAuth = requireAuth;
+window.initAuth = initAuth;

@@ -149,8 +149,12 @@
       -moz-appearance: textfield;
     }
   </style>
+  <script>
+    window.API_URL = 'http://localhost:3001/api';
+  </script>
+  <script src="/auth.js" defer></script>
 </head>
-<body class="min-h-screen flex flex-col">
+<body id="dashboard-body" class="min-h-screen flex flex-col hidden">
   <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
     <a href="/dashboard" class="flex items-center gap-2 text-[#E0E0E0] hover:text-white">
       <span class="material-icons-outlined text-[#34D399]">arrow_back</span>
@@ -799,6 +803,9 @@
     }
 
     confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
+  </script>
+  <script>
+    initAuth('dashboard-body');
   </script>
 </body>
 </html>
