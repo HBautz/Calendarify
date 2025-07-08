@@ -1081,6 +1081,12 @@
   <script>
     const API_URL = 'http://localhost:3001/api';
   </script>
+  <script>
+    const t = localStorage.getItem('calendarify-token');
+    if (!t) {
+      window.location.replace('/log-in');
+    }
+  </script>
   <script src="/auth.js"></script>
 </head>
 <body id="dashboard-body" class="flex min-h-screen hidden">
