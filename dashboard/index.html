@@ -1078,12 +1078,9 @@
       background: #34D399;
     }
   </style>
+  <script src="/auth.js"></script>
   <script>
     const API_URL = 'http://localhost:3001/api';
-    const token = localStorage.getItem('calendarify-token');
-    if (!token) {
-      window.location.replace('/log-in');
-    }
   </script>
 </head>
 <body id="dashboard-body" class="flex min-h-screen hidden">
@@ -1911,29 +1908,6 @@
   </div>
 
   <script>
-    (async function() {
-      const body = document.getElementById('dashboard-body');
-      const token = localStorage.getItem('calendarify-token');
-      if (!token) {
-        window.location.replace('/log-in');
-        return;
-      }
-      try {
-        const res = await fetch(`${API_URL}/users/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          body.classList.remove('hidden');
-          loadState();
-        } else {
-          localStorage.removeItem('calendarify-token');
-          window.location.replace('/log-in');
-        }
-      } catch (e) {
-        localStorage.removeItem('calendarify-token');
-        window.location.replace('/log-in');
-      }
-    })();
 
     async function loadState() {
       const token = localStorage.getItem('calendarify-token');
@@ -4765,6 +4739,13 @@
       }
       document.getElementById('global-search-results').classList.add('hidden');
     }
+
+    (async () => {
+      if (await requireAuth()) {
+        document.getElementById('dashboard-body').classList.remove('hidden');
+        loadState();
+      }
+    })();
   </script>
 
   <!-- Create Event Type Modal -->
