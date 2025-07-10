@@ -1878,6 +1878,19 @@
       return [];
     }
 
+    async function fetchContactsFromServer() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return [];
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/contacts`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (res.ok) {
+        const contacts = await res.json();
+        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        return contacts;
+      }
+      return [];
+    }
+
     function collectState() {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
@@ -2615,6 +2628,8 @@
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       fetchTagsFromServer();
+      fetchWorkflowsFromServer();
+      fetchContactsFromServer();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');
@@ -3710,11 +3725,17 @@
       const email = window.contactToDelete;
       if (email) {
         let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-        contacts = contacts.filter(c => c.email !== email);
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-        const row = document.getElementById(`contact-${email}`);
-        if (row) row.remove();
-        showNotification(`Contact removed: ${email}`);
+        const contact = contacts.find(c => c.email === email);
+        if (contact) {
+          const token = localStorage.getItem('calendarify-token');
+          const clean = token ? token.replace(/^"|"$/g, '') : '';
+          fetch(`${API_URL}/contacts/${contact.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+          contacts = contacts.filter(c => c.email !== email);
+          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+          const row = document.getElementById(`contact-${email}`);
+          if (row) row.remove();
+          showNotification(`Contact removed: ${email}`);
+        }
         closeDeleteContactConfirmModal();
       }
     }
@@ -3773,7 +3794,7 @@
     function toggleFavorite(email, button) {
       const starIcon = button.querySelector('.material-icons-outlined');
       const isFavorited = starIcon.textContent === 'star';
-      
+
       if (isFavorited) {
         // Remove from favorites
         starIcon.textContent = 'star_border';
@@ -3789,11 +3810,22 @@
         button.classList.add('text-[#34D399]');
         showNotification(`${email} added to favorites`);
       }
-      
+
       // Re-apply filters after changing favorite status
       filterContacts();
-
-      // Here you would typically save the favorite status to a database or localStorage
+      const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+      const contact = contacts.find(c => c.email === email);
+      if (contact) {
+        contact.favorite = !isFavorited;
+        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        fetch(`${API_URL}/contacts/${contact.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ favorite: contact.favorite })
+        });
+      }
     }
 
     async function renderTagOptions() {
@@ -3960,15 +3992,11 @@
       const list = document.getElementById('tags-list');
       const title = document.getElementById('tags-modal-title');
       
-      // Store the current contact email for refresh purposes
       modal.setAttribute('data-current-contact', contactEmail);
-      
-      // Clear previous content
       list.innerHTML = '';
-      
+
       try {
-        // Get the contact from localStorage since backend database is empty
-        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+        const contacts = await fetchContactsFromServer();
         const contact = contacts.find(c => c.email === contactEmail);
         
         if (!contact) {
@@ -4123,36 +4151,28 @@
 
     async function addTagToContact(contactEmail, tagName) {
       try {
-        // Get contacts from localStorage
         const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const contact = contacts.find(c => c.email === contactEmail);
-        
+
         if (!contact) {
           showNotification('Contact not found');
           return;
         }
-        
-        // Add tag to contact in localStorage
-        if (!contact.tags) {
-          contact.tags = [];
-        }
-        
-        if (!contact.tags.includes(tagName)) {
-          contact.tags.push(tagName);
-          
-          // Update localStorage
-          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-          
-          showNotification(`Tag "${tagName}" added to ${contact.name}`);
-          
-          // Refresh the contacts table to show updated tags
-          await renderContacts();
-          
-          // Refresh the modal to show updated contact tags
-          await showContactTagsModal(contactEmail);
-        } else {
-          showNotification(`Tag "${tagName}" is already assigned to ${contact.name}`);
-        }
+
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        await fetch(`${API_URL}/contacts/${contact.id}/tags`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ tagName })
+        });
+
+        if (!contact.tags) contact.tags = [];
+        if (!contact.tags.includes(tagName)) contact.tags.push(tagName);
+        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        showNotification(`Tag "${tagName}" added to ${contact.name}`);
+        await renderContacts();
+        await showContactTagsModal(contactEmail);
       } catch (error) {
         console.error('Error adding tag to contact:', error);
         showNotification('Failed to add tag to contact');
@@ -4161,28 +4181,26 @@
 
     async function removeTagFromContact(contactEmail, tagName) {
       try {
-        // Get contacts from localStorage
         const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const contact = contacts.find(c => c.email === contactEmail);
-        
+
         if (!contact) {
           showNotification('Contact not found');
           return;
         }
-        
-        // Remove tag from contact in localStorage
+
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        await fetch(`${API_URL}/contacts/${contact.id}/tags/${encodeURIComponent(tagName)}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${clean}` }
+        });
+
         if (contact.tags && contact.tags.includes(tagName)) {
           contact.tags = contact.tags.filter(tag => tag !== tagName);
-          
-          // Update localStorage
           localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-          
           showNotification(`Tag "${tagName}" removed from ${contact.name}`);
-          
-          // Refresh the contacts table to show updated tags
           await renderContacts();
-          
-          // Refresh the modal to show updated contact tags
           await showContactTagsModal(contactEmail);
         } else {
           showNotification(`Tag "${tagName}" is not assigned to ${contact.name}`);
@@ -4242,10 +4260,9 @@
       const tbody = document.querySelector('#contacts-section tbody');
       if (!tbody) return;
       tbody.innerHTML = '';
-      
+
       try {
-        // Get contacts from localStorage
-        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+        const contacts = await fetchContactsFromServer();
         contacts.forEach(c => addContactRow(c));
         filterContacts();
       } catch (error) {
@@ -4296,35 +4313,20 @@
       const tags = Array.from(document.querySelectorAll('#contact-tag-options input:checked')).map(cb => cb.value);
 
       try {
-        // Get existing contacts from localStorage
         const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-        
-        // Check if contact with this email already exists
-        if (contacts.find(c => c.email === email)) {
-          showNotification('A contact with this email already exists');
-          return;
-        }
-        
-        // Create new contact
-        const newContact = {
-          id: 'c' + Date.now(),
-          name,
-          email,
-          phone,
-          company,
-          notes,
-          favorite,
-          tags,
-          createdAt: new Date().toISOString()
-        };
-        
-        // Add to contacts array
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+
+        const res = await fetch(`${API_URL}/contacts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ name, email, phone, company, notes, favorite, tags })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const newContact = await res.json();
+
         contacts.push(newContact);
-        
-        // Save back to localStorage
         localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-        
-        // Add to UI
         addContactRow(newContact);
 
         showNotification(`Contact "${name}" added successfully!`);
