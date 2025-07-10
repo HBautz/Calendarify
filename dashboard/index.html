@@ -1849,6 +1849,35 @@
       }
     }
 
+    async function fetchTagsFromServer() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return [];
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/tags`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (res.ok) {
+        const tags = await res.json();
+        const map = {};
+        tags.forEach(t => (map[t.name] = t.id));
+        localStorage.setItem('calendarify-tags', JSON.stringify(tags.map(t => t.name)));
+        localStorage.setItem('calendarify-tag-map', JSON.stringify(map));
+        return tags;
+      }
+      return [];
+    }
+
+    async function fetchWorkflowsFromServer() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return [];
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/workflows`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (res.ok) {
+        const wfs = await res.json();
+        localStorage.setItem('calendarify-workflows', JSON.stringify(wfs));
+        return wfs;
+      }
+      return [];
+    }
+
     function collectState() {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
@@ -2169,12 +2198,19 @@
       let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
       const wf = workflows.find(w => w.id === id);
       if (!wf) return;
-      const newWf = { ...wf, id: Date.now().toString(), name: wf.name + ' Copy', lastEdited: 'just now' };
-      workflows.push(newWf);
-      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
-      renderWorkflows();
-      renderContacts();
-      showNotification('Workflow cloned');
+      const token = localStorage.getItem('calendarify-token');
+      const clean = token.replace(/^"|"$/g, '');
+      fetch(`${API_URL}/workflows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+        body: JSON.stringify({ name: wf.name + ' Copy', description: wf.description, data: wf.data }),
+      }).then(res => res.json()).then(newWf => {
+        workflows.push(newWf);
+        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
+        renderWorkflows();
+        renderContacts();
+        showNotification('Workflow cloned');
+      });
     }
 
     function deleteWorkflow(id) {
@@ -2186,6 +2222,9 @@
     function confirmDeleteWorkflow() {
       const workflowId = window.workflowToDelete;
       if (workflowId) {
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token.replace(/^"|"$/g, '');
+        fetch(`${API_URL}/workflows/${workflowId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
         let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
         workflows = workflows.filter(w => w.id !== workflowId);
         localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
@@ -2302,14 +2341,7 @@
 
     function renderWorkflows() {
       const tbody = document.getElementById('workflows-tbody');
-      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
-      if (workflows.length === 0) {
-        workflows = [
-          { id: 'wf1', name: 'Send Reminder Email', status: true, triggerEventTypes: ['Intro Call'], lastEdited: '2 days ago' },
-          { id: 'wf2', name: 'Post-Meeting SMS', status: false, triggerEventTypes: ['All Event Types'], lastEdited: '1 week ago' }
-        ];
-        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
-      }
+      let workflows = await fetchWorkflowsFromServer();
       
       function formatEventTypes(eventTypes) {
         if (!eventTypes || eventTypes.length === 0) {
@@ -2582,6 +2614,7 @@
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
+      fetchTagsFromServer();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');
@@ -3767,10 +3800,9 @@
       const container = document.getElementById('contact-tag-options');
       if (!container) return;
       container.innerHTML = '';
-      
+
       try {
-        // Get tags from localStorage
-        const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+        const tags = await fetchTagsFromServer();
         
         if (tags.length === 0) {
           container.innerHTML = '<p class="text-[#A3B3AF] text-sm">No tags available</p>';
@@ -3811,22 +3843,23 @@
         showNotification('Tag name required');
         return;
       }
-      
+
       try {
-        // Get existing tags from localStorage
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/tags`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ name }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const tag = await res.json();
         const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-        
-        // Check if tag already exists
-        if (tags.includes(name)) {
-          showNotification('Tag already exists');
-          return;
-        }
-        
-        // Add new tag
-        tags.push(name);
-        
-        // Save back to localStorage
+        const map = JSON.parse(localStorage.getItem('calendarify-tag-map') || '{}');
+        if (!tags.includes(tag.name)) tags.push(tag.name);
+        map[tag.name] = tag.id;
         localStorage.setItem('calendarify-tags', JSON.stringify(tags));
+        localStorage.setItem('calendarify-tag-map', JSON.stringify(map));
         
         showNotification(`Tag "${name}" created`);
         closeCreateTagModal();
@@ -3869,8 +3902,7 @@
       list.innerHTML = '';
       
       try {
-        // Get all tags from localStorage
-        const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+        const tags = await fetchTagsFromServer();
         
         // Add tags to the list
         if (tags && tags.length > 0) {
@@ -4049,14 +4081,18 @@
 
     async function removeTag(tagName) {
       try {
-        // Get tags from localStorage
+        const map = JSON.parse(localStorage.getItem('calendarify-tag-map') || '{}');
+        const tagId = map[tagName];
+        if (tagId) {
+          const token = localStorage.getItem('calendarify-token');
+          const clean = token.replace(/^"|"$/g, '');
+          await fetch(`${API_URL}/tags/${tagId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+        }
         const tags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-        
-        // Remove the tag
         const updatedTags = tags.filter(tag => tag !== tagName);
-        
-        // Save back to localStorage
+        delete map[tagName];
         localStorage.setItem('calendarify-tags', JSON.stringify(updatedTags));
+        localStorage.setItem('calendarify-tag-map', JSON.stringify(map));
         
         showNotification('Tag removed successfully');
         
