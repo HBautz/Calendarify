@@ -272,7 +272,7 @@
       renderTriggerProperties();
     });
 
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
       const steps = Array.from(canvas.querySelectorAll('.step')).map(s => ({
         type: s.dataset.type,
@@ -282,15 +282,26 @@
       const optionsDiv = document.getElementById('event-type-options');
       const triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
       const name = nameInput.value || 'Untitled Workflow';
+      const token = localStorage.getItem('calendarify-token');
+      const clean = token.replace(/^"|"$/g, '');
       if (currentWorkflow) {
         currentWorkflow.name = name;
         currentWorkflow.trigger = trigger;
         currentWorkflow.triggerEventTypes = triggerEventTypes;
         currentWorkflow.steps = steps;
-        currentWorkflow.lastEdited = 'just now';
+        await fetch(`${API_URL}/workflows/${currentWorkflow.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ name, description: currentWorkflow.description, data: currentWorkflow }),
+        });
         workflows = workflows.map(w => w.id === currentWorkflow.id ? currentWorkflow : w);
       } else {
-        currentWorkflow = { id: Date.now().toString(), name, status: true, eventTypes: 'All Event Types', lastEdited: 'just now', trigger, triggerEventTypes, steps };
+        const res = await fetch(`${API_URL}/workflows`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ name, description: '', data: { trigger, triggerEventTypes, steps, status: true } }),
+        });
+        currentWorkflow = await res.json();
         workflows.push(currentWorkflow);
       }
       localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
