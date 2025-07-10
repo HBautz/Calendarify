@@ -22,6 +22,7 @@ model User {
   user_state  UserState?
   tags        Tag[]
   contacts    Contact[]
+  workflows   Workflow[]
 }
 
 model EventType {
@@ -135,4 +136,17 @@ model ContactTag {
   created_at  DateTime @default(now())
 
   @@unique([contact_id, tag_id])
+}
+
+model Workflow {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  name        String
+  description String?
+  data        Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([user_id])
 }
