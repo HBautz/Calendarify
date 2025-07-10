@@ -2339,7 +2339,7 @@
       }
     }
 
-    function renderWorkflows() {
+    async function renderWorkflows() {
       const tbody = document.getElementById('workflows-tbody');
       let workflows = await fetchWorkflowsFromServer();
       
