@@ -26,11 +26,8 @@ function login(data) {
 }
 
 async function loadUserState(token) {
-  // Remove surrounding quotes if they exist
-  const cleanToken = token.replace(/^"|"$/g, '');
-  
   const res = await fetch(`${API_URL}/users/me/state`, {
-    headers: { Authorization: `Bearer ${cleanToken}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (res.ok) {
     const data = await res.json();
@@ -43,12 +40,8 @@ async function loadUserState(token) {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, setting up forms...');
   
-  // Only set up forms if we're on a page that has them
   const signupForm = document.getElementById('signup-form');
-  const loginForm = document.getElementById('login-form');
-  
   console.log('Signup form found:', signupForm);
-  console.log('Login form found:', loginForm);
   
   if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
@@ -82,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const loginForm = document.getElementById('login-form');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -104,21 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
 async function verifyToken() {
   const token = localStorage.getItem('calendarify-token');
   if (!token) return false;
-  
-  // Remove surrounding quotes if they exist
-  const cleanToken = token.replace(/^"|"$/g, '');
-  
   try {
     const res = await fetch(`${API_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${cleanToken}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
-    
-    if (res.ok) {
-      return true;
-    }
-  } catch (error) {
-    console.error('Token verification error:', error);
-  }
+    if (res.ok) return true;
+  } catch {}
   localStorage.removeItem('calendarify-token');
   return false;
 }
