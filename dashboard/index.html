@@ -2220,23 +2220,23 @@
       window.location.href = '/dashboard/editor';
     }
 
-    function cloneWorkflow(id) {
-      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
-      const wf = workflows.find(w => w.id === id);
-      if (!wf) return;
+    async function cloneWorkflow(id) {
       const token = localStorage.getItem('calendarify-token');
       const clean = token.replace(/^"|"$/g, '');
-      fetch(`${API_URL}/workflows`, {
+
+      const existingRes = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (!existingRes.ok) return;
+      const wf = await existingRes.json();
+
+      const res = await fetch(`${API_URL}/workflows`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
         body: JSON.stringify({ name: wf.name + ' Copy', description: wf.description, data: wf.data }),
-      }).then(res => res.json()).then(newWf => {
-        workflows.push(newWf);
-        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
-        renderWorkflows();
-        renderContacts();
-        showNotification('Workflow cloned');
       });
+      if (res.ok) {
+        showNotification('Workflow cloned');
+        renderWorkflows();
+      }
     }
 
     function deleteWorkflow(id) {
@@ -2245,18 +2245,15 @@
       document.getElementById('delete-workflow-confirm-modal').classList.remove('hidden');
     }
 
-    function confirmDeleteWorkflow() {
+    async function confirmDeleteWorkflow() {
       const workflowId = window.workflowToDelete;
       if (workflowId) {
         const token = localStorage.getItem('calendarify-token');
         const clean = token.replace(/^"|"$/g, '');
-        fetch(`${API_URL}/workflows/${workflowId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
-        let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
-        workflows = workflows.filter(w => w.id !== workflowId);
-        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
-        renderWorkflows();
+        await fetch(`${API_URL}/workflows/${workflowId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
         showNotification('Workflow deleted');
         closeDeleteWorkflowConfirmModal();
+        renderWorkflows();
       }
     }
 
@@ -2312,56 +2309,68 @@
       document.getElementById('event-types-modal').classList.add('hidden');
     }
 
-    function removeEventTypeFromWorkflow(workflowId, eventTypeIndex) {
-      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
-      const workflow = workflows.find(w => w.id === workflowId);
-      
-      if (workflow && workflow.triggerEventTypes && workflow.triggerEventTypes.length > eventTypeIndex) {
-        // Remove the event type at the specified index
-        workflow.triggerEventTypes.splice(eventTypeIndex, 1);
-        
-        // If no event types left, auto-disable workflow and set to "All Event Types"
-        if (workflow.triggerEventTypes.length === 0) {
-          workflow.triggerEventTypes = [];
-          workflow.status = false; // Disable the workflow
+    async function removeEventTypeFromWorkflow(workflowId, eventTypeIndex) {
+      const token = localStorage.getItem('calendarify-token');
+      const clean = token.replace(/^"|"$/g, '');
+
+      const res = await fetch(`${API_URL}/workflows/${workflowId}`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (!res.ok) return;
+      const workflow = await res.json();
+
+      const wfData = workflow.data || {};
+      wfData.triggerEventTypes = wfData.triggerEventTypes || [];
+
+      if (wfData.triggerEventTypes.length > eventTypeIndex) {
+        wfData.triggerEventTypes.splice(eventTypeIndex, 1);
+
+        if (wfData.triggerEventTypes.length === 0) {
+          wfData.triggerEventTypes = [];
+          wfData.status = false;
           showNotification('Last event type removed. Workflow disabled and set to "All Event Types"');
         } else {
           showNotification('Event type removed from workflow');
         }
-        
-        // Update localStorage
-        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
-        
-        // Close the modal since there are no more event types to show
-        if (workflow.triggerEventTypes.length === 0) {
+
+        await fetch(`${API_URL}/workflows/${workflowId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ data: wfData }),
+        });
+
+        if (wfData.triggerEventTypes.length === 0) {
           closeEventTypesModal();
         } else {
-          // Refresh the modal with updated event types
-          showEventTypesModal(workflowId, workflow.triggerEventTypes);
+          showEventTypesModal(workflowId, wfData.triggerEventTypes);
         }
-        
-        // Refresh the workflows table
+
         renderWorkflows();
       }
     }
 
-    function toggleWorkflowStatus(id, button) {
-      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
-      const wf = workflows.find(w => w.id === id);
-      if (wf) {
-        wf.status = !wf.status;
-        localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
-        
-        // Update button appearance
-        const isActive = wf.status;
-        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        button.classList.toggle('bg-[#34D399]', isActive);
-        button.classList.toggle('bg-[#19342e]', !isActive);
-        
-        const circle = button.querySelector('div');
-        if (circle) {
-          circle.style.transform = isActive ? 'translateX(20px)' : 'translateX(0)';
-        }
+    async function toggleWorkflowStatus(id, button) {
+      const token = localStorage.getItem('calendarify-token');
+      const clean = token.replace(/^"|"$/g, '');
+
+      const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (!res.ok) return;
+      const wf = await res.json();
+
+      const wfData = wf.data || {};
+      wfData.status = !wfData.status;
+
+      await fetch(`${API_URL}/workflows/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+        body: JSON.stringify({ data: wfData }),
+      });
+
+      const isActive = wfData.status;
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      button.classList.toggle('bg-[#34D399]', isActive);
+      button.classList.toggle('bg-[#19342e]', !isActive);
+      const circle = button.querySelector('div');
+      if (circle) {
+        circle.style.transform = isActive ? 'translateX(20px)' : 'translateX(0)';
       }
     }
 

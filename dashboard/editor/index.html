@@ -256,24 +256,27 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       const id = localStorage.getItem('calendarify-current-workflow');
-      const workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
       if (id) {
-        currentWorkflow = workflows.find(w => w.id === id);
-        if (currentWorkflow && currentWorkflow.trigger) {
-          triggerSelect.value = currentWorkflow.trigger;
-        }
-        if (currentWorkflow && currentWorkflow.name) {
-          nameInput.value = currentWorkflow.name;
-        }
-        if (currentWorkflow && currentWorkflow.steps) {
-          currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (res.ok) {
+          currentWorkflow = await res.json();
+          if (currentWorkflow.trigger) {
+            triggerSelect.value = currentWorkflow.trigger;
+          }
+          if (currentWorkflow.name) {
+            nameInput.value = currentWorkflow.name;
+          }
+          if (currentWorkflow.steps) {
+            currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
+          }
         }
       }
       await renderTriggerProperties();
     });
 
     saveBtn.addEventListener('click', async () => {
-      let workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
       const steps = Array.from(canvas.querySelectorAll('.step')).map(s => ({
         type: s.dataset.type,
         props: JSON.parse(s.dataset.props || '{}')
@@ -294,7 +297,6 @@
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
           body: JSON.stringify({ name, description: currentWorkflow.description, data: currentWorkflow }),
         });
-        workflows = workflows.map(w => w.id === currentWorkflow.id ? currentWorkflow : w);
       } else {
         const res = await fetch(`${API_URL}/workflows`, {
           method: 'POST',
@@ -302,9 +304,7 @@
           body: JSON.stringify({ name, description: '', data: { trigger, triggerEventTypes, steps, status: true } }),
         });
         currentWorkflow = await res.json();
-        workflows.push(currentWorkflow);
       }
-      localStorage.setItem('calendarify-workflows', JSON.stringify(workflows));
       localStorage.removeItem('calendarify-current-workflow');
       localStorage.setItem('calendarify-redirect-to', 'workflows');
       window.location.href = '/dashboard';

@@ -14,6 +14,12 @@ export class WorkflowsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  findOne(@Request() req, @Param('id') id: string) {
+    return this.workflows.findById(req.user.userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(
     @Request() req,
