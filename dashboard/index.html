@@ -1891,6 +1891,19 @@
       return [];
     }
 
+    async function fetchEventTypesFromServer() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return [];
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (res.ok) {
+        const eventTypes = await res.json();
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+        return eventTypes;
+      }
+      return [];
+    }
+
     function collectState() {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
@@ -2630,6 +2643,7 @@
       fetchTagsFromServer();
       fetchWorkflowsFromServer();
       fetchContactsFromServer();
+      fetchEventTypesFromServer();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');

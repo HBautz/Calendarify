@@ -155,7 +155,7 @@
       window.location.replace('/log-in');
     }
   </script>
-  <script src="/auth.js" defer></script>
+  <script src="../../auth.js" defer></script>
 </head>
 <body id="dashboard-body" class="min-h-screen flex flex-col hidden">
   <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
@@ -254,7 +254,7 @@
     let currentWorkflow = null;
     let editingStep = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       const id = localStorage.getItem('calendarify-current-workflow');
       const workflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
       if (id) {
@@ -269,7 +269,7 @@
           currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
         }
       }
-      renderTriggerProperties();
+      await renderTriggerProperties();
     });
 
     saveBtn.addEventListener('click', async () => {
@@ -417,11 +417,30 @@
       }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
-    function renderTriggerProperties() {
+    async function renderTriggerProperties() {
       triggerProps.innerHTML = '';
       const triggersWithEventTypes = ['Invitee Schedules', 'Meeting Cancelled', 'Meeting Rescheduled'];
       if (triggersWithEventTypes.includes(triggerSelect.value)) {
         let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+        if (eventTypes.length === 0) {
+          // Try to fetch from server if not in localStorage
+          try {
+            const token = localStorage.getItem('calendarify-token');
+            if (token) {
+              const clean = token.replace(/^"|"$/g, '');
+              const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
+              if (res.ok) {
+                const serverEventTypes = await res.json();
+                eventTypes = serverEventTypes.map(et => ({ name: et.title }));
+                localStorage.setItem('calendarify-event-types', JSON.stringify(serverEventTypes));
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch event types:', error);
+          }
+        }
+        
+        // Fallback to default event types if still empty
         if (eventTypes.length === 0) {
           eventTypes = [
             { name: '30-min Intro Call' },
@@ -491,7 +510,7 @@
       }
     }
 
-    triggerSelect.addEventListener('change', renderTriggerProperties);
+    triggerSelect.addEventListener('change', () => renderTriggerProperties());
 
     function openStepModal(step) {
       editingStep = step;
@@ -647,12 +666,31 @@
       }
     }
 
-    function openCreateMeetingDropdown(step) {
+    async function openCreateMeetingDropdown(step) {
       editingStep = step;
       const props = JSON.parse(step.dataset.props || '{}');
       
       // Get event types from localStorage
       let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      if (eventTypes.length === 0) {
+        // Try to fetch from server if not in localStorage
+        try {
+          const token = localStorage.getItem('calendarify-token');
+          if (token) {
+            const clean = token.replace(/^"|"$/g, '');
+            const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
+            if (res.ok) {
+              const serverEventTypes = await res.json();
+              eventTypes = serverEventTypes.map(et => ({ name: et.title }));
+              localStorage.setItem('calendarify-event-types', JSON.stringify(serverEventTypes));
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch event types:', error);
+        }
+      }
+      
+      // Fallback to default event types if still empty
       if (eventTypes.length === 0) {
         eventTypes = [
           { name: '30-min Intro Call' },
@@ -819,7 +857,37 @@
     confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
   </script>
   <script defer>
-    initAuth('dashboard-body');
+    // Check authentication and redirect if not logged in
+    async function checkAuth() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
+        window.location.replace('/log-in');
+        return;
+      }
+      
+      try {
+        const cleanToken = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${cleanToken}` },
+        });
+        
+        if (!res.ok) {
+          localStorage.removeItem('calendarify-token');
+          window.location.replace('/log-in');
+          return;
+        }
+        
+        // User is authenticated, show the editor
+        document.body.classList.remove('hidden');
+      } catch (error) {
+        console.error('Auth check error:', error);
+        localStorage.removeItem('calendarify-token');
+        window.location.replace('/log-in');
+      }
+    }
+    
+    // Check auth on page load
+    checkAuth();
   </script>
 </body>
 </html>
