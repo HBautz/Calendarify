@@ -45,6 +45,20 @@ export class WorkflowsService {
     };
   }
 
+  async findById(userId: string, workflowId: string): Promise<Workflow | null> {
+    const workflow = await this.prisma.workflow.findFirst({
+      where: { id: workflowId, user_id: userId },
+    });
+    if (!workflow) return null;
+    return {
+      id: workflow.id,
+      userId: workflow.user_id,
+      name: workflow.name,
+      description: workflow.description || undefined,
+      data: workflow.data || undefined,
+    };
+  }
+
   async remove(userId: string, workflowId: string) {
     await this.prisma.workflow.deleteMany({
       where: { id: workflowId, user_id: userId },
