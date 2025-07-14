@@ -30,7 +30,7 @@ export class WorkflowsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  delete(@Request() req, @Param('id') id: string) {
+  remove(@Request() req, @Param('id') id: string) {
     return this.workflows.remove(req.user.userId, id);
   }
 

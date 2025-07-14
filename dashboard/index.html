@@ -2248,12 +2248,32 @@
     async function confirmDeleteWorkflow() {
       const workflowId = window.workflowToDelete;
       if (workflowId) {
-        const token = localStorage.getItem('calendarify-token');
-        const clean = token.replace(/^"|"$/g, '');
-        await fetch(`${API_URL}/workflows/${workflowId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
-        showNotification('Workflow deleted');
-        closeDeleteWorkflowConfirmModal();
-        renderWorkflows();
+        try {
+          const token = localStorage.getItem('calendarify-token');
+          const clean = token.replace(/^"|"$/g, '');
+          const response = await fetch(`${API_URL}/workflows/${workflowId}`, { 
+            method: 'DELETE', 
+            headers: { Authorization: `Bearer ${clean}` } 
+          });
+          
+          if (response.ok) {
+            showNotification('Workflow deleted successfully');
+            closeDeleteWorkflowConfirmModal();
+            // Remove from localStorage cache
+            const cachedWorkflows = JSON.parse(localStorage.getItem('calendarify-workflows') || '[]');
+            const updatedWorkflows = cachedWorkflows.filter(w => w.id !== workflowId);
+            localStorage.setItem('calendarify-workflows', JSON.stringify(updatedWorkflows));
+            // Re-render the workflows
+            await renderWorkflows();
+          } else {
+            const errorText = await response.text();
+            console.error('Delete failed:', response.status, errorText);
+            showNotification('Failed to delete workflow');
+          }
+        } catch (error) {
+          console.error('Delete error:', error);
+          showNotification('Failed to delete workflow');
+        }
       }
     }
 
@@ -2376,6 +2396,7 @@
 
     async function renderWorkflows() {
       const tbody = document.getElementById('workflows-tbody');
+      // Always fetch fresh data from server to ensure UI is up to date
       let workflows = await fetchWorkflowsFromServer();
       
       function formatEventTypes(eventTypes) {
