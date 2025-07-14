@@ -22,4 +22,20 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect('Hello World!');
   });
+
+  it('/api/integrations/google-meet (POST)', () => {
+    return request(app.getHttpServer())
+      .post('/api/integrations/google-meet')
+      .send({ token: 'test' })
+      .expect(201)
+      .expect({ message: 'google meet integration stub', data: { token: 'test' } });
+  });
+
+  it('/api/integrations/zoom (POST)', () => {
+    return request(app.getHttpServer())
+      .post('/api/integrations/zoom')
+      .send({ token: 'test' })
+      .expect(201)
+      .expect({ message: 'zoom integration stub', data: { token: 'test' } });
+  });
 });

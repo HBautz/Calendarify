@@ -1594,7 +1594,7 @@
                 <div class="text-[#A3B3AF] text-sm">Video</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button onclick="openZoomModal()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -1604,7 +1604,7 @@
                 <div class="text-[#A3B3AF] text-sm">Video</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button onclick="openGoogleMeetModal()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
         </div>
       </section>
@@ -4031,6 +4031,56 @@
       document.getElementById('tags-modal').classList.add('hidden');
     }
 
+    function openZoomModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('zoom-modal').classList.remove('hidden');
+    }
+
+    function closeZoomModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('zoom-modal').classList.add('hidden');
+    }
+
+    async function activateZoom() {
+      try {
+        const res = await fetch(`${API_URL}/integrations/zoom`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+        if (res.ok) {
+          showNotification('Zoom connected');
+        } else {
+          showNotification('Failed to connect Zoom');
+        }
+      } catch (e) {
+        console.error(e);
+        showNotification('Failed to connect Zoom');
+      }
+      closeZoomModal();
+    }
+
+    function openGoogleMeetModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('google-meet-modal').classList.remove('hidden');
+    }
+
+    function closeGoogleMeetModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('google-meet-modal').classList.add('hidden');
+    }
+
+    async function activateGoogleMeet() {
+      try {
+        const res = await fetch(`${API_URL}/integrations/google-meet`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+        if (res.ok) {
+          showNotification('Google Meet connected');
+        } else {
+          showNotification('Failed to connect Google Meet');
+        }
+      } catch (e) {
+        console.error(e);
+        showNotification('Failed to connect Google Meet');
+      }
+      closeGoogleMeetModal();
+    }
+
     async function showContactTagsModal(contactEmail) {
       const modal = document.getElementById('tags-modal');
       const list = document.getElementById('tags-list');
@@ -5551,6 +5601,48 @@
     <div class="flex gap-3">
       <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteContact()">Remove</button>
       <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteContactConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Zoom Activation Modal -->
+  <div id="zoom-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Connect Zoom</h2>
+          <button onclick="closeZoomModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Authorize Calendarify to create Zoom meetings on your behalf.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="activateZoom()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Meet Activation Modal -->
+  <div id="google-meet-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Connect Google Meet</h2>
+          <button onclick="closeGoogleMeetModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Authorize Calendarify to create Google Meet meetings on your behalf.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeGoogleMeetModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="activateGoogleMeet()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Connect</button>
+        </div>
+      </div>
     </div>
   </div>
 
