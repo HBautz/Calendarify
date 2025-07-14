@@ -1594,7 +1594,7 @@
                 <div class="text-[#A3B3AF] text-sm">Video</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="zoom-connect-btn" onclick="openZoomModal()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -1604,7 +1604,7 @@
                 <div class="text-[#A3B3AF] text-sm">Video</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="google-meet-connect-btn" onclick="openGoogleMeetModal()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
         </div>
       </section>
@@ -1846,6 +1846,7 @@
         Object.entries(data).forEach(([k, v]) => {
           localStorage.setItem(k, JSON.stringify(v));
         });
+        renderIntegrations();
       }
     }
 
@@ -2483,7 +2484,7 @@
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal' || el.id === 'zoom-modal' || el.id === 'google-meet-modal') {
           el.classList.add('hidden');
         }
       });
@@ -2654,6 +2655,7 @@
       fetchContactsFromServer();
       fetchEventTypesFromServer();
       renderWorkflows();
+      renderIntegrations();
 
       const avatar = document.getElementById('profile-avatar');
       if (avatar) avatar.addEventListener('click', openProfileModal);
@@ -4833,6 +4835,73 @@
       document.getElementById('global-search-results').classList.add('hidden');
     }
 
+    function openZoomModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('zoom-modal').classList.remove('hidden');
+    }
+
+    function closeZoomModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('zoom-modal').classList.add('hidden');
+    }
+
+    async function activateZoomIntegration() {
+      try {
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        await fetch(`${API_URL}/integrations/zoom/activate`, { method: 'POST', headers: { Authorization: `Bearer ${clean}` } });
+        localStorage.setItem('calendarify-integration-zoom', 'true');
+        showNotification('Zoom connected');
+      } catch (e) {
+        console.error('Failed to activate Zoom integration', e);
+        showNotification('Failed to connect Zoom');
+      }
+      closeZoomModal();
+      renderIntegrations();
+    }
+
+    function openGoogleMeetModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('google-meet-modal').classList.remove('hidden');
+    }
+
+    function closeGoogleMeetModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('google-meet-modal').classList.add('hidden');
+    }
+
+    async function activateGoogleMeetIntegration() {
+      try {
+        const token = localStorage.getItem('calendarify-token');
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        await fetch(`${API_URL}/integrations/google-meet/activate`, { method: 'POST', headers: { Authorization: `Bearer ${clean}` } });
+        localStorage.setItem('calendarify-integration-google-meet', 'true');
+        showNotification('Google Meet connected');
+      } catch (e) {
+        console.error('Failed to activate Google Meet integration', e);
+        showNotification('Failed to connect Google Meet');
+      }
+      closeGoogleMeetModal();
+      renderIntegrations();
+    }
+
+    function renderIntegrations() {
+      const zoomBtn = document.getElementById('zoom-connect-btn');
+      const gmeetBtn = document.getElementById('google-meet-connect-btn');
+      const zoomActive = localStorage.getItem('calendarify-integration-zoom') === 'true';
+      const googleActive = localStorage.getItem('calendarify-integration-google-meet') === 'true';
+      if (zoomBtn) {
+        zoomBtn.textContent = zoomActive ? 'Connected' : 'Connect';
+        zoomBtn.disabled = zoomActive;
+        zoomBtn.classList.toggle('opacity-50', zoomActive);
+      }
+      if (gmeetBtn) {
+        gmeetBtn.textContent = googleActive ? 'Connected' : 'Connect';
+        gmeetBtn.disabled = googleActive;
+        gmeetBtn.classList.toggle('opacity-50', googleActive);
+      }
+    }
+
     initAuth('dashboard-body', loadState);
   </script>
 
@@ -5598,6 +5667,36 @@
     </div>
   </div>
 
+  <!-- Zoom Activation Modal -->
+  <div id="zoom-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-white">Connect Zoom</h3>
+      <button onclick="closeZoomModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Allow Calendarify to create Zoom meetings for your events.</p>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeZoomModal()" class="btn-secondary">Cancel</button>
+      <button onclick="activateZoomIntegration()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Connect</button>
+    </div>
+  </div>
+
+  <!-- Google Meet Activation Modal -->
+  <div id="google-meet-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-white">Connect Google Meet</h3>
+      <button onclick="closeGoogleMeetModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Allow Calendarify to create Google Meet links for your events.</p>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeGoogleMeetModal()" class="btn-secondary">Cancel</button>
+      <button onclick="activateGoogleMeetIntegration()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Connect</button>
+    </div>
+  </div>
+
   <!-- Persist default contacts and tags to localStorage if not present -->
   <script>
     // Initialize tags with defaults if not present
@@ -5631,6 +5730,13 @@
           createdAt: new Date().toISOString()
         }
       ]));
+    }
+
+    if (!localStorage.getItem('calendarify-integration-zoom')) {
+      localStorage.setItem('calendarify-integration-zoom', 'false');
+    }
+    if (!localStorage.getItem('calendarify-integration-google-meet')) {
+      localStorage.setItem('calendarify-integration-google-meet', 'false');
     }
     
     // Ensure default tags are always available (merge with existing tags)
