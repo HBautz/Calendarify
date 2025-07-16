@@ -16,8 +16,9 @@ export class IntegrationsController {
   @Get('google/callback')
   async googleCallback(@Query('code') code: string, @Query('state') state: string, @Res() res) {
     await this.integrationsService.handleGoogleCallback(code, state);
-    // Redirect back to the dashboard once authentication succeeds
-    return res.redirect('/dashboard');
+    // Redirect back to the frontend dashboard after successful authentication
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return res.redirect(`${baseUrl}/dashboard`);
   }
 
   @UseGuards(JwtAuthGuard)
