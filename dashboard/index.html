@@ -1604,7 +1604,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync your calendar</div>
               </div>
             </div>
-            <button onclick="connectGoogleCalendar()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="google-calendar-connect-btn" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Connect</button>
           </div>
         </div>
       </section>
@@ -1829,6 +1829,27 @@
     </div>
   </div>
 
+  <!-- Disconnect Google Calendar Modal -->
+  <div id="disconnect-google-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Google Calendar</h2>
+          <button onclick="closeDisconnectGoogleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect your Google Calendar? This will remove the integration.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectGoogleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectGoogle()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script defer>
 
     async function loadState() {
@@ -1967,6 +1988,8 @@
         restoreDayAvailability();
       } else if (section === 'contacts') {
         renderContacts();
+      } else if (section === 'integrations') {
+        setTimeout(updateGoogleCalendarButton, 100); // Wait for tab to show
       }
     }
 
@@ -4058,21 +4081,7 @@
 
 
     async function connectGoogleCalendar() {
-      const token = localStorage.getItem('calendarify-token');
-      if (!token) return;
-      const clean = token.replace(/^"|"$/g, '');
-      const res = await fetch(`${API_URL}/integrations/google/auth-url`, {
-        headers: { Authorization: `Bearer ${clean}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        window.location.href = data.url;
-      } else {
-        showNotification('Failed to start Google OAuth');
-      }
-    }
-
-    async function connectGoogleCalendar() {
+      console.log('connectGoogleCalendar called');
       const token = localStorage.getItem('calendarify-token');
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
@@ -4911,6 +4920,43 @@
     }
 
     initAuth('dashboard-body', loadState);
+
+    function updateGoogleCalendarButton() {
+      const btn = document.getElementById('google-calendar-connect-btn');
+      console.log('updateGoogleCalendarButton called', btn);
+      if (!btn) return;
+      const connected = localStorage.getItem('calendarify-google-calendar-connected');
+      console.log('Google Calendar connected state:', connected);
+      if (connected === 'true') {
+        btn.textContent = 'Connected';
+        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+        btn.classList.add('bg-[#2C4A43]', 'text-[#34D399]');
+        btn.onclick = openDisconnectGoogleModal;
+      } else {
+        btn.textContent = 'Connect';
+        btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
+        btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
+        btn.onclick = connectGoogleCalendar;
+      }
+    }
+    window.updateGoogleCalendarButton = updateGoogleCalendarButton;
+
+    async function connectGoogleCalendar() {
+      console.log('connectGoogleCalendar called');
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/google/auth-url`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.url;
+      } else {
+        showNotification('Failed to start Google OAuth');
+      }
+    }
+    window.connectGoogleCalendar = connectGoogleCalendar;
   </script>
 
   <!-- Create Event Type Modal -->
@@ -4974,769 +5020,3 @@
               <label for="event-type-description" class="block text-[#A3B3AF] text-sm font-medium mb-2">Description</label>
               <textarea id="event-type-description" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Brief description of what this meeting is about"></textarea>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location</label>
-                <select id="event-type-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="zoom">Zoom</option>
-                  <option value="google-meet">Google Meet</option>
-                  <option value="teams">Microsoft Teams</option>
-                  <option value="skype">Skype</option>
-                  <option value="phone">Phone Call</option>
-                  <option value="office">In-person (Office)</option>
-                  <option value="custom">Custom Location</option>
-                </select>
-              </div>
-              
-              <div id="custom-location-container" style="display: none;">
-                <label for="event-type-custom-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Location</label>
-                <input type="text" id="event-type-custom-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter location details">
-              </div>
-            </div>
-
-            <div id="meeting-link-container">
-              <label for="event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link</label>
-              <input type="url" id="event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://zoom.us/j/...">
-            </div>
-
-            <div>
-              <label for="event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color</label>
-              <div class="flex items-center gap-3">
-                <input type="color" id="event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
-                <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Scheduling -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Scheduling</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
-                <select id="event-type-buffer-before" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
-                <select id="event-type-buffer-after" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
-                <select id="event-type-advance-notice" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No minimum</option>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                  <option value="240">4 hours</option>
-                  <option value="480">8 hours</option>
-                  <option value="1440">1 day</option>
-                  <option value="2880">2 days</option>
-                  <option value="10080">1 week</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="event-type-cancellation" class="block text-[#A3B3AF] text-sm font-medium mb-2">Cancellation Policy</label>
-                <select id="event-type-cancellation" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No restrictions</option>
-                  <option value="60">1 hour before</option>
-                  <option value="120">2 hours before</option>
-                  <option value="240">4 hours before</option>
-                  <option value="1440">1 day before</option>
-                  <option value="2880">2 days before</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-timezone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Timezone</label>
-                <select id="event-type-timezone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="auto">Auto-detect (recommended)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Denver">Mountain Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                  <option value="Europe/Paris">Paris</option>
-                  <option value="Asia/Tokyo">Tokyo</option>
-                  <option value="Australia/Sydney">Sydney</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
-                <select id="event-type-booking-limit" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No limit</option>
-                  <option value="1">1 per day</option>
-                  <option value="2">2 per day</option>
-                  <option value="3">3 per day</option>
-                  <option value="5">5 per day</option>
-                  <option value="10">10 per day</option>
-                  <option value="custom">Custom limit</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="custom-booking-limit-container" style="display: none;">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="event-type-custom-limit-count" class="block text-[#A3B3AF] text-sm font-medium mb-2">Limit Count</label>
-                  <input type="number" id="event-type-custom-limit-count" min="1" max="100" value="5" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                </div>
-                <div>
-                  <label for="event-type-custom-limit-period" class="block text-[#A3B3AF] text-sm font-medium mb-2">Time Period</label>
-                  <select id="event-type-custom-limit-period" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                    <option value="day">Per day</option>
-                    <option value="week">Per week</option>
-                    <option value="month">Per month</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Booking Form -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Booking Form</h3>
-            
-            <div>
-              <label for="event-type-confirmation-message" class="block text-[#A3B3AF] text-sm font-medium mb-2">Confirmation Message</label>
-              <textarea id="event-type-confirmation-message" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Message to show after booking confirmation"></textarea>
-            </div>
-
-            <div>
-              <label for="event-type-questions" class="block text-[#A3B3AF] text-sm font-medium mb-2">Additional Questions</label>
-              <textarea id="event-type-questions" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Questions to ask invitees when they book (one per line)"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-name" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Name</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-email" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Email</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-phone" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Phone Number</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-company" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Company</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notifications -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Notifications</h3>
-            
-            <div class="space-y-3">
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="event-type-availability" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Show on availability calendar</span>
-              </label>
-              
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="event-type-reminders" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send reminder notifications</span>
-              </label>
-              
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="event-type-follow-up" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send follow-up email after meeting</span>
-              </label>
-
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="event-type-cancellation-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send cancellation notifications</span>
-              </label>
-
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="event-type-reschedule-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send reschedule notifications</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Advanced Settings -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Advanced Settings</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-secret" class="block text-[#A3B3AF] text-sm font-medium mb-2">Visibility</label>
-                <select id="event-type-secret" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="public">Public</option>
-                  <option value="secret">Secret (hidden from profile)</option>
-                  <option value="private">Private (invite only)</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="event-type-priority" class="block text-[#A3B3AF] text-sm font-medium mb-2">Priority</label>
-                <select id="event-type-priority" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="normal">Normal</option>
-                  <option value="high">High Priority</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label for="event-type-tags" class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
-              <input type="text" id="event-type-tags" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter tags separated by commas (e.g., sales, demo, consultation)">
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
-          <button onclick="closeCreateEventTypeModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
-            Cancel
-          </button>
-          <button onclick="saveEventType()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
-            Create Event Type
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Event Type Modal -->
-  <div id="edit-event-type-modal" class="fixed inset-0 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
-          <h2 class="text-2xl font-bold text-white">Edit Event Type</h2>
-          <button onclick="closeEditEventTypeModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-            <span class="material-icons-outlined text-2xl">close</span>
-          </button>
-        </div>
-
-        <!-- Content -->
-        <div class="p-6 space-y-6">
-          <!-- Basic Information -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Basic Information</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Name *</label>
-                <input type="text" id="edit-event-type-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., 30-min Intro Call">
-              </div>
-              
-              <div>
-                <label for="edit-event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration</label>
-                <select id="edit-event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="15">15 minutes</option>
-                  <option value="30" selected>30 minutes</option>
-                  <option value="45">45 minutes</option>
-                  <option value="60">1 hour</option>
-                  <option value="90">1.5 hours</option>
-                  <option value="120">2 hours</option>
-                  <option value="180">3 hours</option>
-                  <option value="240">4 hours</option>
-                  <option value="custom">Custom duration</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-type" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Type</label>
-                <select id="edit-event-type-type" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="1-on-1" selected>1-on-1</option>
-                  <option value="group">Group</option>
-                  <option value="collective">Collective</option>
-                  <option value="round-robin">Round Robin</option>
-                </select>
-              </div>
-              
-              <div id="edit-attendee-limit-container" style="display: none;">
-                <label for="edit-event-type-attendee-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Max Attendees</label>
-                <input type="number" id="edit-event-type-attendee-limit" min="2" max="100" value="10" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-              </div>
-            </div>
-
-            <div>
-              <label for="edit-event-type-description" class="block text-[#A3B3AF] text-sm font-medium mb-2">Description</label>
-              <textarea id="edit-event-type-description" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Brief description of what this meeting is about"></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location</label>
-                <select id="edit-event-type-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="zoom">Zoom</option>
-                  <option value="google-meet">Google Meet</option>
-                  <option value="teams">Microsoft Teams</option>
-                  <option value="skype">Skype</option>
-                  <option value="phone">Phone Call</option>
-                  <option value="office">In-person (Office)</option>
-                  <option value="custom">Custom Location</option>
-                </select>
-              </div>
-              
-              <div id="edit-custom-location-container" style="display: none;">
-                <label for="edit-event-type-custom-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Location</label>
-                <input type="text" id="edit-event-type-custom-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter location details">
-              </div>
-            </div>
-
-            <div id="edit-meeting-link-container">
-              <label for="edit-event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link</label>
-              <input type="url" id="edit-event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://zoom.us/j/...">
-            </div>
-
-            <div>
-              <label for="edit-event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color</label>
-              <div class="flex items-center gap-3">
-                <input type="color" id="edit-event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
-                <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Scheduling -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Scheduling</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
-                <select id="edit-event-type-buffer-before" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="edit-event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
-                <select id="edit-event-type-buffer-after" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
-                <select id="edit-event-type-advance-notice" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No minimum</option>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                  <option value="240">4 hours</option>
-                  <option value="480">8 hours</option>
-                  <option value="1440">1 day</option>
-                  <option value="2880">2 days</option>
-                  <option value="10080">1 week</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="edit-event-type-cancellation" class="block text-[#A3B3AF] text-sm font-medium mb-2">Cancellation Policy</label>
-                <select id="edit-event-type-cancellation" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No restrictions</option>
-                  <option value="60">1 hour before</option>
-                  <option value="120">2 hours before</option>
-                  <option value="240">4 hours before</option>
-                  <option value="1440">1 day before</option>
-                  <option value="2880">2 days before</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-timezone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Timezone</label>
-                <select id="edit-event-type-timezone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="auto">Auto-detect (recommended)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Denver">Mountain Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                  <option value="Europe/Paris">Paris</option>
-                  <option value="Asia/Tokyo">Tokyo</option>
-                  <option value="Australia/Sydney">Sydney</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="edit-event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
-                <select id="edit-event-type-booking-limit" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No limit</option>
-                  <option value="1">1 per day</option>
-                  <option value="2">2 per day</option>
-                  <option value="3">3 per day</option>
-                  <option value="5">5 per day</option>
-                  <option value="10">10 per day</option>
-                  <option value="custom">Custom limit</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="edit-custom-booking-limit-container" style="display: none;">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="edit-event-type-custom-limit-count" class="block text-[#A3B3AF] text-sm font-medium mb-2">Limit Count</label>
-                  <input type="number" id="edit-event-type-custom-limit-count" min="1" max="100" value="5" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                </div>
-                <div>
-                  <label for="edit-event-type-custom-limit-period" class="block text-[#A3B3AF] text-sm font-medium mb-2">Time Period</label>
-                  <select id="edit-event-type-custom-limit-period" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                    <option value="day">Per day</option>
-                    <option value="week">Per week</option>
-                    <option value="month">Per month</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Booking Form -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Booking Form</h3>
-            
-            <div>
-              <label for="edit-event-type-confirmation-message" class="block text-[#A3B3AF] text-sm font-medium mb-2">Confirmation Message</label>
-              <textarea id="edit-event-type-confirmation-message" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Message to show after booking confirmation"></textarea>
-            </div>
-
-            <div>
-              <label for="edit-event-type-questions" class="block text-[#A3B3AF] text-sm font-medium mb-2">Additional Questions</label>
-              <textarea id="edit-event-type-questions" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Questions to ask invitees when they book (one per line)"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-name" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Name</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-email" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Email</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-phone" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Phone Number</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-company" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Company</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notifications -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Notifications</h3>
-            
-            <div class="space-y-3">
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="edit-event-type-availability" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Show on availability calendar</span>
-              </label>
-              
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="edit-event-type-reminders" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send reminder notifications</span>
-              </label>
-              
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="edit-event-type-follow-up" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send follow-up email after meeting</span>
-              </label>
-
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="edit-event-type-cancellation-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send cancellation notifications</span>
-              </label>
-
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="edit-event-type-reschedule-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send reschedule notifications</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Advanced Settings -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white">Advanced Settings</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-secret" class="block text-[#A3B3AF] text-sm font-medium mb-2">Visibility</label>
-                <select id="edit-event-type-secret" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="public">Public</option>
-                  <option value="secret">Secret (hidden from profile)</option>
-                  <option value="private">Private (invite only)</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="edit-event-type-priority" class="block text-[#A3B3AF] text-sm font-medium mb-2">Priority</label>
-                <select id="edit-event-type-priority" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="normal">Normal</option>
-                  <option value="high">High Priority</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label for="edit-event-type-tags" class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
-              <input type="text" id="edit-event-type-tags" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter tags separated by commas (e.g., sales, demo, consultation)">
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
-          <button onclick="closeEditEventTypeModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
-            Cancel
-          </button>
-          <button onclick="updateEventType()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
-            Update Event Type
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete Event Type Confirmation Modal -->
-  <div id="delete-event-type-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-      <h3 class="text-lg font-bold text-white">Delete Event Type</h3>
-    </div>
-    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this event type? This action cannot be undone.</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteEventType()">Delete</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteEventTypeConfirmModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Cancel Meeting Confirmation Modal -->
-  <div id="cancel-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-      <h3 class="text-lg font-bold text-white">Cancel Meeting</h3>
-    </div>
-    <p class="text-[#A3B3AF] mb-6">Are you sure you want to cancel this meeting? This action cannot be undone.</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmCancelMeeting()">Cancel Meeting</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeCancelMeetingConfirmModal()">Keep Meeting</button>
-    </div>
-  </div>
-
-  <!-- Delete Meeting Confirmation Modal -->
-  <div id="delete-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">delete_forever</span>
-      <h3 class="text-lg font-bold text-white">Delete Meeting</h3>
-    </div>
-    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this meeting from your history? This action cannot be undone.</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteMeeting()">Delete</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteMeetingConfirmModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Delete Workflow Confirmation Modal -->
-  <div id="delete-workflow-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-      <h3 class="text-lg font-bold text-white">Delete Workflow</h3>
-    </div>
-    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this workflow? This action cannot be undone.</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteWorkflow()">Delete</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteWorkflowConfirmModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Delete Contact Confirmation Modal -->
-  <div id="delete-contact-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-      <h3 class="text-lg font-bold text-white">Remove Contact</h3>
-    </div>
-    <p id="delete-contact-message" class="text-[#A3B3AF] mb-6">Are you sure you want to remove this contact?</p>
-    <div class="flex gap-3">
-      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteContact()">Remove</button>
-      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteContactConfirmModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Zoom Activation Modal -->
-  <div id="zoom-modal" class="fixed inset-0 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
-        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
-          <h2 class="text-xl font-bold text-white">Connect Zoom</h2>
-          <button onclick="closeZoomModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-            <span class="material-icons-outlined text-2xl">close</span>
-          </button>
-        </div>
-        <div class="p-6 space-y-4">
-          <p class="text-[#A3B3AF] text-sm">Authorize Calendarify to create Zoom meetings on your behalf.</p>
-        </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
-          <button onclick="closeZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
-          <button onclick="activateZoom()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Connect</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-
-  <!-- Create Tag Modal -->
-  <div id="create-tag-modal" class="fixed inset-0 z-[60] hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
-        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
-          <h2 class="text-xl font-bold text-white">Create Tag</h2>
-          <button onclick="closeCreateTagModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-            <span class="material-icons-outlined text-2xl">close</span>
-          </button>
-        </div>
-        <div class="p-6 space-y-4">
-          <input type="text" id="new-tag-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., VIP, Lead">
-        </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
-          <button onclick="closeCreateTagModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
-          <button onclick="saveTag()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Create</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Event Types Modal -->
-  <div id="event-types-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
-        <h3 class="text-lg font-bold text-white">Event Types</h3>
-      </div>
-      <button onclick="closeEventTypesModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-        <span class="material-icons-outlined">close</span>
-      </button>
-    </div>
-    <div id="event-types-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
-      <!-- Event types will be populated here -->
-    </div>
-    <div class="flex justify-end">
-      <button onclick="closeEventTypesModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
-        Close
-      </button>
-    </div>
-  </div>
-
-  <!-- Tags Modal -->
-  <div id="tags-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
-        <h3 id="tags-modal-title" class="text-lg font-bold text-white">Tags</h3>
-      </div>
-      <button onclick="closeTagsModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
-        <span class="material-icons-outlined">close</span>
-      </button>
-    </div>
-    <div id="tags-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
-      <!-- Tags will be populated here -->
-    </div>
-    <div class="flex justify-end">
-      <button onclick="closeTagsModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
-        Close
-      </button>
-    </div>
-  </div>
-
-  <!-- Persist default contacts and tags to localStorage if not present -->
-  <script>
-    // Initialize tags with defaults if not present
-    if (!localStorage.getItem('calendarify-tags')) {
-      localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
-    }
-    
-    // Initialize contacts with defaults if not present
-    if (!localStorage.getItem('calendarify-contacts')) {
-      localStorage.setItem('calendarify-contacts', JSON.stringify([
-        {
-          id: 'c1',
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          phone: '',
-          company: '',
-          notes: '',
-          favorite: false,
-          tags: ['Client'],
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'c2',
-          name: 'John Smith',
-          email: 'john@company.com',
-          phone: '',
-          company: '',
-          notes: '',
-          favorite: true,
-          tags: ['VIP'],
-          createdAt: new Date().toISOString()
-        }
-      ]));
-    }
-    
-    // Ensure default tags are always available (merge with existing tags)
-    const existingTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-    const defaultTags = ['Client', 'VIP'];
-    const allTags = [...new Set([...existingTags, ...defaultTags])]; // Remove duplicates
-    localStorage.setItem('calendarify-tags', JSON.stringify(allTags));
-  </script>
-</body>
-</html>

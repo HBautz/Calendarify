@@ -3,7 +3,11 @@ import { google } from 'googleapis';
 import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 
-const DEFAULT_SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
+const DEFAULT_SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/userinfo.email',
+];
 
 @Injectable()
 export class IntegrationsService {
@@ -47,11 +51,23 @@ export class IntegrationsService {
   async handleGoogleCallback(code: string, state: string) {
     const userId = this.decodeState(state);
     const client = this.oauthClient();
-    const { tokens } = await client.getToken(code);
+    let tokens;
+    try {
+      const tokenResponse = await client.getToken(code);
+      tokens = tokenResponse.tokens;
+    } catch (err) {
+      throw err;
+    }
     client.setCredentials(tokens);
 
     const oauth2 = google.oauth2({ version: 'v2', auth: client });
-    const { data } = await oauth2.userinfo.get();
+    let data;
+    try {
+      const userInfo = await oauth2.userinfo.get();
+      data = userInfo.data;
+    } catch (err) {
+      throw err;
+    }
     const externalId = data.id ?? '';
 
     const existing = await this.prisma.externalCalendar.findFirst({
@@ -114,6 +130,12 @@ export class IntegrationsService {
       timeMax,
     });
     return res.data.items ?? [];
+  }
+
+  async disconnectGoogle(userId: string) {
+    await this.prisma.externalCalendar.deleteMany({
+      where: { user_id: userId, provider: 'google' },
+    });
   }
 
   connectGoogleMeet(data: any) {

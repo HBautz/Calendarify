@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, UseGuards, Res, Delete } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IntegrationsService } from './integrations.service';
 
@@ -14,9 +14,10 @@ export class IntegrationsController {
   }
 
   @Get('google/callback')
-  async googleCallback(@Query('code') code: string, @Query('state') state: string) {
+  async googleCallback(@Query('code') code: string, @Query('state') state: string, @Res() res) {
     await this.integrationsService.handleGoogleCallback(code, state);
-    return { message: 'Google account connected' };
+    // Redirect to dashboard with a flag for frontend to show integrations tab and connected state
+    return res.redirect('/dashboard?google_oauth=1');
   }
 
   @UseGuards(JwtAuthGuard)
@@ -34,5 +35,12 @@ export class IntegrationsController {
   @Post('zoom')
   zoom(@Body() body: any) {
     return this.integrationsService.connectZoom(body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('google/disconnect')
+  async disconnectGoogle(@Req() req) {
+    await this.integrationsService.disconnectGoogle(req.user.userId);
+    return { message: 'Google Calendar disconnected' };
   }
 }
