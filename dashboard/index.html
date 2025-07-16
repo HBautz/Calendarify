@@ -1622,7 +1622,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync with Google Calendar</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="google-calendar-connect" onclick="connectGoogleCalendar()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -4079,6 +4079,21 @@
         showNotification('Failed to connect Google Meet');
       }
       closeGoogleMeetModal();
+    }
+
+    async function connectGoogleCalendar() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/google/auth-url`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.url;
+      } else {
+        showNotification('Failed to start Google OAuth');
+      }
     }
 
     async function showContactTagsModal(contactEmail) {
