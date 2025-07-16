@@ -16,8 +16,8 @@ export class IntegrationsController {
   @Get('google/callback')
   async googleCallback(@Query('code') code: string, @Query('state') state: string, @Res() res) {
     await this.integrationsService.handleGoogleCallback(code, state);
-    // Redirect to dashboard with a flag for frontend to show integrations tab and connected state
-    return res.redirect('/dashboard?google_oauth=1');
+    // Redirect back to the dashboard once authentication succeeds
+    return res.redirect('/dashboard');
   }
 
   @UseGuards(JwtAuthGuard)
