@@ -44,6 +44,16 @@ Backend tests are executed with Jest:
 npm test
 ```
 
+## Google Calendar Integration
+
+OAuth credentials are loaded from environment variables defined in `.env.example`:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI`
+
+Replace these placeholders with values from your Google Cloud Console before starting the backend.
+
 ## Repository Overview
 
 ```
