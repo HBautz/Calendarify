@@ -1594,7 +1594,7 @@
                 <div class="text-[#A3B3AF] text-sm">Video</div>
               </div>
             </div>
-            <button onclick="openZoomModal()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="zoom-connect-btn" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Not Connected</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -1845,6 +1845,27 @@
         <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
           <button onclick="closeDisconnectGoogleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
           <button onclick="confirmDisconnectGoogle()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disconnect Zoom Modal -->
+  <div id="disconnect-zoom-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Zoom</h2>
+          <button onclick="closeDisconnectZoomModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect Zoom? This will remove the integration.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectZoom()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Connected</button>
         </div>
       </div>
     </div>
@@ -4923,24 +4944,49 @@
     initAuth('dashboard-body', loadState);
 
     function updateGoogleCalendarButton() {
-      const btnMain = document.getElementById('google-calendar-connect-btn');
-      const btnRouting = document.getElementById('google-calendar-connect');
-      const connected = localStorage.getItem('calendarify-google-calendar-connected');
-
-      [btnMain, btnRouting].forEach(btn => {
-        if (!btn) return;
-        if (connected === 'true') {
-          btn.textContent = 'Disconnect';
-          btn.classList.remove('bg-red-500', 'text-white');
-          btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
-          btn.onclick = openDisconnectGoogleModal;
-        } else {
-          btn.textContent = 'Connect';
-          btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
-          btn.classList.add('bg-red-500', 'text-white');
+      const btn = document.getElementById('google-calendar-connect-btn');
+      console.log('[DEBUG] updateGoogleCalendarButton called', btn);
+      if (!btn) return;
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
+        btn.textContent = 'Not Connected';
+        btn.style.backgroundColor = '#ef4444';
+        btn.style.color = '#fff';
+        btn.onclick = connectGoogleCalendar;
+        console.log('[DEBUG] No token found, set to Not Connected');
+        return;
+      }
+      const clean = token.replace(/^\"|\"$/g, '');
+      fetch(`${API_URL}/integrations/google/status`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      })
+        .then(res => {
+          console.log('[DEBUG] /integrations/google/status response status:', res.status);
+          return res.json();
+        })
+        .then(data => {
+          console.log('[DEBUG] /integrations/google/status response data:', data);
+          if (data.connected) {
+            btn.textContent = 'Connected';
+            btn.style.backgroundColor = '#34D399';
+            btn.style.color = '#1A2E29';
+            btn.onclick = openDisconnectGoogleModal;
+            console.log('[DEBUG] Button set to Connected (#34D399)');
+          } else {
+            btn.textContent = 'Not Connected';
+            btn.style.backgroundColor = '#ef4444';
+            btn.style.color = '#fff';
+            btn.onclick = connectGoogleCalendar;
+            console.log('[DEBUG] Button set to Not Connected');
+          }
+        })
+        .catch(e => {
+          btn.textContent = 'Not Connected';
+          btn.style.backgroundColor = '#ef4444';
+          btn.style.color = '#fff';
           btn.onclick = connectGoogleCalendar;
-        }
-      });
+          console.log('[DEBUG] Error fetching status:', e);
+        });
     }
     window.updateGoogleCalendarButton = updateGoogleCalendarButton;
 
@@ -4991,6 +5037,25 @@
     window.openDisconnectGoogleModal = openDisconnectGoogleModal;
     window.closeDisconnectGoogleModal = closeDisconnectGoogleModal;
     window.confirmDisconnectGoogle = confirmDisconnectGoogle;
+
+    function updateZoomButton() {
+      const btn = document.getElementById('zoom-connect-btn');
+      if (!btn) return;
+      const connected = localStorage.getItem('calendarify-zoom-connected');
+      if (connected === 'true') {
+        btn.textContent = 'Connected';
+        btn.classList.remove('bg-red-500', 'text-white');
+        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+        btn.classList.add('bg-[#2C4A43]', 'text-[#34D399]');
+        btn.onclick = openDisconnectZoomModal;
+      } else {
+        btn.textContent = 'Not Connected';
+        btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
+        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+        btn.classList.add('bg-red-500', 'text-white');
+        btn.onclick = connectZoom;
+      }
+    }
   </script>
 
   <!-- Create Event Type Modal -->

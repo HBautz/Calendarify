@@ -28,6 +28,13 @@ export class IntegrationsController {
     return { events };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('google/status')
+  async googleStatus(@Req() req) {
+    const connected = await this.integrationsService.isGoogleConnected(req.user.userId);
+    return { connected };
+  }
+
   @Post('google-meet')
   googleMeet(@Body() body: any) {
     return this.integrationsService.connectGoogleMeet(body);

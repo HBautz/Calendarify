@@ -70,6 +70,17 @@ export class IntegrationsService {
     }
     const externalId = data.id ?? '';
 
+    // DEBUG PRINT
+    try {
+      // Get user email from database
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (user && user.email) {
+        console.log(`"${user.email}" Tried to connect "Google Calendar" and it was "Successful"`);
+      }
+    } catch (e) {
+      // Ignore debug print errors
+    }
+
     const existing = await this.prisma.externalCalendar.findFirst({
       where: { user_id: userId, provider: 'google' },
     });
@@ -136,6 +147,13 @@ export class IntegrationsService {
     await this.prisma.externalCalendar.deleteMany({
       where: { user_id: userId, provider: 'google' },
     });
+  }
+
+  async isGoogleConnected(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'google' },
+    });
+    return !!(record && (record.access_token || record.refresh_token));
   }
 
   connectGoogleMeet(data: any) {
