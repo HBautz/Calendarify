@@ -1889,6 +1889,7 @@
           localStorage.setItem(k, JSON.stringify(v));
         });
         updateGoogleCalendarButton();
+        updateZoomButton();
       }
     }
 
@@ -4088,7 +4089,13 @@
 
     async function activateZoom() {
       try {
-        const res = await fetch(`${API_URL}/integrations/zoom`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+        const token = localStorage.getItem('calendarify-token');
+        if (!token) return;
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/integrations/zoom`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${clean}` },
+        });
         if (res.ok) {
           showNotification('Zoom connected');
         } else {
@@ -5041,21 +5048,85 @@
     function updateZoomButton() {
       const btn = document.getElementById('zoom-connect-btn');
       if (!btn) return;
-      const connected = localStorage.getItem('calendarify-zoom-connected');
-      if (connected === 'true') {
-        btn.textContent = 'Connected';
-        btn.classList.remove('bg-red-500', 'text-white');
-        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
-        btn.classList.add('bg-[#2C4A43]', 'text-[#34D399]');
-        btn.onclick = openDisconnectZoomModal;
-      } else {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
         btn.textContent = 'Not Connected';
         btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
-        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
         btn.classList.add('bg-red-500', 'text-white');
         btn.onclick = connectZoom;
+        return;
+      }
+      const clean = token.replace(/^\"|\"$/g, '');
+      fetch(`${API_URL}/integrations/zoom/status`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.connected) {
+            btn.textContent = 'Connected';
+            btn.classList.remove('bg-red-500', 'text-white');
+            btn.classList.add('bg-[#2C4A43]', 'text-[#34D399]');
+            btn.onclick = openDisconnectZoomModal;
+          } else {
+            btn.textContent = 'Not Connected';
+            btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
+            btn.classList.add('bg-red-500', 'text-white');
+            btn.onclick = connectZoom;
+          }
+        })
+        .catch(() => {
+          btn.textContent = 'Not Connected';
+          btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
+          btn.classList.add('bg-red-500', 'text-white');
+          btn.onclick = connectZoom;
+        });
+    }
+
+    async function connectZoom() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/zoom`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        showNotification('Zoom connected');
+        updateZoomButton();
+      } else {
+        showNotification('Failed to connect Zoom');
       }
     }
+    window.connectZoom = connectZoom;
+    window.updateZoomButton = updateZoomButton;
+
+    function openDisconnectZoomModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('disconnect-zoom-modal').classList.remove('hidden');
+    }
+    function closeDisconnectZoomModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('disconnect-zoom-modal').classList.add('hidden');
+    }
+    async function confirmDisconnectZoom() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/zoom/disconnect`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        showNotification('Zoom disconnected');
+        updateZoomButton();
+      } else {
+        showNotification('Failed to disconnect Zoom');
+      }
+      closeDisconnectZoomModal();
+    }
+    window.openDisconnectZoomModal = openDisconnectZoomModal;
+    window.closeDisconnectZoomModal = closeDisconnectZoomModal;
+    window.confirmDisconnectZoom = confirmDisconnectZoom;
   </script>
 
   <!-- Create Event Type Modal -->

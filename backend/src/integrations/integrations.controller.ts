@@ -40,9 +40,27 @@ export class IntegrationsController {
     return this.integrationsService.connectGoogleMeet(body);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('zoom')
-  zoom(@Body() body: any) {
-    return this.integrationsService.connectZoom(body);
+  async connectZoom(@Req() req) {
+    await this.integrationsService.connectZoom(req.user.userId);
+    return { message: 'Zoom connected' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('zoom/status')
+  async zoomStatus(@Req() req) {
+    const connected = await this.integrationsService.isZoomConnected(
+      req.user.userId,
+    );
+    return { connected };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('zoom/disconnect')
+  async disconnectZoom(@Req() req) {
+    await this.integrationsService.disconnectZoom(req.user.userId);
+    return { message: 'Zoom disconnected' };
   }
 
   @UseGuards(JwtAuthGuard)

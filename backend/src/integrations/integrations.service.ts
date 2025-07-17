@@ -160,7 +160,73 @@ export class IntegrationsService {
     return { message: 'google meet integration stub', data };
   }
 
-  connectZoom(data: any) {
-    return { message: 'zoom integration stub', data };
+  async connectZoom(userId: string) {
+    const clientId = process.env.ZOOM_CLIENT_ID;
+    const clientSecret = process.env.ZOOM_CLIENT_SECRET;
+    const accountId = process.env.ZOOM_ACCOUNT_ID;
+
+    if (!clientId || !clientSecret || !accountId) {
+      return { message: 'zoom integration stub', data: { userId } };
+    }
+
+    const tokenRes = await fetch(
+      `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${encodeURIComponent(
+        accountId,
+      )}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization:
+            'Basic ' +
+            Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
+        },
+      },
+    );
+
+    if (!tokenRes.ok) {
+      throw new BadRequestException('Failed to obtain Zoom tokens');
+    }
+
+    const tokens = (await tokenRes.json()) as {
+      access_token: string;
+      expires_in?: number;
+    };
+
+    const externalId = accountId;
+
+    const existing = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'zoom' },
+    });
+    if (existing) {
+      await this.prisma.externalCalendar.update({
+        where: { id: existing.id },
+        data: {
+          external_id: externalId,
+          access_token: tokens.access_token,
+        },
+      });
+    } else {
+      await this.prisma.externalCalendar.create({
+        data: {
+          user_id: userId,
+          provider: 'zoom',
+          external_id: externalId,
+          access_token: tokens.access_token,
+        },
+      });
+    }
+  }
+
+  async isZoomConnected(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'zoom' },
+    });
+    return !!(record && (record.access_token || record.refresh_token));
+  }
+
+  async disconnectZoom(userId: string) {
+    await this.prisma.externalCalendar.deleteMany({
+      where: { user_id: userId, provider: 'zoom' },
+    });
   }
 }

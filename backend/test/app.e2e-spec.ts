@@ -32,10 +32,11 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api/integrations/zoom (POST)', () => {
+    const token = require('jsonwebtoken').sign({ sub: 'user1' }, 'changeme');
     return request(app.getHttpServer())
       .post('/api/integrations/zoom')
-      .send({ token: 'test' })
+      .set('Authorization', `Bearer ${token}`)
       .expect(201)
-      .expect({ message: 'zoom integration stub', data: { token: 'test' } });
+      .expect({ message: 'zoom integration stub', data: { userId: 'user1' } });
   });
 });

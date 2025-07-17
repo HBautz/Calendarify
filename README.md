@@ -54,6 +54,16 @@ OAuth credentials are loaded from environment variables defined in `.env.example
 
 Replace these placeholders with values from your Google Cloud Console before starting the backend.
 
+## Zoom Integration
+
+Zoom server-to-server OAuth credentials are also read from `.env.example`:
+
+- `ZOOM_CLIENT_ID`
+- `ZOOM_CLIENT_SECRET`
+- `ZOOM_ACCOUNT_ID`
+
+Provide these values from your Zoom app to enable authentication.
+
 ## Repository Overview
 
 ```
