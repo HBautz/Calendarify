@@ -160,40 +160,43 @@ export class IntegrationsService {
     return { message: 'google meet integration stub', data };
   }
 
-  async connectZoom(userId: string) {
+  async handleZoomCallback(code: string, state: string) {
+    const userId = this.decodeState(state);
     const clientId = process.env.ZOOM_CLIENT_ID;
     const clientSecret = process.env.ZOOM_CLIENT_SECRET;
-    const accountId = process.env.ZOOM_ACCOUNT_ID;
-
-    if (!clientId || !clientSecret || !accountId) {
-      return { message: 'zoom integration stub', data: { userId } };
+    const redirectUri = process.env.ZOOM_REDIRECT_URI;
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error('Missing Zoom OAuth environment variables');
     }
-
-    const tokenRes = await fetch(
-      `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${encodeURIComponent(
-        accountId,
-      )}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization:
-            'Basic ' +
-            Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
-        },
+    // Exchange code for access token
+    const tokenRes = await fetch('https://zoom.us/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-    );
-
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+      }),
+    });
     if (!tokenRes.ok) {
-      throw new BadRequestException('Failed to obtain Zoom tokens');
+      throw new Error('Failed to obtain Zoom tokens');
     }
-
-    const tokens = (await tokenRes.json()) as {
-      access_token: string;
-      expires_in?: number;
-    };
-
-    const externalId = accountId;
-
+    const tokens = await tokenRes.json();
+    // Get user info from Zoom
+    const userRes = await fetch('https://api.zoom.us/v2/users/me', {
+      headers: {
+        'Authorization': `Bearer ${tokens.access_token}`,
+      },
+    });
+    if (!userRes.ok) {
+      throw new Error('Failed to fetch Zoom user info');
+    }
+    const userInfo = await userRes.json();
+    const externalId = userInfo.id;
+    // Store in DB
     const existing = await this.prisma.externalCalendar.findFirst({
       where: { user_id: userId, provider: 'zoom' },
     });
@@ -228,5 +231,19 @@ export class IntegrationsService {
     await this.prisma.externalCalendar.deleteMany({
       where: { user_id: userId, provider: 'zoom' },
     });
+  }
+
+  generateZoomAuthUrl(userId: string): string {
+    const clientId = process.env.ZOOM_CLIENT_ID;
+    const redirectUri = process.env.ZOOM_REDIRECT_URI;
+    const state = this.createState(userId);
+    const base = 'https://zoom.us/oauth/authorize';
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: clientId ?? '',
+      redirect_uri: redirectUri ?? '',
+      state,
+    });
+    return `${base}?${params.toString()}`;
   }
 }

@@ -41,6 +41,13 @@ export class IntegrationsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('zoom/auth-url')
+  zoomAuthUrl(@Req() req) {
+    const url = this.integrationsService.generateZoomAuthUrl(req.user.userId);
+    return { url };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('zoom')
   async connectZoom(@Req() req) {
     await this.integrationsService.connectZoom(req.user.userId);
@@ -68,5 +75,12 @@ export class IntegrationsController {
   async disconnectGoogle(@Req() req) {
     await this.integrationsService.disconnectGoogle(req.user.userId);
     return { message: 'Google Calendar disconnected' };
+  }
+
+  @Get('zoom/callback')
+  async zoomCallback(@Query('code') code: string, @Query('state') state: string, @Res() res) {
+    await this.integrationsService.handleZoomCallback(code, state);
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return res.redirect(`${baseUrl}/dashboard`);
   }
 }
