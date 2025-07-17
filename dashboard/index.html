@@ -1604,7 +1604,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync your calendar</div>
               </div>
             </div>
-            <button id="google-calendar-connect-btn" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Connect</button>
+            <button id="google-calendar-connect-btn" onclick="connectGoogleCalendar()" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Connect</button>
           </div>
         </div>
       </section>
@@ -1622,7 +1622,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync with Google Calendar</div>
               </div>
             </div>
-            <button id="google-calendar-connect" onclick="connectGoogleCalendar()" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="google-calendar-connect" onclick="connectGoogleCalendar()" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -1867,6 +1867,7 @@
         Object.entries(data).forEach(([k, v]) => {
           localStorage.setItem(k, JSON.stringify(v));
         });
+        updateGoogleCalendarButton();
       }
     }
 
@@ -4922,22 +4923,24 @@
     initAuth('dashboard-body', loadState);
 
     function updateGoogleCalendarButton() {
-      const btn = document.getElementById('google-calendar-connect-btn');
-      console.log('updateGoogleCalendarButton called', btn);
-      if (!btn) return;
+      const btnMain = document.getElementById('google-calendar-connect-btn');
+      const btnRouting = document.getElementById('google-calendar-connect');
       const connected = localStorage.getItem('calendarify-google-calendar-connected');
-      console.log('Google Calendar connected state:', connected);
-      if (connected === 'true') {
-        btn.textContent = 'Connected';
-        btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
-        btn.classList.add('bg-[#2C4A43]', 'text-[#34D399]');
-        btn.onclick = openDisconnectGoogleModal;
-      } else {
-        btn.textContent = 'Connect';
-        btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
-        btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
-        btn.onclick = connectGoogleCalendar;
-      }
+
+      [btnMain, btnRouting].forEach(btn => {
+        if (!btn) return;
+        if (connected === 'true') {
+          btn.textContent = 'Disconnect';
+          btn.classList.remove('bg-red-500', 'text-white');
+          btn.classList.add('bg-[#34D399]', 'text-[#1A2E29]');
+          btn.onclick = openDisconnectGoogleModal;
+        } else {
+          btn.textContent = 'Connect';
+          btn.classList.remove('bg-[#34D399]', 'text-[#1A2E29]');
+          btn.classList.add('bg-red-500', 'text-white');
+          btn.onclick = connectGoogleCalendar;
+        }
+      });
     }
     window.updateGoogleCalendarButton = updateGoogleCalendarButton;
 
@@ -4957,6 +4960,37 @@
       }
     }
     window.connectGoogleCalendar = connectGoogleCalendar;
+
+    function openDisconnectGoogleModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('disconnect-google-modal').classList.remove('hidden');
+    }
+
+    function closeDisconnectGoogleModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('disconnect-google-modal').classList.add('hidden');
+    }
+
+    async function confirmDisconnectGoogle() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/google/disconnect`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        localStorage.setItem('calendarify-google-calendar-connected', 'false');
+        showNotification('Google Calendar disconnected');
+        updateGoogleCalendarButton();
+      } else {
+        showNotification('Failed to disconnect Google Calendar');
+      }
+      closeDisconnectGoogleModal();
+    }
+    window.openDisconnectGoogleModal = openDisconnectGoogleModal;
+    window.closeDisconnectGoogleModal = closeDisconnectGoogleModal;
+    window.confirmDisconnectGoogle = confirmDisconnectGoogle;
   </script>
 
   <!-- Create Event Type Modal -->
