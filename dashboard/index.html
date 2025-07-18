@@ -1594,7 +1594,7 @@
                 <div class="text-[#A3B3AF] text-sm">Video</div>
               </div>
             </div>
-            <button id="zoom-connect-btn" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Not Connected</button>
+            <button id="zoom-connect-btn" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -1865,7 +1865,7 @@
         </div>
         <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
           <button onclick="closeDisconnectZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
-          <button onclick="confirmDisconnectZoom()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Connected</button>
+          <button onclick="confirmDisconnectZoom()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
         </div>
       </div>
     </div>
@@ -2012,7 +2012,10 @@
       } else if (section === 'contacts') {
         renderContacts();
       } else if (section === 'integrations') {
-        setTimeout(updateGoogleCalendarButton, 100); // Wait for tab to show
+        setTimeout(() => {
+          updateGoogleCalendarButton();
+          updateZoomButton();
+        }, 100); // Wait for tab to show
       }
     }
 
@@ -4092,12 +4095,13 @@
         const token = localStorage.getItem('calendarify-token');
         if (!token) return;
         const clean = token.replace(/^"|"$/g, '');
-        const res = await fetch(`${API_URL}/integrations/zoom`, {
-          method: 'POST',
+        const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
           headers: { Authorization: `Bearer ${clean}` },
         });
+        console.log('[DEBUG] activateZoom status:', res.status);
         if (res.ok) {
-          showNotification('Zoom connected');
+          const data = await res.json();
+          window.location.href = data.url;
         } else {
           showNotification('Failed to connect Zoom');
         }
@@ -5047,57 +5051,66 @@
 
     function updateZoomButton() {
       const btn = document.getElementById('zoom-connect-btn');
+      console.log('[DEBUG] updateZoomButton called', btn);
       if (!btn) return;
       const token = localStorage.getItem('calendarify-token');
       if (!token) {
         btn.textContent = 'Not Connected';
-        btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
-        btn.classList.add('bg-red-500', 'text-white');
-        btn.onclick = connectZoom;
+        btn.style.backgroundColor = '#ef4444';
+        btn.style.color = '#fff';
+        btn.onclick = connectZoomOAuth;
+        console.log('[DEBUG] No token found, set to Not Connected');
         return;
       }
       const clean = token.replace(/^\"|\"$/g, '');
       fetch(`${API_URL}/integrations/zoom/status`, {
         headers: { Authorization: `Bearer ${clean}` },
       })
-        .then(res => res.json())
+        .then(res => {
+          console.log('[DEBUG] /integrations/zoom/status response status:', res.status);
+          return res.json();
+        })
         .then(data => {
+          console.log('[DEBUG] /integrations/zoom/status response data:', data);
           if (data.connected) {
             btn.textContent = 'Connected';
-            btn.classList.remove('bg-red-500', 'text-white');
-            btn.classList.add('bg-[#2C4A43]', 'text-[#34D399]');
+            btn.style.backgroundColor = '#34D399';
+            btn.style.color = '#1A2E29';
             btn.onclick = openDisconnectZoomModal;
+            console.log('[DEBUG] Button set to Connected (#34D399)');
           } else {
             btn.textContent = 'Not Connected';
-            btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
-            btn.classList.add('bg-red-500', 'text-white');
-            btn.onclick = connectZoom;
+            btn.style.backgroundColor = '#ef4444';
+            btn.style.color = '#fff';
+            btn.onclick = connectZoomOAuth;
+            console.log('[DEBUG] Button set to Not Connected');
           }
         })
-        .catch(() => {
+        .catch(e => {
           btn.textContent = 'Not Connected';
-          btn.classList.remove('bg-[#2C4A43]', 'text-[#34D399]');
-          btn.classList.add('bg-red-500', 'text-white');
-          btn.onclick = connectZoom;
+          btn.style.backgroundColor = '#ef4444';
+          btn.style.color = '#fff';
+          btn.onclick = connectZoomOAuth;
+          console.log('[DEBUG] Error fetching status:', e);
         });
     }
 
-    async function connectZoom() {
+    async function connectZoomOAuth() {
+      console.log('connectZoomOAuth called');
       const token = localStorage.getItem('calendarify-token');
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
-      const res = await fetch(`${API_URL}/integrations/zoom`, {
-        method: 'POST',
+      const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
         headers: { Authorization: `Bearer ${clean}` },
       });
+      console.log('[DEBUG] /integrations/zoom/auth-url status:', res.status);
       if (res.ok) {
-        showNotification('Zoom connected');
-        updateZoomButton();
-      } else {
-        showNotification('Failed to connect Zoom');
+        const data = await res.json();
+        console.log('[DEBUG] Redirecting to', data.url);
+        window.location.href = data.url;
       }
     }
-    window.connectZoom = connectZoom;
+    window.connectZoomOAuth = connectZoomOAuth;
     window.updateZoomButton = updateZoomButton;
 
     function openDisconnectZoomModal() {
@@ -5109,6 +5122,7 @@
       document.getElementById('disconnect-zoom-modal').classList.add('hidden');
     }
     async function confirmDisconnectZoom() {
+      console.log('confirmDisconnectZoom called');
       const token = localStorage.getItem('calendarify-token');
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
@@ -5116,6 +5130,7 @@
         method: 'DELETE',
         headers: { Authorization: `Bearer ${clean}` },
       });
+      console.log('[DEBUG] /integrations/zoom/disconnect status:', res.status);
       if (res.ok) {
         showNotification('Zoom disconnected');
         updateZoomButton();

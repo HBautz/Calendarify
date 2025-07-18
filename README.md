@@ -34,7 +34,7 @@ Calendarify is a sample scheduling platform built to demonstrate a full stack we
    npm run start:dev
    ```
 
-Environment variables are defined in `.env.example`. API documentation becomes available at <http://localhost:3001/docs> once the backend is running.
+Environment variables are defined in your local `.env` file. API documentation becomes available at <http://localhost:3001/docs> once the backend is running.
 
 ## Running Tests
 
@@ -46,7 +46,7 @@ npm test
 
 ## Google Calendar Integration
 
-OAuth credentials are loaded from environment variables defined in `.env.example`:
+OAuth credentials are loaded from environment variables defined in your `.env` file:
 
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
@@ -56,13 +56,13 @@ Replace these placeholders with values from your Google Cloud Console before sta
 
 ## Zoom Integration
 
-Zoom server-to-server OAuth credentials are also read from `.env.example`:
+Zoom OAuth credentials are also read from your `.env` file:
 
 - `ZOOM_CLIENT_ID`
 - `ZOOM_CLIENT_SECRET`
-- `ZOOM_ACCOUNT_ID`
+- `ZOOM_REDIRECT_URI`
 
-Provide these values from your Zoom app to enable authentication.
+Provide these values from your Zoom OAuth app to enable authentication. Calendarify now uses a user-level OAuth app with a redirect URI. If you previously configured a server-to-server OAuth app using an Account ID, switch to this standard OAuth flow.
 
 ## Repository Overview
 
