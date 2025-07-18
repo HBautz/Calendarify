@@ -47,12 +47,6 @@ export class IntegrationsController {
     return { url };
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('zoom')
-  async connectZoom(@Req() req) {
-    await this.integrationsService.connectZoom(req.user.userId);
-    return { message: 'Zoom connected' };
-  }
 
   @UseGuards(JwtAuthGuard)
   @Get('zoom/status')

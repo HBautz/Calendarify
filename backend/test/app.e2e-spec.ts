@@ -31,12 +31,14 @@ describe('AppController (e2e)', () => {
       .expect({ message: 'google meet integration stub', data: { token: 'test' } });
   });
 
-  it('/api/integrations/zoom (POST)', () => {
+  it('/api/integrations/zoom/auth-url (GET)', () => {
     const token = require('jsonwebtoken').sign({ sub: 'user1' }, 'changeme');
     return request(app.getHttpServer())
-      .post('/api/integrations/zoom')
+      .get('/api/integrations/zoom/auth-url')
       .set('Authorization', `Bearer ${token}`)
-      .expect(201)
-      .expect({ message: 'zoom integration stub', data: { userId: 'user1' } });
+      .expect(200)
+      .expect(res => {
+        expect(res.body.url).toBeDefined();
+      });
   });
 });
