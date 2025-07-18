@@ -193,14 +193,17 @@
             const token = localStorage.getItem('calendarify-token');
             if (!token) return;
             const clean = token.replace(/^"|"$/g, '');
-            const res = await fetch(`${API_URL}/integrations/zoom`, {
-              method: 'POST',
+            console.log('Requesting Zoom auth URL');
+            const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
               headers: { Authorization: `Bearer ${clean}` },
             });
+            console.log('Zoom auth-url response status:', res.status);
             if (res.ok) {
-              alert('Zoom connected');
+              const data = await res.json();
+              console.log('Redirecting to Zoom OAuth', data.url);
+              window.location.href = data.url;
             } else {
-              alert('Failed to connect Zoom');
+              alert('Failed to initiate Zoom OAuth');
             }
           });
         }

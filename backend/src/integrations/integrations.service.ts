@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { google } from 'googleapis';
 import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
+import { appendFileSync } from 'fs';
+import * as path from 'path';
 
 const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
@@ -12,6 +14,18 @@ const DEFAULT_SCOPES = [
 @Injectable()
 export class IntegrationsService {
   constructor(private prisma: PrismaService) {}
+
+  private zoomLog(...msgs: any[]) {
+    const logPath = path.join(process.cwd(), 'zoom_debug.log');
+    const line = `[${new Date().toISOString()}] ` + msgs.map(m =>
+      typeof m === 'string' ? m : JSON.stringify(m)
+    ).join(' ') + '\n';
+    try {
+      appendFileSync(logPath, line);
+    } catch (err) {
+      console.error('Failed to write zoom log', err);
+    }
+  }
 
   private oauthClient() {
     return new google.auth.OAuth2(
@@ -161,11 +175,15 @@ export class IntegrationsService {
   }
 
   async handleZoomCallback(code: string, state: string) {
+    console.log('[DEBUG] handleZoomCallback code:', code);
+    this.zoomLog('handleZoomCallback start', { code, state });
     const userId = this.decodeState(state);
-    const clientId = process.env.ZOOM_CLIENT_ID;
-    const clientSecret = process.env.ZOOM_CLIENT_SECRET;
-    const redirectUri = process.env.ZOOM_REDIRECT_URI;
+    const clientId = process.env.ZOOM_CLIENT_ID?.trim();
+    const clientSecret = process.env.ZOOM_CLIENT_SECRET?.trim();
+    const redirectUri = process.env.ZOOM_REDIRECT_URI?.trim();
+    console.log('[DEBUG] handleZoomCallback redirect_uri:', redirectUri);
     if (!clientId || !clientSecret || !redirectUri) {
+      this.zoomLog('missing env vars', { clientId, clientSecret, redirectUri });
       throw new Error('Missing Zoom OAuth environment variables');
     }
     // Exchange code for access token
@@ -182,9 +200,11 @@ export class IntegrationsService {
       }),
     });
     if (!tokenRes.ok) {
+      this.zoomLog('token exchange failed', await tokenRes.text());
       throw new Error('Failed to obtain Zoom tokens');
     }
     const tokens = await tokenRes.json();
+    this.zoomLog('token response', tokens);
     // Get user info from Zoom
     const userRes = await fetch('https://api.zoom.us/v2/users/me', {
       headers: {
@@ -192,9 +212,11 @@ export class IntegrationsService {
       },
     });
     if (!userRes.ok) {
+      this.zoomLog('user fetch failed', await userRes.text());
       throw new Error('Failed to fetch Zoom user info');
     }
     const userInfo = await userRes.json();
+    this.zoomLog('userInfo', userInfo);
     const externalId = userInfo.id;
     // Store in DB
     const existing = await this.prisma.externalCalendar.findFirst({
@@ -218,24 +240,28 @@ export class IntegrationsService {
         },
       });
     }
+    this.zoomLog('stored zoom tokens', { userId, externalId });
   }
 
   async isZoomConnected(userId: string): Promise<boolean> {
     const record = await this.prisma.externalCalendar.findFirst({
       where: { user_id: userId, provider: 'zoom' },
     });
-    return !!(record && (record.access_token || record.refresh_token));
+    const connected = !!(record && (record.access_token || record.refresh_token));
+    this.zoomLog('isZoomConnected', { userId, connected });
+    return connected;
   }
 
   async disconnectZoom(userId: string) {
     await this.prisma.externalCalendar.deleteMany({
       where: { user_id: userId, provider: 'zoom' },
     });
+    this.zoomLog('disconnectZoom', { userId });
   }
 
   generateZoomAuthUrl(userId: string): string {
-    const clientId = process.env.ZOOM_CLIENT_ID;
-    const redirectUri = process.env.ZOOM_REDIRECT_URI;
+    const clientId = process.env.ZOOM_CLIENT_ID?.trim();
+    const redirectUri = process.env.ZOOM_REDIRECT_URI?.trim();
     const state = this.createState(userId);
     const base = 'https://zoom.us/oauth/authorize';
     const params = new URLSearchParams({
@@ -244,6 +270,9 @@ export class IntegrationsService {
       redirect_uri: redirectUri ?? '',
       state,
     });
-    return `${base}?${params.toString()}`;
+    const url = `${base}?${params.toString()}`;
+    this.zoomLog('generateZoomAuthUrl', { userId, url });
+    console.log('[DEBUG] Generated Zoom OAuth URL:', url);
+    return url;
   }
 }
