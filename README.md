@@ -63,6 +63,7 @@ Zoom OAuth credentials are also read from your `.env` file:
 - `ZOOM_REDIRECT_URI`
 
 Provide these values from your Zoom OAuth app to enable authentication. Calendarify now uses a user-level OAuth app with a redirect URI. If you previously configured a server-to-server OAuth app using an Account ID, switch to this standard OAuth flow.
+The `ZOOM_REDIRECT_URI` must exactly match the Redirect URL configured in the Zoom app (no trailing slashes or spaces).
 
 ## Repository Overview
 
