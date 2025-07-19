@@ -3272,8 +3272,7 @@
     window.openDisconnectZoomModal = openDisconnectZoomModal;
     window.closeDisconnectZoomModal = closeDisconnectZoomModal;
     window.confirmDisconnectZoom = confirmDisconnectZoom;
-      localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
-    }
+    localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
     if (!localStorage.getItem('calendarify-contacts')) {
       localStorage.setItem('calendarify-contacts', JSON.stringify([
         {
