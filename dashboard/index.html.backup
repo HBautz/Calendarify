@@ -1663,7 +1663,7 @@
         <div class="dashboard-grid">
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">videocam</span>
+              <img src="https://raw.githubusercontent.com/edent/SuperTinyIcons/master/images/svg/zoom.svg" alt="Zoom logo" class="w-6 h-6">
               <div>
                 <div class="text-white font-bold">Zoom</div>
                 <div class="text-[#A3B3AF] text-sm">Video</div>
@@ -1673,17 +1673,17 @@
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">videocam</span>
+              <img src="https://raw.githubusercontent.com/edent/SuperTinyIcons/master/images/svg/google_calendar.svg" alt="Google Calendar logo" class="w-6 h-6">
               <div>
-                <div class="text-white font-bold">Google Meet</div>
-                <div class="text-[#A3B3AF] text-sm">Video</div>
+                <div class="text-white font-bold">Google Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync your calendar</div>
               </div>
             </div>
             <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+              <img src="https://raw.githubusercontent.com/edent/SuperTinyIcons/master/images/svg/outlook.svg" alt="Outlook logo" class="w-6 h-6">
               <div>
                 <div class="text-white font-bold">Outlook Calendar</div>
                 <div class="text-[#A3B3AF] text-sm">Sync with Outlook</div>
@@ -1693,7 +1693,7 @@
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+              <img src="https://raw.githubusercontent.com/edent/SuperTinyIcons/master/images/svg/apple.svg" alt="Apple Calendar logo" class="w-6 h-6">
               <div>
                 <div class="text-white font-bold">Apple Calendar</div>
                 <div class="text-[#A3B3AF] text-sm">Sync with iCloud</div>
