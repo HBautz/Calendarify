@@ -20,6 +20,8 @@
         });
         updateGoogleCalendarButton();
         updateZoomButton();
+        updateOutlookCalendarButton();
+        updateAppleCalendarButton();
       }
     }
 
@@ -145,6 +147,8 @@
         setTimeout(() => {
           updateGoogleCalendarButton();
           updateZoomButton();
+          updateOutlookCalendarButton();
+          updateAppleCalendarButton();
         }, 100); // Wait for tab to show
       }
     }
@@ -3272,6 +3276,53 @@
     window.openDisconnectZoomModal = openDisconnectZoomModal;
     window.closeDisconnectZoomModal = closeDisconnectZoomModal;
     window.confirmDisconnectZoom = confirmDisconnectZoom;
+
+    function updateOutlookCalendarButton() {
+      const btn = document.getElementById('outlook-calendar-connect-btn');
+      if (!btn) return;
+      const connected = localStorage.getItem('calendarify-outlook-calendar-connected') === 'true';
+      if (connected) {
+        btn.textContent = 'Connected';
+        btn.style.backgroundColor = '#34D399';
+        btn.style.color = '#1A2E29';
+      } else {
+        btn.textContent = 'Not Connected';
+        btn.style.backgroundColor = '#ef4444';
+        btn.style.color = '#fff';
+      }
+    }
+    window.updateOutlookCalendarButton = updateOutlookCalendarButton;
+
+    function toggleOutlookCalendar() {
+      const connected = localStorage.getItem('calendarify-outlook-calendar-connected') === 'true';
+      localStorage.setItem('calendarify-outlook-calendar-connected', (!connected).toString());
+      updateOutlookCalendarButton();
+    }
+    window.toggleOutlookCalendar = toggleOutlookCalendar;
+
+    function updateAppleCalendarButton() {
+      const btn = document.getElementById('apple-calendar-connect-btn');
+      if (!btn) return;
+      const connected = localStorage.getItem('calendarify-apple-calendar-connected') === 'true';
+      if (connected) {
+        btn.textContent = 'Connected';
+        btn.style.backgroundColor = '#34D399';
+        btn.style.color = '#1A2E29';
+      } else {
+        btn.textContent = 'Not Connected';
+        btn.style.backgroundColor = '#ef4444';
+        btn.style.color = '#fff';
+      }
+    }
+    window.updateAppleCalendarButton = updateAppleCalendarButton;
+
+    function toggleAppleCalendar() {
+      const connected = localStorage.getItem('calendarify-apple-calendar-connected') === 'true';
+      localStorage.setItem('calendarify-apple-calendar-connected', (!connected).toString());
+      updateAppleCalendarButton();
+    }
+    window.toggleAppleCalendar = toggleAppleCalendar;
+
     localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
     if (!localStorage.getItem('calendarify-contacts')) {
       localStorage.setItem('calendarify-contacts', JSON.stringify([

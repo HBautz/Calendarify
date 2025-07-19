@@ -607,7 +607,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync your calendar</div>
               </div>
             </div>
-          <button id="google-calendar-connect-btn" onclick="connectGoogleCalendar()" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Connect</button>
+            <button id="google-calendar-connect-btn" onclick="connectGoogleCalendar()" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Connect</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -617,7 +617,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync with Outlook</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="outlook-calendar-connect-btn" onclick="toggleOutlookCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -627,7 +627,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync with iCloud</div>
               </div>
             </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
+            <button id="apple-calendar-connect-btn" onclick="toggleAppleCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
           </div>
         </div>
       </section>
