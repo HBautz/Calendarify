@@ -1136,12 +1136,6 @@
           </span>
           Integrations
         </div>
-        <div class="nav-item" data-section="routing" onclick="showSection('routing', this)">
-          <span class="nav-icon"> <!-- routing icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17l4-4m0 0l-4-4m4 4H7a4 4 0 01-4-4V5"/></svg>
-          </span>
-          Routing
-        </div>
       </div>
     </nav>
   </aside>
@@ -1683,24 +1677,6 @@
               <div>
                 <div class="text-white font-bold">Google Meet</div>
                 <div class="text-[#A3B3AF] text-sm">Video</div>
-              </div>
-            </div>
-            <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
-          </div>
-        </div>
-      </section>
-      <!-- Routing Section -->
-      <section id="routing-section" style="display:none;">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-white">Calendar Routing</h2>
-        </div>
-        <div class="dashboard-grid">
-          <div class="card flex flex-col gap-3">
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
-              <div>
-                <div class="text-white font-bold">Google Calendar</div>
-                <div class="text-[#A3B3AF] text-sm">Sync with Google Calendar</div>
               </div>
             </div>
             <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold mt-2">Connect</button>
