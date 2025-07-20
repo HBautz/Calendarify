@@ -129,6 +129,50 @@ def ensure_backend_env():
         print('Copied .env to backend/.env')
 
 
+def load_env_files():
+    """Load environment variables from .env files"""
+    for env_path in ['.env', 'backend/.env']:
+        if os.path.exists(env_path):
+            with open(env_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or '=' not in line:
+                        continue
+                    key, val = line.split('=', 1)
+                    os.environ.setdefault(key, val)
+
+
+def check_apple_calendar():
+    """Attempt a simple CalDAV request to verify Apple Calendar connectivity"""
+    email = os.environ.get('APPLE_EMAIL')
+    password = os.environ.get('APPLE_PASSWORD')
+    if not email or not password:
+        print('Apple Calendar: False (credentials not set)')
+        return False
+
+    try:
+        import requests
+        body = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<propfind xmlns="DAV:">\n  <prop><current-user-principal/>'
+            '</prop>\n</propfind>'
+        )
+        res = requests.request(
+            'PROPFIND',
+            'https://caldav.icloud.com/',
+            headers={'Depth': '0'},
+            auth=(email, password),
+            data=body,
+            timeout=10,
+        )
+        ok = res.status_code == 207
+        print(f'Apple Calendar: {ok}')
+        return ok
+    except Exception as e:
+        print(f'Apple Calendar: False ({e})')
+        return False
+
+
 def setup_database():
     os.chdir('backend')
     
@@ -225,6 +269,8 @@ def main():
     ensure_env_file('.')
     ensure_env_file('backend')
     ensure_backend_env()
+    load_env_files()
+    check_apple_calendar()
     run('npm install')
 
     if check_docker():
