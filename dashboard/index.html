@@ -866,7 +866,7 @@
             <span class="material-icons-outlined text-2xl">close</span>
           </button>
         </div>
-        <div class="p-6 space-y-4">
+        <form onsubmit="submitAppleConnect(); return false;" class="p-6 space-y-4">
           <p class="text-[#A3B3AF] text-sm">To create an app-specific password:</p>
           <ol class="list-decimal list-inside text-[#A3B3AF] text-sm space-y-1">
             <li>Visit <a href="https://appleid.apple.com" target="_blank" class="text-[#34D399] underline">appleid.apple.com</a> and sign in.</li>
@@ -876,11 +876,11 @@
           <p class="text-[#A3B3AF] text-sm">We store this password in our database so Calendarify can sync your events. Do not reuse it elsewhere.</p>
           <input type="email" id="apple-email" placeholder="Apple ID email" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" />
           <input type="password" id="apple-password" placeholder="App-specific password" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" />
-        </div>
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
-          <button onclick="closeConnectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
-          <button onclick="submitAppleConnect()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Connect</button>
-        </div>
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#2C4A43]">
+            <button type="button" onclick="closeConnectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+            <button type="submit" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Connect</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
