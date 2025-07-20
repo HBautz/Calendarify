@@ -3367,6 +3367,8 @@
         showNotification('Apple Calendar connected');
         updateAppleCalendarButton();
         closeConnectAppleModal();
+      } else if (res.status === 400) {
+        showNotification('Invalid Apple credentials');
       } else {
         showNotification('Failed to connect Apple Calendar');
       }
