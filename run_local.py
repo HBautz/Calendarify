@@ -36,6 +36,48 @@ def check_homebrew():
         return False
 
 
+def ensure_node_version(required_major=20):
+    """Ensure Node.js of the required major version is available."""
+    try:
+        output = subprocess.check_output(['node', '--version'], text=True).strip()
+        current_major = int(output.lstrip('v').split('.')[0])
+    except Exception:
+        current_major = None
+    if current_major == required_major:
+        print(f"✓ Node.js {output} detected")
+        return
+
+    print(f"\n⚠️  Node.js {required_major}.x required, but version {output if current_major else 'not found'} detected")
+    installed = False
+
+    if shutil.which('nvm'):
+        try:
+            run('nvm install 20')
+            run('nvm use 20')
+            installed = True
+        except SystemExit:
+            installed = False
+    elif check_homebrew():
+        try:
+            run('brew install node@20')
+            run('brew link --overwrite --force node@20')
+            installed = True
+        except SystemExit:
+            installed = False
+
+    if installed:
+        try:
+            output = subprocess.check_output(['node', '--version'], text=True).strip()
+            if output.startswith(f'v{required_major}'):
+                print(f"✓ Node.js {output} is now active")
+                return
+        except Exception:
+            pass
+
+    print('❌ Failed to ensure the correct Node.js version. Please install Node.js 20 manually.')
+    sys.exit(1)
+
+
 def check_services():
     """Check if required services are available locally"""
     services = {
@@ -85,6 +127,50 @@ def ensure_backend_env():
     if not os.path.exists('backend/.env') and os.path.exists('.env'):
         shutil.copy('.env', 'backend/.env')
         print('Copied .env to backend/.env')
+
+
+def load_env_files():
+    """Load environment variables from .env files"""
+    for env_path in ['.env', 'backend/.env']:
+        if os.path.exists(env_path):
+            with open(env_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or '=' not in line:
+                        continue
+                    key, val = line.split('=', 1)
+                    os.environ.setdefault(key, val)
+
+
+def check_apple_calendar():
+    """Attempt a simple CalDAV request to verify Apple Calendar connectivity"""
+    email = os.environ.get('APPLE_EMAIL')
+    password = os.environ.get('APPLE_PASSWORD')
+    if not email or not password:
+        print('Apple Calendar: False (credentials not set)')
+        return False
+
+    try:
+        import requests
+        body = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<propfind xmlns="DAV:">\n  <prop><current-user-principal/>'
+            '</prop>\n</propfind>'
+        )
+        res = requests.request(
+            'PROPFIND',
+            'https://caldav.icloud.com/',
+            headers={'Depth': '0'},
+            auth=(email, password),
+            data=body,
+            timeout=10,
+        )
+        ok = res.status_code == 207
+        print(f'Apple Calendar: {ok}')
+        return ok
+    except Exception as e:
+        print(f'Apple Calendar: False ({e})')
+        return False
 
 
 def setup_database():
@@ -179,9 +265,12 @@ def serve_frontend():
 
 
 def main():
+    ensure_node_version(20)
     ensure_env_file('.')
     ensure_env_file('backend')
     ensure_backend_env()
+    load_env_files()
+    check_apple_calendar()
     run('npm install')
 
     if check_docker():

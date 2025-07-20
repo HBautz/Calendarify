@@ -65,6 +65,7 @@ model ExternalCalendar {
   external_id   String
   access_token  String?
   refresh_token String?
+  password      String?
 }
 
 model Booking {

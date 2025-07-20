@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { google } from 'googleapis';
 import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
@@ -257,6 +257,65 @@ export class IntegrationsService {
       where: { user_id: userId, provider: 'zoom' },
     });
     this.zoomLog('disconnectZoom', { userId });
+  }
+
+  private async verifyAppleCredentials(email: string, password: string): Promise<'ok' | 'invalid' | 'unreachable'> {
+    try {
+      const res = await fetch('https://caldav.icloud.com/', {
+        method: 'PROPFIND',
+        headers: {
+          Depth: '0',
+          Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
+        },
+        body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
+      });
+      if (res.status === 207) return 'ok';
+      if (res.status === 401) return 'invalid';
+      return 'unreachable';
+    } catch {
+      return 'unreachable';
+    }
+  }
+
+  async connectAppleCalendar(userId: string, email: string, password: string) {
+    const result = await this.verifyAppleCredentials(email, password);
+    if (result === 'invalid') throw new BadRequestException('Invalid Apple credentials');
+    if (result === 'unreachable') throw new ServiceUnavailableException('Unable to reach Apple Calendar');
+
+    const existing = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    if (existing) {
+      await this.prisma.externalCalendar.update({
+        where: { id: existing.id },
+        data: {
+          external_id: email,
+          password,
+        },
+      });
+    } else {
+      await this.prisma.externalCalendar.create({
+        data: {
+          user_id: userId,
+          provider: 'apple',
+          external_id: email,
+          password,
+        },
+      });
+    }
+  }
+
+  async isAppleConnected(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    return !!(record && record.password);
+  }
+
+  async disconnectAppleCalendar(userId: string) {
+    await this.prisma.externalCalendar.deleteMany({
+      where: { user_id: userId, provider: 'apple' },
+    });
   }
 
   generateZoomAuthUrl(userId: string): string {
