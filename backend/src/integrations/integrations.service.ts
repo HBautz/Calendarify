@@ -259,6 +259,62 @@ export class IntegrationsService {
     this.zoomLog('disconnectZoom', { userId });
   }
 
+  private async verifyAppleCredentials(email: string, password: string): Promise<boolean> {
+    try {
+      const res = await fetch('https://caldav.icloud.com/', {
+        method: 'PROPFIND',
+        headers: {
+          Depth: '0',
+          Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
+        },
+        body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
+      });
+      return res.status === 207;
+    } catch {
+      return false;
+    }
+  }
+
+  async connectAppleCalendar(userId: string, email: string, password: string) {
+    const ok = await this.verifyAppleCredentials(email, password);
+    if (!ok) throw new BadRequestException('Invalid Apple credentials');
+
+    const existing = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    if (existing) {
+      await this.prisma.externalCalendar.update({
+        where: { id: existing.id },
+        data: {
+          external_id: email,
+          password,
+        },
+      });
+    } else {
+      await this.prisma.externalCalendar.create({
+        data: {
+          user_id: userId,
+          provider: 'apple',
+          external_id: email,
+          password,
+        },
+      });
+    }
+  }
+
+  async isAppleConnected(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    return !!(record && record.password);
+  }
+
+  async disconnectAppleCalendar(userId: string) {
+    await this.prisma.externalCalendar.deleteMany({
+      where: { user_id: userId, provider: 'apple' },
+    });
+  }
+
   generateZoomAuthUrl(userId: string): string {
     const clientId = process.env.ZOOM_CLIENT_ID?.trim();
     const redirectUri = process.env.ZOOM_REDIRECT_URI?.trim();

@@ -627,7 +627,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync with iCloud</div>
               </div>
             </div>
-            <button id="apple-calendar-connect-btn" onclick="toggleAppleCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
+            <button id="apple-calendar-connect-btn" onclick="connectAppleCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
           </div>
         </div>
       </section>
@@ -851,6 +851,56 @@
         <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
           <button onclick="closeDisconnectZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
           <button onclick="confirmDisconnectZoom()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connect Apple Calendar Modal -->
+  <div id="connect-apple-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Connect Apple Calendar</h2>
+          <button onclick="closeConnectAppleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">To create an app-specific password:</p>
+          <ol class="list-decimal list-inside text-[#A3B3AF] text-sm space-y-1">
+            <li>Visit <a href="https://appleid.apple.com" target="_blank" class="text-[#34D399] underline">appleid.apple.com</a> and sign in.</li>
+            <li>Under <span class="text-white">Security</span> choose <span class="text-white">App-Specific Passwords</span> &gt; <span class="text-white">Generate Password…</span></li>
+            <li>Copy the generated password and paste it below.</li>
+          </ol>
+          <p class="text-[#A3B3AF] text-sm">We store this password in our database so Calendarify can sync your events. Do not reuse it elsewhere.</p>
+          <input type="email" id="apple-email" placeholder="Apple ID email" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" />
+          <input type="password" id="apple-password" placeholder="App-specific password" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" />
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeConnectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="submitAppleConnect()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disconnect Apple Calendar Modal -->
+  <div id="disconnect-apple-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Apple Calendar</h2>
+          <button onclick="closeDisconnectAppleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect Apple Calendar? This will remove the saved password.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectApple()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
         </div>
       </div>
     </div>
