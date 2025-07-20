@@ -259,7 +259,7 @@ export class IntegrationsService {
     this.zoomLog('disconnectZoom', { userId });
   }
 
-  private async verifyAppleCredentials(email: string, password: string): Promise<boolean> {
+  private async verifyAppleCredentials(email: string, password: string): Promise<'ok' | 'invalid' | 'unreachable'> {
     try {
       const res = await fetch('https://caldav.icloud.com/', {
         method: 'PROPFIND',
@@ -269,15 +269,18 @@ export class IntegrationsService {
         },
         body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
       });
-      return res.status === 207;
+      if (res.status === 207) return 'ok';
+      if (res.status === 401) return 'invalid';
+      return 'unreachable';
     } catch {
-      return false;
+      return 'unreachable';
     }
   }
 
   async connectAppleCalendar(userId: string, email: string, password: string) {
-    const ok = await this.verifyAppleCredentials(email, password);
-    if (!ok) throw new BadRequestException('Invalid Apple credentials');
+    const result = await this.verifyAppleCredentials(email, password);
+    if (result === 'invalid') throw new BadRequestException('Invalid Apple credentials');
+    if (result === 'unreachable') throw new ServiceUnavailableException('Unable to reach Apple Calendar');
 
     const existing = await this.prisma.externalCalendar.findFirst({
       where: { user_id: userId, provider: 'apple' },

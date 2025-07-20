@@ -3369,6 +3369,8 @@
         closeConnectAppleModal();
       } else if (res.status === 400) {
         showNotification('Invalid Apple credentials');
+      } else if (res.status === 503) {
+        showNotification('Unable to reach Apple Calendar');
       } else {
         showNotification('Failed to connect Apple Calendar');
       }
