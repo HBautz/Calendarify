@@ -65,6 +65,27 @@ export class IntegrationsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('apple/connect')
+  async connectApple(@Req() req, @Body() body: { email: string; password: string }) {
+    await this.integrationsService.connectAppleCalendar(req.user.userId, body.email, body.password);
+    return { message: 'Apple Calendar connected' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('apple/status')
+  async appleStatus(@Req() req) {
+    const connected = await this.integrationsService.isAppleConnected(req.user.userId);
+    return { connected };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('apple/disconnect')
+  async disconnectApple(@Req() req) {
+    await this.integrationsService.disconnectAppleCalendar(req.user.userId);
+    return { message: 'Apple Calendar disconnected' };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete('google/disconnect')
   async disconnectGoogle(@Req() req) {
     await this.integrationsService.disconnectGoogle(req.user.userId);

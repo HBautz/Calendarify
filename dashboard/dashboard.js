@@ -3303,25 +3303,105 @@
     function updateAppleCalendarButton() {
       const btn = document.getElementById('apple-calendar-connect-btn');
       if (!btn) return;
-      const connected = localStorage.getItem('calendarify-apple-calendar-connected') === 'true';
-      if (connected) {
-        btn.textContent = 'Connected';
-        btn.style.backgroundColor = '#34D399';
-        btn.style.color = '#1A2E29';
-      } else {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
         btn.textContent = 'Not Connected';
         btn.style.backgroundColor = '#ef4444';
         btn.style.color = '#fff';
+        btn.onclick = connectAppleCalendar;
+        return;
       }
+      const clean = token.replace(/^\"|\"$/g, '');
+      fetch(`${API_URL}/integrations/apple/status`, { headers: { Authorization: `Bearer ${clean}` } })
+        .then(res => res.json())
+        .then(data => {
+          if (data.connected) {
+            btn.textContent = 'Connected';
+            btn.style.backgroundColor = '#34D399';
+            btn.style.color = '#1A2E29';
+            btn.onclick = openDisconnectAppleModal;
+          } else {
+            btn.textContent = 'Not Connected';
+            btn.style.backgroundColor = '#ef4444';
+            btn.style.color = '#fff';
+            btn.onclick = connectAppleCalendar;
+          }
+        })
+        .catch(() => {
+          btn.textContent = 'Not Connected';
+          btn.style.backgroundColor = '#ef4444';
+          btn.style.color = '#fff';
+          btn.onclick = connectAppleCalendar;
+        });
     }
     window.updateAppleCalendarButton = updateAppleCalendarButton;
 
-    function toggleAppleCalendar() {
-      const connected = localStorage.getItem('calendarify-apple-calendar-connected') === 'true';
-      localStorage.setItem('calendarify-apple-calendar-connected', (!connected).toString());
-      updateAppleCalendarButton();
+    function connectAppleCalendar() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('connect-apple-modal').classList.remove('hidden');
     }
-    window.toggleAppleCalendar = toggleAppleCalendar;
+    window.connectAppleCalendar = connectAppleCalendar;
+
+    function closeConnectAppleModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('connect-apple-modal').classList.add('hidden');
+    }
+    window.closeConnectAppleModal = closeConnectAppleModal;
+
+    async function submitAppleConnect() {
+      const email = document.getElementById('apple-email').value.trim();
+      const password = document.getElementById('apple-password').value.trim();
+      if (!email || !password) {
+        showNotification('Email and password required');
+        return;
+      }
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/apple/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        showNotification('Apple Calendar connected');
+        updateAppleCalendarButton();
+        closeConnectAppleModal();
+      } else if (res.status === 400) {
+        showNotification('Invalid Apple credentials');
+      } else {
+        showNotification('Failed to connect Apple Calendar');
+      }
+    }
+    window.submitAppleConnect = submitAppleConnect;
+
+    function openDisconnectAppleModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('disconnect-apple-modal').classList.remove('hidden');
+    }
+    function closeDisconnectAppleModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('disconnect-apple-modal').classList.add('hidden');
+    }
+    async function confirmDisconnectApple() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/apple/disconnect`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        showNotification('Apple Calendar disconnected');
+        updateAppleCalendarButton();
+      } else {
+        showNotification('Failed to disconnect Apple Calendar');
+      }
+      closeDisconnectAppleModal();
+    }
+    window.openDisconnectAppleModal = openDisconnectAppleModal;
+    window.closeDisconnectAppleModal = closeDisconnectAppleModal;
+    window.confirmDisconnectApple = confirmDisconnectApple;
 
     localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
     if (!localStorage.getItem('calendarify-contacts')) {
