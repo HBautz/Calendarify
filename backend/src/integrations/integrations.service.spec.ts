@@ -29,8 +29,14 @@ describe('IntegrationsService - Apple Calendar', () => {
   });
 
   it('throws BadRequestException for invalid credentials', async () => {
+    const mockRes = (status: number) => ({
+      status,
+      statusText: '',
+      headers: { entries: () => [] as any[] },
+      text: jest.fn().mockResolvedValue(''),
+    });
     for (const status of [401, 403, 404]) {
-      (global as any).fetch = jest.fn().mockResolvedValue({ status });
+      (global as any).fetch = jest.fn().mockResolvedValue(mockRes(status));
       await expect(
         service.connectAppleCalendar('user1', 'bad@example.com', 'bad')
       ).rejects.toBeInstanceOf(BadRequestException);

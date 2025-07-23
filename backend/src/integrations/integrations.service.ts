@@ -273,7 +273,7 @@ export class IntegrationsService {
         headers: {
           Depth: '0',
           Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
-          'Content-Type': 'application/xml',
+          'Content-Type': 'text/xml',
           'User-Agent': 'calendarify-caldav',
           Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
         },
@@ -281,6 +281,9 @@ export class IntegrationsService {
       });
       // DEBUG PRINT - show status returned by Apple
       console.log('[DEBUG] verifyAppleCredentials response status:', res.status);
+      console.log('[DEBUG] verifyAppleCredentials response headers:', Object.fromEntries(res.headers.entries()));
+      const bodyText = await res.text();
+      console.log('[DEBUG] verifyAppleCredentials response body:', bodyText.slice(0, 200));
       if (res.status === 207) return 'ok';
       if (res.status === 401 || res.status === 403 || res.status === 404) {
         // DEBUG PRINT - mark credentials invalid
