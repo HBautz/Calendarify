@@ -266,24 +266,46 @@ export class IntegrationsService {
 
   private async verifyAppleCredentials(email: string, password: string): Promise<'ok' | 'invalid' | 'unreachable'> {
     try {
+      // DEBUG PRINT - remove when Apple integration is stable
+      console.log('[DEBUG] verifyAppleCredentials request for', email);
       const res = await fetch('https://caldav.icloud.com/', {
         method: 'PROPFIND',
         headers: {
           Depth: '0',
           Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
+          'Content-Type': 'text/xml',
+          'User-Agent': 'calendarify-caldav',
+          Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
         },
         body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
       });
+      // DEBUG PRINT - show status returned by Apple
+      console.log('[DEBUG] verifyAppleCredentials response status:', res.status);
+      console.log('[DEBUG] verifyAppleCredentials response headers:', Object.fromEntries(res.headers.entries()));
+      const bodyText = await res.text();
+      console.log('[DEBUG] verifyAppleCredentials response body:', bodyText.slice(0, 200));
       if (res.status === 207) return 'ok';
-      if (res.status === 401) return 'invalid';
+      if (res.status === 401 || res.status === 403 || res.status === 404) {
+        // DEBUG PRINT - mark credentials invalid
+        console.log('[DEBUG] verifyAppleCredentials invalid status:', res.status);
+        return 'invalid';
+      }
+      // DEBUG PRINT - unexpected status from Apple
+      console.log('[DEBUG] verifyAppleCredentials unreachable status:', res.status);
       return 'unreachable';
-    } catch {
+    } catch (err) {
+      // DEBUG PRINT - error during fetch
+      console.log('[DEBUG] verifyAppleCredentials error:', err);
       return 'unreachable';
     }
   }
 
   async connectAppleCalendar(userId: string, email: string, password: string) {
+    // DEBUG PRINT - start connection attempt
+    console.log('[DEBUG] connectAppleCalendar start', { userId, email });
     const result = await this.verifyAppleCredentials(email, password);
+    // DEBUG PRINT - result of credential check
+    console.log('[DEBUG] connectAppleCalendar verify result:', result);
     if (result === 'invalid') throw new BadRequestException('Invalid Apple credentials');
     if (result === 'unreachable') throw new ServiceUnavailableException('Unable to reach Apple Calendar');
 
