@@ -13,11 +13,23 @@ describe('IntegrationsService - Apple Calendar', () => {
 
   beforeEach(() => {
     service = new IntegrationsService(prisma);
-    (global as any).fetch = jest.fn().mockResolvedValue({ status: 207 });
+    const okResponse = {
+      status: 207,
+      statusText: '',
+      headers: { entries: () => [] as any[] },
+      text: jest.fn().mockResolvedValue(
+        '<current-user-principal><href>/principal/</href></current-user-principal>'
+      ),
+    };
+    (global as any).fetch = jest
+      .fn()
+      .mockResolvedValueOnce(okResponse)
+      .mockResolvedValueOnce({ ...okResponse, text: jest.fn().mockResolvedValue('') });
   });
 
   it('stores credentials when valid', async () => {
     await service.connectAppleCalendar('user1', 'test@example.com', 'pass');
+    expect((global as any).fetch).toHaveBeenCalledTimes(2);
     expect(prisma.externalCalendar.create).toHaveBeenCalledWith({
       data: {
         user_id: 'user1',
@@ -29,9 +41,17 @@ describe('IntegrationsService - Apple Calendar', () => {
   });
 
   it('throws BadRequestException for invalid credentials', async () => {
-    (global as any).fetch = jest.fn().mockResolvedValue({ status: 401 });
-    await expect(
-      service.connectAppleCalendar('user1', 'bad@example.com', 'bad')
-    ).rejects.toBeInstanceOf(BadRequestException);
+    const mockRes = (status: number) => ({
+      status,
+      statusText: '',
+      headers: { entries: () => [] as any[] },
+      text: jest.fn().mockResolvedValue(''),
+    });
+    for (const status of [401, 403, 404]) {
+      (global as any).fetch = jest.fn().mockResolvedValue(mockRes(status));
+      await expect(
+        service.connectAppleCalendar('user1', 'bad@example.com', 'bad')
+      ).rejects.toBeInstanceOf(BadRequestException);
+    }
   });
 });
