@@ -225,6 +225,15 @@ def setup_database():
     os.chdir('..')
 
 
+def seed_default_admin():
+    """Ensure a default admin user exists for local login."""
+    script_path = os.path.join('backend', 'scripts', 'seed_admin.js')
+    if os.path.exists(script_path):
+        run(f'node {script_path}', env=os.environ.copy())
+    else:
+        print('Seed script not found, skipping admin user seeding')
+
+
 def start_backend():
     def _run():
         os.chdir('backend')
@@ -308,6 +317,7 @@ def main():
         print("\n✓ All required services are available locally")
 
     setup_database()
+    seed_default_admin()
     start_backend()
     serve_frontend()
     print("\nOpening http://localhost:3000/log-in in your browser...")
