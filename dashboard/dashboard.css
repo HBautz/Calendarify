@@ -983,3 +983,11 @@
     .contact-menu.open {
       display: block;
     }
+    
+    /* Integration logos - keeping original appearance */
+    #integrations-section .card img {
+      /* Remove any filters to show original logos */
+      display: flex;
+      width: 96px;
+      height: 96px;
+    }
