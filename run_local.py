@@ -251,10 +251,16 @@ def serve_frontend():
     # Use the Node server that comes with the project to serve the static files
     # with extensionless URL support.
     def _run():
-        # Make sure we're in the project root directory
-        os.chdir('/Users/heinebautz/portfolio-github/Calendarify')
+        # Run from the repository root regardless of the caller's cwd
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+        # Ensure the frontend runs on its own port to avoid conflicts with the
+        # backend (which uses PORT from the .env file).
+        env = os.environ.copy()
+        env.setdefault('PORT', '3000')
+
         # Use the custom server.js that handles clean URLs
-        run('node server.js')
+        run('node server.js', env=env)
     t = Thread(target=_run)
     t.daemon = True
     t.start()
