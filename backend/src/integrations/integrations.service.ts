@@ -267,8 +267,7 @@ export class IntegrationsService {
   private async verifyAppleCredentials(email: string, password: string): Promise<'ok' | 'invalid' | 'unreachable'> {
     try {
       // DEBUG PRINT - remove when Apple integration is stable
-      console.log('[DEBUG] verifyAppleCredentials request for', email);
-      const res = await fetch('https://caldav.icloud.com/', {
+      const requestOptions = {
         method: 'PROPFIND',
         headers: {
           Depth: '0',
@@ -278,9 +277,11 @@ export class IntegrationsService {
           Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
         },
         body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
-      });
+      };
+      console.log('[DEBUG] verifyAppleCredentials request for', email, requestOptions);
+      const res = await fetch('https://caldav.icloud.com/', requestOptions);
       // DEBUG PRINT - show status returned by Apple
-      console.log('[DEBUG] verifyAppleCredentials response status:', res.status);
+      console.log('[DEBUG] verifyAppleCredentials response status:', res.status, res.statusText);
       console.log('[DEBUG] verifyAppleCredentials response headers:', Object.fromEntries(res.headers.entries()));
       const bodyText = await res.text();
       console.log('[DEBUG] verifyAppleCredentials response body:', bodyText.slice(0, 200));
