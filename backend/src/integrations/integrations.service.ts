@@ -272,11 +272,13 @@ export class IntegrationsService {
           Depth: '0',
           Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
           'Content-Type': 'application/xml',
+          'User-Agent': 'calendarify-caldav',
+          Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
         },
         body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
       });
       if (res.status === 207) return 'ok';
-      if (res.status === 401 || res.status === 403) return 'invalid';
+      if (res.status === 401 || res.status === 403 || res.status === 404) return 'invalid';
       return 'unreachable';
     } catch {
       return 'unreachable';
