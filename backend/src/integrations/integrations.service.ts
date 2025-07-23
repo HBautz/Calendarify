@@ -27,6 +27,11 @@ export class IntegrationsService {
     }
   }
 
+  private env(name: string): string | undefined {
+    const val = process.env[name];
+    return val ? val.split('#')[0].trim() : undefined;
+  }
+
   private oauthClient() {
     return new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID || 'GOOGLE_CLIENT_ID',
@@ -178,9 +183,9 @@ export class IntegrationsService {
     console.log('[DEBUG] handleZoomCallback code:', code);
     this.zoomLog('handleZoomCallback start', { code, state });
     const userId = this.decodeState(state);
-    const clientId = process.env.ZOOM_CLIENT_ID?.trim();
-    const clientSecret = process.env.ZOOM_CLIENT_SECRET?.trim();
-    const redirectUri = process.env.ZOOM_REDIRECT_URI?.trim();
+    const clientId = this.env('ZOOM_CLIENT_ID');
+    const clientSecret = this.env('ZOOM_CLIENT_SECRET');
+    const redirectUri = this.env('ZOOM_REDIRECT_URI');
     console.log('[DEBUG] handleZoomCallback redirect_uri:', redirectUri);
     if (!clientId || !clientSecret || !redirectUri) {
       this.zoomLog('missing env vars', { clientId, clientSecret, redirectUri });
@@ -319,8 +324,8 @@ export class IntegrationsService {
   }
 
   generateZoomAuthUrl(userId: string): string {
-    const clientId = process.env.ZOOM_CLIENT_ID?.trim();
-    const redirectUri = process.env.ZOOM_REDIRECT_URI?.trim();
+    const clientId = this.env('ZOOM_CLIENT_ID');
+    const redirectUri = this.env('ZOOM_REDIRECT_URI');
     const state = this.createState(userId);
     const base = 'https://zoom.us/oauth/authorize';
     const params = new URLSearchParams({
