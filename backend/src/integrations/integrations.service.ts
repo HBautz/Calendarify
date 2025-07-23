@@ -264,26 +264,79 @@ export class IntegrationsService {
     this.zoomLog('disconnectZoom', { userId });
   }
 
-  private async verifyAppleCredentials(email: string, password: string): Promise<'ok' | 'invalid' | 'unreachable'> {
+  private async verifyAppleCredentials(
+    email: string,
+    password: string,
+  ): Promise<'ok' | 'invalid' | 'unreachable'> {
     try {
-      const res = await fetch('https://caldav.icloud.com/', {
+      // DEBUG ONLY - show constructed request headers/body
+      const auth = 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64');
+      const headers = {
+        Depth: '0',
+        Authorization: auth,
+        'Content-Type': 'application/xml',
+        'User-Agent': 'calendarify-caldav',
+        Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
+      } as const;
+
+      const bodyRoot =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<propfind xmlns="DAV:">\n' +
+        '  <prop><current-user-principal/></prop>\n' +
+        '</propfind>';
+      console.log('[DEBUG] Apple root PROPFIND', { email, headers, bodyRoot });
+      let res = await fetch('https://caldav.icloud.com/', {
         method: 'PROPFIND',
-        headers: {
-          Depth: '0',
-          Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
-        },
-        body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
+        headers,
+        body: bodyRoot,
       });
-      if (res.status === 207) return 'ok';
-      if (res.status === 401) return 'invalid';
-      return 'unreachable';
-    } catch {
+      console.log('[DEBUG] Apple root status', res.status, res.statusText);
+      let text = await res.text();
+      console.log('[DEBUG] Apple root body:', text.slice(0, 200));
+      if (res.status === 401 || res.status === 403) return 'invalid';
+      if (res.status !== 207) return 'unreachable';
+
+      const hrefMatch = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+      if (!hrefMatch) {
+        console.log('[DEBUG] Could not parse principal href');
+        return 'unreachable';
+      }
+      const principalUrl = 'https://caldav.icloud.com' + hrefMatch[1].trim();
+      console.log('[DEBUG] Parsed principal URL', principalUrl);
+
+      const bodyPrincipal =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<propfind xmlns="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">\n' +
+        '  <prop><cal:calendar-home-set/></prop>\n' +
+        '</propfind>';
+      console.log('[DEBUG] Apple principal PROPFIND', { principalUrl, bodyPrincipal });
+      res = await fetch(principalUrl, { method: 'PROPFIND', headers, body: bodyPrincipal });
+      console.log('[DEBUG] Apple principal status', res.status, res.statusText);
+      text = await res.text();
+      console.log('[DEBUG] Apple principal body:', text.slice(0, 200));
+      if (res.status === 401 || res.status === 403) return 'invalid';
+      if (res.status !== 207) return 'unreachable';
+
+      const homeMatch = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+      if (!homeMatch) {
+        console.log('[DEBUG] Could not parse calendar-home-set href');
+        return 'unreachable';
+      }
+      console.log('[DEBUG] Parsed calendar home set', homeMatch[1].trim());
+
+      return 'ok';
+    } catch (err) {
+      console.log('[DEBUG] verifyAppleCredentials error:', err);
       return 'unreachable';
     }
   }
 
   async connectAppleCalendar(userId: string, email: string, password: string) {
+    // DEBUG PRINT - start connection attempt
+    console.log('[DEBUG] connectAppleCalendar start', { userId, email });
     const result = await this.verifyAppleCredentials(email, password);
+    // DEBUG PRINT - result of credential check
+    console.log('[DEBUG] connectAppleCalendar verify result:', result);
     if (result === 'invalid') throw new BadRequestException('Invalid Apple credentials');
     if (result === 'unreachable') throw new ServiceUnavailableException('Unable to reach Apple Calendar');
 
