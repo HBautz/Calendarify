@@ -129,6 +129,29 @@ def ensure_backend_env():
         print('Copied .env to backend/.env')
 
 
+def update_database_url(env_path):
+    """Replace default postgres credentials with current user and reload env."""
+    if not os.path.exists(env_path):
+        return
+
+    with open(env_path, 'r') as f:
+        content = f.read()
+
+    import getpass
+    current_user = getpass.getuser()
+    new_content = content.replace('postgres:postgres@', f'{current_user}@')
+
+    if new_content != content:
+        with open(env_path, 'w') as f:
+            f.write(new_content)
+        print(f'Updated DATABASE_URL in {env_path} to use user: {current_user}')
+
+    for line in new_content.splitlines():
+        if line.startswith('DATABASE_URL='):
+            os.environ['DATABASE_URL'] = line.split('=', 1)[1]
+            break
+
+
 def load_env_files():
     """Load environment variables from .env files"""
     for env_path in ['.env', 'backend/.env']:
@@ -176,26 +199,6 @@ def check_apple_calendar():
 def setup_database():
     os.chdir('backend')
     
-    # Update DATABASE_URL to use current user instead of 'postgres'
-    env_file = '.env'
-    if os.path.exists(env_file):
-        with open(env_file, 'r') as f:
-            content = f.read()
-
-        import getpass
-        current_user = getpass.getuser()
-        new_content = content.replace('postgres:postgres@', f'{current_user}@')
-
-        if new_content != content:
-            with open(env_file, 'w') as f:
-                f.write(new_content)
-            print(f'Updated DATABASE_URL to use user: {current_user}')
-
-            for line in new_content.splitlines():
-                if line.startswith('DATABASE_URL='):
-                    os.environ['DATABASE_URL'] = line.split('=', 1)[1]
-                    break
-    
     # Try to create database if it doesn't exist
     try:
         run('createdb calendarify')
@@ -205,7 +208,7 @@ def setup_database():
     
     # Try to push schema
     try:
-        run('npx prisma db push')
+        run('npx prisma db push', env=os.environ.copy())
         print('Database schema updated successfully')
     except SystemExit as e:
         print(f'Failed to push schema: {e}')
@@ -213,7 +216,7 @@ def setup_database():
         try:
             run('dropdb calendarify --if-exists')
             run('createdb calendarify')
-            run('npx prisma db push')
+            run('npx prisma db push', env=os.environ.copy())
             print('Database schema updated successfully (retry)')
         except SystemExit:
             print('❌ Database setup failed. Please check PostgreSQL configuration.')
@@ -274,6 +277,8 @@ def main():
     ensure_env_file('.')
     ensure_env_file('backend')
     ensure_backend_env()
+    update_database_url('.env')
+    update_database_url('backend/.env')
     load_env_files()
     check_apple_calendar()
     run('npm install')
