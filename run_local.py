@@ -257,7 +257,9 @@ def serve_frontend():
         # Ensure the frontend runs on its own port to avoid conflicts with the
         # backend (which uses PORT from the .env file).
         env = os.environ.copy()
-        env.setdefault('PORT', '3000')
+        # Force the frontend to run on port 3000 regardless of the PORT value
+        # from .env which is used by the backend.
+        env['PORT'] = '3000'
 
         # Use the custom server.js that handles clean URLs
         run('node server.js', env=env)
