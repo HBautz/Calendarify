@@ -181,15 +181,20 @@ def setup_database():
     if os.path.exists(env_file):
         with open(env_file, 'r') as f:
             content = f.read()
-        
-        # Replace postgres user with current user
+
         import getpass
         current_user = getpass.getuser()
-        content = content.replace('postgres:postgres@', f'{current_user}@')
-        
-        with open(env_file, 'w') as f:
-            f.write(content)
-        print(f'Updated DATABASE_URL to use user: {current_user}')
+        new_content = content.replace('postgres:postgres@', f'{current_user}@')
+
+        if new_content != content:
+            with open(env_file, 'w') as f:
+                f.write(new_content)
+            print(f'Updated DATABASE_URL to use user: {current_user}')
+
+            for line in new_content.splitlines():
+                if line.startswith('DATABASE_URL='):
+                    os.environ['DATABASE_URL'] = line.split('=', 1)[1]
+                    break
     
     # Try to create database if it doesn't exist
     try:
