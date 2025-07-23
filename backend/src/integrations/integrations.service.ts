@@ -296,7 +296,7 @@ export class IntegrationsService {
       if (res.status === 401 || res.status === 403) return 'invalid';
       if (res.status !== 207) return 'unreachable';
 
-      const hrefMatch = text.match(/<current-user-principal>\s*<href>([^<]+)<\/href>/i);
+      const hrefMatch = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
       if (!hrefMatch) {
         console.log('[DEBUG] Could not parse principal href');
         return 'unreachable';
@@ -316,6 +316,13 @@ export class IntegrationsService {
       console.log('[DEBUG] Apple principal body:', text.slice(0, 200));
       if (res.status === 401 || res.status === 403) return 'invalid';
       if (res.status !== 207) return 'unreachable';
+
+      const homeMatch = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+      if (!homeMatch) {
+        console.log('[DEBUG] Could not parse calendar-home-set href');
+        return 'unreachable';
+      }
+      console.log('[DEBUG] Parsed calendar home set', homeMatch[1].trim());
 
       return 'ok';
     } catch (err) {

@@ -18,13 +18,16 @@ describe('IntegrationsService - Apple Calendar', () => {
       statusText: '',
       headers: { entries: () => [] as any[] },
       text: jest.fn().mockResolvedValue(
-        '<current-user-principal><href>/principal/</href></current-user-principal>'
+        '<D:multistatus xmlns:D="DAV:"><D:response><D:propstat><D:prop><D:current-user-principal><D:href>/principal/</D:href></D:current-user-principal></D:prop></D:propstat></D:response></D:multistatus>'
       ),
     };
-    (global as any).fetch = jest
-      .fn()
-      .mockResolvedValueOnce(okResponse)
-      .mockResolvedValueOnce({ ...okResponse, text: jest.fn().mockResolvedValue('') });
+    const okPrincipal = {
+      ...okResponse,
+      text: jest.fn().mockResolvedValue(
+        '<D:multistatus xmlns:D="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav"><D:response><D:propstat><D:prop><cal:calendar-home-set><D:href>/home/</D:href></cal:calendar-home-set></D:prop></D:propstat></D:response></D:multistatus>'
+      ),
+    };
+    (global as any).fetch = jest.fn().mockResolvedValueOnce(okResponse).mockResolvedValueOnce(okPrincipal);
   });
 
   it('stores credentials when valid', async () => {
