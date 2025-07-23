@@ -264,38 +264,61 @@ export class IntegrationsService {
     this.zoomLog('disconnectZoom', { userId });
   }
 
-  private async verifyAppleCredentials(email: string, password: string): Promise<'ok' | 'invalid' | 'unreachable'> {
+  private async verifyAppleCredentials(
+    email: string,
+    password: string,
+  ): Promise<'ok' | 'invalid' | 'unreachable'> {
     try {
-      // DEBUG PRINT - remove when Apple integration is stable
-      const requestOptions = {
+      // DEBUG ONLY - show constructed request headers/body
+      const auth = 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64');
+      const headers = {
+        Depth: '0',
+        Authorization: auth,
+        'Content-Type': 'application/xml',
+        'User-Agent': 'calendarify-caldav',
+        Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
+      } as const;
+
+      const bodyRoot =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<propfind xmlns="DAV:">\n' +
+        '  <prop><current-user-principal/></prop>\n' +
+        '</propfind>';
+      console.log('[DEBUG] Apple root PROPFIND', { email, headers, bodyRoot });
+      let res = await fetch('https://caldav.icloud.com/', {
         method: 'PROPFIND',
-        headers: {
-          Depth: '0',
-          Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
-          'Content-Type': 'text/xml',
-          'User-Agent': 'calendarify-caldav',
-          Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
-        },
-        body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
-      };
-      console.log('[DEBUG] verifyAppleCredentials request for', email, requestOptions);
-      const res = await fetch('https://caldav.icloud.com/', requestOptions);
-      // DEBUG PRINT - show status returned by Apple
-      console.log('[DEBUG] verifyAppleCredentials response status:', res.status, res.statusText);
-      console.log('[DEBUG] verifyAppleCredentials response headers:', Object.fromEntries(res.headers.entries()));
-      const bodyText = await res.text();
-      console.log('[DEBUG] verifyAppleCredentials response body:', bodyText.slice(0, 200));
-      if (res.status === 207) return 'ok';
-      if (res.status === 401 || res.status === 403 || res.status === 404) {
-        // DEBUG PRINT - mark credentials invalid
-        console.log('[DEBUG] verifyAppleCredentials invalid status:', res.status);
-        return 'invalid';
+        headers,
+        body: bodyRoot,
+      });
+      console.log('[DEBUG] Apple root status', res.status, res.statusText);
+      let text = await res.text();
+      console.log('[DEBUG] Apple root body:', text.slice(0, 200));
+      if (res.status === 401 || res.status === 403) return 'invalid';
+      if (res.status !== 207) return 'unreachable';
+
+      const hrefMatch = text.match(/<current-user-principal>\s*<href>([^<]+)<\/href>/i);
+      if (!hrefMatch) {
+        console.log('[DEBUG] Could not parse principal href');
+        return 'unreachable';
       }
-      // DEBUG PRINT - unexpected status from Apple
-      console.log('[DEBUG] verifyAppleCredentials unreachable status:', res.status);
-      return 'unreachable';
+      const principalUrl = 'https://caldav.icloud.com' + hrefMatch[1].trim();
+      console.log('[DEBUG] Parsed principal URL', principalUrl);
+
+      const bodyPrincipal =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<propfind xmlns="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">\n' +
+        '  <prop><cal:calendar-home-set/></prop>\n' +
+        '</propfind>';
+      console.log('[DEBUG] Apple principal PROPFIND', { principalUrl, bodyPrincipal });
+      res = await fetch(principalUrl, { method: 'PROPFIND', headers, body: bodyPrincipal });
+      console.log('[DEBUG] Apple principal status', res.status, res.statusText);
+      text = await res.text();
+      console.log('[DEBUG] Apple principal body:', text.slice(0, 200));
+      if (res.status === 401 || res.status === 403) return 'invalid';
+      if (res.status !== 207) return 'unreachable';
+
+      return 'ok';
     } catch (err) {
-      // DEBUG PRINT - error during fetch
       console.log('[DEBUG] verifyAppleCredentials error:', err);
       return 'unreachable';
     }

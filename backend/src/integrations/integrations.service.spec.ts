@@ -13,11 +13,23 @@ describe('IntegrationsService - Apple Calendar', () => {
 
   beforeEach(() => {
     service = new IntegrationsService(prisma);
-    (global as any).fetch = jest.fn().mockResolvedValue({ status: 207 });
+    const okResponse = {
+      status: 207,
+      statusText: '',
+      headers: { entries: () => [] as any[] },
+      text: jest.fn().mockResolvedValue(
+        '<current-user-principal><href>/principal/</href></current-user-principal>'
+      ),
+    };
+    (global as any).fetch = jest
+      .fn()
+      .mockResolvedValueOnce(okResponse)
+      .mockResolvedValueOnce({ ...okResponse, text: jest.fn().mockResolvedValue('') });
   });
 
   it('stores credentials when valid', async () => {
     await service.connectAppleCalendar('user1', 'test@example.com', 'pass');
+    expect((global as any).fetch).toHaveBeenCalledTimes(2);
     expect(prisma.externalCalendar.create).toHaveBeenCalledWith({
       data: {
         user_id: 'user1',
