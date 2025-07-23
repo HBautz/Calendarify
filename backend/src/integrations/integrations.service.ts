@@ -271,11 +271,12 @@ export class IntegrationsService {
         headers: {
           Depth: '0',
           Authorization: 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64'),
+          'Content-Type': 'application/xml',
         },
         body: `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`,
       });
       if (res.status === 207) return 'ok';
-      if (res.status === 401) return 'invalid';
+      if (res.status === 401 || res.status === 403) return 'invalid';
       return 'unreachable';
     } catch {
       return 'unreachable';
