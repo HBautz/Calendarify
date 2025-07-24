@@ -30,6 +30,7 @@ export function buildOutlookAuthUrl(state: string): string {
     '&redirect_uri=' + encodeURIComponent(OUTLOOK_REDIRECT_URI ?? '') +
     '&scope=' + encodeURIComponent(OUTLOOK_SCOPE) +
     '&response_mode=query' +
+    '&prompt=consent' +
     '&state=' + state
   );
 }

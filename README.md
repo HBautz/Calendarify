@@ -82,6 +82,10 @@ The default redirect URI used by Calendarify is:
 http://localhost:3001/api/integrations/outlook/callback
 ```
 
+If Azure returns an `access_denied` error citing **silent authentication**,
+Calendarify includes `prompt=consent` in the authorization URL so the user must
+interactively grant access.
+
 ## Repository Overview
 
 ```
