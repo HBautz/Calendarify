@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
 import * as path from 'path';
+import fetch from 'node-fetch'; // Use node-fetch v2 for all CalDAV requests
 
 const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
@@ -301,7 +302,10 @@ export class IntegrationsService {
         console.log('[DEBUG] Could not parse principal href');
         return 'unreachable';
       }
-      const principalUrl = 'https://caldav.icloud.com' + hrefMatch[1].trim();
+      let principalUrl = hrefMatch[1].trim();
+      if (principalUrl.startsWith('/')) {
+        principalUrl = 'https://caldav.icloud.com' + principalUrl;
+      }
       console.log('[DEBUG] Parsed principal URL', principalUrl);
 
       const bodyPrincipal =
@@ -322,8 +326,11 @@ export class IntegrationsService {
         console.log('[DEBUG] Could not parse calendar-home-set href');
         return 'unreachable';
       }
-      console.log('[DEBUG] Parsed calendar home set', homeMatch[1].trim());
-
+      let homeUrl = homeMatch[1].trim();
+      if (homeUrl.startsWith('/')) {
+        homeUrl = 'https://caldav.icloud.com' + homeUrl;
+      }
+      console.log('[DEBUG] Parsed calendar home set', homeUrl);
       return 'ok';
     } catch (err) {
       console.log('[DEBUG] verifyAppleCredentials error:', err);
@@ -409,7 +416,10 @@ export class IntegrationsService {
     if (res.status !== 207) return null;
     const hrefMatch = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
     if (!hrefMatch) return null;
-    const principalUrl = 'https://caldav.icloud.com' + hrefMatch[1].trim();
+    let principalUrl = hrefMatch[1].trim();
+    if (principalUrl.startsWith('/')) {
+      principalUrl = 'https://caldav.icloud.com' + principalUrl;
+    }
 
     const bodyPrincipal =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
@@ -429,7 +439,10 @@ export class IntegrationsService {
     if (res.status !== 207) return null;
     const homeMatch = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
     if (!homeMatch) return null;
-    const homeUrl = 'https://caldav.icloud.com' + homeMatch[1].trim();
+    let homeUrl = homeMatch[1].trim();
+    if (homeUrl.startsWith('/')) {
+      homeUrl = 'https://caldav.icloud.com' + homeUrl;
+    }
 
     const bodyCals =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
