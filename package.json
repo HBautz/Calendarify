@@ -14,8 +14,14 @@
     "node": "^20"
   },
   "dependencies": {
+    "@types/node-fetch": "^2.6.12",
     "dav": "^1.8.0",
     "node-caldav-mod": "^1.0.3",
+    "node-fetch": "^2.7.0",
     "simple-caldav": "^0.7.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
