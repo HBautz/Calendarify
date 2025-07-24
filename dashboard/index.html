@@ -906,6 +906,27 @@
     </div>
   </div>
 
+  <!-- Select Apple Calendar Modal -->
+  <div id="select-apple-calendar-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Choose Calendar</h2>
+          <button onclick="closeSelectAppleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <form onsubmit="submitAppleCalendarChoice(); return false;" class="p-6 space-y-4">
+          <select id="apple-calendar-list" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]"></select>
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#2C4A43]">
+            <button type="button" onclick="closeSelectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+            <button type="submit" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Create Event Type Modal -->
   <div id="create-event-type-modal" class="fixed inset-0 z-50 hidden">

@@ -86,6 +86,22 @@ export class IntegrationsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('apple/calendars')
+  async appleCalendars(@Req() req) {
+    const calendars = await this.integrationsService.listAppleCalendars(
+      req.user.userId,
+    );
+    return { calendars };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('apple/select')
+  async selectApple(@Req() req, @Body('href') href: string) {
+    await this.integrationsService.selectAppleCalendar(req.user.userId, href);
+    return { message: 'Apple calendar selected' };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete('google/disconnect')
   async disconnectGoogle(@Req() req) {
     await this.integrationsService.disconnectGoogle(req.user.userId);
