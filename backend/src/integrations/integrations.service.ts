@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
 import * as path from 'path';
-import fetch from 'node-fetch'; // Use node-fetch v2 for all CalDAV requests
+// Use the global fetch API available in Node 18+
 
 const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
@@ -269,10 +269,12 @@ export class IntegrationsService {
     const clientId = this.env('OUTLOOK_CLIENT_ID');
     const redirectUri = this.env('OUTLOOK_REDIRECT_URI');
     const state = this.createState(userId);
-    const base =
-      'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
+    const tenant =
+      this.env('OUTLOOK_OAUTH_TENANT') ||
+      'https://login.microsoftonline.com/common';
+    const base = `${tenant}/oauth2/v2.0/authorize`;
     const scope =
-      'offline_access https://graph.microsoft.com/User.Read https://graph.microsoft.com/Calendars.ReadWrite';
+      'User.Read Calendars.ReadWrite Calendars.ReadWrite.Shared MailboxSettings.Read OnlineMeetings.ReadWrite offline_access';
     const params = new URLSearchParams({
       client_id: clientId ?? '',
       response_type: 'code',
@@ -289,11 +291,14 @@ export class IntegrationsService {
     const clientId = this.env('OUTLOOK_CLIENT_ID');
     const clientSecret = this.env('OUTLOOK_CLIENT_SECRET');
     const redirectUri = this.env('OUTLOOK_REDIRECT_URI');
+    const tenant =
+      this.env('OUTLOOK_OAUTH_TENANT') ||
+      'https://login.microsoftonline.com/common';
     if (!clientId || !clientSecret || !redirectUri) {
       throw new Error('Missing Outlook OAuth environment variables');
     }
     const tokenRes = await fetch(
-      'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      `${tenant}/oauth2/v2.0/token`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

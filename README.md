@@ -72,8 +72,9 @@ Like Zoom, Outlook OAuth credentials are loaded from your `.env` file:
 - `OUTLOOK_CLIENT_ID`
 - `OUTLOOK_CLIENT_SECRET`
 - `OUTLOOK_REDIRECT_URI`
+- `OUTLOOK_OAUTH_TENANT`
 
-Supply the values from your Azure application registration so users can connect their Outlook calendars. The `OUTLOOK_REDIRECT_URI` must match the redirect URI configured in Azure exactly.
+Supply the values from your Azure application registration so users can connect their Outlook calendars. The `OUTLOOK_REDIRECT_URI` must match the redirect URI configured in Azure exactly. `OUTLOOK_OAUTH_TENANT` defaults to `https://login.microsoftonline.com/common` for work and personal accounts.
 
 ## Repository Overview
 
