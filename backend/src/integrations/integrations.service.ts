@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
 import * as path from 'path';
-import fetch from 'node-fetch'; // Use node-fetch v2 for all CalDAV requests
+// Use the global fetch API available in Node 18+
 
 const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
@@ -263,6 +263,104 @@ export class IntegrationsService {
       where: { user_id: userId, provider: 'zoom' },
     });
     this.zoomLog('disconnectZoom', { userId });
+  }
+
+  generateOutlookAuthUrl(userId: string): string {
+    const clientId = this.env('OUTLOOK_CLIENT_ID');
+    const redirectUri = this.env('OUTLOOK_REDIRECT_URI');
+    const state = this.createState(userId);
+    const tenant =
+      this.env('OUTLOOK_OAUTH_TENANT') ||
+      'https://login.microsoftonline.com/common';
+    const base = `${tenant}/oauth2/v2.0/authorize`;
+    const scope =
+      'User.Read Calendars.ReadWrite Calendars.ReadWrite.Shared MailboxSettings.Read OnlineMeetings.ReadWrite offline_access';
+    const params = new URLSearchParams({
+      client_id: clientId ?? '',
+      response_type: 'code',
+      redirect_uri: redirectUri ?? '',
+      response_mode: 'query',
+      scope,
+      state,
+    });
+    return `${base}?${params.toString()}`;
+  }
+
+  async handleOutlookCallback(code: string, state: string) {
+    const userId = this.decodeState(state);
+    const clientId = this.env('OUTLOOK_CLIENT_ID');
+    const clientSecret = this.env('OUTLOOK_CLIENT_SECRET');
+    const redirectUri = this.env('OUTLOOK_REDIRECT_URI');
+    const tenant =
+      this.env('OUTLOOK_OAUTH_TENANT') ||
+      'https://login.microsoftonline.com/common';
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error('Missing Outlook OAuth environment variables');
+    }
+    const tokenRes = await fetch(
+      `${tenant}/oauth2/v2.0/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+        }),
+      },
+    );
+    if (!tokenRes.ok) {
+      throw new Error('Failed to obtain Outlook tokens');
+    }
+    const tokens = await tokenRes.json();
+    const accessToken = tokens.access_token as string;
+    const refreshToken = tokens.refresh_token as string | undefined;
+    const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!userRes.ok) {
+      throw new Error('Failed to fetch Outlook user info');
+    }
+    const userInfo = await userRes.json();
+    const externalId = userInfo.id as string;
+    const existing = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'outlook' },
+    });
+    if (existing) {
+      await this.prisma.externalCalendar.update({
+        where: { id: existing.id },
+        data: {
+          external_id: externalId,
+          access_token: accessToken,
+          refresh_token: refreshToken ?? existing.refresh_token,
+        },
+      });
+    } else {
+      await this.prisma.externalCalendar.create({
+        data: {
+          user_id: userId,
+          provider: 'outlook',
+          external_id: externalId,
+          access_token: accessToken,
+          refresh_token: refreshToken ?? null,
+        },
+      });
+    }
+  }
+
+  async isOutlookConnected(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'outlook' },
+    });
+    return !!(record && (record.access_token || record.refresh_token));
+  }
+
+  async disconnectOutlook(userId: string) {
+    await this.prisma.externalCalendar.deleteMany({
+      where: { user_id: userId, provider: 'outlook' },
+    });
   }
 
   private async verifyAppleCredentials(

@@ -47,6 +47,13 @@ export class IntegrationsController {
     return { url };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('outlook/auth-url')
+  outlookAuthUrl(@Req() req) {
+    const url = this.integrationsService.generateOutlookAuthUrl(req.user.userId);
+    return { url };
+  }
+
 
   @UseGuards(JwtAuthGuard)
   @Get('zoom/status')
@@ -58,10 +65,26 @@ export class IntegrationsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('outlook/status')
+  async outlookStatus(@Req() req) {
+    const connected = await this.integrationsService.isOutlookConnected(
+      req.user.userId,
+    );
+    return { connected };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete('zoom/disconnect')
   async disconnectZoom(@Req() req) {
     await this.integrationsService.disconnectZoom(req.user.userId);
     return { message: 'Zoom disconnected' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('outlook/disconnect')
+  async disconnectOutlook(@Req() req) {
+    await this.integrationsService.disconnectOutlook(req.user.userId);
+    return { message: 'Outlook disconnected' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -111,6 +134,17 @@ export class IntegrationsController {
   @Get('zoom/callback')
   async zoomCallback(@Query('code') code: string, @Query('state') state: string, @Res() res) {
     await this.integrationsService.handleZoomCallback(code, state);
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return res.redirect(`${baseUrl}/dashboard`);
+  }
+
+  @Get('outlook/callback')
+  async outlookCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res,
+  ) {
+    await this.integrationsService.handleOutlookCallback(code, state);
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     return res.redirect(`${baseUrl}/dashboard`);
   }
