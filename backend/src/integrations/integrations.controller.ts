@@ -139,11 +139,18 @@ export class IntegrationsController {
   }
 
   @Get('outlook/callback')
-  async outlookCallback(
-    @Query('code') code: string,
-    @Query('state') state: string,
-    @Res() res,
-  ) {
+  async outlookCallback(@Req() req, @Res() res) {
+    console.log('Outlook callback query:', req.query);
+    const { code, error, error_description, state } = req.query as any;
+
+    if (error) {
+      console.error('OAuth error:', error, error_description);
+      return res.status(400).send('OAuth error: ' + error);
+    }
+    if (!code) {
+      return res.status(400).send('No code received');
+    }
+
     await this.integrationsService.handleOutlookCallback(code, state);
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     return res.redirect(`${baseUrl}/dashboard`);

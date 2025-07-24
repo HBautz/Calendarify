@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
 import * as path from 'path';
+import 'dotenv/config';
 // Use the global fetch API available in Node 18+
 
 const DEFAULT_SCOPES = [
@@ -11,6 +12,27 @@ const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
+
+const OUTLOOK_TENANT =
+  process.env.OUTLOOK_OAUTH_TENANT ||
+  'https://login.microsoftonline.com/common';
+const OUTLOOK_CLIENT_ID = process.env.OUTLOOK_CLIENT_ID;
+const OUTLOOK_REDIRECT_URI = process.env.OUTLOOK_REDIRECT_URI;
+const OUTLOOK_SCOPE =
+  'User.Read Calendars.ReadWrite Calendars.ReadWrite.Shared ' +
+  'MailboxSettings.Read OnlineMeetings.ReadWrite offline_access';
+
+export function buildOutlookAuthUrl(state: string): string {
+  return (
+    OUTLOOK_TENANT + '/oauth2/v2.0/authorize' +
+    '?client_id=' + encodeURIComponent(OUTLOOK_CLIENT_ID ?? '') +
+    '&response_type=code' +
+    '&redirect_uri=' + encodeURIComponent(OUTLOOK_REDIRECT_URI ?? '') +
+    '&scope=' + encodeURIComponent(OUTLOOK_SCOPE) +
+    '&response_mode=query' +
+    '&state=' + state
+  );
+}
 
 @Injectable()
 export class IntegrationsService {
@@ -278,24 +300,7 @@ export class IntegrationsService {
   }
 
   generateOutlookAuthUrl(userId: string): string {
-    const clientId = this.env('OUTLOOK_CLIENT_ID');
-    const redirectUri = this.env('OUTLOOK_REDIRECT_URI');
-    const state = this.createState(userId);
-    const tenant =
-      this.env('OUTLOOK_OAUTH_TENANT') ||
-      'https://login.microsoftonline.com/common';
-    const base = `${tenant}/oauth2/v2.0/authorize`;
-    const scope =
-      'User.Read Calendars.ReadWrite Calendars.ReadWrite.Shared MailboxSettings.Read OnlineMeetings.ReadWrite offline_access';
-    const params = new URLSearchParams({
-      client_id: clientId ?? '',
-      response_type: 'code',
-      redirect_uri: redirectUri ?? '',
-      response_mode: 'query',
-      scope,
-      state,
-    });
-    const url = `${base}?${params.toString()}`;
+    const url = buildOutlookAuthUrl(this.createState(userId));
     this.outlookLog('generateOutlookAuthUrl', { userId, url });
     console.log('[DEBUG] Generated Outlook OAuth URL:', url);
     return url;
@@ -305,12 +310,10 @@ export class IntegrationsService {
     console.log('[DEBUG] handleOutlookCallback code:', code);
     this.outlookLog('handleOutlookCallback start', { code, state });
     const userId = this.decodeState(state);
-    const clientId = this.env('OUTLOOK_CLIENT_ID');
-    const clientSecret = this.env('OUTLOOK_CLIENT_SECRET');
-    const redirectUri = this.env('OUTLOOK_REDIRECT_URI');
-    const tenant =
-      this.env('OUTLOOK_OAUTH_TENANT') ||
-      'https://login.microsoftonline.com/common';
+    const clientId = OUTLOOK_CLIENT_ID;
+    const clientSecret = process.env.OUTLOOK_CLIENT_SECRET;
+    const redirectUri = OUTLOOK_REDIRECT_URI;
+    const tenant = OUTLOOK_TENANT;
     console.log('[DEBUG] handleOutlookCallback redirect_uri:', redirectUri);
     if (!clientId || !clientSecret || !redirectUri) {
       this.outlookLog('missing env vars', { clientId, clientSecret, redirectUri });

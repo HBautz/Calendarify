@@ -76,6 +76,12 @@ Like Zoom, Outlook OAuth credentials are loaded from your `.env` file:
 
 Supply the values from your Azure application registration so users can connect their Outlook calendars. The `OUTLOOK_REDIRECT_URI` must match the redirect URI configured in Azure exactly. `OUTLOOK_OAUTH_TENANT` defaults to `https://login.microsoftonline.com/common` for work and personal accounts.
 
+The default redirect URI used by Calendarify is:
+
+```
+http://localhost:3001/api/integrations/outlook/callback
+```
+
 ## Repository Overview
 
 ```
