@@ -391,13 +391,22 @@ export class IntegrationsService {
       '<propfind xmlns="DAV:">\n' +
       '  <prop><current-user-principal/></prop>\n' +
       '</propfind>';
-    let res = await fetch('https://caldav.icloud.com/', {
-      method: 'PROPFIND',
-      headers,
-      body: bodyRoot,
-    });
+    console.log('[DEBUG] fetchAppleCalendars root request', { email, headers });
+    let res: any, text: string;
+    try {
+      res = await fetch('https://caldav.icloud.com/', {
+        method: 'PROPFIND',
+        headers,
+        body: bodyRoot,
+      });
+      console.log('[DEBUG] fetchAppleCalendars root status', res.status, res.statusText);
+      text = await res.text();
+      console.log('[DEBUG] fetchAppleCalendars root body', text.slice(0, 200));
+    } catch (err) {
+      console.log('[DEBUG] fetchAppleCalendars root error', err);
+      return null;
+    }
     if (res.status !== 207) return null;
-    let text = await res.text();
     const hrefMatch = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
     if (!hrefMatch) return null;
     const principalUrl = 'https://caldav.icloud.com' + hrefMatch[1].trim();
@@ -407,9 +416,17 @@ export class IntegrationsService {
       '<propfind xmlns="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">\n' +
       '  <prop><cal:calendar-home-set/></prop>\n' +
       '</propfind>';
-    res = await fetch(principalUrl, { method: 'PROPFIND', headers, body: bodyPrincipal });
+    console.log('[DEBUG] fetchAppleCalendars principal request', { principalUrl });
+    try {
+      res = await fetch(principalUrl, { method: 'PROPFIND', headers, body: bodyPrincipal });
+      console.log('[DEBUG] fetchAppleCalendars principal status', res.status, res.statusText);
+      text = await res.text();
+      console.log('[DEBUG] fetchAppleCalendars principal body', text.slice(0, 200));
+    } catch (err) {
+      console.log('[DEBUG] fetchAppleCalendars principal error', err);
+      return null;
+    }
     if (res.status !== 207) return null;
-    text = await res.text();
     const homeMatch = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
     if (!homeMatch) return null;
     const homeUrl = 'https://caldav.icloud.com' + homeMatch[1].trim();
@@ -419,15 +436,24 @@ export class IntegrationsService {
       '<propfind xmlns="DAV:">\n' +
       '  <prop><displayname/></prop>\n' +
       '</propfind>';
-    res = await fetch(homeUrl, { method: 'PROPFIND', headers: { ...headers, Depth: '1' }, body: bodyCals });
+    console.log('[DEBUG] fetchAppleCalendars list request', { homeUrl });
+    try {
+      res = await fetch(homeUrl, { method: 'PROPFIND', headers: { ...headers, Depth: '1' }, body: bodyCals });
+      console.log('[DEBUG] fetchAppleCalendars list status', res.status, res.statusText);
+      text = await res.text();
+      console.log('[DEBUG] fetchAppleCalendars list body', text.slice(0, 200));
+    } catch (err) {
+      console.log('[DEBUG] fetchAppleCalendars list error', err);
+      return null;
+    }
     if (res.status !== 207) return null;
-    text = await res.text();
     const cals: { href: string; name: string }[] = [];
-    const regex = /<D:response>\s*<D:href>([^<]+)<\/D:href>[\s\S]*?<D:displayname>([^<]*)<\/D:displayname>/gi;
+    const regex = /<response[^>]*>.*?<href>([^<]+)<\/href>.*?<displayname[^>]*>([^<]*)<\/displayname>/gs;
     let m;
     while ((m = regex.exec(text))) {
       cals.push({ href: m[1], name: m[2] });
     }
+    console.log('[DEBUG] fetchAppleCalendars parsed calendars', cals);
     return cals;
   }
 

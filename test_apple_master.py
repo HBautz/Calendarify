@@ -3,6 +3,7 @@
 
 import subprocess
 import sys
+import os
 
 # DEFINE YOUR CREDENTIALS HERE
 APPLE_EMAIL = "your_email@example.com"  # TODO: replace
@@ -13,12 +14,16 @@ NODE_SCRIPT = "test_apple_worker.js"
 
 def run_worker(email: str, password: str) -> str:
     """Run the Node.js worker and return its stdout."""
+    env = os.environ.copy()
+    env["APPLE_EMAIL"] = email
+    env["APPLE_PASSWORD"] = password
     try:
         result = subprocess.run(
-            ["node", NODE_SCRIPT, email, password],
+            ["node", NODE_SCRIPT],
             check=False,
             capture_output=True,
             text=True,
+            env=env,
         )
         if result.stderr:
             print("[DEBUG] worker stderr:", result.stderr.strip())
