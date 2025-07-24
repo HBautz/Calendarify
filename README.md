@@ -65,6 +65,16 @@ Zoom OAuth credentials are also read from your `.env` file:
 Provide these values from your Zoom OAuth app to enable authentication. Calendarify now uses a user-level OAuth app with a redirect URI. If you previously configured a server-to-server OAuth app using an Account ID, switch to this standard OAuth flow.
 The `ZOOM_REDIRECT_URI` must exactly match the Redirect URL configured in the Zoom app (no trailing slashes or spaces).
 
+## Outlook Integration
+
+Like Zoom, Outlook OAuth credentials are loaded from your `.env` file:
+
+- `OUTLOOK_CLIENT_ID`
+- `OUTLOOK_CLIENT_SECRET`
+- `OUTLOOK_REDIRECT_URI`
+
+Supply the values from your Azure application registration so users can connect their Outlook calendars. The `OUTLOOK_REDIRECT_URI` must match the redirect URI configured in Azure exactly.
+
 ## Repository Overview
 
 ```
