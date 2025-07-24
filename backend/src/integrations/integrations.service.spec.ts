@@ -4,6 +4,7 @@ import { IntegrationsService } from './integrations.service';
 describe('IntegrationsService - Apple Calendar', () => {
   let service: IntegrationsService;
   const prisma = {
+    user: { findUnique: jest.fn().mockResolvedValue({ email: 'test@example.com' }) },
     externalCalendar: {
       findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockResolvedValue({}),

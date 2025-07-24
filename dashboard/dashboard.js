@@ -3365,8 +3365,18 @@
       });
       if (res.ok) {
         showNotification('Apple Calendar connected');
-        updateAppleCalendarButton();
-        closeConnectAppleModal();
+        const listRes = await fetch(`${API_URL}/integrations/apple/calendars`, {
+          headers: { Authorization: `Bearer ${clean}` }
+        });
+        if (listRes.ok) {
+          const data = await listRes.json();
+          populateAppleCalendarList(data.calendars);
+          closeConnectAppleModal();
+          openSelectAppleModal();
+        } else {
+          updateAppleCalendarButton();
+          closeConnectAppleModal();
+        }
       } else if (res.status === 400) {
         showNotification('Invalid Apple credentials');
       } else if (res.status === 503) {
@@ -3376,6 +3386,46 @@
       }
     }
     window.submitAppleConnect = submitAppleConnect;
+
+    function populateAppleCalendarList(cals) {
+      const select = document.getElementById('apple-calendar-list');
+      select.innerHTML = '';
+      cals.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.href;
+        opt.textContent = c.name || c.href;
+        select.appendChild(opt);
+      });
+    }
+
+    function openSelectAppleModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('select-apple-calendar-modal').classList.remove('hidden');
+    }
+    function closeSelectAppleModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('select-apple-calendar-modal').classList.add('hidden');
+    }
+    async function submitAppleCalendarChoice() {
+      const href = document.getElementById('apple-calendar-list').value;
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/apple/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+        body: JSON.stringify({ href }),
+      });
+      if (res.ok) {
+        showNotification('Apple calendar selected');
+        updateAppleCalendarButton();
+      } else {
+        showNotification('Failed to save calendar');
+      }
+      closeSelectAppleModal();
+    }
+    window.closeSelectAppleModal = closeSelectAppleModal;
+    window.submitAppleCalendarChoice = submitAppleCalendarChoice;
 
     function openDisconnectAppleModal() {
       document.getElementById('modal-backdrop').classList.remove('hidden');

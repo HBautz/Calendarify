@@ -293,7 +293,7 @@ export class IntegrationsService {
       console.log('[DEBUG] Apple root status', res.status, res.statusText);
       let text = await res.text();
       console.log('[DEBUG] Apple root body:', text.slice(0, 200));
-      if (res.status === 401 || res.status === 403) return 'invalid';
+      if ([401, 403, 404].includes(res.status)) return 'invalid';
       if (res.status !== 207) return 'unreachable';
 
       const hrefMatch = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
@@ -314,7 +314,7 @@ export class IntegrationsService {
       console.log('[DEBUG] Apple principal status', res.status, res.statusText);
       text = await res.text();
       console.log('[DEBUG] Apple principal body:', text.slice(0, 200));
-      if (res.status === 401 || res.status === 403) return 'invalid';
+      if ([401, 403, 404].includes(res.status)) return 'invalid';
       if (res.status !== 207) return 'unreachable';
 
       const homeMatch = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
@@ -373,6 +373,84 @@ export class IntegrationsService {
   async disconnectAppleCalendar(userId: string) {
     await this.prisma.externalCalendar.deleteMany({
       where: { user_id: userId, provider: 'apple' },
+    });
+  }
+
+  private async fetchAppleCalendars(email: string, password: string) {
+    const auth = 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64');
+    const headers = {
+      Depth: '0',
+      Authorization: auth,
+      'Content-Type': 'application/xml',
+      'User-Agent': 'calendarify-caldav',
+      Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
+    } as const;
+
+    const bodyRoot =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<propfind xmlns="DAV:">\n' +
+      '  <prop><current-user-principal/></prop>\n' +
+      '</propfind>';
+    let res = await fetch('https://caldav.icloud.com/', {
+      method: 'PROPFIND',
+      headers,
+      body: bodyRoot,
+    });
+    if (res.status !== 207) return null;
+    let text = await res.text();
+    const hrefMatch = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+    if (!hrefMatch) return null;
+    const principalUrl = 'https://caldav.icloud.com' + hrefMatch[1].trim();
+
+    const bodyPrincipal =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<propfind xmlns="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">\n' +
+      '  <prop><cal:calendar-home-set/></prop>\n' +
+      '</propfind>';
+    res = await fetch(principalUrl, { method: 'PROPFIND', headers, body: bodyPrincipal });
+    if (res.status !== 207) return null;
+    text = await res.text();
+    const homeMatch = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+    if (!homeMatch) return null;
+    const homeUrl = 'https://caldav.icloud.com' + homeMatch[1].trim();
+
+    const bodyCals =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<propfind xmlns="DAV:">\n' +
+      '  <prop><displayname/></prop>\n' +
+      '</propfind>';
+    res = await fetch(homeUrl, { method: 'PROPFIND', headers: { ...headers, Depth: '1' }, body: bodyCals });
+    if (res.status !== 207) return null;
+    text = await res.text();
+    const cals: { href: string; name: string }[] = [];
+    const regex = /<D:response>\s*<D:href>([^<]+)<\/D:href>[\s\S]*?<D:displayname>([^<]*)<\/D:displayname>/gi;
+    let m;
+    while ((m = regex.exec(text))) {
+      cals.push({ href: m[1], name: m[2] });
+    }
+    return cals;
+  }
+
+  async listAppleCalendars(userId: string) {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    if (!record || !record.password) {
+      throw new BadRequestException('Apple Calendar not connected');
+    }
+    const cals = await this.fetchAppleCalendars(record.external_id, record.password);
+    if (!cals) throw new ServiceUnavailableException('Unable to reach Apple Calendar');
+    return cals;
+  }
+
+  async selectAppleCalendar(userId: string, href: string) {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    if (!record) throw new BadRequestException('Apple Calendar not connected');
+    await this.prisma.externalCalendar.update({
+      where: { id: record.id },
+      data: { selected_calendar: href },
     });
   }
 

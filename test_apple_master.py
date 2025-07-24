@@ -5,8 +5,8 @@ import subprocess
 import sys
 
 # DEFINE YOUR CREDENTIALS HERE
-APPLE_EMAIL = "heine@dragnordre.no"  # TODO: replace
-APPLE_PASSWORD = "rjmd-wyzi-vplm-ojcf"  # TODO: replace
+APPLE_EMAIL = "your_email@example.com"  # TODO: replace
+APPLE_PASSWORD = "your_app_specific_password"  # TODO: replace
 
 NODE_SCRIPT = "test_apple_worker.js"
 
