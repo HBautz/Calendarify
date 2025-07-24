@@ -3280,25 +3280,84 @@
     function updateOutlookCalendarButton() {
       const btn = document.getElementById('outlook-calendar-connect-btn');
       if (!btn) return;
-      const connected = localStorage.getItem('calendarify-outlook-calendar-connected') === 'true';
-      if (connected) {
-        btn.textContent = 'Connected';
-        btn.style.backgroundColor = '#34D399';
-        btn.style.color = '#1A2E29';
-      } else {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) {
         btn.textContent = 'Not Connected';
         btn.style.backgroundColor = '#ef4444';
         btn.style.color = '#fff';
+        btn.onclick = connectOutlookCalendar;
+        return;
       }
+      const clean = token.replace(/^\"|\"$/g, '');
+      fetch(`${API_URL}/integrations/outlook/status`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.connected) {
+            btn.textContent = 'Connected';
+            btn.style.backgroundColor = '#34D399';
+            btn.style.color = '#1A2E29';
+            btn.onclick = openDisconnectOutlookModal;
+          } else {
+            btn.textContent = 'Not Connected';
+            btn.style.backgroundColor = '#ef4444';
+            btn.style.color = '#fff';
+            btn.onclick = connectOutlookCalendar;
+          }
+        })
+        .catch(() => {
+          btn.textContent = 'Not Connected';
+          btn.style.backgroundColor = '#ef4444';
+          btn.style.color = '#fff';
+          btn.onclick = connectOutlookCalendar;
+        });
     }
     window.updateOutlookCalendarButton = updateOutlookCalendarButton;
 
-    function toggleOutlookCalendar() {
-      const connected = localStorage.getItem('calendarify-outlook-calendar-connected') === 'true';
-      localStorage.setItem('calendarify-outlook-calendar-connected', (!connected).toString());
-      updateOutlookCalendarButton();
+    async function connectOutlookCalendar() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/outlook/auth-url`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.url;
+      } else {
+        showNotification('Failed to start Outlook OAuth');
+      }
     }
-    window.toggleOutlookCalendar = toggleOutlookCalendar;
+    window.connectOutlookCalendar = connectOutlookCalendar;
+
+    function openDisconnectOutlookModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('disconnect-outlook-modal').classList.remove('hidden');
+    }
+    function closeDisconnectOutlookModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('disconnect-outlook-modal').classList.add('hidden');
+    }
+    async function confirmDisconnectOutlook() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/outlook/disconnect`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        showNotification('Outlook disconnected');
+        updateOutlookCalendarButton();
+      } else {
+        showNotification('Failed to disconnect Outlook');
+      }
+      closeDisconnectOutlookModal();
+    }
+    window.openDisconnectOutlookModal = openDisconnectOutlookModal;
+    window.closeDisconnectOutlookModal = closeDisconnectOutlookModal;
+    window.confirmDisconnectOutlook = confirmDisconnectOutlook;
 
     function updateAppleCalendarButton() {
       const btn = document.getElementById('apple-calendar-connect-btn');

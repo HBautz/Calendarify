@@ -617,7 +617,7 @@
                 <div class="text-[#A3B3AF] text-sm">Sync with Outlook</div>
               </div>
             </div>
-            <button id="outlook-calendar-connect-btn" onclick="toggleOutlookCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
+            <button id="outlook-calendar-connect-btn" onclick="connectOutlookCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
           </div>
           <div class="card flex flex-col gap-3">
             <div class="flex items-center gap-3">
@@ -851,6 +851,27 @@
         <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
           <button onclick="closeDisconnectZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
           <button onclick="confirmDisconnectZoom()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disconnect Outlook Calendar Modal -->
+  <div id="disconnect-outlook-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Outlook Calendar</h2>
+          <button onclick="closeDisconnectOutlookModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect Outlook Calendar? This will remove the integration.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectOutlookModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectOutlook()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
         </div>
       </div>
     </div>
