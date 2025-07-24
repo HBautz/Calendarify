@@ -12,5 +12,10 @@
   },
   "engines": {
     "node": "^20"
+  },
+  "dependencies": {
+    "dav": "^1.8.0",
+    "node-caldav-mod": "^1.0.3",
+    "simple-caldav": "^0.7.1"
   }
 }
