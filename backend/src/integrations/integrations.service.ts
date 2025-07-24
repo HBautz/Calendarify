@@ -275,7 +275,7 @@ export class IntegrationsService {
         Depth: '0',
         Authorization: auth,
         'Content-Type': 'application/xml',
-        'User-Agent': 'calendarify-caldav',
+        'User-Agent': 'calendarify-caldav-test',
         Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
       } as const;
 
@@ -382,7 +382,7 @@ export class IntegrationsService {
       Depth: '0',
       Authorization: auth,
       'Content-Type': 'application/xml',
-      'User-Agent': 'calendarify-caldav',
+      'User-Agent': 'calendarify-caldav-test',
       Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
     } as const;
 
