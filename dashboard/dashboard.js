@@ -3279,6 +3279,7 @@
 
     function updateOutlookCalendarButton() {
       const btn = document.getElementById('outlook-calendar-connect-btn');
+      console.log('[DEBUG] updateOutlookCalendarButton called', btn);
       if (!btn) return;
       const token = localStorage.getItem('calendarify-token');
       if (!token) {
@@ -3292,18 +3293,24 @@
       fetch(`${API_URL}/integrations/outlook/status`, {
         headers: { Authorization: `Bearer ${clean}` },
       })
-        .then(res => res.json())
+        .then(res => {
+          console.log('[DEBUG] /integrations/outlook/status response status:', res.status);
+          return res.json();
+        })
         .then(data => {
+          console.log('[DEBUG] /integrations/outlook/status response data:', data);
           if (data.connected) {
             btn.textContent = 'Connected';
             btn.style.backgroundColor = '#34D399';
             btn.style.color = '#1A2E29';
             btn.onclick = openDisconnectOutlookModal;
+            console.log('[DEBUG] Outlook button set to Connected');
           } else {
             btn.textContent = 'Not Connected';
             btn.style.backgroundColor = '#ef4444';
             btn.style.color = '#fff';
             btn.onclick = connectOutlookCalendar;
+            console.log('[DEBUG] Outlook button set to Not Connected');
           }
         })
         .catch(() => {
@@ -3311,6 +3318,7 @@
           btn.style.backgroundColor = '#ef4444';
           btn.style.color = '#fff';
           btn.onclick = connectOutlookCalendar;
+          console.log('[DEBUG] Error fetching Outlook status');
         });
     }
     window.updateOutlookCalendarButton = updateOutlookCalendarButton;
@@ -3322,8 +3330,10 @@
       const res = await fetch(`${API_URL}/integrations/outlook/auth-url`, {
         headers: { Authorization: `Bearer ${clean}` },
       });
+      console.log('[DEBUG] /integrations/outlook/auth-url status:', res.status);
       if (res.ok) {
         const data = await res.json();
+        console.log('[DEBUG] Redirecting to', data.url);
         window.location.href = data.url;
       } else {
         showNotification('Failed to start Outlook OAuth');
@@ -3347,6 +3357,7 @@
         method: 'DELETE',
         headers: { Authorization: `Bearer ${clean}` },
       });
+      console.log('[DEBUG] /integrations/outlook/disconnect status:', res.status);
       if (res.ok) {
         showNotification('Outlook disconnected');
         updateOutlookCalendarButton();
