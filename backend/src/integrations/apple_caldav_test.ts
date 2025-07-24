@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+// Use the built-in fetch API
 import * as process from 'process';
 
 const APPLE_EMAIL = process.env.APPLE_EMAIL || 'your_email@example.com';
