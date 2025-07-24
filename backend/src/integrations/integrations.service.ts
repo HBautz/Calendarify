@@ -4,13 +4,35 @@ import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
 import * as path from 'path';
-import fetch from 'node-fetch'; // Use node-fetch v2 for all CalDAV requests
+import 'dotenv/config';
+// Use the global fetch API available in Node 18+
 
 const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/userinfo.email',
 ];
+
+const OUTLOOK_TENANT =
+  process.env.OUTLOOK_OAUTH_TENANT ||
+  'https://login.microsoftonline.com/common';
+const OUTLOOK_CLIENT_ID = process.env.OUTLOOK_CLIENT_ID;
+const OUTLOOK_REDIRECT_URI = process.env.OUTLOOK_REDIRECT_URI;
+const OUTLOOK_SCOPE =
+  'User.Read Calendars.ReadWrite Calendars.ReadWrite.Shared ' +
+  'MailboxSettings.Read OnlineMeetings.ReadWrite offline_access';
+
+export function buildOutlookAuthUrl(state: string): string {
+  return (
+    OUTLOOK_TENANT + '/oauth2/v2.0/authorize' +
+    '?client_id=' + encodeURIComponent(OUTLOOK_CLIENT_ID ?? '') +
+    '&response_type=code' +
+    '&redirect_uri=' + encodeURIComponent(OUTLOOK_REDIRECT_URI ?? '') +
+    '&scope=' + encodeURIComponent(OUTLOOK_SCOPE) +
+    '&response_mode=query' +
+    '&state=' + state
+  );
+}
 
 @Injectable()
 export class IntegrationsService {
@@ -25,6 +47,18 @@ export class IntegrationsService {
       appendFileSync(logPath, line);
     } catch (err) {
       console.error('Failed to write zoom log', err);
+    }
+  }
+
+  private outlookLog(...msgs: any[]) {
+    const logPath = path.join(process.cwd(), 'outlook_debug.log');
+    const line = `[${new Date().toISOString()}] ` + msgs.map(m =>
+      typeof m === 'string' ? m : JSON.stringify(m)
+    ).join(' ') + '\n';
+    try {
+      appendFileSync(logPath, line);
+    } catch (err) {
+      console.error('Failed to write outlook log', err);
     }
   }
 
@@ -263,6 +297,100 @@ export class IntegrationsService {
       where: { user_id: userId, provider: 'zoom' },
     });
     this.zoomLog('disconnectZoom', { userId });
+  }
+
+  generateOutlookAuthUrl(userId: string): string {
+    const url = buildOutlookAuthUrl(this.createState(userId));
+    this.outlookLog('generateOutlookAuthUrl', { userId, url });
+    console.log('[DEBUG] Generated Outlook OAuth URL:', url);
+    return url;
+  }
+
+  async handleOutlookCallback(code: string, state: string) {
+    console.log('[DEBUG] handleOutlookCallback code:', code);
+    this.outlookLog('handleOutlookCallback start', { code, state });
+    const userId = this.decodeState(state);
+    const clientId = OUTLOOK_CLIENT_ID;
+    const clientSecret = process.env.OUTLOOK_CLIENT_SECRET;
+    const redirectUri = OUTLOOK_REDIRECT_URI;
+    const tenant = OUTLOOK_TENANT;
+    console.log('[DEBUG] handleOutlookCallback redirect_uri:', redirectUri);
+    if (!clientId || !clientSecret || !redirectUri) {
+      this.outlookLog('missing env vars', { clientId, clientSecret, redirectUri });
+      throw new Error('Missing Outlook OAuth environment variables');
+    }
+    const tokenRes = await fetch(
+      `${tenant}/oauth2/v2.0/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+        }),
+      },
+    );
+    if (!tokenRes.ok) {
+      this.outlookLog('token exchange failed', await tokenRes.text());
+      throw new Error('Failed to obtain Outlook tokens');
+    }
+    const tokens = await tokenRes.json();
+    this.outlookLog('token response', tokens);
+    const accessToken = tokens.access_token as string;
+    const refreshToken = tokens.refresh_token as string | undefined;
+    const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!userRes.ok) {
+      this.outlookLog('user fetch failed', await userRes.text());
+      throw new Error('Failed to fetch Outlook user info');
+    }
+    const userInfo = await userRes.json();
+    this.outlookLog('userInfo', userInfo);
+    const externalId = userInfo.id as string;
+    const existing = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'outlook' },
+    });
+    if (existing) {
+      await this.prisma.externalCalendar.update({
+        where: { id: existing.id },
+        data: {
+          external_id: externalId,
+          access_token: accessToken,
+          refresh_token: refreshToken ?? existing.refresh_token,
+        },
+      });
+    } else {
+      await this.prisma.externalCalendar.create({
+        data: {
+          user_id: userId,
+          provider: 'outlook',
+          external_id: externalId,
+          access_token: accessToken,
+          refresh_token: refreshToken ?? null,
+        },
+      });
+    }
+    this.outlookLog('stored outlook tokens', { userId, externalId });
+  }
+
+  async isOutlookConnected(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'outlook' },
+    });
+    const connected = !!(record && (record.access_token || record.refresh_token));
+    this.outlookLog('isOutlookConnected', { userId, connected });
+    return connected;
+  }
+
+  async disconnectOutlook(userId: string) {
+    await this.prisma.externalCalendar.deleteMany({
+      where: { user_id: userId, provider: 'outlook' },
+    });
+    this.outlookLog('disconnectOutlook', { userId });
   }
 
   private async verifyAppleCredentials(
