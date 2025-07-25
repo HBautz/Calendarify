@@ -219,7 +219,7 @@
             <div class="flex flex-col lg:flex-row lg:space-x-8 main-content" id="mainContent">
                 <div class="lg:w-1/2">
                     <p class="text-sm text-gray-400">Welcome back, <span id="username" class="text-[#34D399]"></span></p>
-                    <h2 class="text-3xl font-bold text-white mt-1 mb-4">Your Calendar</h2>
+                    <h2 id="eventTitle" class="text-3xl font-bold text-white mt-1 mb-4"></h2>
                     <div class="flex items-center text-gray-400 mb-2">
                         <span class="material-icons-outlined mr-2">schedule</span>
                         <span>Manage your availability</span>
@@ -268,9 +268,34 @@
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const params = new URLSearchParams(window.location.search);
-            document.getElementById('username').textContent = params.get('user') || 'User';
+        document.addEventListener('DOMContentLoaded', async function() {
+            const parts = window.location.pathname.split('/').filter(Boolean);
+            let display = '';
+            let slug = '';
+            if (parts.length >= 3 && parts[0] === 'booking') {
+                display = decodeURIComponent(parts[1]);
+                slug = parts[2];
+            } else {
+                const params = new URLSearchParams(window.location.search);
+                display = params.get('user') || '';
+                slug = params.get('event') || '';
+            }
+            if (!slug || !display) {
+                window.location.replace('/');
+                return;
+            }
+            document.getElementById('username').textContent = display;
+
+            window.API_URL = 'http://localhost:3001/api';
+            try {
+                const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
+                if (!res.ok) throw new Error('not found');
+                const event = await res.json();
+                document.getElementById('eventTitle').textContent = `Book: ${event.title}`;
+            } catch (e) {
+                document.body.innerHTML = '<div class="text-center mt-20 text-red-500">Invalid event link</div>';
+                return;
+            }
             
             let currentDate = new Date();
             let selectedDate = null; // No initial selection

@@ -18,6 +18,11 @@ export class EventTypesController {
     return this.events.list(req.user.userId);
   }
 
+  @Get('slug/:slug')
+  findBySlug(@Param('slug') slug: string) {
+    return this.events.findBySlug(slug);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Request() req, @Param('id') id: string) {

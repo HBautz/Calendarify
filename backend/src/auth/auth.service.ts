@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { generateUniqueUserSlug } from '../event-types/slug.utils';
 
 @Injectable()
 export class AuthService {
@@ -15,8 +16,10 @@ export class AuthService {
       throw new UnauthorizedException('Email already registered');
     }
     const password = await bcrypt.hash(data.password, 10);
-    const user = await this.prisma.user.create({ data: { email: data.email, password, name: data.name } });
-    return { id: user.id, email: user.email, name: user.name };
+    const displaySource = data.displayName || data.name || data.email;
+    const display = await generateUniqueUserSlug(this.prisma, displaySource);
+    const user = await this.prisma.user.create({ data: { email: data.email, password, name: data.name, display_name: display } });
+    return { id: user.id, email: user.email, name: user.name, display_name: user.display_name };
   }
 
   async validateUser(email: string, password: string) {
