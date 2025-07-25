@@ -143,7 +143,9 @@ async function initAuth(bodyId, onSuccess) {
       const el = document.getElementById(bodyId);
       if (el) el.classList.remove('hidden');
     }
-    if (typeof onSuccess === 'function') onSuccess();
+    if (typeof onSuccess === 'function') {
+      await onSuccess();
+    }
   }
 }
 
