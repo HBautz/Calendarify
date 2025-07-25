@@ -26,21 +26,25 @@ http.createServer((req, res) => {
     reqPath = '/index.html';
   }
 
+  if (reqPath === '/config.js') {
+    const prepend = process.env.PREPEND_URL || '';
+    res.setHeader('Content-Type', 'text/javascript');
+    res.end(`window.PREPEND_URL = '${prepend}';`);
+    return;
+  }
+
   // Special handling for /sign-up and /sign-up/
   if (reqPath === '/sign-up' || reqPath === '/sign-up/') {
     reqPath = '/sign-up/index.html';
   }
 
-  // Prevent access to booking page without an event slug
-  if (
-    reqPath === '/booking' ||
-    reqPath === '/booking/' ||
-    reqPath === '/booking/index.html'
-  ) {
-    if (!urlObj.searchParams.get('event')) {
+  // Prevent access to booking page without required parts
+  if (reqPath.startsWith('/booking')) {
+    const parts = reqPath.split('/').filter(Boolean);
+    if (parts.length < 3) {
       res.writeHead(404);
       res.end('Not found');
-      console.log(`OUTGOING: 404 ${req.url} (missing event)`);
+      console.log(`OUTGOING: 404 ${req.url} (missing slug)`);
       return;
     }
     reqPath = '/booking/index.html';
