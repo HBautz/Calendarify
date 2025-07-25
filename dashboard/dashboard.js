@@ -929,14 +929,14 @@
     }
 
     // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       fetchTagsFromServer();
       fetchWorkflowsFromServer();
       fetchContactsFromServer();
-      fetchEventTypesFromServer();
+      await fetchEventTypesFromServer();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');
@@ -1568,7 +1568,6 @@
 
     // Add event listeners for interactive form elements
     document.addEventListener('DOMContentLoaded', function() {
-      renderEventTypes();
       
       // Add event listeners for form interactions
       const eventTypeSelect = document.getElementById('event-type-type');
