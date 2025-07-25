@@ -154,6 +154,7 @@
       } else if (section === 'availability') {
         initializeCalendar();
         restoreDayAvailability();
+        restoreWeeklyHours();
       } else if (section === 'contacts') {
         renderContacts();
       } else if (section === 'integrations') {
@@ -937,6 +938,7 @@
       fetchWorkflowsFromServer();
       fetchContactsFromServer();
       await fetchEventTypesFromServer();
+      renderEventTypes();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');
@@ -1022,6 +1024,18 @@
       let ap = is12h ? ampmSel.value : '';
       let display = is12h ? `${h}:${m} ${ap}` : `${h}:${m}`;
       if (setValue) input.value = display;
+
+      const container = picker.closest('[id$="-times"]');
+      if (container) {
+        const day = container.id.replace('-times', '');
+        const inputs = container.querySelectorAll('input');
+        const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+        weekly[day] = {
+          start: inputs[0].value || inputs[0].placeholder,
+          end: inputs[1].value || inputs[1].placeholder,
+        };
+        localStorage.setItem('calendarify-weekly-hours', JSON.stringify(weekly));
+      }
       closeTimeDropdown(btn);
     }
 
@@ -1316,6 +1330,20 @@
           if (currentState !== isAvailable) {
             // Only toggle if the current state doesn't match the saved state
             toggleDayAvailability(day, button);
+          }
+        }
+      });
+    }
+
+    function restoreWeeklyHours() {
+      const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+      Object.entries(weekly).forEach(([day, range]) => {
+        const container = document.getElementById(day + '-times');
+        if (container) {
+          const inputs = container.querySelectorAll('input');
+          if (inputs.length >= 2) {
+            if (range.start) inputs[0].value = range.start;
+            if (range.end) inputs[1].value = range.end;
           }
         }
       });

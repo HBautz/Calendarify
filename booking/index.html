@@ -340,23 +340,53 @@
                 });
             }
 
-            function generateTimeSlots() {
+            function parseTime(str) {
+                const [time, ap] = str.trim().split(' ');
+                let [h, m] = time.split(':').map(Number);
+                if (ap && ap.toUpperCase() === 'PM' && h !== 12) h += 12;
+                if (ap && ap.toUpperCase() === 'AM' && h === 12) h = 0;
+                return { h, m };
+            }
+
+            function generateSlotsInRange(startStr, endStr) {
+                const { h: startH, m: startM } = parseTime(startStr);
+                const { h: endH, m: endM } = parseTime(endStr);
                 const slots = [];
-                const startHour = 9; // 9 AM
-                const endHour = 17; // 5 PM
-                
-                for (let hour = startHour; hour < endHour; hour++) {
-                    for (let minute = 0; minute < 60; minute += 15) {
-                        const time = new Date();
-                        time.setHours(hour, minute, 0);
-                        slots.push(time.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                        }));
-                    }
+                let current = new Date();
+                current.setHours(startH, startM, 0, 0);
+                const end = new Date();
+                end.setHours(endH, endM, 0, 0);
+                while (current < end) {
+                    slots.push(current.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    }));
+                    current.setMinutes(current.getMinutes() + 15);
                 }
                 return slots;
+            }
+
+            function generateTimeSlots(date) {
+                const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                const dayKey = dayNames[date.getDay()];
+
+                const overrides = JSON.parse(localStorage.getItem('calendarify-overrides') || '{}');
+                const override = overrides[date.toISOString().split('T')[0]];
+                if (override) {
+                    if (!override.available) return [];
+                    if (override.timeSlots && override.timeSlots.length > 0) {
+                        let list = [];
+                        override.timeSlots.forEach(t => {
+                            list = list.concat(generateSlotsInRange(t.start, t.end));
+                        });
+                        return list;
+                    }
+                }
+
+                const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+                const range = weekly[dayKey] || { start: '09:00 AM', end: '17:00 PM' };
+                return generateSlotsInRange(range.start, range.end);
             }
 
             function updateTimeSlots() {
@@ -377,12 +407,16 @@
                 dateHeader.textContent = formatDate(selectedDate);
                 container.innerHTML = '';
 
-                if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
+                const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
+                const isDayOff = dayAvail[dayNames[selectedDate.getDay()]] === false;
+
+                if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || selectedDate.getDay() === 0 || selectedDate.getDay() === 6 || isDayOff) {
                     container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
                     confirmButton.style.opacity = '0.5';
                     confirmButton.style.pointerEvents = 'none';
                 } else {
-                    let timeSlots = generateTimeSlots();
+                    let timeSlots = generateTimeSlots(selectedDate);
                     if (selectedDate.toDateString() === new Date().toDateString()) {
                         const now = new Date();
                         timeSlots = timeSlots.filter(t => {
