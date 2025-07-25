@@ -287,15 +287,32 @@
             document.getElementById('username').textContent = display;
 
             window.API_URL = 'http://localhost:3001/api';
+            let event;
             try {
                 const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
                 if (!res.ok) throw new Error('not found');
-                const event = await res.json();
-                document.getElementById('eventTitle').textContent = `Book: ${event.title}`;
+                event = await res.json();
             } catch (e) {
-                document.body.innerHTML = '<div class="text-center mt-20 text-red-500">Invalid event link</div>';
-                return;
+                // Fallback to local data if API request fails
+                try {
+                    const stored = localStorage.getItem('calendarify-event-types');
+                    if (stored) {
+                        const list = JSON.parse(stored);
+                        event = list.find(et => et.slug === slug);
+                    }
+                } catch (err) {
+                    event = null;
+                }
+                if (!event && slug === '30-min-intro-call') {
+                    event = { title: '30-min Intro Call', slug };
+                }
+                if (!event) {
+                    document.body.innerHTML = '<div class="text-center mt-20 text-red-500">Invalid event link</div>';
+                    return;
+                }
             }
+
+            document.getElementById('eventTitle').textContent = `Book: ${event.title}`;
             
             let currentDate = new Date();
             let selectedDate = null; // No initial selection
