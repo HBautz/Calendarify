@@ -114,21 +114,6 @@
       });
     }
 
-    function saveStateToDB() {
-      syncState();
-      showNotification('State saved to DB');
-    }
-
-    async function loadStateFromDB() {
-      await loadState();
-      restoreDayAvailability();
-      restoreWeeklyHours();
-      updateAllCustomTimePickers();
-      showNotification('State loaded from DB');
-    }
-
-    window.saveStateToDB = saveStateToDB;
-    window.loadStateFromDB = loadStateFromDB;
 
     const _setItem = localStorage.setItem.bind(localStorage);
     localStorage.setItem = function(k, v) {
@@ -950,7 +935,7 @@
 
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', async function() {
-      await initAuth('dashboard-body', loadStateFromDB);
+      await initAuth('dashboard-body', loadState);
 
       updateClockFormatUI();
       updateAllCustomTimePickers();
