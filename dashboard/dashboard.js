@@ -99,10 +99,10 @@
     async function syncState() {
       const token = localStorage.getItem("calendarify-token");
       if (!token) return;
-      
+
       // Remove surrounding quotes if they exist
       const cleanToken = token.replace(/^"|"$/g, "");
-      
+
       await fetch(`${API_URL}/users/me/state`, {
         method: "PATCH",
         headers: {
@@ -110,8 +110,25 @@
           Authorization: `Bearer ${cleanToken}`,
         },
         body: JSON.stringify(collectState()),
+        keepalive: true,
       });
     }
+
+    function saveStateToDB() {
+      syncState();
+      showNotification('State saved to DB');
+    }
+
+    async function loadStateFromDB() {
+      await loadState();
+      restoreDayAvailability();
+      restoreWeeklyHours();
+      updateAllCustomTimePickers();
+      showNotification('State loaded from DB');
+    }
+
+    window.saveStateToDB = saveStateToDB;
+    window.loadStateFromDB = loadStateFromDB;
 
     const _setItem = localStorage.setItem.bind(localStorage);
     localStorage.setItem = function(k, v) {
@@ -400,6 +417,7 @@
       };
       
       localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
+      syncState();
       
       // Update calendar display
       renderCalendar();
@@ -420,6 +438,7 @@
       // Remove override from localStorage
       delete calendarOverrides[dateString];
       localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
+      syncState();
       
       // Update calendar display
       renderCalendar();
@@ -931,6 +950,8 @@
 
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', async function() {
+      await initAuth('dashboard-body', loadState);
+
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
@@ -1035,6 +1056,7 @@
           end: inputs[1].value || inputs[1].placeholder,
         };
         localStorage.setItem('calendarify-weekly-hours', JSON.stringify(weekly));
+        syncState();
       }
       closeTimeDropdown(btn);
     }
@@ -1148,6 +1170,7 @@
       let dayAvailability = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
       dayAvailability[day] = !isAvailable; // Toggle the state
       localStorage.setItem('calendarify-day-availability', JSON.stringify(dayAvailability));
+      syncState();
     }
 
     // --- Calendar Override System ---
@@ -3263,7 +3286,6 @@
       document.getElementById('global-search-results').classList.add('hidden');
     }
 
-    initAuth('dashboard-body', loadState);
 
     function updateGoogleCalendarButton() {
       const btn = document.getElementById('google-calendar-connect-btn');
