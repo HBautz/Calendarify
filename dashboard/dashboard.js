@@ -935,7 +935,6 @@
 
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', async function() {
-      await initAuth('dashboard-body', loadState);
 
       updateClockFormatUI();
       updateAllCustomTimePickers();
