@@ -112,6 +112,18 @@
         body: JSON.stringify(collectState()),
       });
     }
+
+    const _setItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(k, v) {
+      _setItem(k, v);
+      if (k.startsWith('calendarify-')) syncState();
+    };
+    const _removeItem = localStorage.removeItem.bind(localStorage);
+    localStorage.removeItem = function(k) {
+      _removeItem(k);
+      if (k.startsWith('calendarify-')) syncState();
+    };
+    window.addEventListener('beforeunload', syncState);
     function showSection(section, el) {
       // Remove active class from all nav items
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -142,6 +154,7 @@
       } else if (section === 'availability') {
         initializeCalendar();
         restoreDayAvailability();
+        restoreWeeklyHours();
       } else if (section === 'contacts') {
         renderContacts();
       } else if (section === 'integrations') {
@@ -917,14 +930,15 @@
     }
 
     // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       fetchTagsFromServer();
       fetchWorkflowsFromServer();
       fetchContactsFromServer();
-      fetchEventTypesFromServer();
+      await fetchEventTypesFromServer();
+      renderEventTypes();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');
@@ -1010,6 +1024,18 @@
       let ap = is12h ? ampmSel.value : '';
       let display = is12h ? `${h}:${m} ${ap}` : `${h}:${m}`;
       if (setValue) input.value = display;
+
+      const container = picker.closest('[id$="-times"]');
+      if (container) {
+        const day = container.id.replace('-times', '');
+        const inputs = container.querySelectorAll('input');
+        const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+        weekly[day] = {
+          start: inputs[0].value || inputs[0].placeholder,
+          end: inputs[1].value || inputs[1].placeholder,
+        };
+        localStorage.setItem('calendarify-weekly-hours', JSON.stringify(weekly));
+      }
       closeTimeDropdown(btn);
     }
 
@@ -1309,6 +1335,20 @@
       });
     }
 
+    function restoreWeeklyHours() {
+      const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+      Object.entries(weekly).forEach(([day, range]) => {
+        const container = document.getElementById(day + '-times');
+        if (container) {
+          const inputs = container.querySelectorAll('input');
+          if (inputs.length >= 2) {
+            if (range.start) inputs[0].value = range.start;
+            if (range.end) inputs[1].value = range.end;
+          }
+        }
+      });
+    }
+
     function loadOverrideData(override) {
       const toggleButton = document.querySelector('#override-modal button[onclick="toggleOverrideAvailability(this)"]');
       const timesContainer = document.getElementById('override-times');
@@ -1556,7 +1596,6 @@
 
     // Add event listeners for interactive form elements
     document.addEventListener('DOMContentLoaded', function() {
-      renderEventTypes();
       
       // Add event listeners for form interactions
       const eventTypeSelect = document.getElementById('event-type-type');
