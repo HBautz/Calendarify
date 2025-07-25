@@ -112,6 +112,18 @@
         body: JSON.stringify(collectState()),
       });
     }
+
+    const _setItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(k, v) {
+      _setItem(k, v);
+      if (k.startsWith('calendarify-')) syncState();
+    };
+    const _removeItem = localStorage.removeItem.bind(localStorage);
+    localStorage.removeItem = function(k) {
+      _removeItem(k);
+      if (k.startsWith('calendarify-')) syncState();
+    };
+    window.addEventListener('beforeunload', syncState);
     function showSection(section, el) {
       // Remove active class from all nav items
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -917,14 +929,14 @@
     }
 
     // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
       fetchTagsFromServer();
       fetchWorkflowsFromServer();
       fetchContactsFromServer();
-      fetchEventTypesFromServer();
+      await fetchEventTypesFromServer();
       renderWorkflows();
 
       const avatar = document.getElementById('profile-avatar');
@@ -1556,7 +1568,6 @@
 
     // Add event listeners for interactive form elements
     document.addEventListener('DOMContentLoaded', function() {
-      renderEventTypes();
       
       // Add event listeners for form interactions
       const eventTypeSelect = document.getElementById('event-type-type');

@@ -77,6 +77,11 @@
             background-color: #34D399;
             border-radius: 50%;
         }
+        .calendar-day.unavailable {
+            color: #555;
+            pointer-events: none;
+            opacity: 0.5;
+        }
         /* Custom scrollbar styling */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
@@ -372,27 +377,44 @@
                 dateHeader.textContent = formatDate(selectedDate);
                 container.innerHTML = '';
 
-                const timeSlots = generateTimeSlots();
-                timeSlots.forEach(time => {
-                    const button = document.createElement('button');
-                    button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium';
-                    button.textContent = time;
-                    
-                    button.addEventListener('click', () => {
-                        // Remove selected class from all time slots
-                        container.querySelectorAll('.time-slot').forEach(slot => {
-                            slot.classList.remove('selected');
+                if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
+                    container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
+                    confirmButton.style.opacity = '0.5';
+                    confirmButton.style.pointerEvents = 'none';
+                } else {
+                    let timeSlots = generateTimeSlots();
+                    if (selectedDate.toDateString() === new Date().toDateString()) {
+                        const now = new Date();
+                        timeSlots = timeSlots.filter(t => {
+                            const [time, ap] = t.split(' ');
+                            let [h,m] = time.split(':').map(Number);
+                            if (ap === 'PM' && h !== 12) h += 12;
+                            if (ap === 'AM' && h === 12) h = 0;
+                            const slot = new Date(selectedDate);
+                            slot.setHours(h, m, 0, 0);
+                            return slot > now;
                         });
-                        // Add selected class to clicked time slot
-                        button.classList.add('selected');
-                        
-                        // Enable confirm button
-                        confirmButton.style.opacity = '1';
-                        confirmButton.style.pointerEvents = 'auto';
-                    });
-                    
-                    container.appendChild(button);
-                });
+                    }
+
+                    if (timeSlots.length === 0) {
+                        container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
+                        confirmButton.style.opacity = '0.5';
+                        confirmButton.style.pointerEvents = 'none';
+                    } else {
+                        timeSlots.forEach(time => {
+                            const button = document.createElement('button');
+                            button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium';
+                            button.textContent = time;
+                            button.addEventListener('click', () => {
+                                container.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
+                                button.classList.add('selected');
+                                confirmButton.style.opacity = '1';
+                                confirmButton.style.pointerEvents = 'auto';
+                            });
+                            container.appendChild(button);
+                        });
+                    }
+                }
 
                 // Show time slots with animation and move entire container left
                 timeSlotsDiv.classList.add('show');
@@ -438,34 +460,34 @@
                 for (let day = 1; day <= lastDay.getDate(); day++) {
                     const div = document.createElement('div');
                     div.textContent = day;
-                    div.className = 'calendar-day cursor-pointer';
-                    
+
                     const currentDay = new Date(year, month, day);
-                    
-                    // Check if it's today
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const isPast = currentDay < today;
+                    const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+
+                    div.className = 'calendar-day' + (isPast || isWeekend ? ' unavailable' : ' cursor-pointer');
+
                     if (currentDay.toDateString() === new Date().toDateString()) {
                         div.classList.add('today');
                     }
-                    
-                    // Check if it's selected
+
                     if (selectedDate && currentDay.toDateString() === selectedDate.toDateString()) {
                         div.classList.add('selected');
                     }
-                    
-                    // Add click event
-                    div.addEventListener('click', () => {
-                        // Remove selected class from all days
-                        calendarEl.querySelectorAll('.calendar-day').forEach(day => {
-                            day.classList.remove('selected');
+
+                    if (!isPast && !isWeekend) {
+                        div.addEventListener('click', () => {
+                            calendarEl.querySelectorAll('.calendar-day').forEach(day => {
+                                day.classList.remove('selected');
+                            });
+                            div.classList.add('selected');
+                            selectedDate = new Date(year, month, day);
+                            updateTimeSlots();
                         });
-                        // Add selected class to clicked day
-                        div.classList.add('selected');
-                        // Update selected date
-                        selectedDate = new Date(year, month, day);
-                        // Update time slots
-                        updateTimeSlots();
-                    });
-                    
+                    }
+
                     calendarEl.appendChild(div);
                 }
             }
