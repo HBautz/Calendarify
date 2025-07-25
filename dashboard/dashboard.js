@@ -103,15 +103,18 @@
       // Remove surrounding quotes if they exist
       const cleanToken = token.replace(/^"|"$/g, "");
 
-      await fetch(`${API_URL}/users/me/state`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${cleanToken}`,
-        },
-        body: JSON.stringify(collectState()),
-        keepalive: true,
-      });
+      try {
+        await fetch(`${API_URL}/users/me/state`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${cleanToken}`,
+          },
+          body: JSON.stringify(collectState()),
+        });
+      } catch (e) {
+        console.error('syncState error', e);
+      }
     }
 
 
@@ -3270,6 +3273,9 @@
       document.getElementById('global-search-results').classList.add('hidden');
     }
 
+    document.addEventListener('DOMContentLoaded', function() {
+      initAuth('dashboard-body', loadState);
+    });
 
     function updateGoogleCalendarButton() {
       const btn = document.getElementById('google-calendar-connect-btn');
