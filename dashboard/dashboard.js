@@ -401,6 +401,7 @@
       };
       
       localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
+      syncState();
       
       // Update calendar display
       renderCalendar();
@@ -421,6 +422,7 @@
       // Remove override from localStorage
       delete calendarOverrides[dateString];
       localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
+      syncState();
       
       // Update calendar display
       renderCalendar();
@@ -1038,6 +1040,7 @@
           end: inputs[1].value || inputs[1].placeholder,
         };
         localStorage.setItem('calendarify-weekly-hours', JSON.stringify(weekly));
+        syncState();
       }
       closeTimeDropdown(btn);
     }
@@ -1151,6 +1154,7 @@
       let dayAvailability = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
       dayAvailability[day] = !isAvailable; // Toggle the state
       localStorage.setItem('calendarify-day-availability', JSON.stringify(dayAvailability));
+      syncState();
     }
 
     // --- Calendar Override System ---
