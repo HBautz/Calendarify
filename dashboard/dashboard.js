@@ -939,6 +939,10 @@
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', async function() {
 
+      // Ensure we are authenticated and state is loaded before continuing
+      await initAuth('dashboard-body');
+      await loadState();
+
       updateClockFormatUI();
       updateAllCustomTimePickers();
       setupTimeInputListeners();
@@ -3273,9 +3277,6 @@
       document.getElementById('global-search-results').classList.add('hidden');
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      initAuth('dashboard-body', loadState);
-    });
 
     function updateGoogleCalendarButton() {
       const btn = document.getElementById('google-calendar-connect-btn');
