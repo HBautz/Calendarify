@@ -99,10 +99,10 @@
     async function syncState() {
       const token = localStorage.getItem("calendarify-token");
       if (!token) return;
-      
+
       // Remove surrounding quotes if they exist
       const cleanToken = token.replace(/^"|"$/g, "");
-      
+
       await fetch(`${API_URL}/users/me/state`, {
         method: "PATCH",
         headers: {
@@ -110,6 +110,7 @@
           Authorization: `Bearer ${cleanToken}`,
         },
         body: JSON.stringify(collectState()),
+        keepalive: true,
       });
     }
 
