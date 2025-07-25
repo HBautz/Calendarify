@@ -119,8 +119,8 @@
               <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
           </div>
             <div class="flex gap-2 mt-2">
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('https://cal.example/intro')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('30-min Intro Call')"><span class="material-icons-outlined text-base">share</span>Share</button>
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('30-min-intro-call')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('30-min Intro Call','30-min-intro-call')"><span class="material-icons-outlined text-base">share</span>Share</button>
               <div class="relative">
                 <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
                 <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
@@ -640,8 +640,8 @@
   <div id="share-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
     <h3 class="text-lg font-bold text-white mb-4">Share "<span id="share-modal-title"></span>"</h3>
     <div class="flex gap-2 mb-4">
-      <input type="text" class="input-field flex-1" value="https://cal.example/intro" readonly>
-      <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold" onclick="copyLink('https://cal.example/intro')">Copy</button>
+      <input id="share-modal-link" type="text" class="input-field flex-1" readonly>
+      <button id="share-modal-copy-btn" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold">Copy</button>
     </div>
     <button class="btn-secondary" onclick="closeShareModal()">Close</button>
   </div>
