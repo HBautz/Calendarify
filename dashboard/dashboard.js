@@ -288,8 +288,10 @@
     }
 
     // Utility functions
-    function copyLink(link) {
-      navigator.clipboard.writeText(link);
+    function copyLink(slug) {
+      const prefix = window.PREPEND_URL || window.location.origin;
+      const display = localStorage.getItem('calendarify-display-name') || 'user';
+      navigator.clipboard.writeText(`${prefix}/booking/${encodeURIComponent(display)}/${slug}`);
       showNotification('Link copied to clipboard');
     }
 
@@ -302,6 +304,25 @@
     function closeShareModal() {
       document.getElementById('share-modal').classList.add('hidden');
       document.getElementById('modal-backdrop').classList.add('hidden');
+    }
+
+    function slugify(text) {
+      return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+
+    function generateSlug(name, existing) {
+      const base = slugify(name);
+      let slug = base;
+      let i = 1;
+      while (existing.some(e => e.slug === slug)) {
+        slug = `${base}-${i++}`;
+      }
+      return slug;
     }
 
     function toggleCreateMenu() {
@@ -663,13 +684,14 @@
       const token = localStorage.getItem('calendarify-token');
       if (token) {
         try {
-          // Remove surrounding quotes if they exist
           const cleanToken = token.replace(/^"|"$/g, "");
           const res = await fetch(`${API_URL}/users/me`, { headers: { Authorization: `Bearer ${cleanToken}` } });
           if (res.ok) {
             const data = await res.json();
             document.getElementById('profile-name').textContent = data.name || 'User';
             document.getElementById('profile-email').textContent = data.email || '';
+            document.getElementById('profile-displayname').textContent = data.display_name || '';
+            localStorage.setItem('calendarify-display-name', data.display_name || '');
           } else {
             console.error('Failed to load profile: HTTP', res.status);
           }
@@ -683,6 +705,45 @@
       document.getElementById('profile-modal').classList.add('hidden');
       document.getElementById('modal-backdrop').classList.add('hidden');
     }
+
+    function openChangeDisplayNameModal() {
+      document.getElementById('change-displayname-input').value = localStorage.getItem('calendarify-display-name') || '';
+      document.getElementById('change-displayname-modal').classList.remove('hidden');
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+    }
+
+    function closeChangeDisplayNameModal() {
+      document.getElementById('change-displayname-modal').classList.add('hidden');
+      document.getElementById('modal-backdrop').classList.add('hidden');
+    }
+
+    async function saveDisplayName() {
+      const input = document.getElementById('change-displayname-input');
+      const newName = input.value.trim();
+      if (!newName) return;
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/users/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+        body: JSON.stringify({ displayName: newName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('profile-displayname').textContent = data.display_name;
+        localStorage.setItem('calendarify-display-name', data.display_name);
+        showNotification('Display name updated');
+      } else {
+        const text = await res.text();
+        showNotification(text || 'Failed to update');
+      }
+      closeChangeDisplayNameModal();
+    }
+
+    window.openChangeDisplayNameModal = openChangeDisplayNameModal;
+    window.closeChangeDisplayNameModal = closeChangeDisplayNameModal;
+    window.saveDisplayName = saveDisplayName;
 
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
@@ -1372,8 +1433,12 @@
         return;
       }
 
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      const slug = generateSlug(name, eventTypes);
+
       const eventTypeData = {
         name,
+        slug,
         duration: parseInt(duration),
         eventType,
         attendeeLimit: eventType !== '1-on-1' ? parseInt(attendeeLimit) : 1,
@@ -1412,9 +1477,6 @@
         id: Date.now().toString()
       };
 
-      // Get existing event types from localStorage
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      
       // Add new event type
       eventTypes.push(eventTypeData);
       
@@ -1553,7 +1615,7 @@
               <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
             </div>
             <div class="flex gap-2 mt-2">
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('https://cal.example/${eventType.id}')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
+              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('${eventType.slug}')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
               <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('${eventType.name}')"><span class="material-icons-outlined text-base">share</span>Share</button>
               <div class="relative">
                 <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
@@ -1603,14 +1665,16 @@
     function cloneEventType(id) {
       let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
       const originalEventType = eventTypes.find(eventType => eventType.id === id);
-      
+
       if (originalEventType) {
         const clonedEventType = {
           ...originalEventType,
           name: `${originalEventType.name} (Copy)`,
           id: Date.now().toString()
         };
-        
+
+        clonedEventType.slug = generateSlug(clonedEventType.name, eventTypes);
+
         eventTypes.push(clonedEventType);
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
         renderEventTypes();
@@ -1734,9 +1798,17 @@
       }
 
       // Update the event type data
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      const existing = eventTypes.filter(et => et.id !== eventType.id);
+      let slug = eventType.slug;
+      if (name !== eventType.name) {
+        slug = generateSlug(name, existing);
+      }
+
       const updatedEventType = {
         ...eventType,
         name,
+        slug,
         duration: parseInt(duration),
         eventType: eventTypeValue,
         attendeeLimit: eventTypeValue !== '1-on-1' ? parseInt(attendeeLimit) : 1,
@@ -1775,7 +1847,7 @@
       };
 
       // Update in localStorage
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
       const index = eventTypes.findIndex(et => et.id === eventType.id);
       if (index !== -1) {
         eventTypes[index] = updatedEventType;
@@ -1841,6 +1913,7 @@
       if (eventTypes.length === 0) {
         eventTypes.push({
           name: '30-min Intro Call',
+          slug: '30-min-intro-call',
           duration: 30,
           eventType: '1-on-1',
           attendeeLimit: 1,
