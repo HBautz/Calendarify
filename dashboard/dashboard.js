@@ -289,7 +289,7 @@
 
     // Utility functions
     function copyLink(slug) {
-      const prefix = window.PREPEND_URL || window.location.origin;
+      const prefix = window.FRONTEND_URL || window.location.origin;
       const display = localStorage.getItem('calendarify-display-name') || 'user';
       navigator.clipboard.writeText(`${prefix}/booking/${encodeURIComponent(display)}/${slug}`);
       showNotification('Link copied to clipboard');
