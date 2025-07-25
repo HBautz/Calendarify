@@ -88,6 +88,20 @@ If Azure returns an `access_denied` error citing **silent authentication**,
 Calendarify includes `prompt=consent` in the authorization URL so the user must
 interactively grant access.
 
+## Email Notifications
+
+Email notifications can be sent using a Gmail account. Configure the following
+environment variables in your local `.env` file:
+
+- `NOTIF_GMAIL` – the Gmail address used to send notifications
+- `NOTIF_GMAIL_PASSWORD` – a Google app password for the account
+
+The backend exposes a `NotificationsService` that wraps Nodemailer and can
+optionally attach calendar invites generated with the `ics` package. Inject the
+service into your modules and call `sendMail()` with the recipient, subject, and
+message. Include an `event` object to attach an iCalendar file similar to how
+Calendly sends invitations.
+
 ## Repository Overview
 
 ```

@@ -418,6 +418,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.15.4":
+  version: 7.28.2
+  resolution: "@babel/runtime@npm:7.28.2"
+  checksum: 10c0/c20afe253629d53a405a610b12a62ac74d341a2c1e0fb202bbef0c118f6b5c84f94bf16039f58fd0483dd256901259930a43976845bdeb180cab1f882c21b6e0
+  languageName: node
+  linkType: hard
+
 "@babel/template@npm:^7.27.2, @babel/template@npm:^7.3.3":
   version: 7.27.2
   resolution: "@babel/template@npm:7.27.2"
@@ -2027,6 +2034,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lodash@npm:^4.14.175":
+  version: 4.17.20
+  resolution: "@types/lodash@npm:4.17.20"
+  checksum: 10c0/98cdd0faae22cbb8079a01a3bb65aa8f8c41143367486c1cbf5adc83f16c9272a2a5d2c1f541f61d0d73da543c16ee1d21cf2ef86cb93cd0cc0ac3bced6dd88f
+  languageName: node
+  linkType: hard
+
 "@types/methods@npm:^1.1.4":
   version: 1.1.4
   resolution: "@types/methods@npm:1.1.4"
@@ -2990,10 +3004,12 @@ __metadata:
     eslint-plugin-prettier: "npm:^5.2.2"
     globals: "npm:^16.0.0"
     googleapis: "npm:^132.0.0"
+    ics: "npm:^2.41.0"
     ioredis: "npm:^5.3.2"
     jest: "npm:^29.7.0"
     jest-util: "npm:^29.7.0"
     jsonwebtoken: "npm:^9.0.2"
+    nodemailer: "npm:^6.9.11"
     passport: "npm:^0.7.0"
     passport-jwt: "npm:^4.0.1"
     prettier: "npm:^3.4.2"
@@ -5397,6 +5413,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ics@npm:^2.41.0":
+  version: 2.44.0
+  resolution: "ics@npm:2.44.0"
+  dependencies:
+    nanoid: "npm:^3.1.23"
+    yup: "npm:^0.32.9"
+  checksum: 10c0/ec41a24ab813700ddc5b3252e9fe3761a336c4114394acc1d2fd1ad7693997bd705592a793a62e8654c17115be8aa020f5435cfda3d6b773d315f20f0fb53ae0
+  languageName: node
+  linkType: hard
+
 "ieee754@npm:^1.1.13, ieee754@npm:^1.2.1":
   version: 1.2.1
   resolution: "ieee754@npm:1.2.1"
@@ -6495,6 +6521,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash-es@npm:^4.17.21":
+  version: 4.17.21
+  resolution: "lodash-es@npm:4.17.21"
+  checksum: 10c0/fb407355f7e6cd523a9383e76e6b455321f0f153a6c9625e21a8827d10c54c2a2341bd2ae8d034358b60e07325e1330c14c224ff582d04612a46a4f0479ff2f2
+  languageName: node
+  linkType: hard
+
 "lodash.defaults@npm:^4.2.0":
   version: 4.2.0
   resolution: "lodash.defaults@npm:4.2.0"
@@ -7069,6 +7102,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"nanoclone@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "nanoclone@npm:0.2.1"
+  checksum: 10c0/760b569ea841c9678fdf8d763c6d7bb093f0889150087f82d86c536a318b302939c82ce35cdaec999d0f687789d0d79d0f3f75a272d7a98dfac7a067c0b47053
+  languageName: node
+  linkType: hard
+
+"nanoid@npm:^3.1.23":
+  version: 3.3.11
+  resolution: "nanoid@npm:3.3.11"
+  bin:
+    nanoid: bin/nanoid.cjs
+  checksum: 10c0/40e7f70b3d15f725ca072dfc4f74e81fcf1fbb02e491cf58ac0c79093adc9b0a73b152bcde57df4b79cd097e13023d7504acb38404a4da7bc1cd8e887b82fe0b
+  languageName: node
+  linkType: hard
+
 "natural-compare@npm:^1.4.0":
   version: 1.4.0
   resolution: "natural-compare@npm:1.4.0"
@@ -7199,6 +7248,13 @@ __metadata:
   version: 2.0.19
   resolution: "node-releases@npm:2.0.19"
   checksum: 10c0/52a0dbd25ccf545892670d1551690fe0facb6a471e15f2cfa1b20142a5b255b3aa254af5f59d6ecb69c2bec7390bc643c43aa63b13bf5e64b6075952e716b1aa
+  languageName: node
+  linkType: hard
+
+"nodemailer@npm:^6.9.11":
+  version: 6.10.1
+  resolution: "nodemailer@npm:6.10.1"
+  checksum: 10c0/e81fde258ea4f4e5646e9e3eebe89294d007939999d2d1a8c96c5488fa00bf659e46cf76fccb2697e9aa6ef9807a1ed47ff2aef6ad30b795e3849b6997066d16
   languageName: node
   linkType: hard
 
@@ -7703,6 +7759,13 @@ __metadata:
     kleur: "npm:^3.0.3"
     sisteransi: "npm:^1.0.5"
   checksum: 10c0/16f1ac2977b19fe2cf53f8411cc98db7a3c8b115c479b2ca5c82b5527cd937aa405fa04f9a5960abeb9daef53191b53b4d13e35c1f5d50e8718c76917c5f1ea4
+  languageName: node
+  linkType: hard
+
+"property-expr@npm:^2.0.4":
+  version: 2.0.6
+  resolution: "property-expr@npm:2.0.6"
+  checksum: 10c0/69b7da15038a1146d6447c69c445306f66a33c425271235bb20507f1846dbf9577a8f9dfafe8acbfcb66f924b270157f155248308f026a68758f35fc72265b3c
   languageName: node
   linkType: hard
 
@@ -8820,6 +8883,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"toposort@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "toposort@npm:2.0.2"
+  checksum: 10c0/ab9ca91fce4b972ccae9e2f539d755bf799a0c7eb60da07fd985fce0f14c159ed1e92305ff55697693b5bc13e300f5417db90e2593b127d421c9f6c440950222
+  languageName: node
+  linkType: hard
+
 "tr46@npm:~0.0.3":
   version: 0.0.3
   resolution: "tr46@npm:0.0.3"
@@ -9577,5 +9647,20 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: 10c0/dceb44c28578b31641e13695d200d34ec4ab3966a5729814d5445b194933c096b7ced71494ce53a0e8820685d1d010df8b2422e5bf2cdea7e469d97ffbea306f
+  languageName: node
+  linkType: hard
+
+"yup@npm:^0.32.9":
+  version: 0.32.11
+  resolution: "yup@npm:0.32.11"
+  dependencies:
+    "@babel/runtime": "npm:^7.15.4"
+    "@types/lodash": "npm:^4.14.175"
+    lodash: "npm:^4.17.21"
+    lodash-es: "npm:^4.17.21"
+    nanoclone: "npm:^0.2.1"
+    property-expr: "npm:^2.0.4"
+    toposort: "npm:^2.0.2"
+  checksum: 10c0/f0802798dc64b49f313886b983a9bea5f283e2094ee2aa1197587b84f50ac5b5d03af99857c313139e63dc02558fac3aaa343503bdbffa96f70006b39d1f59c9
   languageName: node
   linkType: hard

@@ -12,6 +12,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { TagsModule } from './tags/tags.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TagsModule } from './tags/tags.module';
     ContactsModule,
     WorkflowsModule,
     TagsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
