@@ -28,6 +28,10 @@ export class EventTypesService {
     return this.prisma.eventType.findUnique({ where: { id } });
   }
 
+  findBySlug(slug: string) {
+    return this.prisma.eventType.findUnique({ where: { slug } });
+  }
+
   update(id: string, data: Partial<EventType>) {
     return this.prisma.eventType.update({ where: { id }, data });
   }

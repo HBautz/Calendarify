@@ -20,7 +20,8 @@ http.createServer((req, res) => {
   // Log incoming request
   console.log(`INCOMING: ${req.method} ${req.url}`);
 
-  let reqPath = req.url.split('?')[0];
+  const urlObj = new URL(req.url, `http://${req.headers.host}`);
+  let reqPath = urlObj.pathname;
   if (reqPath === '/' || reqPath === '') {
     reqPath = '/index.html';
   }
@@ -28,6 +29,21 @@ http.createServer((req, res) => {
   // Special handling for /sign-up and /sign-up/
   if (reqPath === '/sign-up' || reqPath === '/sign-up/') {
     reqPath = '/sign-up/index.html';
+  }
+
+  // Prevent access to booking page without an event slug
+  if (
+    reqPath === '/booking' ||
+    reqPath === '/booking/' ||
+    reqPath === '/booking/index.html'
+  ) {
+    if (!urlObj.searchParams.get('event')) {
+      res.writeHead(404);
+      res.end('Not found');
+      console.log(`OUTGOING: 404 ${req.url} (missing event)`);
+      return;
+    }
+    reqPath = '/booking/index.html';
   }
 
   let filePath = path.join(rootDir, reqPath);
