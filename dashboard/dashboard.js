@@ -114,6 +114,22 @@
       });
     }
 
+    function saveStateToDB() {
+      syncState();
+      showNotification('State saved to DB');
+    }
+
+    async function loadStateFromDB() {
+      await loadState();
+      restoreDayAvailability();
+      restoreWeeklyHours();
+      updateAllCustomTimePickers();
+      showNotification('State loaded from DB');
+    }
+
+    window.saveStateToDB = saveStateToDB;
+    window.loadStateFromDB = loadStateFromDB;
+
     const _setItem = localStorage.setItem.bind(localStorage);
     localStorage.setItem = function(k, v) {
       _setItem(k, v);
