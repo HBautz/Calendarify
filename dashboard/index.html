@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="/dashboard/dashboard.css">
   <script src="/auth.js"></script>
+  <script src="/config.js"></script>
   <script src="/dashboard/dashboard.js" defer></script>
 </head>
 <body id="dashboard-body" class="flex min-h-screen hidden">
@@ -797,7 +798,7 @@
   </div>
   
   <!-- Profile Modal -->
-  <div id="profile-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+  <div id="profile-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl shadow-2xl p-8 z-50 hidden" style="min-width:320px; max-width:400px;">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-bold text-white">Your Profile</h3>
       <button onclick="closeProfileModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
@@ -807,10 +808,22 @@
     <div class="space-y-2">
       <p><span class="text-[#A3B3AF]">Name:</span> <span id="profile-name" class="text-white"></span></p>
       <p><span class="text-[#A3B3AF]">Email:</span> <span id="profile-email" class="text-white"></span></p>
+      <p><span class="text-[#A3B3AF]">Display Name:</span> <span id="profile-displayname" class="text-white"></span> <button class="btn-secondary text-xs ml-2" onclick="openChangeDisplayNameModal()">Change</button></p>
       <p><span class="text-[#A3B3AF]">Timezone:</span> <span id="profile-timezone" class="text-white"></span></p>
     </div>
     <div class="mt-6 text-right">
       <button class="btn-secondary" onclick="closeProfileModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Change Display Name Modal -->
+  <div id="change-displayname-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <h3 class="text-lg font-bold text-white mb-4">Change Display Name</h3>
+    <p class="text-red-500 font-semibold text-sm mb-4">Changing your display name will break all existing booking links. Are you sure?</p>
+    <input id="change-displayname-input" type="text" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] mb-4" />
+    <div class="text-right space-x-2">
+      <button class="btn-secondary" onclick="closeChangeDisplayNameModal()">Cancel</button>
+      <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold" onclick="saveDisplayName()">Save</button>
     </div>
   </div>
 
