@@ -28,8 +28,9 @@ http.createServer((req, res) => {
 
   if (reqPath === '/config.js') {
     const frontend = process.env.FRONTEND_URL || '';
+    const prepend = process.env.PREPEND_URL || '';
     res.setHeader('Content-Type', 'text/javascript');
-    res.end(`window.FRONTEND_URL = '${frontend}';`);
+    res.end(`window.FRONTEND_URL='${frontend}';window.PREPEND_URL='${prepend}';`);
     return;
   }
 

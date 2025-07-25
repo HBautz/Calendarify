@@ -73,7 +73,8 @@
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
-        const eventTypes = await res.json();
+        const raw = await res.json();
+        const eventTypes = raw.map(et => ({ ...et, name: et.title }));
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
         return eventTypes;
       }
@@ -289,7 +290,7 @@
 
     // Utility functions
     function copyLink(slug) {
-      const prefix = window.FRONTEND_URL || window.location.origin;
+      const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
       const display = localStorage.getItem('calendarify-display-name') || 'user';
       navigator.clipboard.writeText(`${prefix}/booking/${encodeURIComponent(display)}/${slug}`);
       showNotification('Link copied to clipboard');
@@ -1395,7 +1396,7 @@
       `;
     }
 
-    function saveEventType() {
+    async function saveEventType() {
       const name = document.getElementById('event-type-name').value.trim();
       const duration = document.getElementById('event-type-duration').value;
       const eventType = document.getElementById('event-type-type').value;
@@ -1438,6 +1439,7 @@
 
       const eventTypeData = {
         name,
+        title: name,
         slug,
         duration: parseInt(duration),
         eventType,
@@ -1477,10 +1479,26 @@
         id: Date.now().toString()
       };
 
-      // Add new event type
+      try {
+        const token = localStorage.getItem('calendarify-token');
+        if (token) {
+          const clean = token.replace(/^"|"$/g, '');
+          const res = await fetch(`${API_URL}/event-types`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+            body: JSON.stringify({ title: name, slug, description, duration: parseInt(duration) })
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            eventTypeData.id = saved.id;
+            eventTypeData.slug = saved.slug;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to save event type to server', e);
+      }
+
       eventTypes.push(eventTypeData);
-      
-      // Save back to localStorage
       localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
       
       // Update the display
@@ -1643,9 +1661,18 @@
       document.getElementById('delete-event-type-confirm-modal').classList.remove('hidden');
     }
 
-    function confirmDeleteEventType() {
+    async function confirmDeleteEventType() {
       const id = window.eventTypeToDelete;
       if (id) {
+        try {
+          const token = localStorage.getItem('calendarify-token');
+          if (token) {
+            const clean = token.replace(/^"|"$/g, '');
+            await fetch(`${API_URL}/event-types/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+          }
+        } catch (e) {
+          console.error('Failed to delete event type from server', e);
+        }
         let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
         eventTypes = eventTypes.filter(eventType => eventType.id !== id);
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
@@ -1662,7 +1689,7 @@
       window.eventTypeToDelete = null;
     }
 
-    function cloneEventType(id) {
+    async function cloneEventType(id) {
       let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
       const originalEventType = eventTypes.find(eventType => eventType.id === id);
 
@@ -1670,10 +1697,30 @@
         const clonedEventType = {
           ...originalEventType,
           name: `${originalEventType.name} (Copy)`,
+          title: `${originalEventType.name} (Copy)`,
           id: Date.now().toString()
         };
 
         clonedEventType.slug = generateSlug(clonedEventType.name, eventTypes);
+
+        try {
+          const token = localStorage.getItem('calendarify-token');
+          if (token) {
+            const clean = token.replace(/^"|"$/g, '');
+            const res = await fetch(`${API_URL}/event-types`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+              body: JSON.stringify({ title: clonedEventType.name, slug: clonedEventType.slug, duration: clonedEventType.duration, description: clonedEventType.description })
+            });
+            if (res.ok) {
+              const saved = await res.json();
+              clonedEventType.id = saved.id;
+              clonedEventType.slug = saved.slug;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to clone event type on server', e);
+        }
 
         eventTypes.push(clonedEventType);
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
@@ -1755,7 +1802,7 @@
       handleEditBookingLimitChange();
     }
 
-    function updateEventType() {
+    async function updateEventType() {
       const eventType = window.editingEventType;
       if (!eventType) return;
       
@@ -1808,6 +1855,7 @@
       const updatedEventType = {
         ...eventType,
         name,
+        title: name,
         slug,
         duration: parseInt(duration),
         eventType: eventTypeValue,
@@ -1846,16 +1894,27 @@
         tags: tags ? tags.split(',').map(tag => tag.trim()) : []
       };
 
-      // Update in localStorage
+      try {
+        const token = localStorage.getItem('calendarify-token');
+        if (token) {
+          const clean = token.replace(/^"|"$/g, '');
+          await fetch(`${API_URL}/event-types/${eventType.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+            body: JSON.stringify({ title: name, slug, description, duration: parseInt(duration) })
+          });
+        }
+      } catch (e) {
+        console.error('Failed to update event type on server', e);
+      }
+
       eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
       const index = eventTypes.findIndex(et => et.id === eventType.id);
       if (index !== -1) {
-        eventTypes[index] = updatedEventType;
+        eventTypes[index] = { ...eventTypes[index], ...updatedEventType };
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-        
-        // Update the display
+
         renderEventTypes();
-        
         showNotification('Event type updated successfully!');
         closeEditEventTypeModal();
       }
