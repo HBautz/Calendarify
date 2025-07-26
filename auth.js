@@ -49,6 +49,8 @@ function clearToken() {
 
 function logout() {
   clearToken();
+  // mark that user actively logged out so login page clears any lingering tokens
+  sessionStorage.setItem('calendarify-logged-out', '1');
   window.location.href = '/log-in';
 }
 

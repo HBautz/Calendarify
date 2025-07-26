@@ -168,6 +168,10 @@
     <script src="/auth.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', async () => {
+        if (sessionStorage.getItem('calendarify-logged-out')) {
+          clearToken();
+          sessionStorage.removeItem('calendarify-logged-out');
+        }
         if (await verifyToken(true)) {
           window.location.href = '/dashboard';
         }
