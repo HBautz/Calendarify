@@ -167,7 +167,7 @@
     </script>
     <script src="/auth.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', async () => {
+      (async () => {
         if (sessionStorage.getItem('calendarify-logged-out')) {
           clearToken();
           sessionStorage.removeItem('calendarify-logged-out');
@@ -182,7 +182,7 @@
         if (persistent && await verifyToken(true)) {
           window.location.href = '/dashboard';
         }
-      });
+      })();
     </script>
   </body>
 </html>
