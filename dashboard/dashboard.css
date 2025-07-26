@@ -983,6 +983,13 @@
     .contact-menu.open {
       display: block;
     }
+
+    /* Limit event types section width */
+    #event-types-grid {
+      max-width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
     
     /* Integration logos - keeping original appearance */
     #integrations-section .card img {
