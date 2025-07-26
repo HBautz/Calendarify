@@ -1671,6 +1671,13 @@
     function renderEventTypes() {
       const eventTypesGrid = document.getElementById('event-types-grid');
       const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+
+      // Adjust grid width based on number of event types
+      if (eventTypes.length <= 1) {
+        eventTypesGrid.classList.add('limited-width');
+      } else {
+        eventTypesGrid.classList.remove('limited-width');
+      }
       
       // Start with the default event type
       let html = '';

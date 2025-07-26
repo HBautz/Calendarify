@@ -984,11 +984,9 @@
       display: block;
     }
 
-    /* Limit event types section width */
-    #event-types-grid {
+    /* Limit event types section width when only one is shown */
+    #event-types-grid.limited-width {
       max-width: 50%;
-      margin-left: auto;
-      margin-right: auto;
     }
     
     /* Integration logos - keeping original appearance */
