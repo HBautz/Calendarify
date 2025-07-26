@@ -22,7 +22,7 @@ export class NotificationsService {
     let attachments = [] as { filename: string; content: string; contentType: string }[];
     if (options.event) {
       const { error, value } = createEvent(options.event);
-      if (!error) {
+      if (!error && value !== undefined) {
         attachments.push({
           filename: 'invite.ics',
           content: value,

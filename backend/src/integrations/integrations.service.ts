@@ -5,7 +5,8 @@ import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
 import * as path from 'path';
 import 'dotenv/config';
-// Use the global fetch API available in Node 18+
+import fetch from 'node-fetch'; // Use node-fetch v2 for Apple CalDAV requests
+// Use the global fetch API available in Node 18+ for Outlook and other APIs
 
 const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',

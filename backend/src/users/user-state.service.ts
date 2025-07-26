@@ -9,7 +9,19 @@ export class UserStateService {
     const state = await this.prisma.userState.findUnique({
       where: { user_id: userId },
     });
-    return state?.data || {};
+    let data = state?.data || {};
+    // Add default weekly hours if missing or empty
+    if (!data['calendarify-weekly-hours'] || Object.keys(data['calendarify-weekly-hours']).length === 0) {
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const defaultWeekly = {};
+      days.forEach(day => {
+        defaultWeekly[day] = { start: '09:00', end: '17:00' };
+      });
+      data['calendarify-weekly-hours'] = defaultWeekly;
+      // Save the new default to the database
+      await this.save(userId, data);
+    }
+    return data;
   }
 
   async save(userId: string, data: any) {

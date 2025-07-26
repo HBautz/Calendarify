@@ -5,18 +5,21 @@
 
     async function loadState() {
       const token = localStorage.getItem("calendarify-token");
-      if (!token) return;
-      
-      // Remove surrounding quotes if they exist
+      if (!token) {
+        return;
+      }
       const cleanToken = token.replace(/^"|"$/g, "");
-      
       const res = await fetch(`${API_URL}/users/me/state`, {
         headers: { Authorization: `Bearer ${cleanToken}` },
       });
       if (res.ok) {
         const data = await res.json();
         Object.entries(data).forEach(([k, v]) => {
-          localStorage.setItem(k, JSON.stringify(v));
+          if (typeof v === 'string') {
+            localStorage.setItem(k, v);
+          } else {
+            localStorage.setItem(k, JSON.stringify(v));
+          }
         });
         updateGoogleCalendarButton();
         updateZoomButton();
@@ -98,19 +101,19 @@
 
     async function syncState() {
       const token = localStorage.getItem("calendarify-token");
-      if (!token) return;
-
-      // Remove surrounding quotes if they exist
+      if (!token) {
+        return;
+      }
       const cleanToken = token.replace(/^"|"$/g, "");
-
       try {
+        const state = collectState();
         await fetch(`${API_URL}/users/me/state`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${cleanToken}`,
           },
-          body: JSON.stringify(collectState()),
+          body: JSON.stringify(state),
         });
       } catch (e) {
         console.error('syncState error', e);
@@ -130,29 +133,14 @@
     };
     window.addEventListener('beforeunload', syncState);
     function showSection(section, el) {
-      // Remove active class from all nav items
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      
-      // Add active class to clicked item
       el.classList.add('active');
-      
-      // Save current section to localStorage
       localStorage.setItem('calendarify-current-section', section);
-      
-      // Update section title
       document.getElementById('section-title').textContent = el.textContent.trim();
-      
-      // Hide all sections
       document.querySelectorAll('section').forEach(sec => sec.style.display = 'none');
-      
-      // Show the selected section
       const secEl = document.getElementById(section + '-section');
       if (secEl) secEl.style.display = 'block';
-      
-      
-      // Initialize section-specific functionality
       if (section === 'meetings') {
-        // Check for saved meetings tab
         const savedTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
         const savedTabBtn = document.querySelector(`#meetings-section button[data-tab="${savedTab}"]`);
         showMeetingsTab(savedTab, savedTabBtn);
@@ -168,7 +156,7 @@
           updateZoomButton();
           updateOutlookCalendarButton();
           updateAppleCalendarButton();
-        }, 100); // Wait for tab to show
+        }, 100);
       }
     }
 
@@ -409,7 +397,6 @@
       
       // Update calendar display
       renderCalendar();
-      updateOverrideList();
       
       showNotification('Override saved successfully');
       closeOverrideModal();
@@ -430,7 +417,6 @@
       
       // Update calendar display
       renderCalendar();
-      updateOverrideList();
       
       showNotification('Override deleted successfully');
       closeDeleteConfirmModal();
@@ -837,6 +823,7 @@
 
     function setClockFormat(format) {
       localStorage.setItem('calendarify-clock-format', format);
+      syncState(); // Ensure the format is saved to the backend
     }
 
     function updateClockFormatUI() {
@@ -938,13 +925,38 @@
 
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', async function() {
-
-      // Ensure we are authenticated and state is loaded before continuing
       await initAuth('dashboard-body');
       await loadState();
 
+      // Always apply persisted time format to toggle and all time inputs
       updateClockFormatUI();
       updateAllCustomTimePickers();
+
+      let sectionToShow = 'event-types';
+      let navToShow = document.querySelector('.nav-item[data-section="event-types"]');
+
+      const redirectTo = localStorage.getItem('calendarify-redirect-to');
+      if (redirectTo) {
+        localStorage.removeItem('calendarify-redirect-to');
+        const targetNav = document.querySelector(`.nav-item[data-section="${redirectTo}"]`);
+        if (targetNav) {
+          sectionToShow = redirectTo;
+          navToShow = targetNav;
+        }
+      } else {
+        const savedSection = localStorage.getItem('calendarify-current-section');
+        if (savedSection) {
+          const savedNav = document.querySelector(`.nav-item[data-section="${savedSection}"]`);
+          if (savedNav) {
+            sectionToShow = savedSection;
+            navToShow = savedNav;
+          }
+        }
+      }
+
+      // Always use showSection, which now robustly restores availability UI
+      showSection(sectionToShow, navToShow);
+
       setupTimeInputListeners();
       fetchTagsFromServer();
       fetchWorkflowsFromServer();
@@ -955,34 +967,6 @@
 
       const avatar = document.getElementById('profile-avatar');
       if (avatar) avatar.addEventListener('click', openProfileModal);
-      
-      // Check for redirect parameter
-      const redirectTo = localStorage.getItem('calendarify-redirect-to');
-      if (redirectTo) {
-        localStorage.removeItem('calendarify-redirect-to');
-        const targetNav = document.querySelector(`.nav-item[data-section="${redirectTo}"]`);
-        if (targetNav) {
-          showSection(redirectTo, targetNav);
-          return;
-        }
-      }
-      
-      // Check for saved section preference
-      const savedSection = localStorage.getItem('calendarify-current-section');
-      if (savedSection) {
-        const savedNav = document.querySelector(`.nav-item[data-section="${savedSection}"]`);
-        if (savedNav) {
-          showSection(savedSection, savedNav);
-          return;
-        }
-      }
-      
-      // Remove all active classes from nav items
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      const defaultNav = document.querySelector('.nav-item[data-section="event-types"]');
-      if (defaultNav) {
-        showSection('event-types', defaultNav);
-      }
     });
 
     // --- Custom Time Picker ---
@@ -1042,9 +1026,27 @@
         const day = container.id.replace('-times', '');
         const inputs = container.querySelectorAll('input');
         const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+        // Always save in 24h format
+        function to24h(val) {
+          val = val.trim();
+          if (val.includes('AM') || val.includes('PM')) {
+            // 12h format, convert
+            let match = val.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (match) {
+              let hour = parseInt(match[1], 10);
+              let min = match[2];
+              let ap = match[3].toUpperCase();
+              if (ap === 'PM' && hour < 12) hour += 12;
+              if (ap === 'AM' && hour === 12) hour = 0;
+              return `${hour.toString().padStart(2, '0')}:${min}`;
+            }
+          }
+          // Already 24h
+          return val;
+        }
         weekly[day] = {
-          start: inputs[0].value || inputs[0].placeholder,
-          end: inputs[1].value || inputs[1].placeholder,
+          start: to24h(inputs[0].value || inputs[0].placeholder),
+          end: to24h(inputs[1].value || inputs[1].placeholder),
         };
         localStorage.setItem('calendarify-weekly-hours', JSON.stringify(weekly));
         syncState();
@@ -1089,20 +1091,18 @@
     function updateAllCustomTimePickers() {
       document.querySelectorAll('.custom-time-picker input').forEach(input => {
         let val = input.value || input.placeholder || '09:00';
-        let is12h = getClockFormat() === '12h';
-        let [h, m, ap] = parseTimeString(val, !is12h);
-        if (is12h) {
-          // Convert 24h to 12h
+        let targetIs12h = getClockFormat() === '12h';
+        // Always treat as 24h format from backend/localStorage
+        let [h, m] = parseTimeString(val, false); // false = 24h
+        if (targetIs12h) {
+          // Convert to 12h format for display
           let hour = parseInt(h, 10);
-          ap = hour >= 12 ? 'PM' : 'AM';
-          hour = hour % 12 || 12;
-          input.value = `${hour.toString().padStart(2, '0')}:${m} ${ap}`;
+          let ap = hour >= 12 ? 'PM' : 'AM';
+          let displayHour = hour % 12 || 12;
+          input.value = `${displayHour.toString().padStart(2, '0')}:${m} ${ap}`;
         } else {
-          // Convert 12h to 24h
-          let hour = parseInt(h, 10);
-          if (ap === 'PM' && hour < 12) hour += 12;
-          if (ap === 'AM' && hour === 12) hour = 0;
-          input.value = `${hour.toString().padStart(2, '0')}:${m}`;
+          // Display as 24h
+          input.value = `${h}:${m}`;
         }
       });
     }
@@ -1111,7 +1111,8 @@
     const origToggleClockFormat = toggleClockFormat;
     toggleClockFormat = function() {
       origToggleClockFormat.apply(this, arguments);
-      updateAllCustomTimePickers();
+      restoreWeeklyHours(); // repopulate from localStorage (24h)
+      // updateAllCustomTimePickers(); // no longer needed here, restoreWeeklyHours calls it
     };
 
     // Close dropdowns on outside click
@@ -1171,7 +1172,6 @@
 
     function initializeCalendar() {
       renderCalendar();
-      updateOverrideList();
     }
 
     function renderCalendar() {
@@ -1336,14 +1336,38 @@
 
     function restoreDayAvailability() {
       const dayAvailability = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
-      
-      Object.entries(dayAvailability).forEach(([day, isAvailable]) => {
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      days.forEach(day => {
         const button = document.querySelector(`button[onclick="toggleDayAvailability('${day}', this)"]`);
         if (button) {
-          const currentState = button.getAttribute('aria-pressed') === 'true';
-          if (currentState !== isAvailable) {
-            // Only toggle if the current state doesn't match the saved state
-            toggleDayAvailability(day, button);
+          let isAvailable = dayAvailability.hasOwnProperty(day)
+            ? dayAvailability[day]
+            : (day === 'saturday' || day === 'sunday' ? false : true);
+          button.setAttribute('aria-pressed', isAvailable ? 'true' : 'false');
+          button.classList.toggle('bg-[#34D399]', isAvailable);
+          button.classList.toggle('bg-[#19342e]', !isAvailable);
+          const circle = button.querySelector('div');
+          if (circle) {
+            circle.style.transform = isAvailable ? 'translateX(20px)' : 'translateX(0)';
+            circle.style.backgroundColor = isAvailable ? '#fff' : '#34D399';
+          }
+          const timeContainer = document.getElementById(day + '-times');
+          if (timeContainer) {
+            if (isAvailable) {
+              timeContainer.classList.remove('opacity-50');
+              timeContainer.querySelectorAll('input').forEach(input => {
+                input.disabled = false;
+                input.classList.remove('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
+                input.classList.add('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
+              });
+            } else {
+              timeContainer.classList.add('opacity-50');
+              timeContainer.querySelectorAll('input').forEach(input => {
+                input.disabled = true;
+                input.classList.add('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
+                input.classList.remove('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
+              });
+            }
           }
         }
       });
@@ -1351,16 +1375,19 @@
 
     function restoreWeeklyHours() {
       const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
-      Object.entries(weekly).forEach(([day, range]) => {
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      days.forEach(day => {
         const container = document.getElementById(day + '-times');
         if (container) {
           const inputs = container.querySelectorAll('input');
           if (inputs.length >= 2) {
+            const range = weekly[day] || {};
             if (range.start) inputs[0].value = range.start;
             if (range.end) inputs[1].value = range.end;
           }
         }
       });
+      updateAllCustomTimePickers();
     }
 
     function loadOverrideData(override) {
@@ -3656,39 +3683,37 @@
       if (res.ok) {
         showNotification('Apple Calendar disconnected');
         updateAppleCalendarButton();
+        closeDisconnectAppleModal();
       } else {
         showNotification('Failed to disconnect Apple Calendar');
       }
-      closeDisconnectAppleModal();
     }
-    window.openDisconnectAppleModal = openDisconnectAppleModal;
-    window.closeDisconnectAppleModal = closeDisconnectAppleModal;
+    window.submitAppleConnect = submitAppleConnect;
     window.confirmDisconnectApple = confirmDisconnectApple;
 
-    localStorage.setItem('calendarify-tags', JSON.stringify(['Client', 'VIP']));
-    if (!localStorage.getItem('calendarify-contacts')) {
-      localStorage.setItem('calendarify-contacts', JSON.stringify([
-        {
-          id: 'c1',
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          phone: '',
-          company: '',
-          notes: '',
-          favorite: false,
-          tags: ['Client'],
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'c2',
-          name: 'John Smith',
-          email: 'john@company.com',
-          phone: '',
-          company: '',
-          notes: '',
-          favorite: true,
-          tags: ['VIP'],
-          createdAt: new Date().toISOString()
-        }
-      ]));
+    function openDisconnectAppleModal() {
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('disconnect-apple-modal').classList.remove('hidden');
     }
+    function closeDisconnectAppleModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('disconnect-apple-modal').classList.add('hidden');
+    }
+    async function confirmDisconnectApple() {
+      const token = localStorage.getItem('calendarify-token');
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      const res = await fetch(`${API_URL}/integrations/apple/disconnect`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      if (res.ok) {
+        showNotification('Apple Calendar disconnected');
+        updateAppleCalendarButton();
+        closeDisconnectAppleModal();
+      } else {
+        showNotification('Failed to disconnect Apple Calendar');
+      }
+    }
+    window.submitAppleConnect = submitAppleConnect;
+    window.confirmDisconnectApple = confirmDisconnectApple;
