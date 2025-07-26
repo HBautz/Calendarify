@@ -24,6 +24,11 @@ export class UsersController {
     return this.users.findByDisplayName(name);
   }
 
+  @Get('display/:name/state')
+  stateByDisplay(@Param('name') name: string) {
+    return this.state.loadByDisplayName(name);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me/state')
   getState(@Request() req) {

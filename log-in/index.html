@@ -70,6 +70,10 @@
                   />
                 </label>
               </div>
+              <div class="flex items-center px-4 py-2 mx-auto space-x-2">
+                <input id="login-remember" type="checkbox" class="rounded" />
+                <label for="login-remember" class="text-sm text-[#9eb7a8]">Stay logged in</label>
+              </div>
               <div class="flex px-4 py-3 mx-auto">
                 <button
                   type="submit"
@@ -90,5 +94,16 @@
       window.API_URL = 'http://localhost:3001/api';
     </script>
     <script src="/auth.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', async () => {
+        if (sessionStorage.getItem('calendarify-logged-out')) {
+          clearToken();
+          sessionStorage.removeItem('calendarify-logged-out');
+        }
+        if (await verifyToken(true)) {
+          window.location.href = '/dashboard';
+        }
+      });
+    </script>
   </body>
 </html>
