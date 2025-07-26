@@ -274,6 +274,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[TEMP-DEBUG] Booking page loaded');
             const parts = window.location.pathname.split('/').filter(Boolean);
             let display = '';
             let slug = '';
@@ -290,10 +291,12 @@
                 return;
             }
             document.getElementById('username').textContent = display;
+            console.log('[TEMP-DEBUG] Booking for', { display, slug });
 
             window.API_URL = 'http://localhost:3001/api';
             let event;
             try {
+                console.log('[TEMP-DEBUG] Fetching event type info');
                 const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
                 if (!res.ok) throw new Error('not found');
                 event = await res.json();
@@ -318,6 +321,7 @@
             }
 
             try {
+                console.log('[TEMP-DEBUG] Fetching host state');
                 const resState = await fetch(`${API_URL}/users/display/${display}/state`);
                 if (resState.ok) {
                     const state = await resState.json();
@@ -326,7 +330,7 @@
                     });
                 }
             } catch (e) {
-                console.error('Failed to refresh host state', e);
+                console.log('[TEMP-DEBUG] Failed to refresh host state', e);
             }
 
 
@@ -336,6 +340,7 @@
             const bufferBefore = parseInt(event.bufferBefore) || 0;
             const bufferAfter = parseInt(event.bufferAfter) || 0;
             const advanceNotice = parseInt(event.advanceNotice) || 0;
+            console.log('[TEMP-DEBUG] Event settings', { eventDuration, bufferBefore, bufferAfter, advanceNotice });
             
             let currentDate = new Date();
             let selectedDate = null; // No initial selection
@@ -367,6 +372,7 @@
             }
 
             function generateSlotsInRange(startStr, endStr, date) {
+                console.log('[TEMP-DEBUG] generateSlotsInRange', { startStr, endStr, date });
                 const { h: startH, m: startM } = parseTime(startStr);
                 const { h: endH, m: endM } = parseTime(endStr);
 
@@ -397,11 +403,13 @@
                         }
                     }
 
-                    slots.push(slot.toLocaleTimeString('en-US', {
+                    const timeStr = slot.toLocaleTimeString('en-US', {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: true
-                    }));
+                    });
+                    slots.push(timeStr);
+                    console.log('[TEMP-DEBUG] Added slot', timeStr);
                     currentMinutes += step;
                 }
                 return slots;
@@ -430,6 +438,7 @@
             }
 
             function updateTimeSlots() {
+                console.log('[TEMP-DEBUG] updateTimeSlots for', selectedDate);
                 const container = document.getElementById('timeSlotsContainer');
                 const dateHeader = document.getElementById('selectedDate');
                 const timeSlotsDiv = document.getElementById('timeSlots');
@@ -457,6 +466,7 @@
                     confirmButton.style.pointerEvents = 'none';
                 } else {
                     let timeSlots = generateTimeSlots(selectedDate);
+                    console.log('[TEMP-DEBUG] Generated slots', timeSlots);
 
                     if (timeSlots.length === 0) {
                         container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
@@ -491,6 +501,7 @@
             }
 
             function buildCalendar() {
+                console.log('[TEMP-DEBUG] buildCalendar for', currentDate);
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
                 const firstDay = new Date(year, month, 1);
