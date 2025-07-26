@@ -93,30 +93,19 @@
             <h2 class="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-left pb-3 pt-5">What kind of event is this?</h2>
             <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
               <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Name</p>
-                <input
+                <p class="text-white text-base font-medium leading-normal pb-2">Name *</p>
+                <input required
                   placeholder="e.g., 30 Minute Meeting"
                   class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
                   value=""
                 />
               </label>
             </div>
+            <!-- Event type selection removed -->
             <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
               <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Event type</p>
-                <select
-                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 bg-[image:--select-button-svg] placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
-                >
-                  <option value="one"></option>
-                  <option value="two">two</option>
-                  <option value="three">three</option>
-                </select>
-              </label>
-            </div>
-            <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Description/instructions</p>
-                <input
+                <p class="text-white text-base font-medium leading-normal pb-2">Description/instructions *</p>
+                <input required
                   placeholder="Provide any details your invitees should know"
                   class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
                   value=""
@@ -125,8 +114,8 @@
             </div>
             <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
               <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Event link</p>
-                <select
+                <p class="text-white text-base font-medium leading-normal pb-2">Event link *</p>
+                <select required
                   class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 bg-[image:--select-button-svg] placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
                 >
                   <option value="one"></option>
@@ -137,8 +126,8 @@
             </div>
             <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
               <label class="flex flex-col min-w-40 flex-1">
-                <p class="text-white text-base font-medium leading-normal pb-2">Color</p>
-                <select
+                <p class="text-white text-base font-medium leading-normal pb-2">Color *</p>
+                <select required
                   class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#3d5245] bg-[#1c2620] focus:border-[#3d5245] h-14 bg-[image:--select-button-svg] placeholder:text-[#9eb7a8] p-[15px] text-base font-normal leading-normal"
                 >
                   <option value="one"></option>

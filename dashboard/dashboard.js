@@ -1502,8 +1502,6 @@
     async function saveEventType() {
       const name = document.getElementById('event-type-name').value.trim();
       const duration = document.getElementById('event-type-duration').value;
-      const eventType = document.getElementById('event-type-type').value;
-      const attendeeLimit = document.getElementById('event-type-attendee-limit').value;
       const description = document.getElementById('event-type-description').value.trim();
       const location = document.getElementById('event-type-location').value;
       const customLocation = document.getElementById('event-type-custom-location').value.trim();
@@ -1536,6 +1534,22 @@
         showNotification('Event type name is required');
         return;
       }
+      if (!duration) {
+        showNotification('Duration is required');
+        return;
+      }
+      if (!location) {
+        showNotification('Location is required');
+        return;
+      }
+      if (location !== 'office' && location !== 'custom' && !link) {
+        showNotification('Meeting link is required');
+        return;
+      }
+      if (!color) {
+        showNotification('Color is required');
+        return;
+      }
 
       let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
       const slug = generateSlug(name, eventTypes);
@@ -1545,8 +1559,8 @@
         title: name,
         slug,
         duration: parseInt(duration),
-        eventType,
-        attendeeLimit: eventType !== '1-on-1' ? parseInt(attendeeLimit) : 1,
+        eventType: '1-on-1',
+        attendeeLimit: 1,
         description,
         location,
         customLocation: location === 'custom' ? customLocation : '',
@@ -1612,16 +1626,6 @@
     }
 
     // Interactive form functionality
-    function handleEventTypeChange() {
-      const eventType = document.getElementById('event-type-type').value;
-      const attendeeContainer = document.getElementById('attendee-limit-container');
-      
-      if (eventType === '1-on-1') {
-        attendeeContainer.style.display = 'none';
-      } else {
-        attendeeContainer.style.display = 'block';
-      }
-    }
 
     function handleLocationChange() {
       const location = document.getElementById('event-type-location').value;
@@ -1655,13 +1659,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       
       // Add event listeners for form interactions
-      const eventTypeSelect = document.getElementById('event-type-type');
       const locationSelect = document.getElementById('event-type-location');
       const bookingLimitSelect = document.getElementById('event-type-booking-limit');
-      
-      if (eventTypeSelect) {
-        eventTypeSelect.addEventListener('change', handleEventTypeChange);
-      }
       
       if (locationSelect) {
         locationSelect.addEventListener('change', handleLocationChange);
@@ -1708,12 +1707,6 @@
                            eventType.duration === 240 ? '4 hours' :
                            `${eventType.duration} min`;
         
-        const eventTypeText = eventType.eventType === '1-on-1' ? '1-on-1' :
-                             eventType.eventType === 'group' ? 'Group' :
-                             eventType.eventType === 'collective' ? 'Collective' :
-                             eventType.eventType === 'round-robin' ? 'Round Robin' : '1-on-1';
-        
-        const attendeeText = eventType.eventType !== '1-on-1' ? ` • Up to ${eventType.attendeeLimit} people` : '';
         
         const locationText = eventType.location === 'zoom' ? 'Zoom' :
                             eventType.location === 'google-meet' ? 'Google Meet' :
@@ -1747,7 +1740,7 @@
                   ${visibilityBadge}
                   ${priorityBadge}
                 </div>
-                <div class="text-[#A3B3AF] text-sm">${eventTypeText} • ${durationText}${attendeeText}</div>
+                <div class="text-[#A3B3AF] text-sm">${durationText}</div>
                 <div class="text-[#A3B3AF] text-sm mt-1">📍 ${locationText}</div>
                 ${eventType.description ? `<div class="text-[#A3B3AF] text-sm mt-1">${eventType.description}</div>` : ''}
                 ${tagsText}
@@ -1870,8 +1863,6 @@
       // Basic Information
       document.getElementById('edit-event-type-name').value = eventType.name;
       document.getElementById('edit-event-type-duration').value = eventType.duration;
-      document.getElementById('edit-event-type-type').value = eventType.eventType;
-      document.getElementById('edit-event-type-attendee-limit').value = eventType.attendeeLimit || 10;
       document.getElementById('edit-event-type-description').value = eventType.description || '';
       document.getElementById('edit-event-type-location').value = eventType.location;
       document.getElementById('edit-event-type-custom-location').value = eventType.customLocation || '';
@@ -1917,7 +1908,6 @@
       document.getElementById('edit-event-type-tags').value = eventType.tags ? eventType.tags.join(', ') : '';
       
       // Update form visibility based on current values
-      handleEditEventTypeChange();
       handleEditLocationChange();
       handleEditBookingLimitChange();
     }
@@ -1929,8 +1919,6 @@
       // Collect all form data (same as saveEventType but with edit- prefixes)
       const name = document.getElementById('edit-event-type-name').value.trim();
       const duration = document.getElementById('edit-event-type-duration').value;
-      const eventTypeValue = document.getElementById('edit-event-type-type').value;
-      const attendeeLimit = document.getElementById('edit-event-type-attendee-limit').value;
       const description = document.getElementById('edit-event-type-description').value.trim();
       const location = document.getElementById('edit-event-type-location').value;
       const customLocation = document.getElementById('edit-event-type-custom-location').value.trim();
@@ -1963,6 +1951,22 @@
         showNotification('Event type name is required');
         return;
       }
+      if (!duration) {
+        showNotification('Duration is required');
+        return;
+      }
+      if (!location) {
+        showNotification('Location is required');
+        return;
+      }
+      if (location !== "office" && location !== "custom" && !link) {
+        showNotification('Meeting link is required');
+        return;
+      }
+      if (!color) {
+        showNotification('Color is required');
+        return;
+      }
 
       // Update the event type data
       let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
@@ -1978,8 +1982,8 @@
         title: name,
         slug,
         duration: parseInt(duration),
-        eventType: eventTypeValue,
-        attendeeLimit: eventTypeValue !== '1-on-1' ? parseInt(attendeeLimit) : 1,
+        eventType: '1-on-1',
+        attendeeLimit: 1,
         description,
         location,
         customLocation: location === 'custom' ? customLocation : '',
@@ -2047,16 +2051,6 @@
     }
 
     // Edit form interactive functions
-    function handleEditEventTypeChange() {
-      const eventType = document.getElementById('edit-event-type-type').value;
-      const attendeeContainer = document.getElementById('edit-attendee-limit-container');
-      
-      if (eventType === '1-on-1') {
-        attendeeContainer.style.display = 'none';
-      } else {
-        attendeeContainer.style.display = 'block';
-      }
-    }
 
     function handleEditLocationChange() {
       const location = document.getElementById('edit-event-type-location').value;
@@ -2121,13 +2115,8 @@
       renderEventTypes();
       
       // Add event listeners for form interactions
-      const eventTypeSelect = document.getElementById('event-type-type');
       const locationSelect = document.getElementById('event-type-location');
       const bookingLimitSelect = document.getElementById('event-type-booking-limit');
-      
-      if (eventTypeSelect) {
-        eventTypeSelect.addEventListener('change', handleEventTypeChange);
-      }
       
       if (locationSelect) {
         locationSelect.addEventListener('change', handleLocationChange);
