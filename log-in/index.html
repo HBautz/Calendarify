@@ -101,12 +101,11 @@
           sessionStorage.removeItem('calendarify-logged-out');
           return;
         }
-        if (await verifyToken(true)) {
+
+        const persistent = getToken(true);
+        if (persistent && await verifyToken(true)) {
           window.location.href = '/dashboard';
-          return;
         }
-        // No persistent token - drop any session token so login is required
-        sessionStorage.removeItem('calendarify-token');
       });
     </script>
   </body>
