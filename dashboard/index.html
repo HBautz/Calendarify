@@ -109,30 +109,7 @@
             </button>
           </div>
         </div>
-        <div class="dashboard-grid" id="event-types-grid">
-          <div class="card flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-bold text-white">30-min Intro Call</h3>
-                <div class="text-[#A3B3AF] text-sm">1-on-1 • 30 min</div>
-            </div>
-              <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
-          </div>
-            <div class="flex gap-2 mt-2">
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('30-min-intro-call')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
-              <div class="relative">
-                <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
-                <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Edit</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Clone</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Add Note</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Mark Secret</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="deleteEventType('${eventType.id}')">Delete</button>
-            </div>
-          </div>
-            </div>
-          </div>
-        </div>
+        <div class="dashboard-grid" id="event-types-grid"></div>
       </section>
 
       <!-- Meetings Section -->

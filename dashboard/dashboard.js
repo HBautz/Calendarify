@@ -1728,7 +1728,6 @@
                 ${eventType.description ? `<div class="text-[#A3B3AF] text-sm mt-1">${eventType.description}</div>` : ''}
                 ${tagsText}
               </div>
-              <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
             </div>
             <div class="flex gap-2 mt-2">
               <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('${eventType.slug}')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
