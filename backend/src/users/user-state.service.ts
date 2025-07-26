@@ -31,4 +31,10 @@ export class UserStateService {
       create: { user_id: userId, data },
     });
   }
+
+  async loadByDisplayName(displayName: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({ where: { display_name: displayName } });
+    if (!user) return {};
+    return this.load(user.id);
+  }
 }

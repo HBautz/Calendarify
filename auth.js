@@ -25,6 +25,16 @@ function login(data) {
   return apiRequest('/auth/login', data);
 }
 
+function storeToken(token, persist) {
+  if (persist) {
+    localStorage.setItem('calendarify-token', token);
+    sessionStorage.removeItem('calendarify-token');
+  } else {
+    sessionStorage.setItem('calendarify-token', token);
+    localStorage.removeItem('calendarify-token');
+  }
+}
+
 async function loadUserState(token) {
   // Remove surrounding quotes if they exist
   const cleanToken = token.replace(/^"|"$/g, '');
@@ -72,7 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
         await register({ name, email, password });
         console.log('User registered, logging in...');
         const { access_token } = await login({ email, password });
-        localStorage.setItem('calendarify-token', access_token);
+        const remember = signupForm.querySelector('#signup-remember').checked;
+        storeToken(access_token, remember);
         await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
@@ -91,7 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
       err.textContent = '';
       try {
         const { access_token } = await login({ email, password });
-        localStorage.setItem('calendarify-token', access_token);
+        const remember = loginForm.querySelector('#login-remember').checked;
+        storeToken(access_token, remember);
         await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
@@ -102,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function verifyToken() {
-  const token = localStorage.getItem('calendarify-token');
+  const token = sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
   if (!token) return false;
   
   // Remove surrounding quotes if they exist
@@ -120,6 +132,7 @@ async function verifyToken() {
     console.error('Token verification error:', error);
   }
   localStorage.removeItem('calendarify-token');
+  sessionStorage.removeItem('calendarify-token');
   return false;
 }
 
@@ -133,7 +146,7 @@ async function requireAuth() {
 }
 
 async function initAuth(bodyId, onSuccess) {
-  const t = localStorage.getItem('calendarify-token');
+  const t = sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
   if (!t) {
     window.location.replace('/log-in');
     return;
