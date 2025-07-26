@@ -983,6 +983,11 @@
     .contact-menu.open {
       display: block;
     }
+
+    /* Limit event types section width when only one is shown */
+    #event-types-grid.limited-width {
+      max-width: 50%;
+    }
     
     /* Integration logos - keeping original appearance */
     #integrations-section .card img {

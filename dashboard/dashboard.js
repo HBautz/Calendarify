@@ -77,7 +77,11 @@
       const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const raw = await res.json();
-        const eventTypes = raw.map(et => ({ ...et, name: et.title }));
+        const eventTypes = raw.map(et => ({
+          ...et,
+          name: et.title,
+          color: et.color || '#34D399'
+        }));
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
         return eventTypes;
       }
@@ -297,14 +301,26 @@
     // Utility functions
     function copyLink(slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
-      const display = localStorage.getItem('calendarify-display-name') || 'user';
+      const display = localStorage.getItem('calendarify-display-name');
+
+      if (!display || display.trim() === '') {
+        showNotification('Please set a display name in your profile settings before sharing links');
+        return;
+      }
+
       navigator.clipboard.writeText(`${prefix}/booking/${encodeURIComponent(display)}/${slug}`);
       showNotification('Link copied to clipboard');
     }
 
     function openShareModal(title, slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
-      const display = localStorage.getItem('calendarify-display-name') || 'user';
+      const display = localStorage.getItem('calendarify-display-name');
+
+      if (!display || display.trim() === '') {
+        showNotification('Please set a display name in your profile settings before sharing links');
+        return;
+      }
+
       const link = `${prefix}/booking/${encodeURIComponent(display)}/${slug}`;
       document.getElementById('share-modal-title').textContent = title;
       document.getElementById('share-modal-link').value = link;
@@ -1658,7 +1674,27 @@
 
     function renderEventTypes() {
       const eventTypesGrid = document.getElementById('event-types-grid');
-      const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+
+      // Ensure each event type has a color for the left border
+      let updated = false;
+      eventTypes = eventTypes.map(et => {
+        if (!et.color) {
+          et.color = '#34D399';
+          updated = true;
+        }
+        return et;
+      });
+      if (updated) {
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+      }
+
+      // Adjust grid width based on number of event types
+      if (eventTypes.length <= 1) {
+        eventTypesGrid.classList.add('limited-width');
+      } else {
+        eventTypesGrid.classList.remove('limited-width');
+      }
       
       // Start with the default event type
       let html = '';
@@ -1716,11 +1752,9 @@
                 ${eventType.description ? `<div class="text-[#A3B3AF] text-sm mt-1">${eventType.description}</div>` : ''}
                 ${tagsText}
               </div>
-              <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
             </div>
             <div class="flex gap-2 mt-2">
               <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('${eventType.slug}')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('${eventType.name}','${eventType.slug}')"><span class="material-icons-outlined text-base">share</span>Share</button>
               <div class="relative">
                 <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
                 <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
