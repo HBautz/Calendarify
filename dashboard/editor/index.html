@@ -149,13 +149,13 @@
       -moz-appearance: textfield;
     }
   </style>
+  <script src="../../auth.js" defer></script>
   <script defer>
     window.API_URL = 'http://localhost:3001/api';
-    if (!localStorage.getItem('calendarify-token')) {
+    if (!sessionStorage.getItem('calendarify-token') && !localStorage.getItem('calendarify-token')) {
       window.location.replace('/log-in');
     }
   </script>
-  <script src="../../auth.js" defer></script>
 </head>
 <body id="dashboard-body" class="min-h-screen flex flex-col hidden">
   <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
@@ -257,7 +257,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
       const id = localStorage.getItem('calendarify-current-workflow');
       if (id) {
-        const token = localStorage.getItem('calendarify-token');
+        const token = getToken();
         const clean = token.replace(/^"|"$/g, '');
         const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
         if (res.ok) {
@@ -285,7 +285,7 @@
       const optionsDiv = document.getElementById('event-type-options');
       const triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
       const name = nameInput.value || 'Untitled Workflow';
-      const token = localStorage.getItem('calendarify-token');
+      const token = getToken();
       const clean = token.replace(/^"|"$/g, '');
       if (currentWorkflow) {
         currentWorkflow.name = name;
@@ -425,7 +425,7 @@
         if (eventTypes.length === 0) {
           // Try to fetch from server if not in localStorage
           try {
-            const token = localStorage.getItem('calendarify-token');
+            const token = getToken();
             if (token) {
               const clean = token.replace(/^"|"$/g, '');
               const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -675,7 +675,7 @@
       if (eventTypes.length === 0) {
         // Try to fetch from server if not in localStorage
         try {
-          const token = localStorage.getItem('calendarify-token');
+          const token = getToken();
           if (token) {
             const clean = token.replace(/^"|"$/g, '');
             const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -859,7 +859,7 @@
   <script defer>
     // Check authentication and redirect if not logged in
     async function checkAuth() {
-      const token = localStorage.getItem('calendarify-token');
+      const token = getToken();
       if (!token) {
         window.location.replace('/log-in');
         return;
@@ -872,7 +872,7 @@
         });
         
         if (!res.ok) {
-          localStorage.removeItem('calendarify-token');
+          clearToken();
           window.location.replace('/log-in');
           return;
         }
@@ -881,7 +881,7 @@
         document.body.classList.remove('hidden');
       } catch (error) {
         console.error('Auth check error:', error);
-        localStorage.removeItem('calendarify-token');
+        clearToken();
         window.location.replace('/log-in');
       }
     }

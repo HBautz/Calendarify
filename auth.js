@@ -35,6 +35,20 @@ function storeToken(token, persist) {
   }
 }
 
+function getToken() {
+  return sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
+}
+
+function clearToken() {
+  sessionStorage.removeItem('calendarify-token');
+  localStorage.removeItem('calendarify-token');
+}
+
+function logout() {
+  clearToken();
+  window.location.href = '/log-in';
+}
+
 async function loadUserState(token) {
   // Remove surrounding quotes if they exist
   const cleanToken = token.replace(/^"|"$/g, '');
@@ -114,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function verifyToken() {
-  const token = sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
+  const token = getToken();
   if (!token) return false;
   
   // Remove surrounding quotes if they exist
@@ -131,8 +145,7 @@ async function verifyToken() {
   } catch (error) {
     console.error('Token verification error:', error);
   }
-  localStorage.removeItem('calendarify-token');
-  sessionStorage.removeItem('calendarify-token');
+  clearToken();
   return false;
 }
 
@@ -146,7 +159,7 @@ async function requireAuth() {
 }
 
 async function initAuth(bodyId, onSuccess) {
-  const t = sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
+  const t = getToken();
   if (!t) {
     window.location.replace('/log-in');
     return;
@@ -165,3 +178,6 @@ async function initAuth(bodyId, onSuccess) {
 window.verifyToken = verifyToken;
 window.requireAuth = requireAuth;
 window.initAuth = initAuth;
+window.logout = logout;
+window.getToken = getToken;
+window.clearToken = clearToken;

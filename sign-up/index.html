@@ -166,5 +166,12 @@
       window.API_URL = 'http://localhost:3001/api';
     </script>
     <script src="/auth.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', async () => {
+        if (await verifyToken()) {
+          window.location.href = '/dashboard';
+        }
+      });
+    </script>
   </body>
 </html>
