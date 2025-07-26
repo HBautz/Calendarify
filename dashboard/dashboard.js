@@ -297,14 +297,26 @@
     // Utility functions
     function copyLink(slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
-      const display = localStorage.getItem('calendarify-display-name') || 'user';
+      const display = localStorage.getItem('calendarify-display-name');
+
+      if (!display || display.trim() === '') {
+        showNotification('Please set a display name in your profile settings before sharing links');
+        return;
+      }
+
       navigator.clipboard.writeText(`${prefix}/booking/${encodeURIComponent(display)}/${slug}`);
       showNotification('Link copied to clipboard');
     }
 
     function openShareModal(title, slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
-      const display = localStorage.getItem('calendarify-display-name') || 'user';
+      const display = localStorage.getItem('calendarify-display-name');
+
+      if (!display || display.trim() === '') {
+        showNotification('Please set a display name in your profile settings before sharing links');
+        return;
+      }
+
       const link = `${prefix}/booking/${encodeURIComponent(display)}/${slug}`;
       document.getElementById('share-modal-title').textContent = title;
       document.getElementById('share-modal-link').value = link;
@@ -1720,7 +1732,6 @@
             </div>
             <div class="flex gap-2 mt-2">
               <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('${eventType.slug}')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('${eventType.name}','${eventType.slug}')"><span class="material-icons-outlined text-base">share</span>Share</button>
               <div class="relative">
                 <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
                 <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
