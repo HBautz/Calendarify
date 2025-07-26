@@ -25,7 +25,44 @@ function login(data) {
   return apiRequest('/auth/login', data);
 }
 
+function storeToken(token, persist) {
+  console.log('[TEMP-DEBUG] storeToken', { token, persist });
+  if (persist) {
+    localStorage.setItem('calendarify-token', token);
+    sessionStorage.removeItem('calendarify-token');
+  } else {
+    sessionStorage.setItem('calendarify-token', token);
+    localStorage.removeItem('calendarify-token');
+  }
+}
+
+function getToken(persistentOnly = false) {
+  let value;
+  if (persistentOnly) {
+    value = localStorage.getItem('calendarify-token');
+  } else {
+    value = sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
+  }
+  console.log('[TEMP-DEBUG] getToken', { persistentOnly, value });
+  return value;
+}
+
+function clearToken() {
+  console.log('[TEMP-DEBUG] clearToken called');
+  sessionStorage.removeItem('calendarify-token');
+  localStorage.removeItem('calendarify-token');
+}
+
+function logout() {
+  console.log('[TEMP-DEBUG] logout invoked');
+  clearToken();
+  // mark that user actively logged out so login page clears any lingering tokens
+  sessionStorage.setItem('calendarify-logged-out', '1');
+  window.location.href = '/log-in';
+}
+
 async function loadUserState(token) {
+  console.log('[TEMP-DEBUG] loadUserState called', { token });
   // Remove surrounding quotes if they exist
   const cleanToken = token.replace(/^"|"$/g, '');
   
@@ -41,18 +78,18 @@ async function loadUserState(token) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, setting up forms...');
+  console.log('[TEMP-DEBUG] DOM loaded, setting up forms...');
   
   // Only set up forms if we're on a page that has them
   const signupForm = document.getElementById('signup-form');
   const loginForm = document.getElementById('login-form');
   
-  console.log('Signup form found:', signupForm);
-  console.log('Login form found:', loginForm);
+  console.log('[TEMP-DEBUG] Signup form found:', signupForm);
+  console.log('[TEMP-DEBUG] Login form found:', loginForm);
   
   if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
-      console.log('Signup form submitted!');
+      console.log('[TEMP-DEBUG] Signup form submitted!');
       e.preventDefault();
       const name = signupForm.querySelector('#signup-name').value.trim();
       const email = signupForm.querySelector('#signup-email').value.trim();
@@ -60,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const confirm = signupForm.querySelector('#signup-confirm').value;
       const err = document.getElementById('signup-error');
       
-      console.log('Form data:', { name, email, password: '***', confirm: '***' });
+      console.log('[TEMP-DEBUG] Form data:', { name, email, password: '***', confirm: '***' });
       
       err.textContent = '';
       if (password !== confirm) {
@@ -68,11 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       try {
-        console.log('Registering user...');
+        console.log('[TEMP-DEBUG] Registering user...');
         await register({ name, email, password });
-        console.log('User registered, logging in...');
+        console.log('[TEMP-DEBUG] User registered, logging in...');
         const { access_token } = await login({ email, password });
-        localStorage.setItem('calendarify-token', access_token);
+        const remember = signupForm.querySelector('#signup-remember').checked;
+        storeToken(access_token, remember);
         await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
@@ -84,26 +122,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
+      console.log('[TEMP-DEBUG] Login form submitted');
       e.preventDefault();
       const email = loginForm.querySelector('#login-email').value.trim();
       const password = loginForm.querySelector('#login-password').value;
       const err = document.getElementById('login-error');
       err.textContent = '';
       try {
+        console.log('[TEMP-DEBUG] Attempting login for', email);
         const { access_token } = await login({ email, password });
-        localStorage.setItem('calendarify-token', access_token);
+        const remember = loginForm.querySelector('#login-remember').checked;
+        storeToken(access_token, remember);
         await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
+        console.log('[TEMP-DEBUG] Login error', e);
         err.textContent = 'Invalid credentials';
       }
     });
   }
 });
 
-async function verifyToken() {
-  const token = localStorage.getItem('calendarify-token');
-  if (!token) return false;
+async function verifyToken(persistentOnly = false) {
+  console.log('[TEMP-DEBUG] verifyToken called', { persistentOnly });
+  const token = getToken(persistentOnly);
+  if (!token) {
+    console.log('[TEMP-DEBUG] verifyToken no token found');
+    return false;
+  }
   
   // Remove surrounding quotes if they exist
   const cleanToken = token.replace(/^"|"$/g, '');
@@ -114,16 +160,18 @@ async function verifyToken() {
     });
     
     if (res.ok) {
+      console.log('[TEMP-DEBUG] verifyToken success');
       return true;
     }
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.log('[TEMP-DEBUG] verifyToken fetch error', error);
   }
-  localStorage.removeItem('calendarify-token');
+  clearToken();
   return false;
 }
 
 async function requireAuth() {
+  console.log('[TEMP-DEBUG] requireAuth called');
   const ok = await verifyToken();
   if (!ok) {
     window.location.replace('/log-in');
@@ -133,7 +181,8 @@ async function requireAuth() {
 }
 
 async function initAuth(bodyId, onSuccess) {
-  const t = localStorage.getItem('calendarify-token');
+  console.log('[TEMP-DEBUG] initAuth called', { bodyId });
+  const t = getToken();
   if (!t) {
     window.location.replace('/log-in');
     return;
@@ -152,3 +201,6 @@ async function initAuth(bodyId, onSuccess) {
 window.verifyToken = verifyToken;
 window.requireAuth = requireAuth;
 window.initAuth = initAuth;
+window.logout = logout;
+window.getToken = getToken;
+window.clearToken = clearToken;

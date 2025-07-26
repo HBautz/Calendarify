@@ -21,7 +21,14 @@ export class UsersController {
 
   @Get('display/:name')
   byDisplayName(@Param('name') name: string) {
+    console.log('[TEMP-DEBUG] GET /users/display/' + name);
     return this.users.findByDisplayName(name);
+  }
+
+  @Get('display/:name/state')
+  stateByDisplay(@Param('name') name: string) {
+    console.log('[TEMP-DEBUG] GET /users/display/' + name + '/state');
+    return this.state.loadByDisplayName(name);
   }
 
   @UseGuards(JwtAuthGuard)
