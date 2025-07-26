@@ -77,7 +77,11 @@
       const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const raw = await res.json();
-        const eventTypes = raw.map(et => ({ ...et, name: et.title }));
+        const eventTypes = raw.map(et => ({
+          ...et,
+          name: et.title,
+          color: et.color || '#34D399'
+        }));
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
         return eventTypes;
       }
@@ -1670,7 +1674,20 @@
 
     function renderEventTypes() {
       const eventTypesGrid = document.getElementById('event-types-grid');
-      const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+
+      // Ensure each event type has a color for the left border
+      let updated = false;
+      eventTypes = eventTypes.map(et => {
+        if (!et.color) {
+          et.color = '#34D399';
+          updated = true;
+        }
+        return et;
+      });
+      if (updated) {
+        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
+      }
 
       // Adjust grid width based on number of event types
       if (eventTypes.length <= 1) {
