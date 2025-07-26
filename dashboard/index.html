@@ -109,31 +109,7 @@
             </button>
           </div>
         </div>
-        <div class="dashboard-grid" id="event-types-grid">
-          <div class="card flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-bold text-white">30-min Intro Call</h3>
-                <div class="text-[#A3B3AF] text-sm">1-on-1 • 30 min</div>
-            </div>
-              <button class="text-[#A3B3AF] hover:text-[#34D399]" title="Favorite"><span class="material-icons-outlined">star_border</span></button>
-          </div>
-            <div class="flex gap-2 mt-2">
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="copyLink('30-min-intro-call')"><span class="material-icons-outlined text-base">link</span>Copy link</button>
-              <button class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm" onclick="openShareModal('30-min Intro Call','30-min-intro-call')"><span class="material-icons-outlined text-base">share</span>Share</button>
-              <div class="relative">
-                <button class="text-[#A3B3AF] hover:text-[#34D399] px-2 py-1 rounded-full" onclick="toggleCardMenu(this)"><span class="material-icons-outlined">more_vert</span></button>
-                <div class="absolute right-0 mt-2 w-40 bg-[#1E3A34] rounded-lg shadow-lg py-2 z-50 hidden card-menu">
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Edit</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Clone</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Add Note</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]">Mark Secret</button>
-                  <button class="block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e]" onclick="deleteEventType('${eventType.id}')">Delete</button>
-            </div>
-          </div>
-            </div>
-          </div>
-        </div>
+        <div class="dashboard-grid" id="event-types-grid"></div>
       </section>
 
       <!-- Meetings Section -->
@@ -965,7 +941,7 @@
               </div>
               
               <div>
-                <label for="event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration</label>
+                <label for="event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration *</label>
                 <select id="event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
                   <option value="15">15 minutes</option>
                   <option value="30" selected>30 minutes</option>
@@ -981,20 +957,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-type" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Type</label>
-                <select id="event-type-type" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="1-on-1" selected>1-on-1</option>
-                  <option value="group">Group</option>
-                  <option value="collective">Collective</option>
-                  <option value="round-robin">Round Robin</option>
-                </select>
-              </div>
-              
-              <div id="attendee-limit-container" style="display: none;">
-                <label for="event-type-attendee-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Max Attendees</label>
-                <input type="number" id="event-type-attendee-limit" min="2" max="100" value="10" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-              </div>
+              <!-- Event type selection removed -->
             </div>
 
             <div>
@@ -1004,7 +967,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location</label>
+                <label for="event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location *</label>
                 <select id="event-type-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
                   <option value="zoom">Zoom</option>
                   <option value="google-meet">Google Meet</option>
@@ -1023,12 +986,12 @@
             </div>
 
             <div id="meeting-link-container">
-              <label for="event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link</label>
+                <label for="event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link *</label>
               <input type="url" id="event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://zoom.us/j/...">
             </div>
 
             <div>
-              <label for="event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color</label>
+                <label for="event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color *</label>
               <div class="flex items-center gap-3">
                 <input type="color" id="event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
                 <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
@@ -1281,7 +1244,7 @@
               </div>
               
               <div>
-                <label for="edit-event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration</label>
+                <label for="edit-event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration *</label>
                 <select id="edit-event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
                   <option value="15">15 minutes</option>
                   <option value="30" selected>30 minutes</option>
@@ -1297,20 +1260,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-type" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Type</label>
-                <select id="edit-event-type-type" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="1-on-1" selected>1-on-1</option>
-                  <option value="group">Group</option>
-                  <option value="collective">Collective</option>
-                  <option value="round-robin">Round Robin</option>
-                </select>
-              </div>
-              
-              <div id="edit-attendee-limit-container" style="display: none;">
-                <label for="edit-event-type-attendee-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Max Attendees</label>
-                <input type="number" id="edit-event-type-attendee-limit" min="2" max="100" value="10" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-              </div>
+              <!-- Event type editing removed -->
             </div>
 
             <div>
@@ -1320,7 +1270,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="edit-event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location</label>
+                <label for="edit-event-type-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Location *</label>
                 <select id="edit-event-type-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
                   <option value="zoom">Zoom</option>
                   <option value="google-meet">Google Meet</option>
@@ -1339,12 +1289,12 @@
             </div>
 
             <div id="edit-meeting-link-container">
-              <label for="edit-event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link</label>
+                <label for="edit-event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Meeting Link *</label>
               <input type="url" id="edit-event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://zoom.us/j/...">
             </div>
 
             <div>
-              <label for="edit-event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color</label>
+                <label for="edit-event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color *</label>
               <div class="flex items-center gap-3">
                 <input type="color" id="edit-event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
                 <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
