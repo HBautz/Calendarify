@@ -171,10 +171,14 @@
         if (sessionStorage.getItem('calendarify-logged-out')) {
           clearToken();
           sessionStorage.removeItem('calendarify-logged-out');
+          return;
         }
         if (await verifyToken(true)) {
           window.location.href = '/dashboard';
+          return;
         }
+        // If no persistent session, clear any temporary token
+        sessionStorage.removeItem('calendarify-token');
       });
     </script>
   </body>
