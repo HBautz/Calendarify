@@ -40,7 +40,7 @@
     </style>
     <script defer>
       window.API_URL = 'http://localhost:3001/api';
-      if (!localStorage.getItem('calendarify-token')) {
+      if (!sessionStorage.getItem('calendarify-token') && !localStorage.getItem('calendarify-token')) {
         window.location.replace('/log-in');
       }
     </script>
@@ -172,7 +172,7 @@
         const btn = document.getElementById('google-connect');
         if (btn) {
           btn.addEventListener('click', async () => {
-            const token = localStorage.getItem('calendarify-token');
+            const token = getToken();
             if (!token) return;
             const clean = token.replace(/^"|"$/g, '');
             const res = await fetch(`${API_URL}/integrations/google/auth-url`, {
@@ -190,7 +190,7 @@
         const zoomBtn = document.getElementById('zoom-connect');
         if (zoomBtn) {
           zoomBtn.addEventListener('click', async () => {
-            const token = localStorage.getItem('calendarify-token');
+            const token = getToken();
             if (!token) return;
             const clean = token.replace(/^"|"$/g, '');
             console.log('Requesting Zoom auth URL');
