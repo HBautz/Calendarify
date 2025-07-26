@@ -35,7 +35,10 @@ function storeToken(token, persist) {
   }
 }
 
-function getToken() {
+function getToken(persistentOnly = false) {
+  if (persistentOnly) {
+    return localStorage.getItem('calendarify-token');
+  }
   return sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
 }
 
@@ -127,8 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-async function verifyToken() {
-  const token = getToken();
+async function verifyToken(persistentOnly = false) {
+  const token = getToken(persistentOnly);
   if (!token) return false;
   
   // Remove surrounding quotes if they exist

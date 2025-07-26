@@ -168,7 +168,7 @@
     <script src="/auth.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', async () => {
-        if (await verifyToken()) {
+        if (await verifyToken(true)) {
           window.location.href = '/dashboard';
         }
       });
