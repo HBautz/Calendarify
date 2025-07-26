@@ -317,6 +317,18 @@
                 }
             }
 
+            try {
+                const resState = await fetch(`${API_URL}/users/display/${display}/state`);
+                if (resState.ok) {
+                    const state = await resState.json();
+                    Object.entries(state).forEach(([k,v]) => {
+                        localStorage.setItem(k, JSON.stringify(v));
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to refresh host state', e);
+            }
+
 
             document.getElementById('eventTitle').textContent = `Book: ${event.title}`;
 
