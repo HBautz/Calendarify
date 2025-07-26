@@ -317,7 +317,13 @@
                 }
             }
 
+
             document.getElementById('eventTitle').textContent = `Book: ${event.title}`;
+
+            const eventDuration = parseInt(event.duration) || 30;
+            const bufferBefore = parseInt(event.bufferBefore) || 0;
+            const bufferAfter = parseInt(event.bufferAfter) || 0;
+            const advanceNotice = parseInt(event.advanceNotice) || 0;
             
             let currentDate = new Date();
             let selectedDate = null; // No initial selection
@@ -348,21 +354,43 @@
                 return { h, m };
             }
 
-            function generateSlotsInRange(startStr, endStr) {
+            function generateSlotsInRange(startStr, endStr, date) {
                 const { h: startH, m: startM } = parseTime(startStr);
                 const { h: endH, m: endM } = parseTime(endStr);
+
+                const dayStart = startH * 60 + startM;
+                const dayEnd = endH * 60 + endM;
+
+                const effStart = dayStart + bufferBefore;
+                const effEnd = dayEnd - bufferAfter - eventDuration;
+                if (effEnd < effStart) return [];
+
+                const step = 15;
+                let currentMinutes = effStart;
                 const slots = [];
-                let current = new Date();
-                current.setHours(startH, startM, 0, 0);
-                const end = new Date();
-                end.setHours(endH, endM, 0, 0);
-                while (current < end) {
-                    slots.push(current.toLocaleTimeString('en-US', {
+                while (currentMinutes <= effEnd) {
+                    const slot = new Date(date);
+                    slot.setHours(Math.floor(currentMinutes / 60), currentMinutes % 60, 0, 0);
+
+                    if (advanceNotice) {
+                        const earliest = new Date(Date.now() + advanceNotice * 60000);
+                        if (slot < earliest) {
+                            currentMinutes += step;
+                            continue;
+                        }
+                    } else if (date.toDateString() === new Date().toDateString()) {
+                        if (slot <= new Date()) {
+                            currentMinutes += step;
+                            continue;
+                        }
+                    }
+
+                    slots.push(slot.toLocaleTimeString('en-US', {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: true
                     }));
-                    current.setMinutes(current.getMinutes() + 15);
+                    currentMinutes += step;
                 }
                 return slots;
             }
@@ -378,7 +406,7 @@
                     if (override.timeSlots && override.timeSlots.length > 0) {
                         let list = [];
                         override.timeSlots.forEach(t => {
-                            list = list.concat(generateSlotsInRange(t.start, t.end));
+                            list = list.concat(generateSlotsInRange(t.start, t.end, date));
                         });
                         return list;
                     }
@@ -386,7 +414,7 @@
 
                 const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
                 const range = weekly[dayKey] || { start: '09:00 AM', end: '17:00 PM' };
-                return generateSlotsInRange(range.start, range.end);
+                return generateSlotsInRange(range.start, range.end, date);
             }
 
             function updateTimeSlots() {
@@ -417,18 +445,6 @@
                     confirmButton.style.pointerEvents = 'none';
                 } else {
                     let timeSlots = generateTimeSlots(selectedDate);
-                    if (selectedDate.toDateString() === new Date().toDateString()) {
-                        const now = new Date();
-                        timeSlots = timeSlots.filter(t => {
-                            const [time, ap] = t.split(' ');
-                            let [h,m] = time.split(':').map(Number);
-                            if (ap === 'PM' && h !== 12) h += 12;
-                            if (ap === 'AM' && h === 12) h = 0;
-                            const slot = new Date(selectedDate);
-                            slot.setHours(h, m, 0, 0);
-                            return slot > now;
-                        });
-                    }
 
                     if (timeSlots.length === 0) {
                         container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
