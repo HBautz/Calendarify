@@ -166,28 +166,32 @@
       window.API_URL = 'http://localhost:3001/api';
     </script>
     <script src="/auth.js"></script>
-    <script>
-      (async () => {
-        console.log('[TEMP-DEBUG] Signup page init');
-        if (sessionStorage.getItem('calendarify-logged-out')) {
-          console.log('[TEMP-DEBUG] Logged-out flag detected');
-          clearToken();
-          sessionStorage.removeItem('calendarify-logged-out');
-          return;
-        }
+          <script>
+        (async () => {
+          if (sessionStorage.getItem('calendarify-logged-out')) {
+            clearToken();
+            sessionStorage.removeItem('calendarify-logged-out');
+            return;
+          }
 
-        if (sessionStorage.getItem('calendarify-token') && !getToken(true)) {
-          console.log('[TEMP-DEBUG] Removing stray session token');
-          sessionStorage.removeItem('calendarify-token');
-        }
+          // Check for persistent token first (for "stay logged in" users)
+          const persistent = localStorage.getItem('calendarify-token');
+          if (persistent) {
+            if (await verifyToken(true)) {
+              window.location.href = '/dashboard';
+              return;
+            }
+          }
 
-        const persistent = getToken(true);
-        console.log('[TEMP-DEBUG] Persistent token', persistent);
-        if (persistent && await verifyToken(true)) {
-          console.log('[TEMP-DEBUG] Auto-login via persistent token');
-          window.location.href = '/dashboard';
-        }
-      })();
-    </script>
+          // Check for session token (for current session users)
+          const session = sessionStorage.getItem('calendarify-token');
+          if (session) {
+            if (await verifyToken(false)) {
+              window.location.href = '/dashboard';
+              return;
+            }
+          }
+        })();
+      </script>
   </body>
 </html>

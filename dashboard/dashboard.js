@@ -1,10 +1,10 @@
     window.API_URL = 'http://localhost:3001/api';
-    if (!getToken()) {
+    if (!getAnyToken()) {
       window.location.replace('/log-in');
     }
 
     async function loadState() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) {
         return;
       }
@@ -15,10 +15,13 @@
       if (res.ok) {
         const data = await res.json();
         Object.entries(data).forEach(([k, v]) => {
-          if (typeof v === 'string') {
-            localStorage.setItem(k, v);
-          } else {
-            localStorage.setItem(k, JSON.stringify(v));
+          // Don't store the token in localStorage - it should only be in sessionStorage/localStorage based on user choice
+          if (k !== 'calendarify-token') {
+            if (typeof v === 'string') {
+              localStorage.setItem(k, v);
+            } else {
+              localStorage.setItem(k, JSON.stringify(v));
+            }
           }
         });
         updateGoogleCalendarButton();
@@ -29,7 +32,7 @@
     }
 
     async function fetchTagsFromServer() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return [];
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/tags`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -45,7 +48,7 @@
     }
 
     async function fetchWorkflowsFromServer() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return [];
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/workflows`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -58,7 +61,7 @@
     }
 
     async function fetchContactsFromServer() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return [];
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/contacts`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -71,7 +74,7 @@
     }
 
     async function fetchEventTypesFromServer() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return [];
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -104,7 +107,7 @@
     }
 
     async function syncState() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) {
         return;
       }
@@ -454,7 +457,7 @@
     }
 
     async function cloneWorkflow(id) {
-      const token = getToken();
+      const token = getAnyToken();
       const clean = token.replace(/^"|"$/g, '');
 
       const existingRes = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -482,7 +485,7 @@
       const workflowId = window.workflowToDelete;
       if (workflowId) {
         try {
-          const token = getToken();
+          const token = getAnyToken();
           const clean = token.replace(/^"|"$/g, '');
           const response = await fetch(`${API_URL}/workflows/${workflowId}`, { 
             method: 'DELETE', 
@@ -563,7 +566,7 @@
     }
 
     async function removeEventTypeFromWorkflow(workflowId, eventTypeIndex) {
-      const token = getToken();
+      const token = getAnyToken();
       const clean = token.replace(/^"|"$/g, '');
 
       const res = await fetch(`${API_URL}/workflows/${workflowId}`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -601,7 +604,7 @@
     }
 
     async function toggleWorkflowStatus(id, button) {
-      const token = getToken();
+      const token = getAnyToken();
       const clean = token.replace(/^"|"$/g, '');
 
       const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
@@ -710,7 +713,7 @@
       backdrop.classList.remove('hidden');
       modal.classList.remove('hidden');
       document.getElementById('profile-timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const token = getToken();
+      const token = getAnyToken();
       if (token) {
         try {
           const cleanToken = token.replace(/^"|"$/g, "");
@@ -750,7 +753,7 @@
       const input = document.getElementById('change-displayname-input');
       const newName = input.value.trim();
       if (!newName) return;
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/users/me`, {
@@ -1597,7 +1600,7 @@
       };
 
       try {
-        const token = getToken();
+        const token = getAnyToken();
         if (token) {
           const clean = token.replace(/^"|"$/g, '');
           const res = await fetch(`${API_URL}/event-types`, {
@@ -1778,7 +1781,7 @@
       const id = window.eventTypeToDelete;
       if (id) {
         try {
-          const token = getToken();
+          const token = getAnyToken();
           if (token) {
             const clean = token.replace(/^"|"$/g, '');
             await fetch(`${API_URL}/event-types/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
@@ -1817,7 +1820,7 @@
         clonedEventType.slug = generateSlug(clonedEventType.name, eventTypes);
 
         try {
-          const token = getToken();
+          const token = getAnyToken();
           if (token) {
             const clean = token.replace(/^"|"$/g, '');
             const res = await fetch(`${API_URL}/event-types`, {
@@ -2019,7 +2022,7 @@
       };
 
       try {
-        const token = getToken();
+        const token = getAnyToken();
         if (token) {
           const clean = token.replace(/^"|"$/g, '');
           await fetch(`${API_URL}/event-types/${eventType.id}`, {
@@ -2195,7 +2198,7 @@
         let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const contact = contacts.find(c => c.email === email);
         if (contact) {
-          const token = getToken();
+          const token = getAnyToken();
           const clean = token ? token.replace(/^"|"$/g, '') : '';
           fetch(`${API_URL}/contacts/${contact.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
           contacts = contacts.filter(c => c.email !== email);
@@ -2286,7 +2289,7 @@
       if (contact) {
         contact.favorite = !isFavorited;
         localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-        const token = getToken();
+        const token = getAnyToken();
         const clean = token ? token.replace(/^"|"$/g, '') : '';
         fetch(`${API_URL}/contacts/${contact.id}`, {
           method: 'PATCH',
@@ -2345,7 +2348,7 @@
       }
 
       try {
-        const token = getToken();
+        const token = getAnyToken();
         const clean = token.replace(/^"|"$/g, '');
         const res = await fetch(`${API_URL}/tags`, {
           method: 'POST',
@@ -2467,7 +2470,7 @@
 
     async function activateZoom() {
       try {
-        const token = getToken();
+        const token = getAnyToken();
         if (!token) return;
         const clean = token.replace(/^"|"$/g, '');
         const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
@@ -2490,7 +2493,7 @@
 
     async function connectGoogleCalendar() {
       console.log('connectGoogleCalendar called');
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/integrations/google/auth-url`, {
@@ -2629,7 +2632,7 @@
         const map = JSON.parse(localStorage.getItem('calendarify-tag-map') || '{}');
         const tagId = map[tagName];
         if (tagId) {
-          const token = getToken();
+          const token = getAnyToken();
           const clean = token.replace(/^"|"$/g, '');
           await fetch(`${API_URL}/tags/${tagId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
         }
@@ -2676,7 +2679,7 @@
           return;
         }
 
-        const token = getToken();
+        const token = getAnyToken();
         const clean = token ? token.replace(/^"|"$/g, '') : '';
         await fetch(`${API_URL}/contacts/${contact.id}/tags`, {
           method: 'POST',
@@ -2706,7 +2709,7 @@
           return;
         }
 
-        const token = getToken();
+        const token = getAnyToken();
         const clean = token ? token.replace(/^"|"$/g, '') : '';
         await fetch(`${API_URL}/contacts/${contact.id}/tags/${encodeURIComponent(tagName)}`, {
           method: 'DELETE',
@@ -2831,7 +2834,7 @@
 
       try {
         const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-        const token = getToken();
+        const token = getAnyToken();
         const clean = token ? token.replace(/^"|"$/g, '') : '';
 
         const res = await fetch(`${API_URL}/contacts`, {
@@ -3332,7 +3335,7 @@
       const btn = document.getElementById('google-calendar-connect-btn');
       console.log('[DEBUG] updateGoogleCalendarButton called', btn);
       if (!btn) return;
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) {
         btn.textContent = 'Not Connected';
         btn.style.backgroundColor = '#ef4444';
@@ -3377,7 +3380,7 @@
 
     async function connectGoogleCalendar() {
       console.log('connectGoogleCalendar called');
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/integrations/google/auth-url`, {
@@ -3403,7 +3406,7 @@
     }
 
     async function confirmDisconnectGoogle() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/integrations/google/disconnect`, {
@@ -3427,7 +3430,7 @@
       const btn = document.getElementById('zoom-connect-btn');
       console.log('[DEBUG] updateZoomButton called', btn);
       if (!btn) return;
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) {
         btn.textContent = 'Not Connected';
         btn.style.backgroundColor = '#ef4444';
@@ -3471,7 +3474,7 @@
 
     async function connectZoomOAuth() {
       console.log('connectZoomOAuth called');
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
@@ -3497,7 +3500,7 @@
     }
     async function confirmDisconnectZoom() {
       console.log('confirmDisconnectZoom called');
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^"|"$/g, '');
       const res = await fetch(`${API_URL}/integrations/zoom/disconnect`, {
@@ -3521,7 +3524,7 @@
       const btn = document.getElementById('outlook-calendar-connect-btn');
       console.log('[DEBUG] updateOutlookCalendarButton called', btn);
       if (!btn) return;
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) {
         btn.textContent = 'Not Connected';
         btn.style.backgroundColor = '#ef4444';
@@ -3564,7 +3567,7 @@
     window.updateOutlookCalendarButton = updateOutlookCalendarButton;
 
     async function connectOutlookCalendar() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^\"|\"$/g, '');
       const res = await fetch(`${API_URL}/integrations/outlook/auth-url`, {
@@ -3590,7 +3593,7 @@
       document.getElementById('disconnect-outlook-modal').classList.add('hidden');
     }
     async function confirmDisconnectOutlook() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^\"|\"$/g, '');
       const res = await fetch(`${API_URL}/integrations/outlook/disconnect`, {
@@ -3613,7 +3616,7 @@
     function updateAppleCalendarButton() {
       const btn = document.getElementById('apple-calendar-connect-btn');
       if (!btn) return;
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) {
         btn.textContent = 'Not Connected';
         btn.style.backgroundColor = '#ef4444';
@@ -3665,7 +3668,7 @@
         showNotification('Email and password required');
         return;
       }
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^\"|\"$/g, '');
       const res = await fetch(`${API_URL}/integrations/apple/connect`, {
@@ -3696,7 +3699,7 @@
       document.getElementById('disconnect-apple-modal').classList.add('hidden');
     }
     async function confirmDisconnectApple() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^\"|\"$/g, '');
       const res = await fetch(`${API_URL}/integrations/apple/disconnect`, {
@@ -3723,7 +3726,7 @@
       document.getElementById('disconnect-apple-modal').classList.add('hidden');
     }
     async function confirmDisconnectApple() {
-      const token = getToken();
+      const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^\"|\"$/g, '');
       const res = await fetch(`${API_URL}/integrations/apple/disconnect`, {
