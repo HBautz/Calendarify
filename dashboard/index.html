@@ -11,6 +11,89 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="/dashboard/dashboard.css">
+  <style>
+    /* Custom number input styling - remove default arrows */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    
+    /* Custom dropdown styling - remove default arrow */
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2334D399' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.5em 1.5em;
+      padding-right: 2.5rem;
+    }
+    
+    /* Remove arrow from minutes/hours dropdown */
+    .no-arrow-select {
+      background-image: none !important;
+      padding-right: 0.75rem !important;
+    }
+    
+    /* Custom number input with actual buttons */
+    .custom-number-input {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .custom-number-input input[type="number"] {
+      padding-right: 3rem;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: none;
+    }
+    
+    .number-buttons {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #2C4A43;
+    }
+    
+    .number-btn {
+      width: 2rem;
+      height: 1.5rem;
+      background: #19342e;
+      border: 1px solid #2C4A43;
+      color: #34D399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    
+    .number-btn:hover {
+      background: #34D399;
+      color: #1A2E29;
+    }
+    
+    .number-btn:active {
+      background: #2BB98A;
+    }
+    
+    .number-btn.up {
+      border-top-right-radius: 0.5rem;
+      border-bottom: 0.5px solid #2C4A43;
+    }
+    
+    .number-btn.down {
+      border-bottom-right-radius: 0.5rem;
+      border-top: 0.5px solid #2C4A43;
+    }
+  </style>
   <script src="/auth.js"></script>
   <script src="/config.js"></script>
   <script src="/dashboard/dashboard.js" defer></script>
@@ -1007,100 +1090,73 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
-                <select id="event-type-buffer-before" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-buffer-before-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-buffer-before-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-buffer-before-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-buffer-before-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
               </div>
               
               <div>
                 <label for="event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
-                <select id="event-type-buffer-after" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-buffer-after-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-buffer-after-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-buffer-after-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-buffer-after-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
-                <select id="event-type-advance-notice" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No minimum</option>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                  <option value="240">4 hours</option>
-                  <option value="480">8 hours</option>
-                  <option value="1440">1 day</option>
-                  <option value="2880">2 days</option>
-                  <option value="10080">1 week</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="event-type-cancellation" class="block text-[#A3B3AF] text-sm font-medium mb-2">Cancellation Policy</label>
-                <select id="event-type-cancellation" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No restrictions</option>
-                  <option value="60">1 hour before</option>
-                  <option value="120">2 hours before</option>
-                  <option value="240">4 hours before</option>
-                  <option value="1440">1 day before</option>
-                  <option value="2880">2 days before</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="event-type-timezone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Timezone</label>
-                <select id="event-type-timezone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="auto">Auto-detect (recommended)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Denver">Mountain Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                  <option value="Europe/Paris">Paris</option>
-                  <option value="Asia/Tokyo">Tokyo</option>
-                  <option value="Australia/Sydney">Sydney</option>
-                </select>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-advance-notice-value" min="0" max="10080" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-advance-notice-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-advance-notice-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-advance-notice-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No minimum</option>
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                </div>
               </div>
               
               <div>
                 <label for="event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
-                <select id="event-type-booking-limit" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No limit</option>
-                  <option value="1">1 per day</option>
-                  <option value="2">2 per day</option>
-                  <option value="3">3 per day</option>
-                  <option value="5">5 per day</option>
-                  <option value="10">10 per day</option>
-                  <option value="custom">Custom limit</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="custom-booking-limit-container" style="display: none;">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="event-type-custom-limit-count" class="block text-[#A3B3AF] text-sm font-medium mb-2">Limit Count</label>
-                  <input type="number" id="event-type-custom-limit-count" min="1" max="100" value="5" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                </div>
-                <div>
-                  <label for="event-type-custom-limit-period" class="block text-[#A3B3AF] text-sm font-medium mb-2">Time Period</label>
-                  <select id="event-type-custom-limit-period" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                    <option value="day">Per day</option>
-                    <option value="week">Per week</option>
-                    <option value="month">Per month</option>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-booking-limit-value" min="0" max="100" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-booking-limit-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-booking-limit-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-booking-limit-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No limit</option>
+                    <option value="per_day">Per day</option>
+                    <option value="per_week">Per week</option>
                   </select>
                 </div>
               </div>
@@ -1117,19 +1173,25 @@
             </div>
 
             <div>
-              <label for="event-type-questions" class="block text-[#A3B3AF] text-sm font-medium mb-2">Additional Questions</label>
-              <textarea id="event-type-questions" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Questions to ask invitees when they book (one per line)"></textarea>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Questions</label>
+              <div id="questions-container" class="space-y-3">
+                <!-- Questions will be added here dynamically -->
+              </div>
+              <button type="button" onclick="addQuestion()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
+                <span class="material-icons-outlined text-lg">add</span>
+                Add Question
+              </button>
             </div>
 
             <div>
               <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
               <div class="space-y-2">
                 <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-name" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <input type="checkbox" id="event-type-require-name" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
                   <span class="text-[#E0E0E0]">Name</span>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-email" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <input type="checkbox" id="event-type-require-email" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
                   <span class="text-[#E0E0E0]">Email</span>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer">
@@ -1162,11 +1224,6 @@
               <label class="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" id="event-type-follow-up" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
                 <span class="text-[#E0E0E0]">Send follow-up email after meeting</span>
-              </label>
-
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="event-type-cancellation-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send cancellation notifications</span>
               </label>
 
               <label class="flex items-center gap-3 cursor-pointer">
@@ -1310,100 +1367,73 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="edit-event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
-                <select id="edit-event-type-buffer-before" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-buffer-before-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-buffer-before-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-buffer-before-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-buffer-before-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
               </div>
               
               <div>
                 <label for="edit-event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
-                <select id="edit-event-type-buffer-after" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No buffer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-buffer-after-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-buffer-after-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-buffer-after-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-buffer-after-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label for="edit-event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
-                <select id="edit-event-type-advance-notice" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No minimum</option>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                  <option value="240">4 hours</option>
-                  <option value="480">8 hours</option>
-                  <option value="1440">1 day</option>
-                  <option value="2880">2 days</option>
-                  <option value="10080">1 week</option>
-                </select>
-              </div>
-              
-              <div>
-                <label for="edit-event-type-cancellation" class="block text-[#A3B3AF] text-sm font-medium mb-2">Cancellation Policy</label>
-                <select id="edit-event-type-cancellation" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No restrictions</option>
-                  <option value="60">1 hour before</option>
-                  <option value="120">2 hours before</option>
-                  <option value="240">4 hours before</option>
-                  <option value="1440">1 day before</option>
-                  <option value="2880">2 days before</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="edit-event-type-timezone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Timezone</label>
-                <select id="edit-event-type-timezone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="auto">Auto-detect (recommended)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Denver">Mountain Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                  <option value="Europe/Paris">Paris</option>
-                  <option value="Asia/Tokyo">Tokyo</option>
-                  <option value="Australia/Sydney">Sydney</option>
-                </select>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-advance-notice-value" min="0" max="10080" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-advance-notice-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-advance-notice-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-advance-notice-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No minimum</option>
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                </div>
               </div>
               
               <div>
                 <label for="edit-event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
-                <select id="edit-event-type-booking-limit" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                  <option value="0">No limit</option>
-                  <option value="1">1 per day</option>
-                  <option value="2">2 per day</option>
-                  <option value="3">3 per day</option>
-                  <option value="5">5 per day</option>
-                  <option value="10">10 per day</option>
-                  <option value="custom">Custom limit</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="edit-custom-booking-limit-container" style="display: none;">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="edit-event-type-custom-limit-count" class="block text-[#A3B3AF] text-sm font-medium mb-2">Limit Count</label>
-                  <input type="number" id="edit-event-type-custom-limit-count" min="1" max="100" value="5" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                </div>
-                <div>
-                  <label for="edit-event-type-custom-limit-period" class="block text-[#A3B3AF] text-sm font-medium mb-2">Time Period</label>
-                  <select id="edit-event-type-custom-limit-period" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
-                    <option value="day">Per day</option>
-                    <option value="week">Per week</option>
-                    <option value="month">Per month</option>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-booking-limit-value" min="0" max="100" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-booking-limit-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-booking-limit-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-booking-limit-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No limit</option>
+                    <option value="per_day">Per day</option>
+                    <option value="per_week">Per week</option>
                   </select>
                 </div>
               </div>
@@ -1420,19 +1450,25 @@
             </div>
 
             <div>
-              <label for="edit-event-type-questions" class="block text-[#A3B3AF] text-sm font-medium mb-2">Additional Questions</label>
-              <textarea id="edit-event-type-questions" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Questions to ask invitees when they book (one per line)"></textarea>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Questions</label>
+              <div id="edit-questions-container" class="space-y-3">
+                <!-- Questions will be added here dynamically -->
+              </div>
+              <button type="button" onclick="addEditQuestion()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
+                <span class="material-icons-outlined text-lg">add</span>
+                Add Question
+              </button>
             </div>
 
             <div>
               <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
               <div class="space-y-2">
                 <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-name" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <input type="checkbox" id="edit-event-type-require-name" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
                   <span class="text-[#E0E0E0]">Name</span>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-email" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                  <input type="checkbox" id="edit-event-type-require-email" class="w-5 h-5 text-[#2C4A43] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
                   <span class="text-[#E0E0E0]">Email</span>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer">
@@ -1465,11 +1501,6 @@
               <label class="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" id="edit-event-type-follow-up" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
                 <span class="text-[#E0E0E0]">Send follow-up email after meeting</span>
-              </label>
-
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" id="edit-event-type-cancellation-notification" checked class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                <span class="text-[#E0E0E0]">Send cancellation notifications</span>
               </label>
 
               <label class="flex items-center gap-3 cursor-pointer">

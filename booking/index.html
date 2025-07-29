@@ -123,7 +123,7 @@
             width: 260px;
             padding: 1rem;
             border-radius: 0 0.75rem 0.75rem 0;
-            background-color: #1F3A34;
+            background-color: #1E3A34;
             z-index: 10;
             display: flex;
             flex-direction: column;
@@ -158,12 +158,6 @@
         .time-slot:hover {
             background-color: #34D399;
             color: #1A2E29;
-            border-color: #34D399;
-        }
-        
-        .time-slot.show {
-            opacity: 1;
-            transform: translateY(0);
         }
         
         .time-slot:nth-child(1) { transition-delay: 0.1s; }
@@ -198,6 +192,20 @@
         .time-slot:nth-child(30) { transition-delay: 1.55s; }
         .time-slot:nth-child(31) { transition-delay: 1.6s; }
         .time-slot:nth-child(32) { transition-delay: 1.65s; }
+        
+        /* Modal styling */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background-color: #1E3A34;
+            border: 1px solid #2C4A43;
+            border-radius: 12px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -266,6 +274,72 @@
         </div>
     </main>
 
+    <!-- Booking Details Modal -->
+    <div id="bookingModal" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="modal-content w-full max-w-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-white">Complete Your Booking</h3>
+                <button id="closeBookingModal" class="text-gray-400 hover:text-white">
+                    <span class="material-icons-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Booking Summary -->
+                <div class="bg-[#1A2E29] p-4 rounded-lg">
+                    <h4 class="text-lg font-medium text-white mb-2">Booking Summary</h4>
+                    <div class="text-gray-300">
+                        <p><strong>Event:</strong> <span id="modalEventTitle"></span></p>
+                        <p><strong>Date:</strong> <span id="modalEventDate"></span></p>
+                        <p><strong>Time:</strong> <span id="modalEventTime"></span></p>
+                        <p><strong>Duration:</strong> <span id="modalEventDuration"></span></p>
+                    </div>
+                </div>
+
+                <!-- Required Fields -->
+                <div id="requiredFieldsSection">
+                    <h4 class="text-lg font-medium text-white mb-4">Required Information</h4>
+                    <div class="space-y-4">
+                        <div id="nameField" class="hidden">
+                            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Name *</label>
+                            <input type="text" id="bookingName" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your name">
+                        </div>
+                        <div id="emailField" class="hidden">
+                            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Email *</label>
+                            <input type="email" id="bookingEmail" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your email">
+                        </div>
+                        <div id="phoneField" class="hidden">
+                            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Phone Number</label>
+                            <input type="tel" id="bookingPhone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your phone number">
+                        </div>
+                        <div id="companyField" class="hidden">
+                            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Company</label>
+                            <input type="text" id="bookingCompany" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your company name">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Questions -->
+                <div id="questionsSection" class="hidden">
+                    <h4 class="text-lg font-medium text-white mb-4">Additional Questions</h4>
+                    <div id="questionsContainer" class="space-y-4">
+                        <!-- Questions will be dynamically added here -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-4 pt-4">
+                    <button id="cancelBooking" class="secondary-button px-6 py-3 rounded-lg font-semibold">
+                        Cancel
+                    </button>
+                    <button id="confirmBooking" class="primary-button px-6 py-3 rounded-lg font-semibold">
+                        Confirm Booking
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="py-8 text-center">
         <p class="text-xs text-gray-500">
             This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
@@ -300,24 +374,25 @@
                 const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
                 if (!res.ok) throw new Error('not found');
                 event = await res.json();
-            } catch (e) {
-                // Fallback to local data if API request fails
-                try {
-                    const stored = localStorage.getItem('calendarify-event-types');
-                    if (stored) {
-                        const list = JSON.parse(stored);
-                        event = list.find(et => et.slug === slug);
-                    }
-                } catch (err) {
-                    event = null;
-                }
-                if (!event && slug === '30-min-intro-call') {
-                    event = { title: '30-min Intro Call', slug };
-                }
+                console.log('[DEBUG] Event data from API:', event);
+                
                 if (!event) {
                     document.body.innerHTML = '<div class="text-center mt-20 text-red-500">Invalid event link</div>';
                     return;
                 }
+            } catch (e) {
+                // Fallback to local data if API request fails
+                console.log('[TEMP-DEBUG] API failed, using fallback data');
+                event = {
+                    title: 'Demo Meeting',
+                    name: 'Demo Meeting',
+                    duration: 30,
+                    bufferBefore: 0,
+                    bufferAfter: 0,
+                    advanceNotice: 0,
+                    questions: '',
+                    requiredFields: { name: true, email: true, phone: false, company: false }
+                };
             }
 
             try {
@@ -328,13 +403,36 @@
                     Object.entries(state).forEach(([k,v]) => {
                         localStorage.setItem(k, JSON.stringify(v));
                     });
+                    
+                    // Try to get the complete event type data from the host's state
+                    const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+                    const completeEventType = eventTypes.find(et => et.slug === slug);
+                    if (completeEventType) {
+                        console.log('[DEBUG] Found complete event type in host state:', completeEventType);
+                        // Merge the complete data with the basic API data
+                        event = { ...event, ...completeEventType };
+                        console.log('[DEBUG] Merged event data:', event);
+                    }
                 }
             } catch (e) {
                 console.log('[TEMP-DEBUG] Failed to refresh host state', e);
             }
 
+            // Ensure we have default weekly hours if none exist
+            const weeklyHours = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+            if (Object.keys(weeklyHours).length === 0) {
+                const defaultHours = {
+                    monday: { start: '09:00 AM', end: '05:00 PM' },
+                    tuesday: { start: '09:00 AM', end: '05:00 PM' },
+                    wednesday: { start: '09:00 AM', end: '05:00 PM' },
+                    thursday: { start: '09:00 AM', end: '05:00 PM' },
+                    friday: { start: '09:00 AM', end: '05:00 PM' }
+                };
+                localStorage.setItem('calendarify-weekly-hours', JSON.stringify(defaultHours));
+                console.log('[TEMP-DEBUG] Set default weekly hours:', defaultHours);
+            }
 
-            document.getElementById('eventTitle').textContent = `Book: ${event.title}`;
+            document.getElementById('eventTitle').textContent = `Book: ${event.title || event.name}`;
 
             const eventDuration = parseInt(event.duration) || 30;
             const bufferBefore = parseInt(event.bufferBefore) || 0;
@@ -343,7 +441,8 @@
             console.log('[TEMP-DEBUG] Event settings', { eventDuration, bufferBefore, bufferAfter, advanceNotice });
             
             let currentDate = new Date();
-            let selectedDate = null; // No initial selection
+            let selectedDate = null;
+            let selectedTime = null;
             let timeSlots = {};
 
             function formatDate(date) {
@@ -376,27 +475,41 @@
                 const { h: startH, m: startM } = parseTime(startStr);
                 const { h: endH, m: endM } = parseTime(endStr);
 
+                console.log('[TEMP-DEBUG] Parsed times:', { startH, startM, endH, endM });
+
                 const dayStart = startH * 60 + startM;
                 const dayEnd = endH * 60 + endM;
 
-                const effStart = dayStart + bufferBefore;
-                const effEnd = dayEnd - bufferAfter - eventDuration;
-                if (effEnd < effStart) return [];
+                console.log('[TEMP-DEBUG] Day minutes:', { dayStart, dayEnd });
+
+                // Apply buffer times
+                const effectiveStart = dayStart + bufferBefore;
+                const effectiveEnd = dayEnd - bufferAfter - eventDuration;
+                
+                console.log('[TEMP-DEBUG] Effective times:', { effectiveStart, effectiveEnd, bufferBefore, bufferAfter, eventDuration });
+                
+                if (effectiveEnd < effectiveStart) {
+                    console.log('[TEMP-DEBUG] No slots available - effective end before start');
+                    return [];
+                }
 
                 const step = 15;
-                let currentMinutes = effStart;
+                let currentMinutes = effectiveStart;
                 const slots = [];
-                while (currentMinutes <= effEnd) {
+                
+                while (currentMinutes <= effectiveEnd) {
                     const slot = new Date(date);
                     slot.setHours(Math.floor(currentMinutes / 60), currentMinutes % 60, 0, 0);
 
-                    if (advanceNotice) {
-                        const earliest = new Date(Date.now() + advanceNotice * 60000);
-                        if (slot < earliest) {
+                    // Apply advance notice
+                    if (advanceNotice > 0) {
+                        const earliestAllowed = new Date(Date.now() + advanceNotice * 60000);
+                        if (slot < earliestAllowed) {
                             currentMinutes += step;
                             continue;
                         }
                     } else if (date.toDateString() === new Date().toDateString()) {
+                        // If no advance notice, don't show past times for today
                         if (slot <= new Date()) {
                             currentMinutes += step;
                             continue;
@@ -412,6 +525,8 @@
                     console.log('[TEMP-DEBUG] Added slot', timeStr);
                     currentMinutes += step;
                 }
+                
+                console.log('[TEMP-DEBUG] Total slots generated:', slots.length);
                 return slots;
             }
 
@@ -419,9 +534,12 @@
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 const dayKey = dayNames[date.getDay()];
 
+                console.log('[TEMP-DEBUG] generateTimeSlots for day:', dayKey);
+
                 const overrides = JSON.parse(localStorage.getItem('calendarify-overrides') || '{}');
                 const override = overrides[date.toISOString().split('T')[0]];
                 if (override) {
+                    console.log('[TEMP-DEBUG] Found override for date:', override);
                     if (!override.available) return [];
                     if (override.timeSlots && override.timeSlots.length > 0) {
                         let list = [];
@@ -433,7 +551,9 @@
                 }
 
                 const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
-                const range = weekly[dayKey] || { start: '09:00 AM', end: '17:00 PM' };
+                console.log('[TEMP-DEBUG] Weekly hours data:', weekly);
+                const range = weekly[dayKey] || { start: '09:00 AM', end: '05:00 PM' };
+                console.log('[TEMP-DEBUG] Using time range:', range);
                 return generateSlotsInRange(range.start, range.end, date);
             }
 
@@ -460,7 +580,18 @@
                 const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
                 const isDayOff = dayAvail[dayNames[selectedDate.getDay()]] === false;
 
+                console.log('[TEMP-DEBUG] Day availability check:', {
+                    selectedDate: selectedDate.toDateString(),
+                    dayOfWeek: selectedDate.getDay(),
+                    dayName: dayNames[selectedDate.getDay()],
+                    dayAvail,
+                    isDayOff,
+                    isPast: selectedDate < new Date(new Date().setHours(0,0,0,0)),
+                    isWeekend: selectedDate.getDay() === 0 || selectedDate.getDay() === 6
+                });
+
                 if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || selectedDate.getDay() === 0 || selectedDate.getDay() === 6 || isDayOff) {
+                    console.log('[TEMP-DEBUG] No availability - date filtered out');
                     container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
                     confirmButton.style.opacity = '0.5';
                     confirmButton.style.pointerEvents = 'none';
@@ -477,9 +608,14 @@
                             const button = document.createElement('button');
                             button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium';
                             button.textContent = time;
+                            // Force visibility for debugging
+                            button.style.opacity = '1';
+                            button.style.transform = 'translateY(0)';
+                            button.style.visibility = 'visible';
                             button.addEventListener('click', () => {
                                 container.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
                                 button.classList.add('selected');
+                                selectedTime = time;
                                 confirmButton.style.opacity = '1';
                                 confirmButton.style.pointerEvents = 'auto';
                             });
@@ -492,12 +628,21 @@
                 timeSlotsDiv.classList.add('show');
                 mainContainer.classList.add('extended');
                 
+                // Debug: Check container visibility
+                console.log('[TEMP-DEBUG] Time slots container classes:', timeSlotsDiv.className);
+                console.log('[TEMP-DEBUG] Time slots container computed style:', window.getComputedStyle(timeSlotsDiv).display);
+                console.log('[TEMP-DEBUG] Main container classes:', mainContainer.className);
+                
                 // Animate time slots appearing
                 setTimeout(() => {
                     container.querySelectorAll('.time-slot').forEach(slot => {
                         slot.classList.add('show');
                     });
                 }, 100);
+                
+                // Debug: Check if slots are actually in the DOM
+                console.log('[TEMP-DEBUG] Time slots in DOM:', container.querySelectorAll('.time-slot').length);
+                console.log('[TEMP-DEBUG] First slot element:', container.querySelector('.time-slot'));
             }
 
             function buildCalendar() {
@@ -565,6 +710,161 @@
                 }
             }
 
+            function showBookingModal() {
+                // Debug: Log the event data to see what we're working with
+                console.log('[DEBUG] Event data:', event);
+                console.log('[DEBUG] Required fields:', event.requiredFields);
+                console.log('[DEBUG] Questions:', event.questions);
+                
+                // Populate modal with booking details
+                document.getElementById('modalEventTitle').textContent = event.title || event.name;
+                document.getElementById('modalEventDate').textContent = formatDate(selectedDate);
+                document.getElementById('modalEventTime').textContent = selectedTime;
+                document.getElementById('modalEventDuration').textContent = `${eventDuration} minutes`;
+
+                // Show/hide required fields based on actual event settings
+                const requiredFields = event.requiredFields || { name: false, email: false, phone: false, company: false };
+                console.log('[DEBUG] Using required fields:', requiredFields);
+                
+                // Reset all fields to hidden first
+                document.getElementById('nameField').classList.add('hidden');
+                document.getElementById('emailField').classList.add('hidden');
+                document.getElementById('phoneField').classList.add('hidden');
+                document.getElementById('companyField').classList.add('hidden');
+                
+                // Show only the fields that are required
+                if (requiredFields.name) {
+                    console.log('[DEBUG] Showing name field');
+                    document.getElementById('nameField').classList.remove('hidden');
+                }
+                if (requiredFields.email) {
+                    console.log('[DEBUG] Showing email field');
+                    document.getElementById('emailField').classList.remove('hidden');
+                }
+                if (requiredFields.phone) {
+                    console.log('[DEBUG] Showing phone field');
+                    document.getElementById('phoneField').classList.remove('hidden');
+                }
+                if (requiredFields.company) {
+                    console.log('[DEBUG] Showing company field');
+                    document.getElementById('companyField').classList.remove('hidden');
+                }
+
+                // Handle additional questions from actual event settings
+                const questions = event.questions || [];
+                console.log('[DEBUG] Questions array:', questions);
+                if (Array.isArray(questions) && questions.length > 0) {
+                    console.log('[DEBUG] Processing questions');
+                    const questionsContainer = document.getElementById('questionsContainer');
+                    questionsContainer.innerHTML = '';
+                    
+                    questions.forEach((questionObj, index) => {
+                        const questionDiv = document.createElement('div');
+                        const requiredText = questionObj.required ? ' *' : '';
+                        questionDiv.innerHTML = `
+                            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">${questionObj.text}${requiredText}</label>
+                            <textarea id="question_${index}" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" rows="3" placeholder="Your answer"></textarea>
+                        `;
+                        questionsContainer.appendChild(questionDiv);
+                    });
+                    document.getElementById('questionsSection').classList.remove('hidden');
+                    console.log('[DEBUG] Questions section shown');
+                } else {
+                    document.getElementById('questionsSection').classList.add('hidden');
+                    console.log('[DEBUG] No questions, hiding questions section');
+                }
+
+                // Show modal
+                document.getElementById('bookingModal').classList.remove('hidden');
+            }
+
+            function closeBookingModal() {
+                document.getElementById('bookingModal').classList.add('hidden');
+                
+                // Reset form fields to hidden
+                document.getElementById('nameField').classList.add('hidden');
+                document.getElementById('emailField').classList.add('hidden');
+                document.getElementById('phoneField').classList.add('hidden');
+                document.getElementById('companyField').classList.add('hidden');
+                document.getElementById('questionsSection').classList.add('hidden');
+                
+                // Clear form values
+                document.getElementById('bookingName').value = '';
+                document.getElementById('bookingEmail').value = '';
+                document.getElementById('bookingPhone').value = '';
+                document.getElementById('bookingCompany').value = '';
+                document.getElementById('questionsContainer').innerHTML = '';
+            }
+
+            function validateBookingForm() {
+                const requiredFields = event.requiredFields || { name: false, email: false, phone: false, company: false };
+                
+                if (requiredFields.name && !document.getElementById('bookingName').value.trim()) {
+                    alert('Please enter your name');
+                    return false;
+                }
+                if (requiredFields.email && !document.getElementById('bookingEmail').value.trim()) {
+                    alert('Please enter your email');
+                    return false;
+                }
+                if (requiredFields.phone && !document.getElementById('bookingPhone').value.trim()) {
+                    alert('Please enter your phone number');
+                    return false;
+                }
+                if (requiredFields.company && !document.getElementById('bookingCompany').value.trim()) {
+                    alert('Please enter your company name');
+                    return false;
+                }
+                
+                // Validate required custom questions
+                const questions = event.questions || [];
+                if (Array.isArray(questions) && questions.length > 0) {
+                    for (let i = 0; i < questions.length; i++) {
+                        const questionObj = questions[i];
+                        if (questionObj.required) {
+                            const answer = document.getElementById(`question_${i}`).value.trim();
+                            if (!answer) {
+                                alert(`Please answer the required question: ${questionObj.text}`);
+                                return false;
+                            }
+                        }
+                    }
+                }
+                
+                return true;
+            }
+
+            function confirmBooking() {
+                if (!validateBookingForm()) return;
+                
+                // Collect form data
+                const bookingData = {
+                    eventTitle: event.title || event.name,
+                    date: formatDate(selectedDate),
+                    time: selectedTime,
+                    duration: eventDuration,
+                    name: document.getElementById('bookingName').value,
+                    email: document.getElementById('bookingEmail').value,
+                    phone: document.getElementById('bookingPhone').value,
+                    company: document.getElementById('bookingCompany').value,
+                    questions: []
+                };
+
+                // Collect question answers
+                const questions = event.questions || [];
+                if (Array.isArray(questions) && questions.length > 0) {
+                    questions.forEach((questionObj, index) => {
+                        const answer = document.getElementById(`question_${index}`).value;
+                        bookingData.questions.push({ question: questionObj.text, answer });
+                    });
+                }
+
+                console.log('Booking confirmed:', bookingData);
+                alert(`Booking confirmed for ${bookingData.date} at ${bookingData.time}!`);
+                closeBookingModal();
+            }
+
+            // Event listeners
             document.getElementById('prevMonth').addEventListener('click', () => {
                 currentDate.setMonth(currentDate.getMonth() - 1);
                 buildCalendar();
@@ -575,17 +875,26 @@
                 buildCalendar();
             });
 
-            // Add confirm button functionality
             document.getElementById('confirmButton').addEventListener('click', () => {
-                const selectedTimeSlot = document.querySelector('.time-slot.selected');
-                if (selectedDate && selectedTimeSlot) {
-                    alert(`Meeting confirmed for ${formatDate(selectedDate)} at ${selectedTimeSlot.textContent}`);
+                if (selectedDate && selectedTime) {
+                    showBookingModal();
                 } else {
                     alert('Please select a date and time slot');
                 }
             });
 
-            // Initialize the calendar (no time slots initially)
+            document.getElementById('closeBookingModal').addEventListener('click', closeBookingModal);
+            document.getElementById('cancelBooking').addEventListener('click', closeBookingModal);
+            document.getElementById('confirmBooking').addEventListener('click', confirmBooking);
+
+            // Close modal when clicking backdrop
+            document.getElementById('bookingModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('bookingModal')) {
+                    closeBookingModal();
+                }
+            });
+
+            // Initialize the calendar
             buildCalendar();
         });
     </script>

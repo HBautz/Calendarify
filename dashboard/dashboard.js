@@ -376,6 +376,9 @@
     function closeCreateEventTypeModal() {
       document.getElementById('modal-backdrop').classList.add('hidden');
       document.getElementById('create-event-type-modal').classList.add('hidden');
+      // Clear questions container
+      document.getElementById('questions-container').innerHTML = '';
+      questionCounter = 0;
     }
 
     function saveOverride() {
@@ -739,14 +742,21 @@
     }
 
     function openChangeDisplayNameModal() {
-      document.getElementById('change-displayname-input').value = localStorage.getItem('calendarify-display-name') || '';
+      const displayName = localStorage.getItem('calendarify-display-name') || '';
+      // Remove any surrounding quotes from the display name
+      const cleanDisplayName = displayName.replace(/^["']|["']$/g, '');
+      document.getElementById('change-displayname-input').value = cleanDisplayName;
       document.getElementById('change-displayname-modal').classList.remove('hidden');
       document.getElementById('modal-backdrop').classList.remove('hidden');
     }
 
     function closeChangeDisplayNameModal() {
       document.getElementById('change-displayname-modal').classList.add('hidden');
-      document.getElementById('modal-backdrop').classList.add('hidden');
+      // Only hide the backdrop if the profile modal is not open
+      const profileModal = document.getElementById('profile-modal');
+      if (!profileModal || profileModal.classList.contains('hidden')) {
+        document.getElementById('modal-backdrop').classList.add('hidden');
+      }
     }
 
     async function saveDisplayName() {
@@ -763,8 +773,10 @@
       });
       if (res.ok) {
         const data = await res.json();
-        document.getElementById('profile-displayname').textContent = data.display_name;
-        localStorage.setItem('calendarify-display-name', data.display_name);
+        // Clean the display name to remove any quotes
+        const cleanDisplayName = data.display_name.replace(/^["']|["']$/g, '');
+        document.getElementById('profile-displayname').textContent = cleanDisplayName;
+        localStorage.setItem('calendarify-display-name', cleanDisplayName);
         showNotification('Display name updated');
       } else {
         const text = await res.text();
@@ -779,8 +791,23 @@
 
     // Close modals when clicking backdrop
     document.getElementById('modal-backdrop').addEventListener('click', function() {
+      // Check if change display name modal is open
+      const changeDisplayNameModal = document.getElementById('change-displayname-modal');
+      const profileModal = document.getElementById('profile-modal');
+      
+      // If change display name modal is open, only close it and keep profile modal open
+      if (changeDisplayNameModal && !changeDisplayNameModal.classList.contains('hidden')) {
+        changeDisplayNameModal.classList.add('hidden');
+        // Don't hide backdrop if profile modal is still open
+        if (!profileModal || profileModal.classList.contains('hidden')) {
+          document.getElementById('modal-backdrop').classList.add('hidden');
+        }
+        return;
+      }
+      
+      // Otherwise, close all modals as usual
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal' || el.id === 'change-displayname-modal') {
           el.classList.add('hidden');
         }
       });
@@ -1510,16 +1537,43 @@
       const customLocation = document.getElementById('event-type-custom-location').value.trim();
       const link = document.getElementById('event-type-link').value.trim();
       const color = document.getElementById('event-type-color').value;
-      const bufferBefore = document.getElementById('event-type-buffer-before').value;
-      const bufferAfter = document.getElementById('event-type-buffer-after').value;
-      const advanceNotice = document.getElementById('event-type-advance-notice').value;
-      const cancellation = document.getElementById('event-type-cancellation').value;
-      const timezone = document.getElementById('event-type-timezone').value;
-      const bookingLimit = document.getElementById('event-type-booking-limit').value;
-      const customLimitCount = document.getElementById('event-type-custom-limit-count').value;
-      const customLimitPeriod = document.getElementById('event-type-custom-limit-period').value;
+      // Handle buffer times with new structure
+      const bufferBeforeValue = parseInt(document.getElementById('event-type-buffer-before-value').value) || 0;
+      const bufferBeforeUnit = document.getElementById('event-type-buffer-before-unit').value;
+      const bufferBefore = bufferBeforeUnit === 'hours' ? bufferBeforeValue * 60 : bufferBeforeValue;
+      
+      const bufferAfterValue = parseInt(document.getElementById('event-type-buffer-after-value').value) || 0;
+      const bufferAfterUnit = document.getElementById('event-type-buffer-after-unit').value;
+      const bufferAfter = bufferAfterUnit === 'hours' ? bufferAfterValue * 60 : bufferAfterValue;
+      
+      // Handle advance notice with new structure
+      const advanceNoticeValue = parseInt(document.getElementById('event-type-advance-notice-value').value) || 0;
+      const advanceNoticeUnit = document.getElementById('event-type-advance-notice-unit').value;
+      let advanceNotice = 0;
+      
+      if (advanceNoticeUnit === 'days') {
+        advanceNotice = advanceNoticeValue * 1440; // Convert days to minutes
+      } else if (advanceNoticeUnit === 'hours') {
+        advanceNotice = advanceNoticeValue * 60; // Convert hours to minutes
+      } else if (advanceNoticeUnit === 'minutes') {
+        advanceNotice = advanceNoticeValue;
+      }
+      // If unit is '0', advanceNotice remains 0 (no minimum)
+      
+      // Handle booking limit with new structure
+      const bookingLimitValue = parseInt(document.getElementById('event-type-booking-limit-value').value) || 0;
+      const bookingLimitUnit = document.getElementById('event-type-booking-limit-unit').value;
+      let bookingLimit = 0;
+      
+      if (bookingLimitUnit === 'per_day') {
+        bookingLimit = { count: bookingLimitValue, period: 'day' };
+      } else if (bookingLimitUnit === 'per_week') {
+        bookingLimit = { count: bookingLimitValue, period: 'week' };
+      } else if (bookingLimitUnit === '0') {
+        bookingLimit = 0; // No limit
+      }
       const confirmationMessage = document.getElementById('event-type-confirmation-message').value.trim();
-      const questions = document.getElementById('event-type-questions').value.trim();
+      const questions = getQuestionsData('questions-container');
       const requireName = document.getElementById('event-type-require-name').checked;
       const requireEmail = document.getElementById('event-type-require-email').checked;
       const requirePhone = document.getElementById('event-type-require-phone').checked;
@@ -1527,7 +1581,7 @@
       const availability = document.getElementById('event-type-availability').checked;
       const reminders = document.getElementById('event-type-reminders').checked;
       const followUp = document.getElementById('event-type-follow-up').checked;
-      const cancellationNotification = document.getElementById('event-type-cancellation-notification').checked;
+
       const rescheduleNotification = document.getElementById('event-type-reschedule-notification').checked;
       const secret = document.getElementById('event-type-secret').value;
       const priority = document.getElementById('event-type-priority').value;
@@ -1572,8 +1626,6 @@
         bufferBefore: parseInt(bufferBefore),
         bufferAfter: parseInt(bufferAfter),
         advanceNotice: parseInt(advanceNotice),
-        cancellation: parseInt(cancellation),
-        timezone,
         bookingLimit: bookingLimit === 'custom' ? {
           count: parseInt(customLimitCount),
           period: customLimitPeriod
@@ -1590,7 +1642,6 @@
           availability,
           reminders,
           followUp,
-          cancellation: cancellationNotification,
           reschedule: rescheduleNotification
         },
         visibility: secret,
@@ -1647,30 +1698,16 @@
       }
     }
 
-    function handleBookingLimitChange() {
-      const bookingLimit = document.getElementById('event-type-booking-limit').value;
-      const customLimitContainer = document.getElementById('custom-booking-limit-container');
-      
-      if (bookingLimit === 'custom') {
-        customLimitContainer.style.display = 'block';
-      } else {
-        customLimitContainer.style.display = 'none';
-      }
-    }
+
 
     // Add event listeners for interactive form elements
     document.addEventListener('DOMContentLoaded', function() {
       
       // Add event listeners for form interactions
       const locationSelect = document.getElementById('event-type-location');
-      const bookingLimitSelect = document.getElementById('event-type-booking-limit');
       
       if (locationSelect) {
         locationSelect.addEventListener('change', handleLocationChange);
-      }
-      
-      if (bookingLimitSelect) {
-        bookingLimitSelect.addEventListener('change', handleBookingLimitChange);
       }
     });
 
@@ -1873,28 +1910,87 @@
       document.getElementById('edit-event-type-color').value = eventType.color;
       
       // Scheduling
-      document.getElementById('edit-event-type-buffer-before').value = eventType.bufferBefore;
-      document.getElementById('edit-event-type-buffer-after').value = eventType.bufferAfter;
-      document.getElementById('edit-event-type-advance-notice').value = eventType.advanceNotice;
-      document.getElementById('edit-event-type-cancellation').value = eventType.cancellation;
-      document.getElementById('edit-event-type-timezone').value = eventType.timezone;
+      // Handle buffer times with new structure
+      if (eventType.bufferBefore) {
+        const bufferBeforeValue = eventType.bufferBefore;
+        if (bufferBeforeValue >= 60) {
+          document.getElementById('edit-event-type-buffer-before-value').value = Math.floor(bufferBeforeValue / 60);
+          document.getElementById('edit-event-type-buffer-before-unit').value = 'hours';
+        } else {
+          document.getElementById('edit-event-type-buffer-before-value').value = bufferBeforeValue;
+          document.getElementById('edit-event-type-buffer-before-unit').value = 'minutes';
+        }
+      } else {
+        document.getElementById('edit-event-type-buffer-before-value').value = 0;
+        document.getElementById('edit-event-type-buffer-before-unit').value = 'minutes';
+      }
+      
+      if (eventType.bufferAfter) {
+        const bufferAfterValue = eventType.bufferAfter;
+        if (bufferAfterValue >= 60) {
+          document.getElementById('edit-event-type-buffer-after-value').value = Math.floor(bufferAfterValue / 60);
+          document.getElementById('edit-event-type-buffer-after-unit').value = 'hours';
+        } else {
+          document.getElementById('edit-event-type-buffer-after-value').value = bufferAfterValue;
+          document.getElementById('edit-event-type-buffer-after-unit').value = 'minutes';
+        }
+      } else {
+        document.getElementById('edit-event-type-buffer-after-value').value = 0;
+        document.getElementById('edit-event-type-buffer-after-unit').value = 'minutes';
+      }
+      
+      // Handle advance notice with new structure
+      if (eventType.advanceNotice) {
+        const advanceNoticeValue = eventType.advanceNotice;
+        if (advanceNoticeValue >= 1440) {
+          document.getElementById('edit-event-type-advance-notice-value').value = Math.floor(advanceNoticeValue / 1440);
+          document.getElementById('edit-event-type-advance-notice-unit').value = 'days';
+        } else if (advanceNoticeValue >= 60) {
+          document.getElementById('edit-event-type-advance-notice-value').value = Math.floor(advanceNoticeValue / 60);
+          document.getElementById('edit-event-type-advance-notice-unit').value = 'hours';
+        } else {
+          document.getElementById('edit-event-type-advance-notice-value').value = advanceNoticeValue;
+          document.getElementById('edit-event-type-advance-notice-unit').value = 'minutes';
+        }
+      } else {
+        document.getElementById('edit-event-type-advance-notice-value').value = 0;
+        document.getElementById('edit-event-type-advance-notice-unit').value = '0';
+      }
       
       // Booking limits
       if (typeof eventType.bookingLimit === 'object') {
-        document.getElementById('edit-event-type-booking-limit').value = 'custom';
-        document.getElementById('edit-event-type-custom-limit-count').value = eventType.bookingLimit.count;
-        document.getElementById('edit-event-type-custom-limit-period').value = eventType.bookingLimit.period;
+        // Handle custom booking limit object
+        const limitValue = eventType.bookingLimit.count;
+        const limitPeriod = eventType.bookingLimit.period;
+        
+        document.getElementById('edit-event-type-booking-limit-value').value = limitValue;
+        if (limitPeriod === 'day') {
+          document.getElementById('edit-event-type-booking-limit-unit').value = 'per_day';
+        } else if (limitPeriod === 'week') {
+          document.getElementById('edit-event-type-booking-limit-unit').value = 'per_week';
+        } else {
+          document.getElementById('edit-event-type-booking-limit-unit').value = 'per_day'; // default
+        }
       } else {
-        document.getElementById('edit-event-type-booking-limit').value = eventType.bookingLimit;
+        // Handle simple booking limit (number or 0)
+        const limitValue = eventType.bookingLimit || 0;
+        if (limitValue === 0) {
+          document.getElementById('edit-event-type-booking-limit-value').value = 0;
+          document.getElementById('edit-event-type-booking-limit-unit').value = '0';
+        } else {
+          // Assume it's per day if it's a simple number
+          document.getElementById('edit-event-type-booking-limit-value').value = limitValue;
+          document.getElementById('edit-event-type-booking-limit-unit').value = 'per_day';
+        }
       }
       
       // Booking Form
       document.getElementById('edit-event-type-confirmation-message').value = eventType.confirmationMessage || '';
-      document.getElementById('edit-event-type-questions').value = eventType.questions || '';
+      loadQuestionsData('edit-questions-container', eventType.questions || []);
       
       // Required Fields
-      document.getElementById('edit-event-type-require-name').checked = eventType.requiredFields?.name !== false;
-      document.getElementById('edit-event-type-require-email').checked = eventType.requiredFields?.email !== false;
+      document.getElementById('edit-event-type-require-name').checked = eventType.requiredFields?.name === true;
+      document.getElementById('edit-event-type-require-email').checked = eventType.requiredFields?.email === true;
       document.getElementById('edit-event-type-require-phone').checked = eventType.requiredFields?.phone === true;
       document.getElementById('edit-event-type-require-company').checked = eventType.requiredFields?.company === true;
       
@@ -1902,7 +1998,7 @@
       document.getElementById('edit-event-type-availability').checked = eventType.notifications?.availability !== false;
       document.getElementById('edit-event-type-reminders').checked = eventType.notifications?.reminders !== false;
       document.getElementById('edit-event-type-follow-up').checked = eventType.notifications?.followUp === true;
-      document.getElementById('edit-event-type-cancellation-notification').checked = eventType.notifications?.cancellation !== false;
+
       document.getElementById('edit-event-type-reschedule-notification').checked = eventType.notifications?.reschedule !== false;
       
       // Advanced Settings
@@ -1912,7 +2008,6 @@
       
       // Update form visibility based on current values
       handleEditLocationChange();
-      handleEditBookingLimitChange();
     }
 
     async function updateEventType() {
@@ -1927,16 +2022,43 @@
       const customLocation = document.getElementById('edit-event-type-custom-location').value.trim();
       const link = document.getElementById('edit-event-type-link').value.trim();
       const color = document.getElementById('edit-event-type-color').value;
-      const bufferBefore = document.getElementById('edit-event-type-buffer-before').value;
-      const bufferAfter = document.getElementById('edit-event-type-buffer-after').value;
-      const advanceNotice = document.getElementById('edit-event-type-advance-notice').value;
-      const cancellation = document.getElementById('edit-event-type-cancellation').value;
-      const timezone = document.getElementById('edit-event-type-timezone').value;
-      const bookingLimit = document.getElementById('edit-event-type-booking-limit').value;
-      const customLimitCount = document.getElementById('edit-event-type-custom-limit-count').value;
-      const customLimitPeriod = document.getElementById('edit-event-type-custom-limit-period').value;
+      // Handle buffer times with new structure
+      const bufferBeforeValue = parseInt(document.getElementById('edit-event-type-buffer-before-value').value) || 0;
+      const bufferBeforeUnit = document.getElementById('edit-event-type-buffer-before-unit').value;
+      const bufferBefore = bufferBeforeUnit === 'hours' ? bufferBeforeValue * 60 : bufferBeforeValue;
+      
+      const bufferAfterValue = parseInt(document.getElementById('edit-event-type-buffer-after-value').value) || 0;
+      const bufferAfterUnit = document.getElementById('edit-event-type-buffer-after-unit').value;
+      const bufferAfter = bufferAfterUnit === 'hours' ? bufferAfterValue * 60 : bufferAfterValue;
+      
+      // Handle advance notice with new structure
+      const advanceNoticeValue = parseInt(document.getElementById('edit-event-type-advance-notice-value').value) || 0;
+      const advanceNoticeUnit = document.getElementById('edit-event-type-advance-notice-unit').value;
+      let advanceNotice = 0;
+      
+      if (advanceNoticeUnit === 'days') {
+        advanceNotice = advanceNoticeValue * 1440; // Convert days to minutes
+      } else if (advanceNoticeUnit === 'hours') {
+        advanceNotice = advanceNoticeValue * 60; // Convert hours to minutes
+      } else if (advanceNoticeUnit === 'minutes') {
+        advanceNotice = advanceNoticeValue;
+      }
+      // If unit is '0', advanceNotice remains 0 (no minimum)
+      
+      // Handle booking limit with new structure
+      const bookingLimitValue = parseInt(document.getElementById('edit-event-type-booking-limit-value').value) || 0;
+      const bookingLimitUnit = document.getElementById('edit-event-type-booking-limit-unit').value;
+      let bookingLimit = 0;
+      
+      if (bookingLimitUnit === 'per_day') {
+        bookingLimit = { count: bookingLimitValue, period: 'day' };
+      } else if (bookingLimitUnit === 'per_week') {
+        bookingLimit = { count: bookingLimitValue, period: 'week' };
+      } else if (bookingLimitUnit === '0') {
+        bookingLimit = 0; // No limit
+      }
       const confirmationMessage = document.getElementById('edit-event-type-confirmation-message').value.trim();
-      const questions = document.getElementById('edit-event-type-questions').value.trim();
+      const questions = getQuestionsData('edit-questions-container');
       const requireName = document.getElementById('edit-event-type-require-name').checked;
       const requireEmail = document.getElementById('edit-event-type-require-email').checked;
       const requirePhone = document.getElementById('edit-event-type-require-phone').checked;
@@ -1944,7 +2066,7 @@
       const availability = document.getElementById('edit-event-type-availability').checked;
       const reminders = document.getElementById('edit-event-type-reminders').checked;
       const followUp = document.getElementById('edit-event-type-follow-up').checked;
-      const cancellationNotification = document.getElementById('edit-event-type-cancellation-notification').checked;
+
       const rescheduleNotification = document.getElementById('edit-event-type-reschedule-notification').checked;
       const secret = document.getElementById('edit-event-type-secret').value;
       const priority = document.getElementById('edit-event-type-priority').value;
@@ -1995,8 +2117,6 @@
         bufferBefore: parseInt(bufferBefore),
         bufferAfter: parseInt(bufferAfter),
         advanceNotice: parseInt(advanceNotice),
-        cancellation: parseInt(cancellation),
-        timezone,
         bookingLimit: bookingLimit === 'custom' ? {
           count: parseInt(customLimitCount),
           period: customLimitPeriod
@@ -2013,7 +2133,6 @@
           availability,
           reminders,
           followUp,
-          cancellation: cancellationNotification,
           reschedule: rescheduleNotification
         },
         visibility: secret,
@@ -2051,6 +2170,9 @@
       document.getElementById('modal-backdrop').classList.add('hidden');
       document.getElementById('edit-event-type-modal').classList.add('hidden');
       window.editingEventType = null;
+      // Clear questions container
+      document.getElementById('edit-questions-container').innerHTML = '';
+      questionCounter = 0;
     }
 
     // Edit form interactive functions
@@ -2072,16 +2194,7 @@
       }
     }
 
-    function handleEditBookingLimitChange() {
-      const bookingLimit = document.getElementById('edit-event-type-booking-limit').value;
-      const customLimitContainer = document.getElementById('edit-custom-booking-limit-container');
-      
-      if (bookingLimit === 'custom') {
-        customLimitContainer.style.display = 'block';
-      } else {
-        customLimitContainer.style.display = 'none';
-      }
-    }
+
 
     // Initialize event types on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -2106,7 +2219,7 @@
           bookingLimit: 0,
           confirmationMessage: '',
           questions: '',
-          requiredFields: { name: true, email: true, phone: false, company: false },
+          requiredFields: { name: false, email: false, phone: false, company: false },
           notifications: { availability: true, reminders: true, followUp: false, cancellation: true, reschedule: true },
           visibility: 'public',
           priority: 'normal',
@@ -2119,14 +2232,9 @@
       
       // Add event listeners for form interactions
       const locationSelect = document.getElementById('event-type-location');
-      const bookingLimitSelect = document.getElementById('event-type-booking-limit');
       
       if (locationSelect) {
         locationSelect.addEventListener('change', handleLocationChange);
-      }
-      
-      if (bookingLimitSelect) {
-        bookingLimitSelect.addEventListener('change', handleBookingLimitChange);
       }
     });
 
@@ -3743,3 +3851,104 @@
     }
     window.submitAppleConnect = submitAppleConnect;
     window.confirmDisconnectApple = confirmDisconnectApple;
+
+    // Number input increment/decrement functions
+    function incrementNumber(inputId) {
+      const input = document.getElementById(inputId);
+      const currentValue = parseInt(input.value) || 0;
+      const max = parseInt(input.max) || 999;
+      if (currentValue < max) {
+        input.value = currentValue + 1;
+        input.dispatchEvent(new Event('change'));
+      }
+    }
+
+    function decrementNumber(inputId) {
+      const input = document.getElementById(inputId);
+      const currentValue = parseInt(input.value) || 0;
+      const min = parseInt(input.min) || 0;
+      if (currentValue > min) {
+        input.value = currentValue - 1;
+        input.dispatchEvent(new Event('change'));
+      }
+    }
+
+    // Question management functions
+    let questionCounter = 0;
+
+    function addQuestion(containerId = 'questions-container', questionData = null) {
+      const container = document.getElementById(containerId);
+      const questionId = `question_${questionCounter++}`;
+      
+      const questionDiv = document.createElement('div');
+      questionDiv.className = 'bg-[#19342e] border border-[#2C4A43] rounded-lg p-4';
+      questionDiv.id = `question_div_${questionId}`;
+      
+      questionDiv.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-[#E0E0E0] font-medium">Question ${questionCounter}</h4>
+          <button type="button" onclick="removeQuestion('${questionId}')" class="text-red-400 hover:text-red-300 transition-colors">
+            <span class="material-icons-outlined text-lg">delete</span>
+          </button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Question Text</label>
+            <input type="text" id="question_text_${questionId}" class="w-full bg-[#1A2E29] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your question" value="${questionData ? questionData.text : ''}">
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="question_required_${questionId}" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2" ${questionData && questionData.required ? 'checked' : ''}>
+              <span class="text-[#E0E0E0] text-sm">Required</span>
+            </label>
+          </div>
+        </div>
+      `;
+      
+      container.appendChild(questionDiv);
+    }
+
+    function addEditQuestion() {
+      addQuestion('edit-questions-container');
+    }
+
+    function removeQuestion(questionId) {
+      const questionDiv = document.getElementById(`question_div_${questionId}`);
+      if (questionDiv) {
+        questionDiv.remove();
+      }
+    }
+
+    function getQuestionsData(containerId) {
+      const container = document.getElementById(containerId);
+      const questions = [];
+      
+      // Get all question divs
+      const questionDivs = container.querySelectorAll('[id^="question_div_question_"]');
+      
+      questionDivs.forEach(div => {
+        const questionId = div.id.replace('question_div_', '');
+        const textInput = document.getElementById(`question_text_${questionId}`);
+        const requiredCheckbox = document.getElementById(`question_required_${questionId}`);
+        
+        if (textInput && textInput.value.trim()) {
+          questions.push({
+            text: textInput.value.trim(),
+            required: requiredCheckbox ? requiredCheckbox.checked : false
+          });
+        }
+      });
+      
+      return questions;
+    }
+
+    function loadQuestionsData(containerId, questions) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = ''; // Clear existing questions
+      
+      if (questions && questions.length > 0) {
+        questions.forEach(question => {
+          addQuestion(containerId, question);
+        });
+      }
+    }

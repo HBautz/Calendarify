@@ -320,8 +320,6 @@ def main():
     seed_default_admin()
     start_backend()
     serve_frontend()
-    print("\nOpening http://localhost:3000/log-in in your browser...")
-    webbrowser.open('http://localhost:3000/log-in')
     print("\nAll services started! Press Ctrl+C to stop.")
     while True:
         time.sleep(60)
