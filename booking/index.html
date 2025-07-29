@@ -516,13 +516,32 @@
                         }
                     }
 
-                    const timeStr = slot.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
+                    // Exclude times that have already been booked (respect buffer)
+                    let booked = {};
+                    try {
+                        booked = JSON.parse(localStorage.getItem('calendarify-booked-slots') || '{}');
+                    } catch {}
+                    const busy = booked[event.slug] || [];
+                    const candidateStart = new Date(slot.getTime() - bufferBefore * 60000);
+                    const candidateEnd = new Date(slot.getTime() + eventDuration * 60000 + bufferAfter * 60000);
+                    const conflict = busy.some(b => {
+                        const bStart = new Date(b.start);
+                        const bEnd = new Date(b.end);
+                        const bStartBuf = new Date(bStart.getTime() - (b.bufferBefore || 0) * 60000);
+                        const bEndBuf = new Date(bEnd.getTime() + (b.bufferAfter || 0) * 60000);
+                        return candidateStart < bEndBuf && candidateEnd > bStartBuf;
                     });
-                    slots.push(timeStr);
-                    console.log('[TEMP-DEBUG] Added slot', timeStr);
+                    if (!conflict) {
+                        const timeStr = slot.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        slots.push(timeStr);
+                        console.log('[TEMP-DEBUG] Added slot', timeStr);
+                    } else {
+                        console.log('[TEMP-DEBUG] Skipping booked slot at', slot);
+                    }
                     currentMinutes += step;
                 }
                 
@@ -836,7 +855,7 @@
 
             function confirmBooking() {
                 if (!validateBookingForm()) return;
-                
+
                 // Collect form data
                 const bookingData = {
                     eventTitle: event.title || event.name,
@@ -858,6 +877,45 @@
                         bookingData.questions.push({ question: questionObj.text, answer });
                     });
                 }
+
+                // Persist meeting to localStorage so host dashboard can display it
+                const meeting = {
+                    id: Date.now(),
+                    invitee: bookingData.name || 'Anonymous',
+                    email: bookingData.email || '',
+                    eventType: bookingData.eventTitle,
+                    date: `${bookingData.date}, ${bookingData.time}`,
+                    status: 'Confirmed',
+                    slug: event.slug
+                };
+
+                let meetingsObj;
+                try {
+                    meetingsObj = JSON.parse(localStorage.getItem('calendarify-meetings') || '{}');
+                } catch {
+                    meetingsObj = {};
+                }
+                if (!meetingsObj.upcoming) meetingsObj = { upcoming: [], past: [], pending: [] };
+                meetingsObj.upcoming.push(meeting);
+                localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsObj));
+
+                // Mark this slot as booked so it becomes unavailable
+                const startDate = new Date(selectedDate);
+                const { h, m } = parseTime(selectedTime);
+                startDate.setHours(h, m, 0, 0);
+                const endDate = new Date(startDate.getTime() + eventDuration * 60000);
+                let booked = {};
+                try {
+                    booked = JSON.parse(localStorage.getItem('calendarify-booked-slots') || '{}');
+                } catch {}
+                if (!booked[event.slug]) booked[event.slug] = [];
+                booked[event.slug].push({
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                    bufferBefore,
+                    bufferAfter
+                });
+                localStorage.setItem('calendarify-booked-slots', JSON.stringify(booked));
 
                 console.log('Booking confirmed:', bookingData);
                 alert(`Booking confirmed for ${bookingData.date} at ${bookingData.time}!`);
