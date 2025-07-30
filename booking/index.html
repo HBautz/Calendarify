@@ -516,13 +516,32 @@
                         }
                     }
 
-                    const timeStr = slot.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
+                    // Exclude times that have already been booked (respect buffer)
+                    let booked = {};
+                    try {
+                        booked = JSON.parse(localStorage.getItem('calendarify-booked-slots') || '{}');
+                    } catch {}
+                    const busy = booked[event.slug] || [];
+                    const candidateStart = new Date(slot.getTime() - bufferBefore * 60000);
+                    const candidateEnd = new Date(slot.getTime() + eventDuration * 60000 + bufferAfter * 60000);
+                    const conflict = busy.some(b => {
+                        const bStart = new Date(b.start);
+                        const bEnd = new Date(b.end);
+                        const bStartBuf = new Date(bStart.getTime() - (b.bufferBefore || 0) * 60000);
+                        const bEndBuf = new Date(bEnd.getTime() + (b.bufferAfter || 0) * 60000);
+                        return candidateStart < bEndBuf && candidateEnd > bStartBuf;
                     });
-                    slots.push(timeStr);
-                    console.log('[TEMP-DEBUG] Added slot', timeStr);
+                    if (!conflict) {
+                        const timeStr = slot.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        slots.push(timeStr);
+                        console.log('[TEMP-DEBUG] Added slot', timeStr);
+                    } else {
+                        console.log('[TEMP-DEBUG] Skipping booked slot at', slot);
+                    }
                     currentMinutes += step;
                 }
                 
@@ -530,7 +549,15 @@
                 return slots;
             }
 
-            function generateTimeSlots(date) {
+            async function generateTimeSlots(date) {
+                try {
+                    const res = await fetch(`${API_URL}/event-types/${event.slug}/slots?date=${date.toISOString().split('T')[0]}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        return data.map(iso => formatTime(iso.substring(11,16)));
+                    }
+                } catch (e) { console.log('slot fetch failed', e); }
+
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 const dayKey = dayNames[date.getDay()];
 
@@ -557,7 +584,7 @@
                 return generateSlotsInRange(range.start, range.end, date);
             }
 
-            function updateTimeSlots() {
+            async function updateTimeSlots() {
                 console.log('[TEMP-DEBUG] updateTimeSlots for', selectedDate);
                 const container = document.getElementById('timeSlotsContainer');
                 const dateHeader = document.getElementById('selectedDate');
@@ -596,7 +623,7 @@
                     confirmButton.style.opacity = '0.5';
                     confirmButton.style.pointerEvents = 'none';
                 } else {
-                    let timeSlots = generateTimeSlots(selectedDate);
+                    let timeSlots = await generateTimeSlots(selectedDate);
                     console.log('[TEMP-DEBUG] Generated slots', timeSlots);
 
                     if (timeSlots.length === 0) {
@@ -834,9 +861,9 @@
                 return true;
             }
 
-            function confirmBooking() {
+            async function confirmBooking() {
                 if (!validateBookingForm()) return;
-                
+
                 // Collect form data
                 const bookingData = {
                     eventTitle: event.title || event.name,
@@ -858,6 +885,64 @@
                         bookingData.questions.push({ question: questionObj.text, answer });
                     });
                 }
+
+                const startDate = new Date(selectedDate);
+                const { h, m } = parseTime(selectedTime);
+                startDate.setHours(h, m, 0, 0);
+                const endDate = new Date(startDate.getTime() + eventDuration * 60000);
+
+                // Persist meeting to server
+                try {
+                    const res = await fetch(`${API_URL}/event-types/${event.slug}/bookings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: bookingData.name,
+                            email: bookingData.email,
+                            start: startDate.toISOString(),
+                            end: endDate.toISOString()
+                        })
+                    });
+                    console.log('Server booking response', res.status);
+                } catch (e) { console.error('Booking API failed', e); }
+
+                // Persist meeting to localStorage so host dashboard can display it
+                const meeting = {
+                    id: Date.now(),
+                    invitee: bookingData.name || 'Anonymous',
+                    email: bookingData.email || '',
+                    eventType: bookingData.eventTitle,
+                    slug: event.slug,
+                    duration: eventDuration,
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                    date: `${bookingData.date}, ${bookingData.time}`,
+                    status: 'Confirmed'
+                };
+
+                let meetingsObj;
+                try {
+                    meetingsObj = JSON.parse(localStorage.getItem('calendarify-meetings') || '{}');
+                } catch {
+                    meetingsObj = {};
+                }
+                if (!meetingsObj.upcoming) meetingsObj = { upcoming: [], past: [], pending: [] };
+                meetingsObj.upcoming.push(meeting);
+                localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsObj));
+
+                // Mark this slot as booked so it becomes unavailable
+                let booked = {};
+                try {
+                    booked = JSON.parse(localStorage.getItem('calendarify-booked-slots') || '{}');
+                } catch {}
+                if (!booked[event.slug]) booked[event.slug] = [];
+                booked[event.slug].push({
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                    bufferBefore,
+                    bufferAfter
+                });
+                localStorage.setItem('calendarify-booked-slots', JSON.stringify(booked));
 
                 console.log('Booking confirmed:', bookingData);
                 alert(`Booking confirmed for ${bookingData.date} at ${bookingData.time}!`);

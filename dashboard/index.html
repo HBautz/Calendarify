@@ -792,6 +792,28 @@
     </div>
   </div>
 
+  <!-- Reschedule Meeting Modal -->
+  <div id="reschedule-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Reschedule Meeting</h2>
+          <button onclick="closeRescheduleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <input type="date" id="reschedule-date" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]">
+          <select id="reschedule-time" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]"></select>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeRescheduleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmReschedule()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Add Contact Modal -->
   <div id="add-contact-modal" class="fixed inset-0 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
