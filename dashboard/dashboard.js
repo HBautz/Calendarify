@@ -91,6 +91,31 @@
       return [];
     }
 
+    async function fetchMeetingsFromServer() {
+      const token = getAnyToken();
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/bookings`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (res.ok) {
+        const data = await res.json();
+        meetingsData = { upcoming: [], past: [], pending: [] };
+        const now = new Date();
+        data.forEach(b => {
+          const start = new Date(b.starts_at);
+          const info = {
+            id: b.id,
+            invitee: b.name,
+            email: b.email,
+            eventType: b.event_type.title,
+            date: new Date(b.starts_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+            status: 'Confirmed'
+          };
+          if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
+        });
+        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
+      }
+    }
+
     function collectState() {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
@@ -168,7 +193,7 @@
     }
 
     // Meetings tab functionality
-    function showMeetingsTab(tab, btn) {
+    async function showMeetingsTab(tab, btn) {
       console.log('showMeetingsTab called with tab:', tab);
       
       // Save current tab to localStorage
@@ -189,6 +214,7 @@
         console.log('Active button classes:', btn.className);
       }
 
+      await fetchMeetingsFromServer();
       // Update table content based on tab
       updateMeetingsTable(tab);
     }
@@ -202,7 +228,14 @@
         console.error('Could not find tbody element!');
         return;
       }
-      
+      // Reload meetings data from localStorage each time to reflect new bookings
+      try {
+        const stored = JSON.parse(localStorage.getItem('calendarify-meetings') || '{}');
+        if (stored.upcoming) {
+          meetingsData = stored;
+        }
+      } catch {}
+
       const meetings = getMeetingsData(tab);
       console.log('Meetings for tab', tab, ':', meetings);
       
@@ -259,19 +292,27 @@
     }
 
     // Store meetings data in a variable that can be modified
-    let meetingsData = {
-      upcoming: [
-        { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' }
-      ],
-      past: [
-        { id: 3, invitee: 'Alice Johnson', email: 'alice@test.com', eventType: '30-min Intro Call', date: 'Yesterday, 3:00 PM', status: 'Completed' }
-      ],
-      pending: [
-        { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
-      ]
-    };
-    // Persist default meetings to localStorage if not present
-    if (!localStorage.getItem('calendarify-meetings')) {
+    let meetingsData = { upcoming: [], past: [], pending: [] };
+    try {
+      const storedMeetings = JSON.parse(localStorage.getItem('calendarify-meetings') || '{}');
+      if (storedMeetings.upcoming) {
+        meetingsData = storedMeetings;
+      } else {
+        // seed with example data if nothing stored yet
+        meetingsData = {
+          upcoming: [
+            { id: 1, invitee: 'Jane Doe', email: 'jane@example.com', eventType: '30-min Intro Call', date: 'Today, 2:00 PM', status: 'Confirmed' }
+          ],
+          past: [
+            { id: 3, invitee: 'Alice Johnson', email: 'alice@test.com', eventType: '30-min Intro Call', date: 'Yesterday, 3:00 PM', status: 'Completed' }
+          ],
+          pending: [
+            { id: 2, invitee: 'John Smith', email: 'john@company.com', eventType: '1-hour Consultation', date: 'Tomorrow, 10:00 AM', status: 'Pending' }
+          ]
+        };
+        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
+      }
+    } catch {
       localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
     }
 
@@ -3178,6 +3219,9 @@
         // Then remove meeting from data (cancelled meetings are removed)
         removeMeetingFromData(meetingInfo.id);
         console.log('Meeting removed from data. Current data:', meetingsData);
+
+        // Persist updated meetings to localStorage
+        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
         
         // Show notification
         showNotification(`Meeting with ${meetingInfo.invitee} has been cancelled`);
@@ -3215,6 +3259,9 @@
         // Then remove meeting from data
         removeMeetingFromData(meetingInfo.id);
         console.log('Meeting removed from data. Current data:', meetingsData);
+
+        // Persist updated meetings to localStorage
+        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
         
         // Show notification
         showNotification(`Meeting with ${meetingInfo.invitee} has been deleted`);
