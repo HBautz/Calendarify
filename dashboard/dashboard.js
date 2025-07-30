@@ -91,6 +91,31 @@
       return [];
     }
 
+    async function fetchMeetingsFromServer() {
+      const token = getAnyToken();
+      if (!token) return;
+      const clean = token.replace(/^"|"$/g, '');
+      const res = await fetch(`${API_URL}/bookings`, { headers: { Authorization: `Bearer ${clean}` } });
+      if (res.ok) {
+        const data = await res.json();
+        meetingsData = { upcoming: [], past: [], pending: [] };
+        const now = new Date();
+        data.forEach(b => {
+          const start = new Date(b.starts_at);
+          const info = {
+            id: b.id,
+            invitee: b.name,
+            email: b.email,
+            eventType: b.event_type.title,
+            date: new Date(b.starts_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+            status: 'Confirmed'
+          };
+          if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
+        });
+        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
+      }
+    }
+
     function collectState() {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
@@ -168,7 +193,7 @@
     }
 
     // Meetings tab functionality
-    function showMeetingsTab(tab, btn) {
+    async function showMeetingsTab(tab, btn) {
       console.log('showMeetingsTab called with tab:', tab);
       
       // Save current tab to localStorage
@@ -189,6 +214,7 @@
         console.log('Active button classes:', btn.className);
       }
 
+      await fetchMeetingsFromServer();
       // Update table content based on tab
       updateMeetingsTable(tab);
     }
