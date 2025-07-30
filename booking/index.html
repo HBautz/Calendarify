@@ -912,9 +912,12 @@
                     invitee: bookingData.name || 'Anonymous',
                     email: bookingData.email || '',
                     eventType: bookingData.eventTitle,
+                    slug: event.slug,
+                    duration: eventDuration,
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
                     date: `${bookingData.date}, ${bookingData.time}`,
-                    status: 'Confirmed',
-                    slug: event.slug
+                    status: 'Confirmed'
                 };
 
                 let meetingsObj;

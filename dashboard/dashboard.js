@@ -107,6 +107,10 @@
             invitee: b.name,
             email: b.email,
             eventType: b.event_type.title,
+            slug: b.event_type.slug,
+            duration: b.event_type.duration,
+            start: b.starts_at,
+            end: b.ends_at,
             date: new Date(b.starts_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
             status: 'Confirmed'
           };
@@ -848,7 +852,7 @@
       
       // Otherwise, close all modals as usual
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal' || el.id === 'change-displayname-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal' || el.id === 'change-displayname-modal' || el.id === 'reschedule-modal') {
           el.classList.add('hidden');
         }
       });
@@ -858,6 +862,7 @@
       // Clear any stored data
       window.meetingToCancel = null;
       window.meetingToDelete = null;
+      window.meetingToReschedule = null;
       window.workflowToDelete = null;
       window.contactToDelete = null;
       window.tagToDelete = null;
@@ -3120,12 +3125,17 @@
 
     function rescheduleMeeting(meetingId) {
       const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
-      const meeting = getMeetingsData('upcoming').find(m => m.id === id) || 
+      const meeting = getMeetingsData('upcoming').find(m => m.id === id) ||
                      getMeetingsData('pending').find(m => m.id === id);
-      
+
       if (meeting) {
-        showNotification(`Opening reschedule dialog for ${meeting.invitee}`);
-        // Here you would typically open a reschedule modal
+        window.meetingToReschedule = meeting;
+        const start = new Date(meeting.start);
+        const dateInput = document.getElementById('reschedule-date');
+        dateInput.value = start.toISOString().split('T')[0];
+        document.getElementById('modal-backdrop').classList.remove('hidden');
+        document.getElementById('reschedule-modal').classList.remove('hidden');
+        loadRescheduleSlots();
       } else {
         showNotification('Cannot reschedule past meetings');
       }
@@ -3286,6 +3296,62 @@
       document.getElementById('delete-meeting-confirm-modal').classList.add('hidden');
       window.meetingToDelete = null;
     }
+
+    function closeRescheduleModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('reschedule-modal').classList.add('hidden');
+      window.meetingToReschedule = null;
+    }
+
+    async function loadRescheduleSlots() {
+      const meeting = window.meetingToReschedule;
+      if (!meeting) return;
+      const dateStr = document.getElementById('reschedule-date').value;
+      const res = await fetch(`${API_URL}/event-types/${meeting.slug}/slots?date=${dateStr}&exclude=${meeting.id}`);
+      const select = document.getElementById('reschedule-time');
+      select.innerHTML = '';
+      if (res.ok) {
+        const slots = await res.json();
+        slots.forEach(iso => {
+          const d = new Date(iso);
+          const display = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const opt = document.createElement('option');
+          opt.value = iso;
+          opt.textContent = display;
+          select.appendChild(opt);
+        });
+      }
+    }
+
+    async function confirmReschedule() {
+      const meeting = window.meetingToReschedule;
+      if (!meeting) return;
+      const iso = document.getElementById('reschedule-time').value;
+      if (!iso) {
+        showNotification('Please select a new time');
+        return;
+      }
+      const start = new Date(iso);
+      const end = new Date(start.getTime() + meeting.duration * 60000);
+      const token = getAnyToken();
+      const clean = token ? token.replace(/^"|"$/g, '') : '';
+      await fetch(`${API_URL}/bookings/${meeting.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+        body: JSON.stringify({ start: start.toISOString(), end: end.toISOString() })
+      });
+      meeting.start = start.toISOString();
+      meeting.end = end.toISOString();
+      meeting.date = start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
+      showNotification(`Meeting with ${meeting.invitee} rescheduled`);
+      closeRescheduleModal();
+      const activeTabButton = document.querySelector('#meetings-section button.active-tab');
+      const currentTab = activeTabButton ? activeTabButton.getAttribute('data-tab') : 'upcoming';
+      updateMeetingsTable(currentTab);
+    }
+
+    document.getElementById('reschedule-date').addEventListener('change', loadRescheduleSlots);
 
     // Test function to verify everything is working
     function testMeetingsFunctionality() {

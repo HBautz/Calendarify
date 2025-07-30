@@ -57,7 +57,7 @@ export class EventTypesService {
     return this.prisma.eventType.delete({ where: { id } });
   }
 
-  async availableSlots(slug: string, date: Date) {
+  async availableSlots(slug: string, date: Date, exclude?: string) {
     const et = await this.prisma.eventType.findUnique({ where: { slug } });
     if (!et) return [];
 
@@ -69,6 +69,7 @@ export class EventTypesService {
         event_type_id: et.id,
         starts_at: { gte: start },
         ends_at: { lte: end },
+        ...(exclude ? { NOT: { id: exclude } } : {}),
       },
     });
 

@@ -29,4 +29,15 @@ export class BookingsService {
   remove(id: string) {
     return this.prisma.booking.delete({ where: { id } });
   }
+
+  update(id: string, data: { start: string; end: string }) {
+    return this.prisma.booking.update({
+      where: { id },
+      data: {
+        starts_at: new Date(data.start),
+        ends_at: new Date(data.end),
+      },
+      include: { event_type: true },
+    });
+  }
 }

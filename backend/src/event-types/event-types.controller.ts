@@ -42,9 +42,13 @@ export class EventTypesController {
   }
 
   @Get(':slug/slots')
-  async slots(@Param('slug') slug: string, @Query('date') date: string) {
+  async slots(
+    @Param('slug') slug: string,
+    @Query('date') date: string,
+    @Query('exclude') exclude?: string,
+  ) {
     const d = date ? new Date(date) : new Date();
-    return this.events.availableSlots(slug, d);
+    return this.events.availableSlots(slug, d, exclude);
   }
 
   @Post(':slug/bookings')
