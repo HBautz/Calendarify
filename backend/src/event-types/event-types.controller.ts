@@ -31,8 +31,8 @@ export class EventTypesController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.events.update(id, body);
+  update(@Request() req, @Param('id') id: string, @Body() body: any) {
+    return this.events.update(id, body, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)

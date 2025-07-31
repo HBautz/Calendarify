@@ -96,7 +96,10 @@
     <script src="/auth.js"></script>
     <script>
       (async () => {
+        console.log('Login page: Checking for existing tokens...');
+        
         if (sessionStorage.getItem('calendarify-logged-out')) {
+          console.log('User logged out, clearing tokens');
           clearToken();
           sessionStorage.removeItem('calendarify-logged-out');
           return;
@@ -105,20 +108,30 @@
         // Check for persistent token first (for "stay logged in" users)
         const persistent = localStorage.getItem('calendarify-token');
         if (persistent) {
+          console.log('Found persistent token, validating...');
           if (await verifyToken(true)) {
+            console.log('Persistent token valid, redirecting to dashboard');
             window.location.href = '/dashboard';
             return;
+          } else {
+            console.log('Persistent token invalid, cleared');
           }
         }
 
         // Check for session token (for current session users)
         const session = sessionStorage.getItem('calendarify-token');
         if (session) {
+          console.log('Found session token, validating...');
           if (await verifyToken(false)) {
+            console.log('Session token valid, redirecting to dashboard');
             window.location.href = '/dashboard';
             return;
+          } else {
+            console.log('Session token invalid, cleared');
           }
         }
+        
+        console.log('No valid tokens found, staying on login page');
       })();
     </script>
   </body>

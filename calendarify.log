@@ -1,0 +1,455 @@
+
+up to date, audited 992 packages in 10s
+
+173 packages are looking for funding
+  run `npm fund` for details
+
+13 vulnerabilities (1 low, 4 moderate, 4 high, 4 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+createdb: error: database creation failed: ERROR:  database "calendarify" already exists
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "calendarify", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v5.22.0) to ./../node_modules/@prisma/client in 402ms
+
+
+up to date, audited 992 packages in 7s
+
+173 packages are looking for funding
+  run `npm fund` for details
+
+4 vulnerabilities (1 low, 2 high, 1 critical)
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> backend@0.0.1 start
+> nest start
+
+Server running at http://localhost:3000
+INCOMING: GET /
+OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +385ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mNotificationsModule dependencies initialized[39m[38;5;3m +9ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +25ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAvailabilityModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAdminModule dependencies initialized[39m[38;5;3m +2ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +5ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mEventTypesModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mIntegrationsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mContactsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWorkflowsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTagsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:14 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBookingsModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAppController {/api}:[39m[38;5;3m +103ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/logout, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/display/:name, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/display/:name/state, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/state, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/state, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEventTypesController {/api/event-types}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/slug/:slug, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:slug/slots, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:slug/bookings, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBookingsController {/api/bookings}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAvailabilityController {/api/availability}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mIntegrationsController {/api/integrations}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/auth-url, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/events, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google-meet, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/auth-url, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/auth-url, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/status, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/connect, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/calendars, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/select, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/disconnect, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mContactsController {/api/contacts}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id/tags, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id/tags/:tagName, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWorkflowsController {/api/workflows}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTagsController {/api/tags}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAdminController {/api/admin}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/status, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/wipe, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 35763  - [39m07/31/2025, 3:56:15 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +74ms[39m
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-04T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-04T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-04T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-04T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-04T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:35.815Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:35.815Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 2
+   ❌ Blocked slots: 14
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-01T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-01T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-01T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-01T11:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-01T12:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 9 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.081Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.081Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 2
+[ADVANCE-NOTICE-DEBUG] Filtered out slot: 2025-08-01T09:00:00.000Z because 2025-08-01T09:00:00.000Z < 2025-08-01T13:59:39.081Z
+[ADVANCE-NOTICE-DEBUG] Filtered out slot: 2025-08-01T09:30:00.000Z because 2025-08-01T09:30:00.000Z < 2025-08-01T13:59:39.081Z
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-02T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-02T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-02T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-02T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-02T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.104Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.104Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-03T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-03T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-03T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-03T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-03T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.117Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.117Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-04T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-04T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-04T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-04T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-04T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.130Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.130Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-05T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-05T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-05T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-05T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-05T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.142Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.142Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-10T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-10T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-10T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-10T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-10T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.155Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.155Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 16
+   ❌ Blocked slots: 0
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T13:59:39.168Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T13:59:39.168Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 16
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 16
+🎯 [SUPER-BUFFER-DEBUG] Event type buffer settings from database:
+   📊 buffer_before: 120 minutes
+   📊 buffer_after: 19200 minutes
+   📊 duration: 30 minutes
+   📊 slot_interval: 30 minutes
+🎯 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+   📅 Busy 1: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS START =====
+🔒 [SUPER-BUFFER-DEBUG] Buffer settings: {
+  bufferBefore: '120 minutes (2 hours)',
+  bufferAfter: '19200 minutes (320 hours)'
+}
+🔒 [SUPER-BUFFER-DEBUG] Busy periods found: 1
+🔒 [SUPER-BUFFER-DEBUG] Busy period 1:
+   📅 Original: 2025-08-01T12:00:00.000Z - 2025-08-01T12:30:00.000Z
+   🚫 With buffers: 2025-08-01T10:00:00.000Z - 2025-08-14T20:30:00.000Z
+   ⏱️  Blocked duration: 19350 minutes
+🔒 [SUPER-BUFFER-DEBUG] Slots before buffer filtering: 16
+🔒 [SUPER-BUFFER-DEBUG] Buffer filtering results:
+   ✅ Available slots: 0
+   ❌ Blocked slots: 16
+   📊 Total slots processed: 16
+🔒 [SUPER-BUFFER-DEBUG] Blocked slots details:
+   1. 2025-08-04T09:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   2. 2025-08-04T09:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   3. 2025-08-04T10:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   4. 2025-08-04T10:30:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   5. 2025-08-04T11:00:00.000Z - busy period 2025-08-01T12:00:00.000Z-2025-08-01T12:30:00.000Z with buffers
+   ... and 11 more blocked slots
+🔒 [SUPER-BUFFER-DEBUG] ===== BUFFER ANALYSIS END =====
+[ADVANCE-NOTICE-DEBUG] Advance notice calculation:
+[ADVANCE-NOTICE-DEBUG]   now: 2025-07-31T14:00:44.139Z
+[ADVANCE-NOTICE-DEBUG]   advance_notice minutes: 1440
+[ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T14:00:44.139Z
+[ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
+[ADVANCE-NOTICE-DEBUG]   slots after filtering: 0

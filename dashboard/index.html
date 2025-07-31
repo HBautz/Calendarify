@@ -200,6 +200,14 @@
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-2xl font-bold text-white">Meetings</h2>
           <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <label for="meetings-clock-format-toggle" class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-[#A3B3AF] text-sm">12h format</span>
+                <button id="meetings-clock-format-toggle" type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleClockFormat()">
+                  <div id="meetings-toggle-circle" class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s;"></div>
+                </button>
+              </label>
+            </div>
             <input type="text" class="search-field w-64" placeholder="Search meetings..." oninput="handleMeetingsSearch(event)">
             <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold" onclick="exportCSV()">Export CSV</button>
           </div>
@@ -972,6 +980,88 @@
     </div>
   </div>
 
+  <!-- Add Question Modal -->
+  <div id="add-question-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl shadow-2xl p-8 z-[60] hidden" style="min-width:400px; max-width:500px;">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-lg font-bold text-white">Add Question</h3>
+      <button onclick="closeAddQuestionModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="space-y-4">
+      <!-- Pre-made Questions -->
+      <div>
+        <h4 class="text-[#E0E0E0] font-medium mb-3">Pre-made Questions</h4>
+        <div class="space-y-2">
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="name" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Name</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's full name</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="email" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Email</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's email address</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="phone" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Phone Number</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's phone number</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="company" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Company</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's company name</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Custom Question -->
+      <div>
+        <h4 class="text-[#E0E0E0] font-medium mb-3">Custom Question</h4>
+        <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+          <input type="radio" name="question-type" value="custom" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+          <div>
+            <span class="text-[#E0E0E0] font-medium">Custom Question</span>
+            <p class="text-[#A3B3AF] text-sm">Ask your own question</p>
+          </div>
+        </label>
+      </div>
+
+      <!-- Custom Question Input (hidden by default) -->
+      <div id="custom-question-input" class="hidden">
+        <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Question Text</label>
+        <input type="text" id="custom-question-text" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your question">
+      </div>
+
+      <!-- Required Toggle -->
+      <div class="flex items-center gap-3 pt-4 border-t border-[#2C4A43]">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="question-required" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+          <span class="text-[#E0E0E0] text-sm">Required</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-6 border-t border-[#2C4A43]">
+      <button onclick="closeAddQuestionModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+        Cancel
+      </button>
+      <button onclick="confirmAddQuestion()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Add Question
+      </button>
+    </div>
+  </div>
+
   <!-- Connect Apple Calendar Modal -->
   <div id="connect-apple-modal" class="fixed inset-0 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
@@ -1057,7 +1147,20 @@
                   <option value="120">2 hours</option>
                   <option value="180">3 hours</option>
                   <option value="240">4 hours</option>
-                  <option value="custom">Custom duration</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="event-type-slot-interval" class="block text-[#A3B3AF] text-sm font-medium mb-2">Slot Interval *</label>
+                <select id="event-type-slot-interval" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
                 </select>
               </div>
             </div>
@@ -1195,37 +1298,17 @@
             </div>
 
             <div>
-              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Questions</label>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Questions</label>
               <div id="questions-container" class="space-y-3">
                 <!-- Questions will be added here dynamically -->
               </div>
-              <button type="button" onclick="addQuestion()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
+              <button type="button" onclick="openAddQuestionModal()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
                 <span class="material-icons-outlined text-lg">add</span>
                 Add Question
               </button>
             </div>
 
-            <div>
-              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-name" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Name</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-email" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Email</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-phone" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Phone Number</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="event-type-require-company" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Company</span>
-                </label>
-              </div>
-            </div>
+
           </div>
 
           <!-- Notifications -->
@@ -1334,7 +1417,20 @@
                   <option value="120">2 hours</option>
                   <option value="180">3 hours</option>
                   <option value="240">4 hours</option>
-                  <option value="custom">Custom duration</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-slot-interval" class="block text-[#A3B3AF] text-sm font-medium mb-2">Slot Interval *</label>
+                <select id="edit-event-type-slot-interval" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
                 </select>
               </div>
             </div>
@@ -1472,37 +1568,17 @@
             </div>
 
             <div>
-              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Questions</label>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Questions</label>
               <div id="edit-questions-container" class="space-y-3">
                 <!-- Questions will be added here dynamically -->
               </div>
-              <button type="button" onclick="addEditQuestion()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
+              <button type="button" onclick="openAddEditQuestionModal()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
                 <span class="material-icons-outlined text-lg">add</span>
                 Add Question
               </button>
             </div>
 
-            <div>
-              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Required Fields</label>
-              <div class="space-y-2">
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-name" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Name</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-email" class="w-5 h-5 text-[#2C4A43] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Email</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-phone" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Phone Number</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" id="edit-event-type-require-company" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-                  <span class="text-[#E0E0E0]">Company</span>
-                </label>
-              </div>
-            </div>
+
           </div>
 
           <!-- Notifications -->

@@ -1,4 +1,4 @@
-import { Controller, Delete, Param, Get, UseGuards, Request, Patch, Body } from '@nestjs/common';
+import { Controller, Delete, Param, Get, UseGuards, Request, Patch, Body, Post } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BookingsService } from './bookings.service';
 
@@ -10,6 +10,11 @@ export class BookingsController {
   @Get()
   list(@Request() req) {
     return this.bookings.findForUser(req.user.userId);
+  }
+
+  @Post()
+  create(@Body() body: any) {
+    return this.bookings.createPublic(body);
   }
 
   @UseGuards(JwtAuthGuard)

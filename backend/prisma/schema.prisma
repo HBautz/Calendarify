@@ -37,6 +37,10 @@ model EventType {
   buffer_before Int @default(0)
   buffer_after  Int @default(0)
   advance_notice Int @default(0)
+  slot_interval Int @default(30) // Interval between slots in minutes (required, defaults to 30)
+  questions   Json?
+  required_fields Json?
+  confirmation_message String?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
   bookings    Booking[]

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Calendarify</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A2E29;
+            color: #E0E0E0;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-[#111f1c] rounded-lg p-8 border border-[#3d5245]">
+                <div class="flex items-center mb-6">
+                    <span class="text-3xl text-[#34D399] mr-3">⚠️</span>
+                    <h1 class="text-2xl font-bold text-white">Admin Panel</h1>
+                </div>
+                
+                <div class="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                    <h2 class="text-lg font-semibold text-red-400 mb-2">⚠️ DANGER ZONE</h2>
+                    <p class="text-red-300 text-sm">
+                        This page contains destructive operations. Use with extreme caution.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Database Wipe Section -->
+                    <div class="bg-[#29382f] rounded-lg p-6 border border-[#3d5245]">
+                        <h3 class="text-lg font-semibold text-white mb-4">Database Operations</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-red-400 font-medium mb-2">Wipe Database</h4>
+                                <p class="text-sm text-gray-400 mb-4">
+                                    This will permanently delete ALL data from the database including users, event types, bookings, and settings.
+                                </p>
+                                <button 
+                                    id="wipeDbBtn"
+                                    onclick="wipeDatabase()"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                                >
+                                    🗑️ Wipe Database
+                                </button>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-yellow-400 font-medium mb-2">Database Status</h4>
+                                <div id="dbStatus" class="text-sm text-gray-400">
+                                    Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Authentication Section -->
+                    <div class="bg-[#29382f] rounded-lg p-6 border border-[#3d5245]">
+                        <h3 class="text-lg font-semibold text-white mb-4">Authentication</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-blue-400 font-medium mb-2">Clear All Tokens</h4>
+                                <p class="text-sm text-gray-400 mb-4">
+                                    Clear all authentication tokens from localStorage and sessionStorage.
+                                </p>
+                                <button 
+                                    onclick="clearAllTokens()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                                >
+                                    🔓 Clear All Tokens
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Info -->
+                    <div class="bg-[#29382f] rounded-lg p-6 border border-[#3d5245]">
+                        <h3 class="text-lg font-semibold text-white mb-4">System Information</h3>
+                        <div id="systemInfo" class="text-sm text-gray-400 space-y-2">
+                            <div>Environment: <span class="text-green-400">Development</span></div>
+                            <div>Database: <span class="text-green-400">PostgreSQL</span></div>
+                            <div>Backend: <span class="text-green-400">NestJS</span></div>
+                            <div>Frontend: <span class="text-green-400">Vanilla JS</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-[#3d5245]">
+                    <a href="/" class="text-[#34D399] hover:text-[#2BB98A] transition-colors">
+                        ← Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-[#111f1c] rounded-lg p-6 max-w-md mx-4 border border-red-500">
+            <h3 class="text-xl font-bold text-red-400 mb-4">⚠️ Confirm Database Wipe</h3>
+            <p class="text-gray-300 mb-6">
+                This action will <strong>permanently delete ALL data</strong> from the database. This cannot be undone.
+            </p>
+            <div class="flex space-x-4">
+                <button 
+                    onclick="confirmWipe()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                    Yes, Wipe Database
+                </button>
+                <button 
+                    onclick="cancelWipe()"
+                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+
+        // Load database status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDatabaseStatus();
+        });
+
+        async function loadDatabaseStatus() {
+            try {
+                const response = await fetch(`${API_URL}/admin/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('dbStatus').innerHTML = `
+                        <div class="space-y-1">
+                            <div>Users: <span class="text-blue-400">${data.users}</span></div>
+                            <div>Event Types: <span class="text-green-400">${data.eventTypes}</span></div>
+                            <div>Bookings: <span class="text-yellow-400">${data.bookings}</span></div>
+                            <div>Availability Rules: <span class="text-purple-400">${data.availabilityRules}</span></div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('dbStatus').innerHTML = '<span class="text-red-400">Error loading status</span>';
+                }
+            } catch (error) {
+                document.getElementById('dbStatus').innerHTML = '<span class="text-red-400">Connection error</span>';
+            }
+        }
+
+        function wipeDatabase() {
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function cancelWipe() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        async function confirmWipe() {
+            const button = document.getElementById('wipeDbBtn');
+            button.disabled = true;
+            button.textContent = '🗑️ Wiping...';
+            button.classList.add('opacity-50');
+
+            try {
+                const response = await fetch(`${API_URL}/admin/wipe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✅ Database wiped successfully!');
+                    loadDatabaseStatus(); // Refresh status
+                } else {
+                    const error = await response.text();
+                    alert(`❌ Error: ${error}`);
+                }
+            } catch (error) {
+                alert(`❌ Connection error: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.textContent = '🗑️ Wipe Database';
+                button.classList.remove('opacity-50');
+                cancelWipe();
+            }
+        }
+
+        function clearAllTokens() {
+            console.log('🧹 Clearing all authentication tokens...');
+            
+            // Clear all possible token storage locations
+            localStorage.removeItem('calendarify-token');
+            sessionStorage.removeItem('calendarify-token');
+            localStorage.removeItem('calendarify-session-token');
+            sessionStorage.removeItem('calendarify-session-token');
+            
+            // Mark as logged out
+            sessionStorage.setItem('calendarify-logged-out', '1');
+            
+            console.log('✅ All tokens cleared successfully!');
+            alert('✅ All tokens cleared! You will be redirected to login.');
+            
+            // Redirect to login page
+            setTimeout(() => {
+                window.location.href = '/log-in';
+            }, 1000);
+        }
+    </script>
+</body>
+</html> 

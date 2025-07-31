@@ -14,13 +14,29 @@
       });
       if (res.ok) {
         const data = await res.json();
+        
+        // Get existing event types to preserve questions
+        const existingEventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+        
         Object.entries(data).forEach(([k, v]) => {
           // Don't store the token in localStorage - it should only be in sessionStorage/localStorage based on user choice
           if (k !== 'calendarify-token') {
-            if (typeof v === 'string') {
-              localStorage.setItem(k, v);
+            if (k === 'calendarify-event-types' && Array.isArray(v)) {
+              // Special handling for event types to preserve questions
+              const mergedEventTypes = v.map(et => {
+                const existing = existingEventTypes.find(existingEt => existingEt.slug === et.slug);
+                return {
+                  ...et,
+                  questions: et.questions || (existing ? existing.questions : [])
+                };
+              });
+              localStorage.setItem(k, JSON.stringify(mergedEventTypes));
             } else {
-              localStorage.setItem(k, JSON.stringify(v));
+              if (typeof v === 'string') {
+                localStorage.setItem(k, v);
+              } else {
+                localStorage.setItem(k, JSON.stringify(v));
+              }
             }
           }
         });
@@ -80,11 +96,32 @@
       const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const raw = await res.json();
-        const eventTypes = raw.map(et => ({
-          ...et,
-          name: et.title,
-          color: et.color || '#34D399'
-        }));
+        
+        // Get existing event types from localStorage to preserve questions
+        const existingEventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+        
+        const eventTypes = raw.map(et => {
+          // Find existing event type with same slug to preserve questions
+          const existing = existingEventTypes.find(existingEt => existingEt.slug === et.slug);
+          
+          const mergedEventType = {
+            ...et,
+            name: et.title,
+            color: et.color || '#34D399',
+            // Preserve questions from existing data if server doesn't provide them
+            questions: et.questions || (existing ? existing.questions : [])
+          };
+          
+          // Debug logging
+          console.log(`Event type ${et.slug}:`, {
+            serverQuestions: et.questions,
+            existingQuestions: existing ? existing.questions : null,
+            finalQuestions: mergedEventType.questions
+          });
+          
+          return mergedEventType;
+        });
+        
         localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
         return eventTypes;
       }
@@ -93,31 +130,74 @@
 
     async function fetchMeetingsFromServer() {
       const token = getAnyToken();
-      if (!token) return;
-      const clean = token.replace(/^"|"$/g, '');
-      const res = await fetch(`${API_URL}/bookings`, { headers: { Authorization: `Bearer ${clean}` } });
-      if (res.ok) {
-        const data = await res.json();
-        meetingsData = { upcoming: [], past: [], pending: [] };
-        const now = new Date();
-        data.forEach(b => {
-          const start = new Date(b.starts_at);
-          const info = {
-            id: b.id,
-            invitee: b.name,
-            email: b.email,
-            eventType: b.event_type.title,
-            slug: b.event_type.slug,
-            duration: b.event_type.duration,
-            start: b.starts_at,
-            end: b.ends_at,
-            date: new Date(b.starts_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
-            status: 'Confirmed'
-          };
-          if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
-        });
-        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
+      if (!token) {
+        console.log('[DEBUG] No token available for fetching meetings');
+        return;
       }
+      const clean = token.replace(/^"|"$/g, '');
+      
+      try {
+        console.log('[DEBUG] Fetching meetings from server...');
+        const res = await fetch(`${API_URL}/bookings`, { headers: { Authorization: `Bearer ${clean}` } });
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('[DEBUG] Server returned meetings:', data.length, 'bookings');
+          
+          meetingsData = { upcoming: [], past: [], pending: [] };
+          const now = new Date();
+          
+          data.forEach(b => {
+            const start = new Date(b.starts_at);
+            const info = {
+              id: b.id,
+              invitee: b.name,
+              email: b.email,
+              eventType: b.event_type.title,
+              slug: b.event_type.slug,
+              duration: b.event_type.duration,
+              start: b.starts_at, // Use server data directly
+              end: b.ends_at,     // Use server data directly
+              date: new Date(b.starts_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+              status: 'Confirmed'
+            };
+            if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
+          });
+          
+          // Always overwrite local storage with server data
+          localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
+          console.log('[DEBUG] Updated local storage with server data');
+        } else {
+          console.error('[DEBUG] Failed to fetch meetings from server:', res.status, res.statusText);
+          // Don't use local storage as fallback - keep empty data
+          meetingsData = { upcoming: [], past: [], pending: [] };
+          localStorage.removeItem('calendarify-meetings'); // Clear stale data
+        }
+      } catch (error) {
+        console.error('[DEBUG] Error fetching meetings from server:', error);
+        // Don't use local storage as fallback - keep empty data
+        meetingsData = { upcoming: [], past: [], pending: [] };
+        localStorage.removeItem('calendarify-meetings'); // Clear stale data
+      }
+    }
+
+    async function refreshMeetingsData() {
+      console.log('[DEBUG] Refreshing meetings data...');
+      await fetchMeetingsFromServer();
+      // Update the current tab if meetings section is active
+      const currentTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
+      if (document.getElementById('meetings-section').style.display !== 'none') {
+        updateMeetingsTable(currentTab);
+      }
+    }
+
+    // Force refresh meetings data from server (for debugging)
+    async function forceRefreshMeetings() {
+      console.log('[DEBUG] Force refreshing meetings data from server...');
+      await fetchMeetingsFromServer();
+      const currentTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
+      updateMeetingsTable(currentTab);
+      showNotification('Meetings data refreshed from server');
     }
 
     function collectState() {
@@ -168,7 +248,7 @@
       if (k.startsWith('calendarify-')) syncState();
     };
     window.addEventListener('beforeunload', syncState);
-    function showSection(section, el) {
+    async function showSection(section, el) {
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
       el.classList.add('active');
       localStorage.setItem('calendarify-current-section', section);
@@ -177,6 +257,8 @@
       const secEl = document.getElementById(section + '-section');
       if (secEl) secEl.style.display = 'block';
       if (section === 'meetings') {
+        // Refresh meetings data from server
+        await refreshMeetingsData();
         const savedTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
         const savedTabBtn = document.querySelector(`#meetings-section button[data-tab="${savedTab}"]`);
         showMeetingsTab(savedTab, savedTabBtn);
@@ -232,13 +314,8 @@
         console.error('Could not find tbody element!');
         return;
       }
-      // Reload meetings data from localStorage each time to reflect new bookings
-      try {
-        const stored = JSON.parse(localStorage.getItem('calendarify-meetings') || '{}');
-        if (stored.upcoming) {
-          meetingsData = stored;
-        }
-      } catch {}
+      // Use current meetingsData (which should be fresh from server)
+      // No local storage fallback - server data is the source of truth
 
       const meetings = getMeetingsData(tab);
       console.log('Meetings for tab', tab, ':', meetings);
@@ -852,7 +929,7 @@
       
       // Otherwise, close all modals as usual
       document.querySelectorAll('.hidden').forEach(el => {
-        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal' || el.id === 'change-displayname-modal' || el.id === 'reschedule-modal') {
+        if (el.id === 'modal-backdrop' || el.id === 'share-modal' || el.id === 'delete-event-type-confirm-modal' || el.id === 'cancel-meeting-confirm-modal' || el.id === 'delete-meeting-confirm-modal' || el.id === 'add-contact-modal' || el.id === 'delete-workflow-confirm-modal' || el.id === 'delete-contact-confirm-modal' || el.id === 'event-types-modal' || el.id === 'create-tag-modal' || el.id === 'tags-modal' || el.id === 'profile-modal' || el.id === 'change-displayname-modal' || el.id === 'reschedule-modal' || el.id === 'add-question-modal') {
           el.classList.add('hidden');
         }
       });
@@ -1620,10 +1697,6 @@
       }
       const confirmationMessage = document.getElementById('event-type-confirmation-message').value.trim();
       const questions = getQuestionsData('questions-container');
-      const requireName = document.getElementById('event-type-require-name').checked;
-      const requireEmail = document.getElementById('event-type-require-email').checked;
-      const requirePhone = document.getElementById('event-type-require-phone').checked;
-      const requireCompany = document.getElementById('event-type-require-company').checked;
       const availability = document.getElementById('event-type-availability').checked;
       const reminders = document.getElementById('event-type-reminders').checked;
       const followUp = document.getElementById('event-type-follow-up').checked;
@@ -1675,15 +1748,10 @@
         bookingLimit: bookingLimit === 'custom' ? {
           count: parseInt(customLimitCount),
           period: customLimitPeriod
-        } : parseInt(bookingLimit),
+        } : bookingLimit,
         confirmationMessage,
         questions,
-        requiredFields: {
-          name: requireName,
-          email: requireEmail,
-          phone: requirePhone,
-          company: requireCompany
-        },
+        requiredFields: {},
         notifications: {
           availability,
           reminders,
@@ -1703,7 +1771,15 @@
           const res = await fetch(`${API_URL}/event-types`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-            body: JSON.stringify({ title: name, slug, description, duration: parseInt(duration) })
+            body: JSON.stringify({ 
+              title: name, 
+              slug, 
+              description, 
+              duration: parseInt(duration),
+              questions: questions,
+              requiredFields: {},
+              confirmationMessage: confirmationMessage
+            })
           });
           if (res.ok) {
             const saved = await res.json();
@@ -2034,11 +2110,7 @@
       document.getElementById('edit-event-type-confirmation-message').value = eventType.confirmationMessage || '';
       loadQuestionsData('edit-questions-container', eventType.questions || []);
       
-      // Required Fields
-      document.getElementById('edit-event-type-require-name').checked = eventType.requiredFields?.name === true;
-      document.getElementById('edit-event-type-require-email').checked = eventType.requiredFields?.email === true;
-      document.getElementById('edit-event-type-require-phone').checked = eventType.requiredFields?.phone === true;
-      document.getElementById('edit-event-type-require-company').checked = eventType.requiredFields?.company === true;
+      // Required Fields - removed, now handled by questions system
       
       // Notifications
       document.getElementById('edit-event-type-availability').checked = eventType.notifications?.availability !== false;
@@ -2105,10 +2177,6 @@
       }
       const confirmationMessage = document.getElementById('edit-event-type-confirmation-message').value.trim();
       const questions = getQuestionsData('edit-questions-container');
-      const requireName = document.getElementById('edit-event-type-require-name').checked;
-      const requireEmail = document.getElementById('edit-event-type-require-email').checked;
-      const requirePhone = document.getElementById('edit-event-type-require-phone').checked;
-      const requireCompany = document.getElementById('edit-event-type-require-company').checked;
       const availability = document.getElementById('edit-event-type-availability').checked;
       const reminders = document.getElementById('edit-event-type-reminders').checked;
       const followUp = document.getElementById('edit-event-type-follow-up').checked;
@@ -2166,15 +2234,10 @@
         bookingLimit: bookingLimit === 'custom' ? {
           count: parseInt(customLimitCount),
           period: customLimitPeriod
-        } : parseInt(bookingLimit),
+        } : bookingLimit,
         confirmationMessage,
         questions,
-        requiredFields: {
-          name: requireName,
-          email: requireEmail,
-          phone: requirePhone,
-          company: requireCompany
-        },
+        requiredFields: {},
         notifications: {
           availability,
           reminders,
@@ -2193,7 +2256,15 @@
           await fetch(`${API_URL}/event-types/${eventType.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-            body: JSON.stringify({ title: name, slug, description, duration: parseInt(duration) })
+            body: JSON.stringify({ 
+              title: name, 
+              slug, 
+              description, 
+              duration: parseInt(duration),
+              questions: questions,
+              requiredFields: {},
+              confirmationMessage: confirmationMessage
+            })
           });
         }
       } catch (e) {
@@ -2284,22 +2355,10 @@
       }
     });
 
+    // This function is deprecated - using the updated version below
     function cancelMeeting(meetingId) {
-      // Find the meeting by ID
-      const meetings = JSON.parse(localStorage.getItem('calendarify-meetings') || '[]');
-      const meeting = meetings.find(m => m.id === meetingId);
-      
-      if (!meeting) {
-        showNotification('Meeting not found!', 'error');
-        return;
-      }
-      
-      // Store the meeting to cancel
-      window.meetingToCancel = meeting;
-      
-      // Show custom confirmation modal
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('cancel-meeting-confirm-modal').classList.remove('hidden');
+      // This function is kept for backward compatibility but should not be used
+      console.log('Deprecated cancelMeeting function called');
     }
 
     // Removed duplicate confirmCancelMeeting function - using the updated version below
@@ -3124,7 +3183,9 @@
     }
 
     function rescheduleMeeting(meetingId) {
-      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
+      // Handle ID properly - don't convert UUIDs to numbers
+      const id = meetingId;
+      
       const meeting = getMeetingsData('upcoming').find(m => m.id === id) ||
                      getMeetingsData('pending').find(m => m.id === id);
 
@@ -3137,16 +3198,16 @@
         document.getElementById('reschedule-modal').classList.remove('hidden');
         loadRescheduleSlots();
       } else {
-        showNotification('Cannot reschedule past meetings');
+        showNotification('Meeting not found or cannot be rescheduled');
       }
     }
 
     function cancelMeeting(meetingId) {
       console.log('cancelMeeting called with ID:', meetingId, 'Type:', typeof meetingId);
       
-      // Convert to number if it's a string
-      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
-      console.log('Converted ID:', id);
+      // Handle ID properly - don't convert UUIDs to numbers
+      const id = meetingId;
+      console.log('Using ID as-is:', id);
       
       // Check all tabs to find the meeting
       const upcomingMeeting = getMeetingsData('upcoming').find(m => m.id === id);
@@ -3165,7 +3226,7 @@
       if (meeting) {
         console.log('Valid meeting found, showing confirmation modal');
         // Store meeting info for cancellation
-        window.meetingToCancel = { id: id, invitee: meeting.invitee };
+        window.meetingToCancel = { id: meeting.id, invitee: meeting.invitee };
         
         // Show themed confirmation modal
         const backdrop = document.getElementById('modal-backdrop');
@@ -3217,37 +3278,49 @@
       }
     }
 
-    function confirmCancelMeeting() {
+    async function confirmCancelMeeting() {
       const meetingInfo = window.meetingToCancel;
       if (meetingInfo) {
         console.log('Confirming cancellation for meeting:', meetingInfo);
         
-        // First, close the modal
-        closeCancelMeetingConfirmModal();
-        window.meetingToCancel = null;
-        
-        // Then remove meeting from data (cancelled meetings are removed)
-        removeMeetingFromData(meetingInfo.id);
-        console.log('Meeting removed from data. Current data:', meetingsData);
-
-        // Persist updated meetings to localStorage
-        localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
-        
-        // Show notification
-        showNotification(`Meeting with ${meetingInfo.invitee} has been cancelled`);
-        
-        // Finally, refresh the meetings table - try multiple ways to find current tab
-        let currentTab = 'upcoming'; // default fallback
-        const activeTabButton = document.querySelector('#meetings-section button.active-tab');
-        if (activeTabButton) {
-          currentTab = activeTabButton.getAttribute('data-tab');
+        try {
+          // Call server to cancel the meeting
+          const token = getAnyToken();
+          const clean = token ? token.replace(/^"|"$/g, '') : '';
+          const res = await fetch(`${API_URL}/bookings/${meetingInfo.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${clean}` }
+          });
+          
+          if (res.ok) {
+            // First, close the modal
+            closeCancelMeetingConfirmModal();
+            window.meetingToCancel = null;
+            
+            // Show notification
+            showNotification(`Meeting with ${meetingInfo.invitee} has been cancelled`);
+            
+            // Immediately refresh data from server to ensure consistency
+            console.log('[DEBUG] Refreshing meetings data from server after cancellation...');
+            await fetchMeetingsFromServer();
+            
+            // Update the table with fresh server data
+            let currentTab = 'upcoming'; // default fallback
+            const activeTabButton = document.querySelector('#meetings-section button.active-tab');
+            if (activeTabButton) {
+              currentTab = activeTabButton.getAttribute('data-tab');
+            }
+            
+            console.log('Refreshing table for tab:', currentTab);
+            updateMeetingsTable(currentTab);
+          } else {
+            console.error('Failed to cancel meeting on server:', res.status);
+            showNotification('Failed to cancel meeting. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error cancelling meeting:', error);
+          showNotification('Failed to cancel meeting. Please try again.');
         }
-        
-        console.log('Refreshing table for tab:', currentTab);
-        // Use setTimeout to ensure the modal is fully closed before updating
-        setTimeout(() => {
-          updateMeetingsTable(currentTab);
-        }, 100);
       }
     }
 
@@ -3335,20 +3408,47 @@
       const end = new Date(start.getTime() + meeting.duration * 60000);
       const token = getAnyToken();
       const clean = token ? token.replace(/^"|"$/g, '') : '';
-      await fetch(`${API_URL}/bookings/${meeting.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-        body: JSON.stringify({ start: start.toISOString(), end: end.toISOString() })
+      
+      console.log('[DEBUG] Rescheduling meeting:', {
+        meetingId: meeting.id,
+        newStart: start.toISOString(),
+        newEnd: end.toISOString(),
+        duration: meeting.duration
       });
-      meeting.start = start.toISOString();
-      meeting.end = end.toISOString();
-      meeting.date = start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-      localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
-      showNotification(`Meeting with ${meeting.invitee} rescheduled`);
-      closeRescheduleModal();
-      const activeTabButton = document.querySelector('#meetings-section button.active-tab');
-      const currentTab = activeTabButton ? activeTabButton.getAttribute('data-tab') : 'upcoming';
-      updateMeetingsTable(currentTab);
+      
+      try {
+        const res = await fetch(`${API_URL}/bookings/${meeting.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ start: start.toISOString(), end: end.toISOString() })
+        });
+        
+        console.log('[DEBUG] Reschedule response status:', res.status);
+        
+        if (res.ok) {
+          const updatedBooking = await res.json();
+          console.log('[DEBUG] Server returned updated booking:', updatedBooking);
+          
+          showNotification(`Meeting with ${meeting.invitee} rescheduled`);
+          closeRescheduleModal();
+          
+          // Immediately refresh data from server to ensure consistency
+          console.log('[DEBUG] Refreshing meetings data from server after reschedule...');
+          await fetchMeetingsFromServer();
+          
+          // Update the table with fresh server data
+          const activeTabButton = document.querySelector('#meetings-section button.active-tab');
+          const currentTab = activeTabButton ? activeTabButton.getAttribute('data-tab') : 'upcoming';
+          updateMeetingsTable(currentTab);
+        } else {
+          const errorData = await res.json();
+          console.error('[DEBUG] Reschedule failed:', errorData);
+          showNotification('Failed to reschedule meeting. Please try again.');
+        }
+      } catch (error) {
+        console.error('[DEBUG] Reschedule error:', error);
+        showNotification('Failed to reschedule meeting. Please try again.');
+      }
     }
 
     document.getElementById('reschedule-date').addEventListener('change', loadRescheduleSlots);
@@ -3988,6 +4088,55 @@
 
     // Question management functions
     let questionCounter = 0;
+    let currentQuestionContainer = 'questions-container';
+
+    function openAddQuestionModal() {
+      console.log('openAddQuestionModal called');
+      currentQuestionContainer = 'questions-container';
+      resetAddQuestionModal();
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('add-question-modal').classList.remove('hidden');
+      console.log('Modal should be visible now');
+    }
+
+    function openAddEditQuestionModal() {
+      console.log('openAddEditQuestionModal called');
+      currentQuestionContainer = 'edit-questions-container';
+      resetAddQuestionModal();
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('add-question-modal').classList.remove('hidden');
+      console.log('Modal should be visible now');
+    }
+
+    function closeAddQuestionModal() {
+      document.getElementById('add-question-modal').classList.add('hidden');
+      // Only hide backdrop if no other modals are open
+      const profileModal = document.getElementById('profile-modal');
+      const createModal = document.getElementById('create-event-type-modal');
+      const editModal = document.getElementById('edit-event-type-modal');
+      
+      if ((!profileModal || profileModal.classList.contains('hidden')) &&
+          (!createModal || createModal.classList.contains('hidden')) &&
+          (!editModal || editModal.classList.contains('hidden'))) {
+        document.getElementById('modal-backdrop').classList.add('hidden');
+      }
+    }
+
+    function resetAddQuestionModal() {
+      // Reset radio buttons
+      document.querySelectorAll('input[name="question-type"]').forEach(radio => {
+        radio.checked = false;
+      });
+      
+      // Hide custom question input
+      document.getElementById('custom-question-input').classList.add('hidden');
+      
+      // Reset custom question text
+      document.getElementById('custom-question-text').value = '';
+      
+      // Reset required checkbox
+      document.getElementById('question-required').checked = false;
+    }
 
     function addQuestion(containerId = 'questions-container', questionData = null) {
       const container = document.getElementById(containerId);
@@ -3999,16 +4148,12 @@
       
       questionDiv.innerHTML = `
         <div class="flex items-center justify-between mb-3">
-          <h4 class="text-[#E0E0E0] font-medium">Question ${questionCounter}</h4>
+          <h4 class="text-[#E0E0E0] font-medium">${questionData ? questionData.text : 'Question'}</h4>
           <button type="button" onclick="removeQuestion('${questionId}')" class="text-red-400 hover:text-red-300 transition-colors">
             <span class="material-icons-outlined text-lg">delete</span>
           </button>
         </div>
         <div class="space-y-3">
-          <div>
-            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Question Text</label>
-            <input type="text" id="question_text_${questionId}" class="w-full bg-[#1A2E29] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your question" value="${questionData ? questionData.text : ''}">
-          </div>
           <div class="flex items-center gap-3">
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" id="question_required_${questionId}" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2" ${questionData && questionData.required ? 'checked' : ''}>
@@ -4019,10 +4164,6 @@
       `;
       
       container.appendChild(questionDiv);
-    }
-
-    function addEditQuestion() {
-      addQuestion('edit-questions-container');
     }
 
     function removeQuestion(questionId) {
@@ -4041,12 +4182,12 @@
       
       questionDivs.forEach(div => {
         const questionId = div.id.replace('question_div_', '');
-        const textInput = document.getElementById(`question_text_${questionId}`);
+        const titleElement = div.querySelector('h4');
         const requiredCheckbox = document.getElementById(`question_required_${questionId}`);
         
-        if (textInput && textInput.value.trim()) {
+        if (titleElement && titleElement.textContent.trim()) {
           questions.push({
-            text: textInput.value.trim(),
+            text: titleElement.textContent.trim(),
             required: requiredCheckbox ? requiredCheckbox.checked : false
           });
         }
@@ -4065,3 +4206,54 @@
         });
       }
     }
+
+    function confirmAddQuestion() {
+      const selectedType = document.querySelector('input[name="question-type"]:checked');
+      if (!selectedType) {
+        showNotification('Please select a question type');
+        return;
+      }
+
+      const isRequired = document.getElementById('question-required').checked;
+      let questionText = '';
+
+      if (selectedType.value === 'custom') {
+        questionText = document.getElementById('custom-question-text').value.trim();
+        if (!questionText) {
+          showNotification('Please enter a custom question');
+          return;
+        }
+      } else {
+        // Pre-made questions
+        const questionMap = {
+          'name': 'What is your full name?',
+          'email': 'What is your email address?',
+          'phone': 'What is your phone number?',
+          'company': 'What company do you work for?'
+        };
+        questionText = questionMap[selectedType.value];
+      }
+
+      // Add the question to the current container
+      addQuestion(currentQuestionContainer, {
+        text: questionText,
+        required: isRequired
+      });
+
+      closeAddQuestionModal();
+    }
+
+    // Event listener for question type selection
+    document.addEventListener('DOMContentLoaded', function() {
+      const questionTypeRadios = document.querySelectorAll('input[name="question-type"]');
+      questionTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          const customInput = document.getElementById('custom-question-input');
+          if (this.value === 'custom') {
+            customInput.classList.remove('hidden');
+          } else {
+            customInput.classList.add('hidden');
+          }
+        });
+      });
+    });

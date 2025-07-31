@@ -234,11 +234,49 @@ def seed_default_admin():
         print('Seed script not found, skipping admin user seeding')
 
 
+def kill_existing_services():
+    """Kill any existing services that might be using our ports"""
+    import subprocess
+    import signal
+    
+    print("Checking for existing services...")
+    
+    # Kill processes on port 3000 (frontend)
+    try:
+        result = subprocess.run(['lsof', '-ti:3000'], capture_output=True, text=True)
+        if result.stdout.strip():
+            pids = result.stdout.strip().split('\n')
+            for pid in pids:
+                if pid:
+                    print(f"Killing process {pid} on port 3000")
+                    os.kill(int(pid), signal.SIGTERM)
+    except Exception as e:
+        print(f"Warning: Could not kill processes on port 3000: {e}")
+    
+    # Kill processes on port 3001 (backend)
+    try:
+        result = subprocess.run(['lsof', '-ti:3001'], capture_output=True, text=True)
+        if result.stdout.strip():
+            pids = result.stdout.strip().split('\n')
+            for pid in pids:
+                if pid:
+                    print(f"Killing process {pid} on port 3001")
+                    os.kill(int(pid), signal.SIGTERM)
+    except Exception as e:
+        print(f"Warning: Could not kill processes on port 3001: {e}")
+    
+    # Wait a moment for processes to die
+    time.sleep(2)
+
+
 def start_backend():
     def _run():
+        try:
         os.chdir('backend')
         run('npm install')
         run('npm start')
+        except Exception as e:
+            print(f"Backend startup error: {e}")
     t = Thread(target=_run)
     t.daemon = True
     t.start()
@@ -246,7 +284,7 @@ def start_backend():
     for _ in range(30):
         try:
             import requests
-            r = requests.get('http://localhost:3001/api')
+            r = requests.get('http://localhost:3001/api', timeout=2)
             if r.status_code == 200 or r.status_code == 404:
                 print('Backend is up!')
                 return
@@ -260,6 +298,7 @@ def serve_frontend():
     # Use the Node server that comes with the project to serve the static files
     # with extensionless URL support.
     def _run():
+        try:
         # Run from the repository root regardless of the caller's cwd
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -272,6 +311,8 @@ def serve_frontend():
 
         # Use the custom server.js that handles clean URLs
         run('node server.js', env=env)
+        except Exception as e:
+            print(f"Frontend startup error: {e}")
     t = Thread(target=_run)
     t.daemon = True
     t.start()
@@ -279,7 +320,7 @@ def serve_frontend():
     for _ in range(15):
         try:
             import requests
-            r = requests.get('http://localhost:3000')
+            r = requests.get('http://localhost:3000', timeout=2)
             if r.status_code == 200:
                 print('Frontend is up!')
                 return
@@ -317,12 +358,30 @@ def main():
         print("\n✓ All required services are available locally")
 
     setup_database()
-    seed_default_admin()
+    # seed_default_admin()  # Removed automatic admin user creation
+    
+    # Kill any existing services before starting new ones
+    kill_existing_services()
+    
     start_backend()
     serve_frontend()
-    print("\nAll services started! Press Ctrl+C to stop.")
+    print("\nAll services started!")
+    print("Backend: http://localhost:3001")
+    print("Frontend: http://localhost:3000")
+    print("\nPress Ctrl+C to stop all services.")
+    
+    try:
     while True:
-        time.sleep(60)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n\nShutting down services...")
+        # Try to gracefully stop services
+        try:
+            import requests
+            requests.post('http://localhost:3001/api/admin/shutdown', timeout=1)
+        except:
+            pass
+        print("Services stopped. Goodbye!")
 
 
 if __name__ == '__main__':

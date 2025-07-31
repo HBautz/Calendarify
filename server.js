@@ -39,6 +39,11 @@ http.createServer((req, res) => {
     reqPath = '/sign-up/index.html';
   }
 
+  // Special handling for /admin/wipe
+  if (reqPath === '/admin/wipe' || reqPath === '/admin/wipe/') {
+    reqPath = '/admin/index.html';
+  }
+
   // Prevent access to booking page without required parts
   if (reqPath.startsWith('/booking')) {
     const parts = reqPath.split('/').filter(Boolean);

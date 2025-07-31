@@ -25,6 +25,16 @@ export class UserStateService {
   }
 
   async save(userId: string, data: any) {
+    // First check if the user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!user) {
+      console.log(`User with id ${userId} not found, skipping user state save`);
+      return;
+    }
+    
     await this.prisma.userState.upsert({
       where: { user_id: userId },
       update: { data },

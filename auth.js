@@ -158,33 +158,49 @@ async function verifyToken(persistentOnly = false) {
     });
     
     if (res.ok) {
+      const userData = await res.json();
+      
+      // Additional check: verify user actually exists in database
+      if (userData && userData.id) {
+        console.log('Token verified successfully for user:', userData.email);
       return true;
+      } else {
+        console.log('Token valid but user data missing, clearing token');
+        clearToken();
+        return false;
+      }
+    } else {
+      console.log('Token validation failed with status:', res.status);
     }
   } catch (error) {
-    // Token verification failed
+    console.log('Token verification error:', error.message);
   }
   
-  // Only clear the specific token that failed verification
-  if (persistentOnly) {
-    localStorage.removeItem('calendarify-token');
-  } else {
-    sessionStorage.removeItem('calendarify-token');
-  }
-  
+  // Clear all tokens when verification fails
+  console.log('Clearing invalid tokens');
+  clearToken();
   return false;
 }
 
 async function requireAuth() {
+  console.log('Checking authentication...');
+  
   // Try session token first, then persistent token
   let ok = await verifyToken(false); // Check sessionStorage
   if (!ok) {
+    console.log('Session token invalid, trying persistent token...');
     ok = await verifyToken(true); // Check localStorage
   }
   
   if (!ok) {
+    console.log('All tokens invalid, redirecting to login');
+    // Clear any remaining tokens and redirect
+    clearToken();
     window.location.replace('/log-in');
     return false;
   }
+  
+  console.log('Authentication successful');
   return true;
 }
 
@@ -216,5 +232,30 @@ window.logout = logout;
 window.getToken = getToken;
 window.getAnyToken = getAnyToken;
 window.clearToken = clearToken;
+
+// Manual logout function for console use
+function clearAllTokens() {
+  console.log('🧹 Clearing all authentication tokens...');
+  
+  // Clear all possible token storage locations
+  localStorage.removeItem('calendarify-token');
+  sessionStorage.removeItem('calendarify-token');
+  
+  // Clear any other auth-related data
+  localStorage.removeItem('calendarify-session-token');
+  sessionStorage.removeItem('calendarify-session-token');
+  
+  // Mark as logged out
+  sessionStorage.setItem('calendarify-logged-out', '1');
+  
+  console.log('✅ All tokens cleared successfully!');
+  console.log('🔄 Redirecting to login page...');
+  
+  // Redirect to login page
+  window.location.href = '/log-in';
+}
+
+// Make it available globally
+window.clearAllTokens = clearAllTokens;
 
 

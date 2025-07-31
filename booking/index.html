@@ -82,6 +82,12 @@
             pointer-events: none;
             opacity: 0.5;
         }
+        .calendar-day.today.unavailable {
+            background-color: #F97316; /* Keep orange background */
+            color: #1A2E29;
+            font-weight: bold;
+            opacity: 0.7; /* More opaque than regular unavailable */
+        }
         /* Custom scrollbar styling */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
@@ -206,6 +212,40 @@
             max-height: 90vh;
             overflow-y: auto;
         }
+
+        /* Confirmation modal animations */
+        #bookingConfirmationModal {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        #bookingConfirmationModal > div {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to { 
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Validation error modal animations */
+        #validationErrorModal {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        #validationErrorModal > div {
+            animation: slideIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -221,6 +261,14 @@
                 <a class="nav-link" href="/enterprise">Enterprise</a>
             </nav>
             <div class="flex items-center space-x-4">
+                <div class="flex items-center gap-2">
+                    <label for="clock-format-toggle" class="flex items-center gap-2 cursor-pointer select-none">
+                        <span class="text-[#A3B3AF] text-sm">12h format</span>
+                        <button id="clock-format-toggle" type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleClockFormat()">
+                            <div id="toggle-circle" class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s;"></div>
+                        </button>
+                    </label>
+                </div>
                 <button class="primary-button px-6 py-2 rounded-lg font-semibold text-sm">Sign up</button>
                 <button class="text-sm nav-link">Log In</button>
             </div>
@@ -296,9 +344,9 @@
                     </div>
                 </div>
 
-                <!-- Required Fields -->
-                <div id="requiredFieldsSection">
-                    <h4 class="text-lg font-medium text-white mb-4">Required Information</h4>
+                <!-- Contact Information -->
+                <div id="contactInfoSection" class="hidden">
+                    <h4 class="text-lg font-medium text-white mb-4">Contact Information</h4>
                     <div class="space-y-4">
                         <div id="nameField" class="hidden">
                             <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Name *</label>
@@ -306,11 +354,13 @@
                         </div>
                         <div id="emailField" class="hidden">
                             <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Email *</label>
-                            <input type="email" id="bookingEmail" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your email">
+                            <input type="email" id="bookingEmail" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="example@email.com">
+                            <div id="emailError" class="text-red-400 text-sm mt-1 hidden">Please enter a valid email address</div>
                         </div>
                         <div id="phoneField" class="hidden">
                             <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Phone Number</label>
-                            <input type="tel" id="bookingPhone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your phone number">
+                            <input type="tel" id="bookingPhone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="+1 (555) 123-4567">
+                            <div id="phoneError" class="text-red-400 text-sm mt-1 hidden">Please enter a valid phone number (7-15 digits)</div>
                         </div>
                         <div id="companyField" class="hidden">
                             <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Company</label>
@@ -319,9 +369,9 @@
                     </div>
                 </div>
 
-                <!-- Additional Questions -->
+                <!-- Custom Questions -->
                 <div id="questionsSection" class="hidden">
-                    <h4 class="text-lg font-medium text-white mb-4">Additional Questions</h4>
+                    <h4 class="text-lg font-medium text-white mb-4">Additional Information</h4>
                     <div id="questionsContainer" class="space-y-4">
                         <!-- Questions will be dynamically added here -->
                     </div>
@@ -340,6 +390,52 @@
         </div>
     </div>
 
+    <!-- Booking Confirmation Modal -->
+    <div id="bookingConfirmationModal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-[#1E3A34] rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center">
+                <!-- Success Icon -->
+                <div class="mx-auto w-16 h-16 bg-[#34D399] rounded-full flex items-center justify-center mb-6">
+                    <span class="material-icons-outlined text-white text-3xl">check</span>
+                </div>
+                
+                <!-- Success Message -->
+                <h3 class="text-xl font-bold text-white mb-4">Booking Confirmed!</h3>
+                <p class="text-[#A3B3AF] mb-6">Your meeting has been successfully scheduled.</p>
+                
+                <!-- Booking Details -->
+                <div class="bg-[#19342e] rounded-lg p-4 mb-6 text-left">
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-[#A3B3AF]">Event:</span>
+                            <span class="text-white font-medium" id="confirmationEventTitle"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#A3B3AF]">Date:</span>
+                            <span class="text-white font-medium" id="confirmationDate"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#A3B3AF]">Time:</span>
+                            <span class="text-white font-medium" id="confirmationTime"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#A3B3AF]">Duration:</span>
+                            <span class="text-white font-medium" id="confirmationDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Info -->
+                <p class="text-[#A3B3AF] text-sm mb-6">You will receive a confirmation email shortly with meeting details and calendar invite.</p>
+                
+                <!-- Action Button -->
+                <button id="closeBookingConfirmationModal" class="bg-[#34D399] text-[#1A2E29] px-8 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold w-full">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer class="py-8 text-center">
         <p class="text-xs text-gray-500">
             This is a demo application and is not intended for actual use. All functionality is for demonstration purposes only.
@@ -348,42 +444,44 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('[TEMP-DEBUG] Booking page loaded');
+                                                                        
             const parts = window.location.pathname.split('/').filter(Boolean);
+                        
             let display = '';
             let slug = '';
             if (parts.length >= 3 && parts[0] === 'booking') {
                 display = decodeURIComponent(parts[1]);
                 slug = parts[2];
-            } else {
+                            } else {
                 const params = new URLSearchParams(window.location.search);
                 display = params.get('user') || '';
                 slug = params.get('event') || '';
-            }
+                            }
             if (!slug || !display) {
-                window.location.replace('/');
+                                window.location.replace('/');
                 return;
             }
             document.getElementById('username').textContent = display;
-            console.log('[TEMP-DEBUG] Booking for', { display, slug });
-
+            
             window.API_URL = 'http://localhost:3001/api';
+                                    
             let event;
             try {
-                console.log('[TEMP-DEBUG] Fetching event type info');
-                const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
-                if (!res.ok) throw new Error('not found');
-                event = await res.json();
-                console.log('[DEBUG] Event data from API:', event);
+                                                const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
+                                                
+                if (!res.ok) {
+                                        throw new Error('not found');
+                }
                 
+                event = await res.json();
+                                                
                 if (!event) {
                     document.body.innerHTML = '<div class="text-center mt-20 text-red-500">Invalid event link</div>';
                     return;
                 }
             } catch (e) {
                 // Fallback to local data if API request fails
-                console.log('[TEMP-DEBUG] API failed, using fallback data');
-                event = {
+                                                                event = {
                     title: 'Demo Meeting',
                     name: 'Demo Meeting',
                     duration: 30,
@@ -393,11 +491,10 @@
                     questions: '',
                     requiredFields: { name: true, email: true, phone: false, company: false }
                 };
-            }
+                            }
 
             try {
-                console.log('[TEMP-DEBUG] Fetching host state');
-                const resState = await fetch(`${API_URL}/users/display/${display}/state`);
+                                const resState = await fetch(`${API_URL}/users/display/${display}/state`);
                 if (resState.ok) {
                     const state = await resState.json();
                     Object.entries(state).forEach(([k,v]) => {
@@ -408,15 +505,12 @@
                     const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
                     const completeEventType = eventTypes.find(et => et.slug === slug);
                     if (completeEventType) {
-                        console.log('[DEBUG] Found complete event type in host state:', completeEventType);
-                        // Merge the complete data with the basic API data
+                                                // Merge the complete data with the basic API data
                         event = { ...event, ...completeEventType };
-                        console.log('[DEBUG] Merged event data:', event);
-                    }
+                                            }
                 }
             } catch (e) {
-                console.log('[TEMP-DEBUG] Failed to refresh host state', e);
-            }
+                            }
 
             // Ensure we have default weekly hours if none exist
             const weeklyHours = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
@@ -429,8 +523,7 @@
                     friday: { start: '09:00 AM', end: '05:00 PM' }
                 };
                 localStorage.setItem('calendarify-weekly-hours', JSON.stringify(defaultHours));
-                console.log('[TEMP-DEBUG] Set default weekly hours:', defaultHours);
-            }
+                            }
 
             document.getElementById('eventTitle').textContent = `Book: ${event.title || event.name}`;
 
@@ -438,15 +531,91 @@
             const bufferBefore = parseInt(event.bufferBefore) || 0;
             const bufferAfter = parseInt(event.bufferAfter) || 0;
             const advanceNotice = parseInt(event.advanceNotice) || 0;
-            console.log('[TEMP-DEBUG] Event settings', { eventDuration, bufferBefore, bufferAfter, advanceNotice });
-            
+                        
             let currentDate = new Date();
             let selectedDate = null;
             let selectedTime = null;
             let timeSlots = {};
 
+            // --- 12h/24h Toggle Functionality ---
+            async function toggleClockFormat() {
+                const is12h = getClockFormat() === '12h';
+                const newFormat = is12h ? '24h' : '12h';
+                
+                // Update format preference
+                setClockFormat(newFormat);
+                updateClockFormatUI();
+                
+                // Refresh time slots display with new format
+                if (selectedDate) {
+                    await displayTimeSlots();
+                }
+            }
+            // Make toggleClockFormat available globally for onclick handler
+            window.toggleClockFormat = toggleClockFormat;
+
+            function getClockFormat() {
+                let stored = localStorage.getItem('calendarify-booking-clock-format');
+                if (!stored) {
+                    localStorage.setItem('calendarify-booking-clock-format', '24h');
+                    return '24h';
+                }
+                return stored;
+            }
+
+            function setClockFormat(format) {
+                localStorage.setItem('calendarify-booking-clock-format', format);
+            }
+
+            function updateClockFormatUI() {
+                const is12h = getClockFormat() === '12h';
+                const toggle = document.getElementById('clock-format-toggle');
+                const circle = document.getElementById('toggle-circle');
+                if (toggle && circle) {
+                    toggle.setAttribute('aria-pressed', is12h ? 'true' : 'false');
+                    toggle.classList.toggle('bg-[#34D399]', is12h);
+                    toggle.classList.toggle('bg-[#19342e]', !is12h);
+                    circle.style.transform = is12h ? 'translateX(20px)' : 'translateX(0)';
+                    circle.style.backgroundColor = is12h ? '#fff' : '#34D399';
+                }
+            }
+
+            // Converts time between formats, preserving the actual time
+            function convertTimeFormat(value, fromFormat, toFormat) {
+                if (!value || !/^\d{2}:\d{2}$/.test(value)) return value;
+                
+                let [hours, minutes] = value.split(':').map(Number);
+                
+                if (fromFormat === toFormat) {
+                    return value; // No conversion needed
+                }
+                
+                if (fromFormat === '24h' && toFormat === '12h') {
+                    // Convert 24h to 12h
+                    if (hours === 0) {
+                        return `12:${minutes.toString().padStart(2, '0')}`;
+                    } else if (hours > 12) {
+                        return `${(hours - 12).toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    } else {
+                        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    }
+                } else if (fromFormat === '12h' && toFormat === '24h') {
+                    // Convert 12h to 24h
+                    if (hours === 12) {
+                        return `12:${minutes.toString().padStart(2, '0')}`; // 12 PM
+                    } else if (hours >= 1 && hours <= 11) {
+                        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`; // AM
+                    } else {
+                        // This shouldn't happen with valid 12h input, but fallback
+                        return value;
+                    }
+                }
+                
+                return value;
+            }
+
             function formatDate(date) {
-                return date.toLocaleDateString('en-US', { 
+                return date.toLocaleDateString(undefined, { 
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -455,10 +624,11 @@
             }
 
             function formatTime(time) {
-                return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+                const is12h = getClockFormat() === '12h';
+                return new Date(`2000-01-01T${time}`).toLocaleTimeString(undefined, {
                     hour: 'numeric',
                     minute: '2-digit',
-                    hour12: true
+                    hour12: is12h
                 });
             }
 
@@ -471,26 +641,18 @@
             }
 
             function generateSlotsInRange(startStr, endStr, date) {
-                console.log('[TEMP-DEBUG] generateSlotsInRange', { startStr, endStr, date });
-                const { h: startH, m: startM } = parseTime(startStr);
+                                const { h: startH, m: startM } = parseTime(startStr);
                 const { h: endH, m: endM } = parseTime(endStr);
-
-                console.log('[TEMP-DEBUG] Parsed times:', { startH, startM, endH, endM });
 
                 const dayStart = startH * 60 + startM;
                 const dayEnd = endH * 60 + endM;
 
-                console.log('[TEMP-DEBUG] Day minutes:', { dayStart, dayEnd });
-
                 // Apply buffer times
                 const effectiveStart = dayStart + bufferBefore;
                 const effectiveEnd = dayEnd - bufferAfter - eventDuration;
-                
-                console.log('[TEMP-DEBUG] Effective times:', { effectiveStart, effectiveEnd, bufferBefore, bufferAfter, eventDuration });
-                
+
                 if (effectiveEnd < effectiveStart) {
-                    console.log('[TEMP-DEBUG] No slots available - effective end before start');
-                    return [];
+                                        return [];
                 }
 
                 const step = 15;
@@ -516,76 +678,176 @@
                         }
                     }
 
-                    // Exclude times that have already been booked (respect buffer)
-                    let booked = {};
-                    try {
-                        booked = JSON.parse(localStorage.getItem('calendarify-booked-slots') || '{}');
-                    } catch {}
-                    const busy = booked[event.slug] || [];
-                    const candidateStart = new Date(slot.getTime() - bufferBefore * 60000);
-                    const candidateEnd = new Date(slot.getTime() + eventDuration * 60000 + bufferAfter * 60000);
-                    const conflict = busy.some(b => {
-                        const bStart = new Date(b.start);
-                        const bEnd = new Date(b.end);
-                        const bStartBuf = new Date(bStart.getTime() - (b.bufferBefore || 0) * 60000);
-                        const bEndBuf = new Date(bEnd.getTime() + (b.bufferAfter || 0) * 60000);
-                        return candidateStart < bEndBuf && candidateEnd > bStartBuf;
+                    // Server handles buffer and booking conflicts, so just add the slot
+                    const timeStr = slot.toLocaleTimeString(undefined, {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
                     });
-                    if (!conflict) {
-                        const timeStr = slot.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                        });
-                        slots.push(timeStr);
-                        console.log('[TEMP-DEBUG] Added slot', timeStr);
-                    } else {
-                        console.log('[TEMP-DEBUG] Skipping booked slot at', slot);
-                    }
-                    currentMinutes += step;
+                    slots.push(timeStr);
+                                        currentMinutes += step;
                 }
                 
-                console.log('[TEMP-DEBUG] Total slots generated:', slots.length);
-                return slots;
+                                return slots;
             }
 
             async function generateTimeSlots(date) {
-                try {
-                    const res = await fetch(`${API_URL}/event-types/${event.slug}/slots?date=${date.toISOString().split('T')[0]}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        return data.map(iso => formatTime(iso.substring(11,16)));
-                    }
-                } catch (e) { console.log('slot fetch failed', e); }
+                const dateStr = date.toISOString().split('T')[0];
+                const res = await fetch(`${API_URL}/event-types/${event.slug}/slots?date=${dateStr}`);
+                
+                if (!res.ok) {
+                    console.error('Failed to fetch time slots:', res.status, res.statusText);
+                    return [];
+                }
+                
+                const data = await res.json();
+                
+                // Convert UTC ISO strings to local time strings
+                const formattedSlots = data.map(iso => {
+                    const utcDate = new Date(iso);
+                    const is12h = getClockFormat() === '12h';
+                    return utcDate.toLocaleTimeString(undefined, {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: is12h
+                    });
+                });
+                
+                return formattedSlots;
+            }
 
-                const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                const dayKey = dayNames[date.getDay()];
+            // Cache for availability results to avoid repeated API calls
+            const availabilityCache = new Map();
+            
+            // Cache busting function
+            function clearAvailabilityCache() {
+                availabilityCache.clear();
+                            }
+            
+            // Clear cache on page load to ensure fresh data
+            clearAvailabilityCache();
 
-                console.log('[TEMP-DEBUG] generateTimeSlots for day:', dayKey);
-
-                const overrides = JSON.parse(localStorage.getItem('calendarify-overrides') || '{}');
-                const override = overrides[date.toISOString().split('T')[0]];
-                if (override) {
-                    console.log('[TEMP-DEBUG] Found override for date:', override);
-                    if (!override.available) return [];
-                    if (override.timeSlots && override.timeSlots.length > 0) {
-                        let list = [];
-                        override.timeSlots.forEach(t => {
-                            list = list.concat(generateSlotsInRange(t.start, t.end, date));
-                        });
-                        return list;
+            async function checkDateAvailability(date) {
+                const dateKey = date.toISOString().split('T')[0];
+                
+                // Create cache key with timestamp to ensure fresh data
+                const cacheKey = `${dateKey}-${Date.now()}`;
+                
+                // Check cache first (but with shorter TTL)
+                if (availabilityCache.has(dateKey)) {
+                    const cached = availabilityCache.get(dateKey);
+                    const cacheAge = Date.now() - cached.timestamp;
+                    
+                    // Cache expires after 30 seconds
+                    if (cacheAge < 30000) {
+                        return cached.result;
+                    } else {
+                        availabilityCache.delete(dateKey);
                     }
                 }
 
-                const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
-                console.log('[TEMP-DEBUG] Weekly hours data:', weekly);
-                const range = weekly[dayKey] || { start: '09:00 AM', end: '05:00 PM' };
-                console.log('[TEMP-DEBUG] Using time range:', range);
-                return generateSlotsInRange(range.start, range.end, date);
+                // Check basic availability rules first (using UTC)
+                const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
+                const dayOfWeek = date.getUTCDay();
+                const dayName = dayNames[dayOfWeek];
+                const isDayOff = dayAvail[dayName] === false;
+                const today = new Date();
+                const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+                const isPast = date < todayUTC;
+                const isWeekend = date.getUTCDay() === 0 || date.getUTCDay() === 6;
+
+                // If any basic rule fails, no availability
+                if (isPast || isWeekend || isDayOff) {
+                    availabilityCache.set(dateKey, false);
+                    return false;
+                }
+
+                // Check if there are actual time slots available
+                try {
+                    const timeSlots = await generateTimeSlots(date);
+                    const hasAvailability = timeSlots.length > 0;
+                    availabilityCache.set(dateKey, {
+                        result: hasAvailability,
+                        timestamp: Date.now()
+                    });
+                    return hasAvailability;
+                } catch (e) {
+                    console.error('[ERROR] Error checking availability for date:', date, e);
+                    availabilityCache.set(dateKey, false);
+                    return false;
+                }
             }
 
-            async function updateTimeSlots() {
-                console.log('[TEMP-DEBUG] updateTimeSlots for', selectedDate);
+            // Clear cache when needed (e.g., when availability settings change)
+            function clearAvailabilityCache() {
+                availabilityCache.clear();
+            }
+
+            // Clear cache when a new booking is made to refresh availability
+            function refreshAvailabilityAfterBooking() {
+                clearAvailabilityCache();
+                // If we're currently viewing a date, refresh its availability
+                if (selectedDate) {
+                    displayTimeSlots();
+                }
+            }
+
+            // Clear cache on page load to ensure fresh data
+            clearAvailabilityCache();
+
+            // Make clearAvailabilityCache available globally for debugging
+            window.clearAvailabilityCache = clearAvailabilityCache;
+            window.refreshAvailabilityAfterBooking = refreshAvailabilityAfterBooking;
+            
+            // Real-time settings update listener
+            function setupRealtimeUpdates() {
+                // Listen for postMessage events from dashboard
+                window.addEventListener('message', function(event) {
+                    if (event.data && event.data.type === 'SETTINGS_UPDATED') {
+                        console.log('[REALTIME] Received settings update:', event.data);
+                        clearAvailabilityCache();
+                        buildCalendar();
+                        console.log('[REALTIME] Calendar refreshed after settings update');
+                    }
+                });
+                
+                // Listen for localStorage changes (cross-tab communication)
+                window.addEventListener('storage', function(event) {
+                    if (event.key === 'calendarify-settings-updated') {
+                        try {
+                            const data = JSON.parse(event.newValue);
+                            console.log('[REALTIME] Received settings update via storage:', data);
+                            clearAvailabilityCache();
+                            buildCalendar();
+                            console.log('[REALTIME] Calendar refreshed after settings update (storage)');
+                        } catch (e) {
+                            console.error('[REALTIME] Error parsing settings update:', e);
+                        }
+                    }
+                });
+                
+                // Check for recent settings updates on page load
+                const lastUpdate = localStorage.getItem('calendarify-settings-updated');
+                if (lastUpdate) {
+                    try {
+                        const data = JSON.parse(lastUpdate);
+                        const age = Date.now() - data.timestamp;
+                        if (age < 60000) { // If update was within last minute
+                            console.log('[REALTIME] Recent settings update detected, refreshing calendar');
+                            clearAvailabilityCache();
+                            buildCalendar();
+                        }
+                    } catch (e) {
+                        console.error('[REALTIME] Error checking recent settings update:', e);
+                    }
+                }
+            }
+            
+            // Setup real-time updates
+            setupRealtimeUpdates();
+
+            async function displayTimeSlots() {
                 const container = document.getElementById('timeSlotsContainer');
                 const dateHeader = document.getElementById('selectedDate');
                 const timeSlotsDiv = document.getElementById('timeSlots');
@@ -605,26 +867,14 @@
 
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
-                const isDayOff = dayAvail[dayNames[selectedDate.getDay()]] === false;
+                const isDayOff = dayAvail[dayNames[selectedDate.getUTCDay()]] === true;
 
-                console.log('[TEMP-DEBUG] Day availability check:', {
-                    selectedDate: selectedDate.toDateString(),
-                    dayOfWeek: selectedDate.getDay(),
-                    dayName: dayNames[selectedDate.getDay()],
-                    dayAvail,
-                    isDayOff,
-                    isPast: selectedDate < new Date(new Date().setHours(0,0,0,0)),
-                    isWeekend: selectedDate.getDay() === 0 || selectedDate.getDay() === 6
-                });
-
-                if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || selectedDate.getDay() === 0 || selectedDate.getDay() === 6 || isDayOff) {
-                    console.log('[TEMP-DEBUG] No availability - date filtered out');
+                if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || isDayOff) {
                     container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
                     confirmButton.style.opacity = '0.5';
                     confirmButton.style.pointerEvents = 'none';
                 } else {
                     let timeSlots = await generateTimeSlots(selectedDate);
-                    console.log('[TEMP-DEBUG] Generated slots', timeSlots);
 
                     if (timeSlots.length === 0) {
                         container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
@@ -635,10 +885,6 @@
                             const button = document.createElement('button');
                             button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium';
                             button.textContent = time;
-                            // Force visibility for debugging
-                            button.style.opacity = '1';
-                            button.style.transform = 'translateY(0)';
-                            button.style.visibility = 'visible';
                             button.addEventListener('click', () => {
                                 container.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
                                 button.classList.add('selected');
@@ -655,25 +901,15 @@
                 timeSlotsDiv.classList.add('show');
                 mainContainer.classList.add('extended');
                 
-                // Debug: Check container visibility
-                console.log('[TEMP-DEBUG] Time slots container classes:', timeSlotsDiv.className);
-                console.log('[TEMP-DEBUG] Time slots container computed style:', window.getComputedStyle(timeSlotsDiv).display);
-                console.log('[TEMP-DEBUG] Main container classes:', mainContainer.className);
-                
                 // Animate time slots appearing
                 setTimeout(() => {
                     container.querySelectorAll('.time-slot').forEach(slot => {
                         slot.classList.add('show');
                     });
                 }, 100);
-                
-                // Debug: Check if slots are actually in the DOM
-                console.log('[TEMP-DEBUG] Time slots in DOM:', container.querySelectorAll('.time-slot').length);
-                console.log('[TEMP-DEBUG] First slot element:', container.querySelector('.time-slot'));
             }
 
-            function buildCalendar() {
-                console.log('[TEMP-DEBUG] buildCalendar for', currentDate);
+            async function buildCalendar() {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
                 const firstDay = new Date(year, month, 1);
@@ -681,39 +917,60 @@
                 const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
                 
                 document.getElementById('currentMonth').textContent = 
-                    firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    firstDay.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
                 
                 const calendarEl = document.getElementById('calendar');
                 calendarEl.innerHTML = '';
                 
                 // Add day names
-                dayNames.forEach(n => {
+                dayNames.forEach(day => {
                     const div = document.createElement('div');
-                    div.textContent = n;
-                    div.className = 'text-sm text-gray-400 py-2';
+                    div.className = 'calendar-day-name';
+                    div.textContent = day;
                     calendarEl.appendChild(div);
                 });
                 
                 // Add empty cells for days before the first day of the month
-                for (let i = 0; i < firstDay.getDay(); i++) {
+                for (let i = 0; i < firstDay.getUTCDay(); i++) {
                     const div = document.createElement('div');
-                    div.className = 'calendar-day';
+                    div.className = 'calendar-day empty';
                     calendarEl.appendChild(div);
                 }
+                
+                const availabilityChecks = [];
+                const dayElements = [];
+                
+                // Get day availability settings
+                const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
+                const dayNamesFull = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 
                 // Add days of the month
                 for (let day = 1; day <= lastDay.getDate(); day++) {
                     const div = document.createElement('div');
+                    div.className = 'calendar-day cursor-pointer';
                     div.textContent = day;
-
-                    const currentDay = new Date(year, month, day);
+                    
+                    const currentDay = new Date(Date.UTC(year, month, day));
                     const today = new Date();
-                    today.setHours(0,0,0,0);
-                    const isPast = currentDay < today;
-                    const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+                    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+                    const isPast = currentDay < todayUTC;
+                    const dayOfWeek = currentDay.getUTCDay();
+                    const dayName = dayNamesFull[dayOfWeek];
+                    const isDayOff = dayAvail[dayName] === true;
+                    
+                    // Start with basic availability check - only check past dates, not weekends
+                    let isUnavailable = isPast || isDayOff;
+                    
+                    // If not obviously unavailable, we'll check availability later
+                    if (!isUnavailable) {
+                        availabilityChecks.push({ day, element: div, date: currentDay });
+                    } else {
+                        // Preserve today class if it exists
+                        const isToday = currentDay.toDateString() === new Date().toDateString();
+                        div.className = 'calendar-day unavailable' + (isToday ? ' today' : '');
+                    }
 
-                    div.className = 'calendar-day' + (isPast || isWeekend ? ' unavailable' : ' cursor-pointer');
-
+                    // Check if this is today (for visual highlighting)
                     if (currentDay.toDateString() === new Date().toDateString()) {
                         div.classList.add('today');
                     }
@@ -722,84 +979,138 @@
                         div.classList.add('selected');
                     }
 
-                    if (!isPast && !isWeekend) {
-                        div.addEventListener('click', () => {
-                            calendarEl.querySelectorAll('.calendar-day').forEach(day => {
-                                day.classList.remove('selected');
-                            });
-                            div.classList.add('selected');
-                            selectedDate = new Date(year, month, day);
-                            updateTimeSlots();
-                        });
-                    }
-
+                    dayElements.push(div);
                     calendarEl.appendChild(div);
+                }
+                
+                // Check availability for dates that need it (in parallel for better performance)
+                if (availabilityChecks.length > 0) {
+                    const availabilityPromises = availabilityChecks.map(async ({ day, element, date }) => {
+                        try {
+                            const hasAvailability = await checkDateAvailability(date);
+                            return { day, element, hasAvailability };
+                        } catch (e) {
+                            console.error('[ERROR] Error checking availability for day', day, e);
+                            return { day, element, hasAvailability: false };
+                        }
+                    });
+                    
+                    const results = await Promise.all(availabilityPromises);
+                    
+                    results.forEach(({ element, hasAvailability }) => {
+                        // Preserve today class if it exists
+                        const isToday = element.classList.contains('today');
+                        
+                        if (hasAvailability) {
+                            element.className = 'calendar-day cursor-pointer' + (isToday ? ' today' : '');
+                            element.addEventListener('click', () => {
+                                calendarEl.querySelectorAll('.calendar-day').forEach(day => {
+                                    day.classList.remove('selected');
+                                });
+                                element.classList.add('selected');
+                                selectedDate = new Date(Date.UTC(year, month, parseInt(element.textContent)));
+                                displayTimeSlots();
+                            });
+                        } else {
+                            element.className = 'calendar-day unavailable' + (isToday ? ' today' : '');
+                        }
+                    });
                 }
             }
 
             function showBookingModal() {
                 // Debug: Log the event data to see what we're working with
-                console.log('[DEBUG] Event data:', event);
-                console.log('[DEBUG] Required fields:', event.requiredFields);
-                console.log('[DEBUG] Questions:', event.questions);
-                
+                                                
                 // Populate modal with booking details
                 document.getElementById('modalEventTitle').textContent = event.title || event.name;
                 document.getElementById('modalEventDate').textContent = formatDate(selectedDate);
                 document.getElementById('modalEventTime').textContent = selectedTime;
                 document.getElementById('modalEventDuration').textContent = `${eventDuration} minutes`;
 
-                // Show/hide required fields based on actual event settings
-                const requiredFields = event.requiredFields || { name: false, email: false, phone: false, company: false };
-                console.log('[DEBUG] Using required fields:', requiredFields);
-                
+                // Show/hide required fields based on questions
+                const questions = event.questions || [];
+                                
                 // Reset all fields to hidden first
                 document.getElementById('nameField').classList.add('hidden');
                 document.getElementById('emailField').classList.add('hidden');
                 document.getElementById('phoneField').classList.add('hidden');
                 document.getElementById('companyField').classList.add('hidden');
                 
-                // Show only the fields that are required
-                if (requiredFields.name) {
-                    console.log('[DEBUG] Showing name field');
-                    document.getElementById('nameField').classList.remove('hidden');
+                // Hide contact info section initially
+                document.getElementById('contactInfoSection').classList.add('hidden');
+                
+                // Show fields based on questions and update labels
+                let hasContactFields = false;
+                const fieldRequirements = {};
+                
+                questions.forEach(questionObj => {
+                    const questionText = questionObj.text.toLowerCase();
+                    if (questionText.includes('name') || questionText.includes('full name')) {
+                        document.getElementById('nameField').classList.remove('hidden');
+                        fieldRequirements.name = questionObj.required;
+                        hasContactFields = true;
+                    } else if (questionText.includes('email') || questionText.includes('email address')) {
+                        document.getElementById('emailField').classList.remove('hidden');
+                        fieldRequirements.email = questionObj.required;
+                        hasContactFields = true;
+                    } else if (questionText.includes('phone') || questionText.includes('phone number')) {
+                        document.getElementById('phoneField').classList.remove('hidden');
+                        fieldRequirements.phone = questionObj.required;
+                        hasContactFields = true;
+                    } else if (questionText.includes('company') || questionText.includes('work for')) {
+                        document.getElementById('companyField').classList.remove('hidden');
+                        fieldRequirements.company = questionObj.required;
+                        hasContactFields = true;
+                    }
+                });
+                
+                // Update field labels to show required indicators
+                if (fieldRequirements.name !== undefined) {
+                    const nameLabel = document.querySelector('#nameField label');
+                    nameLabel.textContent = fieldRequirements.name ? 'Name *' : 'Name';
                 }
-                if (requiredFields.email) {
-                    console.log('[DEBUG] Showing email field');
-                    document.getElementById('emailField').classList.remove('hidden');
+                if (fieldRequirements.email !== undefined) {
+                    const emailLabel = document.querySelector('#emailField label');
+                    emailLabel.textContent = fieldRequirements.email ? 'Email *' : 'Email';
                 }
-                if (requiredFields.phone) {
-                    console.log('[DEBUG] Showing phone field');
-                    document.getElementById('phoneField').classList.remove('hidden');
+                if (fieldRequirements.phone !== undefined) {
+                    const phoneLabel = document.querySelector('#phoneField label');
+                    phoneLabel.textContent = fieldRequirements.phone ? 'Phone Number *' : 'Phone Number';
                 }
-                if (requiredFields.company) {
-                    console.log('[DEBUG] Showing company field');
-                    document.getElementById('companyField').classList.remove('hidden');
+                if (fieldRequirements.company !== undefined) {
+                    const companyLabel = document.querySelector('#companyField label');
+                    companyLabel.textContent = fieldRequirements.company ? 'Company *' : 'Company';
+                }
+                
+                // Show contact info section if there are contact fields
+                if (hasContactFields) {
+                    document.getElementById('contactInfoSection').classList.remove('hidden');
                 }
 
-                // Handle additional questions from actual event settings
-                const questions = event.questions || [];
-                console.log('[DEBUG] Questions array:', questions);
-                if (Array.isArray(questions) && questions.length > 0) {
-                    console.log('[DEBUG] Processing questions');
-                    const questionsContainer = document.getElementById('questionsContainer');
+                // Handle additional custom questions
+                const customQuestions = questions.filter(q => {
+                    const text = q.text.toLowerCase();
+                    return !text.includes('name') && !text.includes('email') && 
+                           !text.includes('phone') && !text.includes('company');
+                });
+                
+                if (customQuestions.length > 0) {
+                                        const questionsContainer = document.getElementById('questionsContainer');
                     questionsContainer.innerHTML = '';
                     
-                    questions.forEach((questionObj, index) => {
+                    customQuestions.forEach((questionObj, index) => {
                         const questionDiv = document.createElement('div');
                         const requiredText = questionObj.required ? ' *' : '';
                         questionDiv.innerHTML = `
                             <label class="block text-[#A3B3AF] text-sm font-medium mb-2">${questionObj.text}${requiredText}</label>
-                            <textarea id="question_${index}" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" rows="3" placeholder="Your answer"></textarea>
+                            <textarea id="custom_question_${index}" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" rows="3" placeholder="Your answer"></textarea>
                         `;
                         questionsContainer.appendChild(questionDiv);
                     });
                     document.getElementById('questionsSection').classList.remove('hidden');
-                    console.log('[DEBUG] Questions section shown');
-                } else {
+                                    } else {
                     document.getElementById('questionsSection').classList.add('hidden');
-                    console.log('[DEBUG] No questions, hiding questions section');
-                }
+                                    }
 
                 // Show modal
                 document.getElementById('bookingModal').classList.remove('hidden');
@@ -813,6 +1124,7 @@
                 document.getElementById('emailField').classList.add('hidden');
                 document.getElementById('phoneField').classList.add('hidden');
                 document.getElementById('companyField').classList.add('hidden');
+                document.getElementById('contactInfoSection').classList.add('hidden');
                 document.getElementById('questionsSection').classList.add('hidden');
                 
                 // Clear form values
@@ -823,47 +1135,205 @@
                 document.getElementById('questionsContainer').innerHTML = '';
             }
 
-            function validateBookingForm() {
-                const requiredFields = event.requiredFields || { name: false, email: false, phone: false, company: false };
+            // Real-time validation feedback
+            function setupRealTimeValidation() {
+                const emailInput = document.getElementById('bookingEmail');
+                const phoneInput = document.getElementById('bookingPhone');
+                const emailError = document.getElementById('emailError');
+                const phoneError = document.getElementById('phoneError');
                 
-                if (requiredFields.name && !document.getElementById('bookingName').value.trim()) {
-                    alert('Please enter your name');
-                    return false;
+                if (emailInput) {
+                    emailInput.addEventListener('input', function() {
+                        const value = this.value.trim();
+                        // Only show error if there's a value and it's invalid
+                        if (value && !isValidEmail(value)) {
+                            this.classList.add('border-red-500');
+                            this.classList.remove('border-[#2C4A43]');
+                            if (emailError) emailError.classList.remove('hidden');
+                        } else {
+                            this.classList.remove('border-red-500');
+                            this.classList.add('border-[#2C4A43]');
+                            if (emailError) emailError.classList.add('hidden');
+                        }
+                    });
                 }
-                if (requiredFields.email && !document.getElementById('bookingEmail').value.trim()) {
-                    alert('Please enter your email');
-                    return false;
+                
+                if (phoneInput) {
+                    phoneInput.addEventListener('input', function() {
+                        const value = this.value.trim();
+                        // Only show error if there's a value and it's invalid
+                        if (value && !isValidPhoneNumber(value)) {
+                            this.classList.add('border-red-500');
+                            this.classList.remove('border-[#2C4A43]');
+                            if (phoneError) phoneError.classList.remove('hidden');
+                        } else {
+                            this.classList.remove('border-red-500');
+                            this.classList.add('border-[#2C4A43]');
+                            if (phoneError) phoneError.classList.add('hidden');
+                        }
+                    });
                 }
-                if (requiredFields.phone && !document.getElementById('bookingPhone').value.trim()) {
-                    alert('Please enter your phone number');
-                    return false;
+            }
+
+            // Validation functions
+            function isValidEmail(email) {
+                if (!email || email.trim() === '') return true; // Empty is valid for optional fields
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email.trim());
+            }
+
+            function isValidPhoneNumber(phone) {
+                if (!phone || phone.trim() === '') return true; // Empty is valid for optional fields
+                // Remove all non-digit characters for validation
+                const digitsOnly = phone.replace(/\D/g, '');
+                // Check if it has 7-15 digits (common phone number lengths)
+                return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+            }
+
+            function validateBookingForm() {
+                const questions = event.questions || [];
+                const errors = [];
+                
+                // Create a map of field types and their required status
+                const fieldRequirements = {};
+                questions.forEach(questionObj => {
+                    const questionText = questionObj.text.toLowerCase();
+                    if (questionText.includes('name') || questionText.includes('full name')) {
+                        fieldRequirements.name = questionObj.required;
+                    } else if (questionText.includes('email') || questionText.includes('email address')) {
+                        fieldRequirements.email = questionObj.required;
+                    } else if (questionText.includes('phone') || questionText.includes('phone number')) {
+                        fieldRequirements.phone = questionObj.required;
+                    } else if (questionText.includes('company') || questionText.includes('work for')) {
+                        fieldRequirements.company = questionObj.required;
+                    }
+                });
+                
+                // Validate each field based on its requirement
+                if (fieldRequirements.name !== undefined) {
+                    const nameValue = document.getElementById('bookingName').value.trim();
+                    if (fieldRequirements.name && !nameValue) {
+                        errors.push('Please enter your name');
+                    }
                 }
-                if (requiredFields.company && !document.getElementById('bookingCompany').value.trim()) {
-                    alert('Please enter your company name');
-                    return false;
+                
+                if (fieldRequirements.email !== undefined) {
+                    const emailValue = document.getElementById('bookingEmail').value.trim();
+                    if (fieldRequirements.email && !emailValue) {
+                        errors.push('Please enter your email address');
+                    } else if (emailValue && !isValidEmail(emailValue)) {
+                        errors.push('Please enter a valid email address');
+                    }
+                }
+                
+                if (fieldRequirements.phone !== undefined) {
+                    const phoneValue = document.getElementById('bookingPhone').value.trim();
+                    if (fieldRequirements.phone && !phoneValue) {
+                        errors.push('Please enter your phone number');
+                    } else if (phoneValue && !isValidPhoneNumber(phoneValue)) {
+                        errors.push('Please enter a valid phone number');
+                    }
+                }
+                
+                if (fieldRequirements.company !== undefined) {
+                    const companyValue = document.getElementById('bookingCompany').value.trim();
+                    if (fieldRequirements.company && !companyValue) {
+                        errors.push('Please enter your company name');
+                    }
                 }
                 
                 // Validate required custom questions
-                const questions = event.questions || [];
-                if (Array.isArray(questions) && questions.length > 0) {
-                    for (let i = 0; i < questions.length; i++) {
-                        const questionObj = questions[i];
-                        if (questionObj.required) {
-                            const answer = document.getElementById(`question_${i}`).value.trim();
-                            if (!answer) {
-                                alert(`Please answer the required question: ${questionObj.text}`);
-                                return false;
-                            }
+                const customQuestions = questions.filter(q => {
+                    const text = q.text.toLowerCase();
+                    return !text.includes('name') && !text.includes('email') && 
+                           !text.includes('phone') && !text.includes('company');
+                });
+                
+                for (let i = 0; i < customQuestions.length; i++) {
+                    const questionObj = customQuestions[i];
+                    if (questionObj.required) {
+                        const answer = document.getElementById(`custom_question_${i}`).value.trim();
+                        if (!answer) {
+                            errors.push(`Please answer the required question: ${questionObj.text}`);
                         }
                     }
+                }
+                
+                // Show errors if any
+                if (errors.length > 0) {
+                    showValidationErrors(errors);
+                    return false;
                 }
                 
                 return true;
             }
 
+            function showValidationErrors(errors) {
+                // Remove any existing error modal
+                const existingErrorModal = document.getElementById('validationErrorModal');
+                if (existingErrorModal) {
+                    existingErrorModal.remove();
+                }
+                
+                // Create error modal
+                const errorModal = document.createElement('div');
+                errorModal.id = 'validationErrorModal';
+                errorModal.className = 'fixed inset-0 z-[80] flex items-center justify-center p-4';
+                errorModal.innerHTML = `
+                    <div class="bg-[#1E3A34] rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 border border-[#EF4444]">
+                        <div class="text-center">
+                            <!-- Error Icon -->
+                            <div class="mx-auto w-16 h-16 bg-[#EF4444] rounded-full flex items-center justify-center mb-6">
+                                <span class="material-icons-outlined text-white text-3xl">error</span>
+                            </div>
+                            
+                            <!-- Error Message -->
+                            <h3 class="text-xl font-bold text-white mb-4">Please fix the following errors:</h3>
+                            
+                            <!-- Error List -->
+                            <div class="bg-[#19342e] rounded-lg p-4 mb-6 text-left">
+                                <ul class="space-y-2">
+                                    ${errors.map(error => `<li class="text-[#FCA5A5] flex items-start">
+                                        <span class="material-icons-outlined text-[#EF4444] mr-2 mt-0.5 text-sm">circle</span>
+                                        ${error}
+                                    </li>`).join('')}
+                                </ul>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            <button id="validationErrorOkButton" class="bg-[#EF4444] text-white px-8 py-3 rounded-lg hover:bg-[#DC2626] transition-colors font-bold w-full">
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(errorModal);
+                
+                // Add event listener for OK button
+                const okButton = errorModal.querySelector('#validationErrorOkButton');
+                if (okButton) {
+                    okButton.addEventListener('click', closeValidationErrorModal);
+                }
+                
+                // Close modal when clicking backdrop
+                errorModal.addEventListener('click', (e) => {
+                    if (e.target === errorModal) {
+                        closeValidationErrorModal();
+                    }
+                });
+            }
+
+            function closeValidationErrorModal() {
+                const errorModal = document.getElementById('validationErrorModal');
+                if (errorModal) {
+                    errorModal.remove();
+                }
+            }
+
             async function confirmBooking() {
                 if (!validateBookingForm()) return;
-
+                
                 // Collect form data
                 const bookingData = {
                     eventTitle: event.title || event.name,
@@ -877,100 +1347,166 @@
                     questions: []
                 };
 
-                // Collect question answers
+                // Collect custom question answers
                 const questions = event.questions || [];
-                if (Array.isArray(questions) && questions.length > 0) {
-                    questions.forEach((questionObj, index) => {
-                        const answer = document.getElementById(`question_${index}`).value;
+                const customQuestions = questions.filter(q => {
+                    const text = q.text.toLowerCase();
+                    return !text.includes('name') && !text.includes('email') && 
+                           !text.includes('phone') && !text.includes('company');
+                });
+                
+                if (customQuestions.length > 0) {
+                    customQuestions.forEach((questionObj, index) => {
+                        const answer = document.getElementById(`custom_question_${index}`).value;
                         bookingData.questions.push({ question: questionObj.text, answer });
                     });
                 }
 
-                const startDate = new Date(selectedDate);
-                const { h, m } = parseTime(selectedTime);
-                startDate.setHours(h, m, 0, 0);
-                const endDate = new Date(startDate.getTime() + eventDuration * 60000);
-
-                // Persist meeting to server
+                // Create the actual booking in the database
                 try {
-                    const res = await fetch(`${API_URL}/event-types/${event.slug}/bookings`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            name: bookingData.name,
-                            email: bookingData.email,
-                            start: startDate.toISOString(),
-                            end: endDate.toISOString()
-                        })
+                    // Get slug and display from the same logic used at page load
+                    const parts = window.location.pathname.split('/').filter(Boolean);
+                    let display = '';
+                    let slug = '';
+                    if (parts.length >= 3 && parts[0] === 'booking') {
+                        display = decodeURIComponent(parts[1]);
+                        slug = parts[2];
+                    } else {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        display = urlParams.get('user') || '';
+                        slug = urlParams.get('event') || '';
+                    }
+                    
+                    console.log('URL params:', {
+                        slug: slug,
+                        display: display,
+                        fullUrl: window.location.href,
+                        search: window.location.search,
+                        pathname: window.location.pathname
                     });
-                    console.log('Server booking response', res.status);
-                } catch (e) { console.error('Booking API failed', e); }
-
-                // Persist meeting to localStorage so host dashboard can display it
-                const meeting = {
-                    id: Date.now(),
-                    invitee: bookingData.name || 'Anonymous',
-                    email: bookingData.email || '',
-                    eventType: bookingData.eventTitle,
-                    slug: event.slug,
-                    duration: eventDuration,
-                    start: startDate.toISOString(),
-                    end: endDate.toISOString(),
-                    date: `${bookingData.date}, ${bookingData.time}`,
-                    status: 'Confirmed'
-                };
-
-                let meetingsObj;
-                try {
-                    meetingsObj = JSON.parse(localStorage.getItem('calendarify-meetings') || '{}');
-                } catch {
-                    meetingsObj = {};
+                    
+                    if (!slug) {
+                        showValidationErrors(['Invalid booking link. Missing event type.']);
+                        return;
+                    }
+                    
+                    // Calculate start and end times
+                    // Parse the selected time (format: "10:00 AM" or "14:00")
+                    let startTime = new Date(selectedDate);
+                    let timeStr = selectedTime;
+                    
+                    // Convert 12-hour format to 24-hour if needed
+                    if (timeStr.includes('AM') || timeStr.includes('PM')) {
+                        const [time, period] = timeStr.split(' ');
+                        let [hours, minutes] = time.split(':').map(Number);
+                        
+                        if (period === 'PM' && hours !== 12) {
+                            hours += 12;
+                        } else if (period === 'AM' && hours === 12) {
+                            hours = 0;
+                        }
+                        
+                        startTime.setHours(hours, minutes, 0, 0);
+                    } else {
+                        const [hours, minutes] = timeStr.split(':').map(Number);
+                        startTime.setHours(hours, minutes, 0, 0);
+                    }
+                    
+                    const endTime = new Date(startTime);
+                    endTime.setMinutes(endTime.getMinutes() + eventDuration);
+                    
+                    const bookingPayload = {
+                        event_type_slug: slug,
+                        name: bookingData.name,
+                        email: bookingData.email,
+                        phone: bookingData.phone || null,
+                        company: bookingData.company || null,
+                        starts_at: startTime.toISOString(),
+                        ends_at: endTime.toISOString(),
+                        questions: bookingData.questions
+                    };
+                    
+                    console.log('API URL:', `${API_URL}/bookings`);
+                    console.log('Booking payload:', JSON.stringify(bookingPayload, null, 2));
+                    
+                    console.log('Creating booking with payload:', bookingPayload);
+                    
+                    // Create booking on the server
+                    console.log('Creating booking on server');
+                    
+                    const res = await fetch(`${API_URL}/bookings`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(bookingPayload)
+                    });
+                    
+                    if (res.ok) {
+                        const createdBooking = await res.json();
+                        console.log('Booking created successfully:', createdBooking);
+                        showBookingConfirmationModal(bookingData);
+                    } else {
+                        const errorData = await res.json();
+                        console.error('Failed to create booking:', errorData);
+                        console.error('Response status:', res.status);
+                        
+                        // Show more specific error message
+                        let errorMessage = 'Failed to create booking. Please try again.';
+                        if (errorData && errorData.message) {
+                            errorMessage = `Booking failed: ${errorData.message}`;
+                        } else if (errorData && errorData.error) {
+                            errorMessage = `Booking failed: ${errorData.error}`;
+                        }
+                        
+                        showValidationErrors([errorMessage]);
+                    }
+                } catch (error) {
+                    console.error('Error creating booking:', error);
+                    showValidationErrors(['Failed to create booking. Please try again.']);
                 }
-                if (!meetingsObj.upcoming) meetingsObj = { upcoming: [], past: [], pending: [] };
-                meetingsObj.upcoming.push(meeting);
-                localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsObj));
+            }
 
-                // Mark this slot as booked so it becomes unavailable
-                let booked = {};
-                try {
-                    booked = JSON.parse(localStorage.getItem('calendarify-booked-slots') || '{}');
-                } catch {}
-                if (!booked[event.slug]) booked[event.slug] = [];
-                booked[event.slug].push({
-                    start: startDate.toISOString(),
-                    end: endDate.toISOString(),
-                    bufferBefore,
-                    bufferAfter
-                });
-                localStorage.setItem('calendarify-booked-slots', JSON.stringify(booked));
-
-                console.log('Booking confirmed:', bookingData);
-                alert(`Booking confirmed for ${bookingData.date} at ${bookingData.time}!`);
+            function showBookingConfirmationModal(bookingData) {
+                // Populate confirmation modal with booking details
+                document.getElementById('confirmationEventTitle').textContent = bookingData.eventTitle;
+                document.getElementById('confirmationDate').textContent = bookingData.date;
+                document.getElementById('confirmationTime').textContent = bookingData.time;
+                document.getElementById('confirmationDuration').textContent = `${bookingData.duration} minutes`;
+                
+                // Close the booking modal first
                 closeBookingModal();
+                
+                // Show the confirmation modal
+                document.getElementById('bookingConfirmationModal').classList.remove('hidden');
+            }
+
+            function closeBookingConfirmationModal() {
+                document.getElementById('bookingConfirmationModal').classList.add('hidden');
             }
 
             // Event listeners
-            document.getElementById('prevMonth').addEventListener('click', () => {
+            document.getElementById('prevMonth').addEventListener('click', async () => {
                 currentDate.setMonth(currentDate.getMonth() - 1);
-                buildCalendar();
+                await buildCalendar();
             });
 
-            document.getElementById('nextMonth').addEventListener('click', () => {
+            document.getElementById('nextMonth').addEventListener('click', async () => {
                 currentDate.setMonth(currentDate.getMonth() + 1);
-                buildCalendar();
+                await buildCalendar();
             });
 
             document.getElementById('confirmButton').addEventListener('click', () => {
                 if (selectedDate && selectedTime) {
                     showBookingModal();
-                } else {
-                    alert('Please select a date and time slot');
                 }
             });
 
+            // Modal button event listeners
             document.getElementById('closeBookingModal').addEventListener('click', closeBookingModal);
             document.getElementById('cancelBooking').addEventListener('click', closeBookingModal);
             document.getElementById('confirmBooking').addEventListener('click', confirmBooking);
+            document.getElementById('closeBookingConfirmationModal').addEventListener('click', closeBookingConfirmationModal);
 
             // Close modal when clicking backdrop
             document.getElementById('bookingModal').addEventListener('click', (e) => {
@@ -979,8 +1515,21 @@
                 }
             });
 
+            // Close confirmation modal when clicking backdrop
+            document.getElementById('bookingConfirmationModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('bookingConfirmationModal')) {
+                    closeBookingConfirmationModal();
+                }
+            });
+
             // Initialize the calendar
-            buildCalendar();
+            buildCalendar().catch(console.error);
+            
+            // Initialize time format toggle
+            updateClockFormatUI();
+            
+            // Setup real-time validation
+            setupRealTimeValidation();
         });
     </script>
 </body>

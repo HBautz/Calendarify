@@ -8,11 +8,16 @@ export interface SlotOptions {
   rules: { dayOfWeek: number; startMinute: number; endMinute: number }[];
   overrides: { date: Date; startMinute?: number; endMinute?: number; isBusy?: boolean }[];
   busy: { start: Date; end: Date }[];
+  bufferBefore?: number; // minutes
+  bufferAfter?: number; // minutes
+  slotInterval?: number; // minutes (optional, defaults to duration)
 }
 
 export function generateSlots(opts: SlotOptions): string[] {
   const days = eachDayOfInterval({ start: opts.from, end: opts.to });
   let slots: Date[] = [];
+
+  const step = opts.slotInterval || opts.duration;
 
   for (const day of days) {
     const dow = day.getUTCDay();
@@ -20,7 +25,7 @@ export function generateSlots(opts: SlotOptions): string[] {
     for (const rule of ruleSlots) {
       const dayStart = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 0, rule.startMinute));
       const dayEnd = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 0, rule.endMinute));
-      const chunked = eachMinuteOfInterval({ start: dayStart, end: dayEnd }, { step: opts.duration });
+      const chunked = eachMinuteOfInterval({ start: dayStart, end: dayEnd }, { step });
       slots = slots.concat(chunked);
     }
   }
@@ -39,10 +44,49 @@ export function generateSlots(opts: SlotOptions): string[] {
     });
   }
 
-  // subtract busy ranges
+  // SUPER ROBUST BUFFER LOGIC
+  const bufferBefore = opts.bufferBefore || 0;
+  const bufferAfter = opts.bufferAfter || 0;
+  
+  // Only log buffer analysis if there are busy periods and buffers are configured
+  if (opts.busy.length > 0 && (bufferBefore > 0 || bufferAfter > 0)) {
+    console.log('[BUFFER-DEBUG] Processing', opts.busy.length, 'busy periods with buffers:', {
+      bufferBefore: `${bufferBefore}min`,
+      bufferAfter: `${bufferAfter}min`
+    });
+  }
+  
+  const originalSlotsCount = slots.length;
+  let blockedSlotsCount = 0;
+  
   slots = slots.filter(s => {
-    return !opts.busy.some(b => s >= addMinutes(b.start, -5) && s <= addMinutes(b.end, 5));
+    let isBlocked = false;
+    
+    for (const b of opts.busy) {
+      const busyStart = addMinutes(b.start, -bufferBefore);
+      const busyEnd = addMinutes(b.end, bufferAfter);
+      
+      if (s >= busyStart && s <= busyEnd) {
+        isBlocked = true;
+        break;
+      }
+    }
+    
+    if (isBlocked) {
+      blockedSlotsCount++;
+    }
+    
+    return !isBlocked;
   });
+  
+  // Only log results if slots were actually blocked
+  if (blockedSlotsCount > 0) {
+    console.log('[BUFFER-DEBUG] Buffer filtering:', {
+      available: slots.length,
+      blocked: blockedSlotsCount,
+      total: originalSlotsCount
+    });
+  }
 
   // dedupe and format
   const iso = Array.from(new Set(slots.map(d => d.toISOString())));

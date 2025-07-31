@@ -440,14 +440,7 @@
           }
         }
         
-        // Fallback to default event types if still empty
-        if (eventTypes.length === 0) {
-          eventTypes = [
-            { name: '30-min Intro Call' },
-            { name: 'Product Demo' },
-            { name: 'Consultation' }
-          ];
-        }
+        // No default event types - let user create their own
         triggerProps.innerHTML = `
           <label class="block text-sm text-[#A3B3AF] mb-2">Event Types</label>
           <div class="multi-select">
@@ -690,14 +683,7 @@
         }
       }
       
-      // Fallback to default event types if still empty
-      if (eventTypes.length === 0) {
-        eventTypes = [
-          { name: '30-min Intro Call' },
-          { name: 'Product Demo' },
-          { name: 'Consultation' }
-        ];
-      }
+      // No default event types - let user create their own
       
       // Create dropdown container
       const dropdownContainer = document.createElement('div');
