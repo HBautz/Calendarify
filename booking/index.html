@@ -867,7 +867,7 @@
 
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
-                const isDayOff = dayAvail[dayNames[selectedDate.getUTCDay()]] === true;
+                const isDayOff = dayAvail[dayNames[selectedDate.getUTCDay()]] === false;
 
                 if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || isDayOff) {
                     container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
@@ -956,7 +956,7 @@
                     const isPast = currentDay < todayUTC;
                     const dayOfWeek = currentDay.getUTCDay();
                     const dayName = dayNamesFull[dayOfWeek];
-                    const isDayOff = dayAvail[dayName] === true;
+                    const isDayOff = dayAvail[dayName] === false;
                     
                     // Start with basic availability check - only check past dates, not weekends
                     let isUnavailable = isPast || isDayOff;
