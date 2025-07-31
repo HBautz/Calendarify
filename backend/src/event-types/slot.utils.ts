@@ -66,7 +66,7 @@ export function generateSlots(opts: SlotOptions): string[] {
       const busyStart = addMinutes(b.start, -bufferBefore);
       const busyEnd = addMinutes(b.end, bufferAfter);
       
-      if (s >= busyStart && s <= busyEnd) {
+      if (s >= busyStart && s < busyEnd) {
         isBlocked = true;
         break;
       }
