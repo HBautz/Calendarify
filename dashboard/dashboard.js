@@ -3,6 +3,38 @@
       window.location.replace('/log-in');
     }
 
+    // Global variables to store fresh data (no localStorage caching for business data)
+    let freshEventTypes = [];
+    let freshTags = [];
+    let freshWorkflows = [];
+    let freshContacts = [];
+    let freshMeetings = {};
+    let freshUserState = {};
+    
+    // Authentication functions are already available from auth.js
+    // getAnyToken(), clearToken(), logout() are globally available
+    
+    // Tab memory functions (preserved in localStorage for UX)
+    function saveCurrentSection(section) {
+      console.log(`💾 Saving current section: ${section}`);
+      localStorage.setItem('calendarify-current-section', section);
+      console.log(`✅ Section saved. Current localStorage:`, localStorage.getItem('calendarify-current-section'));
+    }
+    
+    function getCurrentSection() {
+      const section = localStorage.getItem('calendarify-current-section') || 'event-types';
+      console.log(`📖 Getting current section: ${section}`);
+      return section;
+    }
+    
+    function saveMeetingsTab(tab) {
+      localStorage.setItem('calendarify-meetings-tab', tab);
+    }
+    
+    function getMeetingsTab() {
+      return localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
+    }
+
     async function loadState() {
       const token = getAnyToken();
       if (!token) {
@@ -14,32 +46,9 @@
       });
       if (res.ok) {
         const data = await res.json();
+        freshUserState = data;
         
-        // Get existing event types to preserve questions
-        const existingEventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-        
-        Object.entries(data).forEach(([k, v]) => {
-          // Don't store the token in localStorage - it should only be in sessionStorage/localStorage based on user choice
-          if (k !== 'calendarify-token') {
-            if (k === 'calendarify-event-types' && Array.isArray(v)) {
-              // Special handling for event types to preserve questions
-              const mergedEventTypes = v.map(et => {
-                const existing = existingEventTypes.find(existingEt => existingEt.slug === et.slug);
-                return {
-                  ...et,
-                  questions: et.questions || (existing ? existing.questions : [])
-                };
-              });
-              localStorage.setItem(k, JSON.stringify(mergedEventTypes));
-            } else {
-              if (typeof v === 'string') {
-                localStorage.setItem(k, v);
-              } else {
-                localStorage.setItem(k, JSON.stringify(v));
-              }
-            }
-          }
-        });
+        // Update UI elements that depend on user state
         updateGoogleCalendarButton();
         updateZoomButton();
         updateOutlookCalendarButton();
@@ -54,10 +63,7 @@
       const res = await fetch(`${API_URL}/tags`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const tags = await res.json();
-        const map = {};
-        tags.forEach(t => (map[t.name] = t.id));
-        localStorage.setItem('calendarify-tags', JSON.stringify(tags.map(t => t.name)));
-        localStorage.setItem('calendarify-tag-map', JSON.stringify(map));
+        freshTags = tags;
         return tags;
       }
       return [];
@@ -70,7 +76,7 @@
       const res = await fetch(`${API_URL}/workflows`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const wfs = await res.json();
-        localStorage.setItem('calendarify-workflows', JSON.stringify(wfs));
+        freshWorkflows = wfs;
         return wfs;
       }
       return [];
@@ -83,7 +89,7 @@
       const res = await fetch(`${API_URL}/contacts`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const contacts = await res.json();
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        freshContacts = contacts;
         return contacts;
       }
       return [];
@@ -93,37 +99,51 @@
       const token = getAnyToken();
       if (!token) return [];
       const clean = token.replace(/^"|"$/g, '');
-      const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
-      if (res.ok) {
-        const raw = await res.json();
-        
-        // Get existing event types from localStorage to preserve questions
-        const existingEventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-        
-        const eventTypes = raw.map(et => {
-          // Find existing event type with same slug to preserve questions
-          const existing = existingEventTypes.find(existingEt => existingEt.slug === et.slug);
+      
+      try {
+        // Fetch event types from backend
+        const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (res.ok) {
+          const raw = await res.json();
           
-          const mergedEventType = {
-            ...et,
-            name: et.title,
-            color: et.color || '#34D399',
-            // Preserve questions from existing data if server doesn't provide them
-            questions: et.questions || (existing ? existing.questions : [])
-          };
-          
-          // Debug logging
-          console.log(`Event type ${et.slug}:`, {
-            serverQuestions: et.questions,
-            existingQuestions: existing ? existing.questions : null,
-            finalQuestions: mergedEventType.questions
-          });
-          
-          return mergedEventType;
-        });
-        
-        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-        return eventTypes;
+          // Fetch user state to get additional settings
+          const stateRes = await fetch(`${API_URL}/users/me/state`, { headers: { Authorization: `Bearer ${clean}` } });
+          if (stateRes.ok) {
+            const userState = await stateRes.json();
+            
+            // Merge event types with their additional settings
+            const mergedEventTypes = raw.map(eventType => {
+              const settingsKey = `event-type-settings-${eventType.id}`;
+              const additionalSettings = userState[settingsKey] || {};
+              
+              return {
+                ...eventType,
+                ...additionalSettings,
+                // Ensure we have fallbacks for required fields
+                color: additionalSettings.color || '#34D399',
+                location: additionalSettings.location || 'zoom',
+                visibility: additionalSettings.visibility || 'public',
+                priority: additionalSettings.priority || 'normal',
+                tags: additionalSettings.tags || [],
+                notifications: additionalSettings.notifications || {
+                  availability: true,
+                  reminders: true,
+                  followUp: false,
+                  reschedule: true
+                }
+              };
+            });
+            
+            freshEventTypes = mergedEventTypes;
+            return mergedEventTypes;
+          } else {
+            // If we can't fetch user state, just use the raw data
+            freshEventTypes = raw;
+            return raw;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching event types:', error);
       }
       return [];
     }
@@ -158,26 +178,27 @@
               duration: b.event_type.duration,
               start: b.starts_at, // Use server data directly
               end: b.ends_at,     // Use server data directly
-              date: new Date(b.starts_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+              // Do not pre-format date here; we format per current clock setting when rendering
+              date: b.starts_at,
               status: 'Confirmed'
             };
             if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
           });
           
-          // Always overwrite local storage with server data
-          localStorage.setItem('calendarify-meetings', JSON.stringify(meetingsData));
-          console.log('[DEBUG] Updated local storage with server data');
+          // Store fresh data in memory (no localStorage caching)
+          freshMeetings = meetingsData;
+          console.log('[DEBUG] Updated fresh meetings data');
         } else {
           console.error('[DEBUG] Failed to fetch meetings from server:', res.status, res.statusText);
           // Don't use local storage as fallback - keep empty data
           meetingsData = { upcoming: [], past: [], pending: [] };
-          localStorage.removeItem('calendarify-meetings'); // Clear stale data
+          freshMeetings = meetingsData; // Clear fresh data
         }
       } catch (error) {
         console.error('[DEBUG] Error fetching meetings from server:', error);
         // Don't use local storage as fallback - keep empty data
         meetingsData = { upcoming: [], past: [], pending: [] };
-        localStorage.removeItem('calendarify-meetings'); // Clear stale data
+        freshMeetings = meetingsData; // Clear fresh data
       }
     }
 
@@ -185,7 +206,7 @@
       console.log('[DEBUG] Refreshing meetings data...');
       await fetchMeetingsFromServer();
       // Update the current tab if meetings section is active
-      const currentTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
+      const currentTab = getMeetingsTab();
       if (document.getElementById('meetings-section').style.display !== 'none') {
         updateMeetingsTable(currentTab);
       }
@@ -195,79 +216,47 @@
     async function forceRefreshMeetings() {
       console.log('[DEBUG] Force refreshing meetings data from server...');
       await fetchMeetingsFromServer();
-      const currentTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
+      const currentTab = getMeetingsTab();
       updateMeetingsTable(currentTab);
       showNotification('Meetings data refreshed from server');
     }
 
-    function collectState() {
-      const data = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("calendarify-")) {
-          try {
-            data[key] = JSON.parse(localStorage.getItem(key));
-          } catch {
-            data[key] = localStorage.getItem(key);
-          }
-        }
-      }
-      return data;
-    }
-
+    // No localStorage state management - always fetch fresh data
     async function syncState() {
-      const token = getAnyToken();
-      if (!token) {
-        return;
-      }
-      const cleanToken = token.replace(/^"|"$/g, "");
-      try {
-        const state = collectState();
-        await fetch(`${API_URL}/users/me/state`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${cleanToken}`,
-          },
-          body: JSON.stringify(state),
-        });
-      } catch (e) {
-        console.error('syncState error', e);
-      }
+      // No-op - we don't cache state in localStorage anymore
+      console.log('syncState called - no localStorage caching');
     }
-
-
-    const _setItem = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(k, v) {
-      _setItem(k, v);
-      if (k.startsWith('calendarify-')) syncState();
-    };
-    const _removeItem = localStorage.removeItem.bind(localStorage);
-    localStorage.removeItem = function(k) {
-      _removeItem(k);
-      if (k.startsWith('calendarify-')) syncState();
-    };
-    window.addEventListener('beforeunload', syncState);
     async function showSection(section, el) {
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
       el.classList.add('active');
-      localStorage.setItem('calendarify-current-section', section);
       document.getElementById('section-title').textContent = el.textContent.trim();
       document.querySelectorAll('section').forEach(sec => sec.style.display = 'none');
       const secEl = document.getElementById(section + '-section');
       if (secEl) secEl.style.display = 'block';
+      
+      // Save current section for tab memory
+      saveCurrentSection(section);
+      
+      // Always fetch fresh data for each section
       if (section === 'meetings') {
         // Refresh meetings data from server
         await refreshMeetingsData();
-        const savedTab = localStorage.getItem('calendarify-meetings-tab') || 'upcoming';
+        const savedTab = getMeetingsTab();
         const savedTabBtn = document.querySelector(`#meetings-section button[data-tab="${savedTab}"]`);
         showMeetingsTab(savedTab, savedTabBtn);
       } else if (section === 'availability') {
         initializeCalendar();
-        restoreDayAvailability();
-        restoreWeeklyHours();
+        // Always fetch fresh availability data from backend
+        await loadFreshAvailabilityData();
       } else if (section === 'contacts') {
+        await fetchContactsFromServer();
         renderContacts();
+      } else if (section === 'event-types') {
+        await fetchEventTypesFromServer();
+        renderEventTypes();
+      } else if (section === 'workflows') {
+        await fetchWorkflowsFromServer();
+        renderWorkflows();
       } else if (section === 'integrations') {
         setTimeout(() => {
           updateGoogleCalendarButton();
@@ -282,8 +271,8 @@
     async function showMeetingsTab(tab, btn) {
       console.log('showMeetingsTab called with tab:', tab);
       
-      // Save current tab to localStorage
-      localStorage.setItem('calendarify-meetings-tab', tab);
+      // Save current tab for tab memory
+      saveMeetingsTab(tab);
       
       // Update tab buttons
       document.querySelectorAll('#meetings-section button[data-tab]').forEach(button => {
@@ -320,7 +309,15 @@
       const meetings = getMeetingsData(tab);
       console.log('Meetings for tab', tab, ':', meetings);
       
+      const is12h = getClockFormat() === '12h';
       const tableHTML = meetings.map(meeting => {
+        const displayDate = new Date(meeting.start).toLocaleString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: is12h
+        });
         let badgeClass =
           meeting.status === 'Confirmed' ? 'badge-success' :
           meeting.status === 'Pending' ? 'badge-warning' :
@@ -338,7 +335,7 @@
             </div>
           </td>
           <td class="py-2 text-center">${meeting.eventType}</td>
-          <td class="py-2 text-center">${meeting.date}</td>
+          <td class="py-2 text-center">${displayDate}</td>
           <td class="py-2 text-center"><span class="${badgeClass}">${meeting.status}</span></td>
           <td class="py-2 text-center">
             <div class="relative inline-block text-left">
@@ -426,7 +423,7 @@
     // Utility functions
     function copyLink(slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
-      const display = localStorage.getItem('calendarify-display-name');
+      const display = freshUserState['calendarify-display-name'] || '';
 
       if (!display || display.trim() === '') {
         showNotification('Please set a display name in your profile settings before sharing links');
@@ -439,7 +436,7 @@
 
     function openShareModal(title, slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
-      const display = localStorage.getItem('calendarify-display-name');
+      const display = freshUserState['calendarify-display-name'] || '';
 
       if (!display || display.trim() === '') {
         showNotification('Please set a display name in your profile settings before sharing links');
@@ -848,7 +845,7 @@
             document.getElementById('profile-name').textContent = data.name || 'User';
             document.getElementById('profile-email').textContent = data.email || '';
             document.getElementById('profile-displayname').textContent = data.display_name || '';
-            localStorage.setItem('calendarify-display-name', data.display_name || '');
+            freshUserState['calendarify-display-name'] = data.display_name || '';
           } else {
             console.error('Failed to load profile: HTTP', res.status);
           }
@@ -898,7 +895,7 @@
         // Clean the display name to remove any quotes
         const cleanDisplayName = data.display_name.replace(/^["']|["']$/g, '');
         document.getElementById('profile-displayname').textContent = cleanDisplayName;
-        localStorage.setItem('calendarify-display-name', cleanDisplayName);
+        freshUserState['calendarify-display-name'] = cleanDisplayName;
         showNotification('Display name updated');
       } else {
         const text = await res.text();
@@ -979,24 +976,33 @@
         }
       });
       addAMPMDisplay();
+      // Re-render meetings table to apply new format to Date/Time column
+      try {
+        const currentTab = getMeetingsTab ? getMeetingsTab() : 'upcoming';
+        if (typeof updateMeetingsTable === 'function') {
+          updateMeetingsTable(currentTab);
+        }
+      } catch (_) {}
     }
 
     function getClockFormat() {
-      let stored = localStorage.getItem('calendarify-clock-format');
-      if (!stored) {
-        localStorage.setItem('calendarify-clock-format', '24h');
+      try {
+        const stored = localStorage.getItem('calendarify-dashboard-clock-format');
+        return stored === '12h' ? '12h' : '24h';
+      } catch (_) {
         return '24h';
       }
-      return stored;
     }
 
     function setClockFormat(format) {
-      localStorage.setItem('calendarify-clock-format', format);
-      syncState(); // Ensure the format is saved to the backend
+      try {
+        localStorage.setItem('calendarify-dashboard-clock-format', format === '12h' ? '12h' : '24h');
+      } catch (_) {}
     }
 
     function updateClockFormatUI() {
       const is12h = getClockFormat() === '12h';
+      // Availability section toggle
       const toggle = document.getElementById('clock-format-toggle');
       const circle = document.getElementById('toggle-circle');
       if (toggle && circle) {
@@ -1005,6 +1011,16 @@
         toggle.classList.toggle('bg-[#19342e]', !is12h);
         circle.style.transform = is12h ? 'translateX(20px)' : 'translateX(0)';
         circle.style.backgroundColor = is12h ? '#fff' : '#34D399';
+      }
+      // Meetings section toggle
+      const meetingsToggle = document.getElementById('meetings-clock-format-toggle');
+      const meetingsCircle = document.getElementById('meetings-toggle-circle');
+      if (meetingsToggle && meetingsCircle) {
+        meetingsToggle.setAttribute('aria-pressed', is12h ? 'true' : 'false');
+        meetingsToggle.classList.toggle('bg-[#34D399]', is12h);
+        meetingsToggle.classList.toggle('bg-[#19342e]', !is12h);
+        meetingsCircle.style.transform = is12h ? 'translateX(20px)' : 'translateX(0)';
+        meetingsCircle.style.backgroundColor = is12h ? '#fff' : '#34D399';
       }
     }
 
@@ -1097,8 +1113,9 @@
       await initAuth('dashboard-body');
       await loadState();
 
-      // Always apply persisted time format to toggle and all time inputs
+      // Apply persisted time format to toggles, inputs, and pickers
       updateClockFormatUI();
+      updateAllTimeInputs();
       updateAllCustomTimePickers();
 
       let sectionToShow = 'event-types';
@@ -1137,6 +1154,9 @@
       const avatar = document.getElementById('profile-avatar');
       if (avatar) avatar.addEventListener('click', openProfileModal);
     });
+
+    // Expose toggle to window for inline onclick handlers in HTML
+    window.toggleClockFormat = toggleClockFormat;
 
     // --- Custom Time Picker ---
     function showTimeDropdown(input) {
@@ -1192,32 +1212,8 @@
 
       const container = picker.closest('[id$="-times"]');
       if (container) {
-        const day = container.id.replace('-times', '');
-        const inputs = container.querySelectorAll('input');
-        const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
-        // Always save in 24h format
-        function to24h(val) {
-          val = val.trim();
-          if (val.includes('AM') || val.includes('PM')) {
-            // 12h format, convert
-            let match = val.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-            if (match) {
-              let hour = parseInt(match[1], 10);
-              let min = match[2];
-              let ap = match[3].toUpperCase();
-              if (ap === 'PM' && hour < 12) hour += 12;
-              if (ap === 'AM' && hour === 12) hour = 0;
-              return `${hour.toString().padStart(2, '0')}:${min}`;
-            }
-          }
-          // Already 24h
-          return val;
-        }
-        weekly[day] = {
-          start: to24h(inputs[0].value || inputs[0].placeholder),
-          end: to24h(inputs[1].value || inputs[1].placeholder),
-        };
-        localStorage.setItem('calendarify-weekly-hours', JSON.stringify(weekly));
+        // No localStorage caching - just sync to backend
+        syncAvailabilityRules();
         syncState();
       }
       closeTimeDropdown(btn);
@@ -1291,12 +1287,19 @@
 
     // --- Day Availability Toggle ---
     function toggleDayAvailability(day, button) {
+      const timestamp = new Date().toISOString();
       const isAvailable = button.getAttribute('aria-pressed') === 'true';
       const timeContainer = document.getElementById(day + '-times');
       const circle = button.querySelector('div');
       
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== USER CLICKED DAY TOGGLE =====`);
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] User clicked: ${day}`);
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Current state: isAvailable=${isAvailable}`);
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Button aria-pressed before: "${button.getAttribute('aria-pressed')}"`);
+      
       if (isAvailable) {
         // Disable the day (unavailable)
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Disabling ${day} (making unavailable)`);
         button.setAttribute('aria-pressed', 'false');
         button.classList.remove('bg-[#34D399]');
         button.classList.add('bg-[#19342e]');
@@ -1310,8 +1313,10 @@
           input.classList.add('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
           input.classList.remove('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
         });
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} disabled - time inputs disabled`);
       } else {
         // Enable the day (available)
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Enabling ${day} (making available)`);
         button.setAttribute('aria-pressed', 'true');
         button.classList.remove('bg-[#19342e]');
         button.classList.add('bg-[#34D399]');
@@ -1325,14 +1330,282 @@
           input.classList.remove('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
           input.classList.add('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
         });
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} enabled - time inputs enabled`);
       }
       
-      // Save day availability to localStorage
-      let dayAvailability = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
-      dayAvailability[day] = !isAvailable; // Toggle the state
-      localStorage.setItem('calendarify-day-availability', JSON.stringify(dayAvailability));
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Button aria-pressed after: "${button.getAttribute('aria-pressed')}"`);
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== DAY TOGGLE COMPLETE =====`);
+      
+      // Sync availability rules to backend (no localStorage caching)
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Calling syncAvailabilityRules()...`);
+      syncAvailabilityRules();
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Calling syncState()...`);
       syncState();
     }
+
+    // Sync availability rules to backend
+    async function syncAvailabilityRules() {
+      const timestamp = new Date().toISOString();
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== STARTING AVAILABILITY SYNC =====`);
+      
+      const token = getAnyToken();
+      if (!token) {
+        console.error(`[❌ TEMP DEBUG ${timestamp}] No authentication token found`);
+        return;
+      }
+      
+      const cleanToken = token.replace(/^"|"$/g, "");
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Token found, length: ${cleanToken.length}`);
+      
+      // Get current availability from UI instead of localStorage
+      const dayAvailability = {};
+      const weeklyHours = {};
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Reading availability from UI...`);
+      
+      dayNames.forEach((day, index) => {
+        // Get day availability from toggle button
+        const dayButton = document.querySelector(`button[onclick="toggleDayAvailability('${day}', this)"]`);
+        if (dayButton) {
+          const buttonState = dayButton.getAttribute('aria-pressed');
+          dayAvailability[day] = buttonState === 'true';
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} button state: aria-pressed="${buttonState}" -> available=${dayAvailability[day]}`);
+        } else {
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} button NOT FOUND`);
+        }
+        
+        // Get time inputs from the day's time container
+        const timeContainer = document.getElementById(day + '-times');
+        if (timeContainer) {
+          const inputs = timeContainer.querySelectorAll('input.time-input');
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time inputs found: ${inputs.length}`);
+          if (inputs.length >= 2 && inputs[0].value && inputs[1].value) {
+            const startTime = inputs[0].value;
+            const endTime = inputs[1].value;
+            
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} raw input values: start="${startTime}", end="${endTime}"`);
+            
+            // Validate that start and end times are different
+            if (startTime !== endTime) {
+              weeklyHours[day] = {
+                start: startTime,
+                end: endTime
+              };
+              console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time range stored: ${startTime} - ${endTime}`);
+            } else {
+              console.warn(`[⚠️ TEMP DEBUG ${timestamp}] ${day} has same start and end time: ${startTime}`);
+            }
+          } else {
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time inputs missing or empty: inputs=${inputs.length}, start="${inputs[0]?.value || 'EMPTY'}", end="${inputs[1]?.value || 'EMPTY'}"`);
+          }
+        } else {
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time container NOT FOUND`);
+        }
+      });
+      
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Final dayAvailability:`, dayAvailability);
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Final weeklyHours:`, weeklyHours);
+      
+      // Convert to availability rules format
+      const rules = [];
+      
+      dayNames.forEach((day, index) => {
+        const isAvailable = dayAvailability[day] === true;
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Processing ${day} (index ${index}): isAvailable=${isAvailable}, hasWeeklyHours=${!!weeklyHours[day]}`);
+        
+        if (isAvailable) {
+          if (weeklyHours[day]) {
+            const startTime = weeklyHours[day].start;
+            const endTime = weeklyHours[day].end;
+            
+            // Convert local time to UTC minutes
+            const startMinutes = convertLocalTimeToUTCMinutes(startTime);
+            const endMinutes = convertLocalTimeToUTCMinutes(endTime);
+            
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] Converting ${day} availability:`, {
+              localStart: startTime,
+              localEnd: endTime,
+              utcStartMinutes: startMinutes,
+              utcEndMinutes: endMinutes
+            });
+            
+            // Validate that start time is before end time
+            if (startMinutes >= endMinutes) {
+              console.error(`[❌ TEMP DEBUG ${timestamp}] Invalid time range for ${day}: start (${startMinutes}) >= end (${endMinutes})`);
+              return; // Skip this rule
+            }
+            
+            const rule = {
+              day_of_week: index,
+              start_minute: startMinutes,
+              end_minute: endMinutes
+            };
+            rules.push(rule);
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] Added rule for ${day}:`, rule);
+          } else {
+            // Day is available but has no time range - use default times
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} is available but has no time range, using default times`);
+            const defaultStartMinutes = convertLocalTimeToUTCMinutes('09:00');
+            const defaultEndMinutes = convertLocalTimeToUTCMinutes('17:00');
+            
+            const rule = {
+              day_of_week: index,
+              start_minute: defaultStartMinutes,
+              end_minute: defaultEndMinutes
+            };
+            rules.push(rule);
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] Added default rule for ${day}:`, rule);
+          }
+        } else {
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} is marked as unavailable, will be removed from database`);
+        }
+      });
+      
+      // Don't send if no valid rules
+      if (rules.length === 0) {
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] No valid availability rules to sync`);
+        return;
+      }
+      
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Sending ${rules.length} rules to backend:`, rules);
+      
+      try {
+        const requestBody = { rules };
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Request body:`, JSON.stringify(requestBody, null, 2));
+        
+        const response = await fetch(`${API_URL}/availability/rules`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${cleanToken}`,
+          },
+          body: JSON.stringify(requestBody),
+        });
+        
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Response status: ${response.status}`);
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Response headers:`, Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[❌ TEMP DEBUG ${timestamp}] Failed to sync availability rules: ${response.status} - ${errorText}`);
+          console.error(`[❌ TEMP DEBUG ${timestamp}] Request body that failed:`, JSON.stringify(requestBody, null, 2));
+        } else {
+          const responseText = await response.text();
+          console.log(`[✅ TEMP DEBUG ${timestamp}] Availability rules synced to backend successfully`);
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] Response body: ${responseText}`);
+        }
+      } catch (error) {
+        console.error(`[❌ TEMP DEBUG ${timestamp}] Error syncing availability rules:`, error);
+      }
+      
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== AVAILABILITY SYNC COMPLETE =====`);
+    }
+
+    // Helper function to parse time string to minutes
+    function parseTimeToMinutes(timeStr) {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    }
+
+    // Helper function to convert local time to UTC minutes
+    function convertLocalTimeToUTCMinutes(timeStr) {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      
+      // Convert local time to UTC
+      const timezoneOffset = new Date().getTimezoneOffset(); // minutes (negative means local is ahead of UTC)
+      const localMinutes = hours * 60 + minutes;
+      const utcMinutes = localMinutes + timezoneOffset; // Add offset to convert local to UTC
+      
+      // Handle day wrapping (negative or > 1440 minutes)
+      if (utcMinutes < 0) {
+        return utcMinutes + 1440; // Add 24 hours
+      } else if (utcMinutes >= 1440) {
+        return utcMinutes - 1440; // Subtract 24 hours
+      }
+      
+      return utcMinutes;
+    }
+
+    // Helper function to convert UTC time string to local time string
+    function convertUTCTimeToLocalTime(utcTimeStr) {
+      const [utcHours, utcMinutes] = utcTimeStr.split(':').map(Number);
+      
+      // Create a UTC date object
+      const utcDate = new Date();
+      utcDate.setUTCHours(utcHours, utcMinutes, 0, 0);
+      
+      // Convert to local time by adding timezone offset
+      const timezoneOffset = utcDate.getTimezoneOffset(); // minutes
+      const localDate = new Date(utcDate.getTime() + (timezoneOffset * 60000));
+      
+      const localHours = localDate.getHours();
+      const localMinutes = localDate.getMinutes();
+      
+      return `${localHours.toString().padStart(2, '0')}:${localMinutes.toString().padStart(2, '0')}`;
+    }
+
+    // Helper function to convert UTC minutes back to time string
+    function minutesToTimeString(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
+
+    // Debug function to check availability state
+    window.debugAvailability = function() {
+      console.log('🔍 Debugging availability state...\n');
+      
+      // Check what's in localStorage
+      console.log('📋 Current localStorage calendarify data:');
+      const calendarifyData = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('calendarify-')) {
+          try {
+            const value = localStorage.getItem(key);
+            calendarifyData[key] = value;
+            console.log(`  ${key}: ${value}`);
+          } catch (e) {
+            console.log(`  ${key}: [Error reading]`);
+          }
+        }
+      }
+      
+      console.log('\n📊 Parsed data:');
+      if (calendarifyData['calendarify-weekly-hours']) {
+        try {
+          const weeklyHours = JSON.parse(calendarifyData['calendarify-weekly-hours']);
+          console.log('  Weekly Hours:', weeklyHours);
+        } catch (e) {
+          console.log('  Weekly Hours: [Parse error]');
+        }
+      }
+      
+      if (calendarifyData['calendarify-day-availability']) {
+        try {
+          const dayAvailability = JSON.parse(calendarifyData['calendarify-day-availability']);
+          console.log('  Day Availability:', dayAvailability);
+        } catch (e) {
+          console.log('  Day Availability: [Parse error]');
+        }
+      }
+      
+      console.log('\n🌍 Timezone Info:');
+      console.log(`  Current timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+      console.log(`  Timezone offset: ${new Date().getTimezoneOffset()} minutes`);
+      console.log(`  Current local time: ${new Date().toLocaleTimeString()}`);
+      console.log(`  Current UTC time: ${new Date().toUTCString()}`);
+    };
+
+    // Function to clear availability cache
+    window.clearAvailabilityCache = function() {
+      console.log('🗑️ Clearing availability cache...');
+      localStorage.removeItem('calendarify-weekly-hours');
+      localStorage.removeItem('calendarify-day-availability');
+      console.log('✅ Cache cleared. Reload the page to see fresh data.');
+      location.reload();
+    };
 
     // --- Calendar Override System ---
     let currentDate = new Date();
@@ -1504,59 +1777,178 @@
     }
 
     function restoreDayAvailability() {
-      const dayAvailability = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
-      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-      days.forEach(day => {
-        const button = document.querySelector(`button[onclick="toggleDayAvailability('${day}', this)"]`);
-        if (button) {
-          let isAvailable = dayAvailability.hasOwnProperty(day)
-            ? dayAvailability[day]
-            : (day === 'saturday' || day === 'sunday' ? false : true);
-          button.setAttribute('aria-pressed', isAvailable ? 'true' : 'false');
-          button.classList.toggle('bg-[#34D399]', isAvailable);
-          button.classList.toggle('bg-[#19342e]', !isAvailable);
-          const circle = button.querySelector('div');
-          if (circle) {
-            circle.style.transform = isAvailable ? 'translateX(20px)' : 'translateX(0)';
-            circle.style.backgroundColor = isAvailable ? '#fff' : '#34D399';
-          }
-          const timeContainer = document.getElementById(day + '-times');
-          if (timeContainer) {
-            if (isAvailable) {
-              timeContainer.classList.remove('opacity-50');
-              timeContainer.querySelectorAll('input').forEach(input => {
-                input.disabled = false;
-                input.classList.remove('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
-                input.classList.add('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
-              });
-            } else {
-              timeContainer.classList.add('opacity-50');
-              timeContainer.querySelectorAll('input').forEach(input => {
-                input.disabled = true;
-                input.classList.add('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
-                input.classList.remove('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
-              });
-            }
-          }
-        }
-      });
+      // Always fetch fresh data from backend instead of using localStorage
+      console.log('🔄 restoreDayAvailability called - fetching fresh data from backend');
+      loadFreshAvailabilityData();
     }
 
     function restoreWeeklyHours() {
-      const weekly = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
-      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-      days.forEach(day => {
-        const container = document.getElementById(day + '-times');
-        if (container) {
-          const inputs = container.querySelectorAll('input');
-          if (inputs.length >= 2) {
-            const range = weekly[day] || {};
-            if (range.start) inputs[0].value = range.start;
-            if (range.end) inputs[1].value = range.end;
+      // Always fetch fresh data from backend instead of using localStorage
+      console.log('🔄 restoreWeeklyHours called - fetching fresh data from backend');
+      loadFreshAvailabilityData();
+    }
+
+    // Load fresh availability data directly from backend
+    async function loadFreshAvailabilityData() {
+      const timestamp = new Date().toISOString();
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== LOADING FRESH AVAILABILITY DATA =====`);
+      
+      const token = getAnyToken();
+      if (!token) {
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] No token found, skipping load`);
+        return;
+      }
+      
+      const cleanToken = token.replace(/^"|"$/g, "");
+      console.log(`[🔍 TEMP DEBUG ${timestamp}] Token found, length: ${cleanToken.length}`);
+      
+      try {
+        // Fetch availability rules directly from the availability endpoint
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Fetching from: ${API_URL}/availability/rules`);
+        const res = await fetch(`${API_URL}/availability/rules`, {
+          headers: { Authorization: `Bearer ${cleanToken}` },
+        });
+        
+        console.log(`[🔍 TEMP DEBUG ${timestamp}] Response status: ${res.status}`);
+        
+        if (res.ok) {
+          const availabilityRules = await res.json();
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] Raw availability rules from DB:`, availabilityRules);
+          
+          // Convert availability rules to the format expected by the frontend
+          const dayAvailability = {};
+          const weeklyHours = {};
+          
+          // Initialize all days as unavailable
+          const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+          dayNames.forEach(day => {
+            dayAvailability[day] = false;
+          });
+          
+          // Mark days with availability rules as available
+          availabilityRules.forEach(rule => {
+            const dayName = dayNames[rule.dayOfWeek];
+            dayAvailability[dayName] = true;
+            
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] Processing rule: dayOfWeek=${rule.dayOfWeek} -> dayName=${dayName}`);
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] Rule UTC times: startMinute=${rule.startMinute}, endMinute=${rule.endMinute}`);
+            
+            // Convert UTC minutes to local time strings for the frontend
+            const localStartMinutes = convertUTCMinutesToLocalTime(rule.startMinute);
+            const localEndMinutes = convertUTCMinutesToLocalTime(rule.endMinute);
+            const localStartTime = minutesToTimeString(localStartMinutes);
+            const localEndTime = minutesToTimeString(localEndMinutes);
+            
+            console.log(`[🔍 TEMP DEBUG ${timestamp}] Converted to local: startMinutes=${localStartMinutes} -> "${localStartTime}", endMinutes=${localEndMinutes} -> "${localEndTime}"`);
+            
+            weeklyHours[dayName] = {
+              start: localStartTime,
+              end: localEndTime
+            };
+          });
+          
+          // Apply frontend-only defaults if no availability data exists
+          const hasAnyAvailability = Object.keys(dayAvailability).length > 0 || Object.keys(weeklyHours).length > 0;
+          if (!hasAnyAvailability) {
+            console.log('📅 No availability data found, applying frontend-only defaults');
           }
+          
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] Final processed data:`, {
+            dayAvailability,
+            weeklyHours
+          });
+          
+          // Update UI with fresh data
+          const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+          
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] Updating UI buttons...`);
+          
+          // Update day availability buttons
+          days.forEach(day => {
+            const button = document.querySelector(`button[onclick="toggleDayAvailability('${day}', this)"]`);
+            if (button) {
+              let isAvailable = dayAvailability.hasOwnProperty(day)
+                ? dayAvailability[day]
+                : false; // Frontend-only default - all days off by default
+              
+              console.log(`[🔍 TEMP DEBUG ${timestamp}] Setting ${day} button: isAvailable=${isAvailable}, aria-pressed="${isAvailable ? 'true' : 'false'}"`);
+              
+              button.setAttribute('aria-pressed', isAvailable ? 'true' : 'false');
+              button.classList.toggle('bg-[#34D399]', isAvailable);
+              button.classList.toggle('bg-[#19342e]', !isAvailable);
+              
+              const circle = button.querySelector('div');
+              if (circle) {
+                circle.style.transform = isAvailable ? 'translateX(20px)' : 'translateX(0)';
+                circle.style.backgroundColor = isAvailable ? '#fff' : '#34D399';
+              }
+              
+              const timeContainer = document.getElementById(day + '-times');
+              if (timeContainer) {
+                if (isAvailable) {
+                  timeContainer.classList.remove('opacity-50');
+                  timeContainer.querySelectorAll('input').forEach(input => {
+                    input.disabled = false;
+                    input.classList.remove('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
+                    input.classList.add('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
+                  });
+                } else {
+                  timeContainer.classList.add('opacity-50');
+                  timeContainer.querySelectorAll('input').forEach(input => {
+                    input.disabled = true;
+                    input.classList.add('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
+                    input.classList.remove('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
+                  });
+                }
+              }
+            }
+          });
+          
+          // Update time inputs - convert UTC minutes to local times for display
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] Updating time inputs...`);
+          days.forEach(day => {
+            const container = document.getElementById(day + '-times');
+            if (container) {
+              const inputs = container.querySelectorAll('input');
+              if (inputs.length >= 2) {
+                const range = weeklyHours[day] || {};
+                console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time range from weeklyHours:`, range);
+                
+                if (range.start) {
+                  // The range.start is already a local time string, just use it directly
+                  inputs[0].value = range.start;
+                  console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} start time: "${range.start}" -> set directly`);
+                } else if (!hasAnyAvailability) {
+                  // Frontend-only default: 9:00 AM
+                  inputs[0].value = '09:00';
+                  console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} start time: using default "09:00"`);
+                }
+                if (range.end) {
+                  // The range.end is already a local time string, just use it directly
+                  inputs[1].value = range.end;
+                  console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} end time: "${range.end}" -> set directly`);
+                } else if (!hasAnyAvailability) {
+                  // Frontend-only default: 5:00 PM
+                  inputs[1].value = '17:00';
+                  console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} end time: using default "17:00"`);
+                }
+              } else {
+                console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time container found but has ${inputs.length} inputs (need 2)`);
+              }
+            } else {
+              console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} time container NOT FOUND`);
+            }
+          });
+          
+          updateAllCustomTimePickers();
+          console.log(`[✅ TEMP DEBUG ${timestamp}] Fresh availability data loaded successfully`);
+          console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== LOADING FRESH AVAILABILITY DATA COMPLETE =====`);
+        } else {
+          console.log(`[❌ TEMP DEBUG ${timestamp}] Failed to load availability data: ${res.status}`);
         }
-      });
-      updateAllCustomTimePickers();
+      } catch (error) {
+        console.error(`[❌ TEMP DEBUG ${timestamp}] Error loading fresh availability data:`, error);
+      }
     }
 
     function loadOverrideData(override) {
@@ -1727,43 +2119,6 @@
         return;
       }
 
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      const slug = generateSlug(name, eventTypes);
-
-      const eventTypeData = {
-        name,
-        title: name,
-        slug,
-        duration: parseInt(duration),
-        eventType: '1-on-1',
-        attendeeLimit: 1,
-        description,
-        location,
-        customLocation: location === 'custom' ? customLocation : '',
-        link: location !== 'office' ? link : '',
-        color,
-        bufferBefore: parseInt(bufferBefore),
-        bufferAfter: parseInt(bufferAfter),
-        advanceNotice: parseInt(advanceNotice),
-        bookingLimit: bookingLimit === 'custom' ? {
-          count: parseInt(customLimitCount),
-          period: customLimitPeriod
-        } : bookingLimit,
-        confirmationMessage,
-        questions,
-        requiredFields: {},
-        notifications: {
-          availability,
-          reminders,
-          followUp,
-          reschedule: rescheduleNotification
-        },
-        visibility: secret,
-        priority,
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        id: Date.now().toString()
-      };
-
       try {
         const token = getAnyToken();
         if (token) {
@@ -1773,32 +2128,60 @@
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
             body: JSON.stringify({ 
               title: name, 
-              slug, 
+              slug: generateSlug(name, freshEventTypes || []), 
               description, 
               duration: parseInt(duration),
               questions: questions,
               requiredFields: {},
-              confirmationMessage: confirmationMessage
+              confirmationMessage: confirmationMessage,
+              bufferBefore: parseInt(bufferBefore),
+              bufferAfter: parseInt(bufferAfter),
+              advanceNotice: parseInt(advanceNotice),
+              slotInterval: parseInt(duration)
             })
           });
           if (res.ok) {
-            const saved = await res.json();
-            eventTypeData.id = saved.id;
-            eventTypeData.slug = saved.slug;
+            const savedEventType = await res.json();
+            
+            // Save additional settings to UserState
+            const additionalSettings = {
+              location,
+              customLocation: location === 'custom' ? customLocation : '',
+              link: location !== 'office' ? link : '',
+              color,
+              visibility: secret,
+              priority,
+              tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+              notifications: {
+                availability,
+                reminders,
+                followUp,
+                reschedule: rescheduleNotification
+              }
+            };
+            
+            // Save to UserState
+            await fetch(`${API_URL}/users/me/state`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+              body: JSON.stringify({
+                [`event-type-settings-${savedEventType.id}`]: additionalSettings
+              })
+            });
+            
+            // Refresh event types from server after successful save
+            await fetchEventTypesFromServer();
+            renderEventTypes();
+            showNotification('Event type created successfully!');
+            closeCreateEventTypeModal();
+          } else {
+            showNotification('Failed to create event type');
           }
         }
       } catch (e) {
         console.error('Failed to save event type to server', e);
+        showNotification('Failed to create event type');
       }
-
-      eventTypes.push(eventTypeData);
-      localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-      
-      // Update the display
-      renderEventTypes();
-      
-      showNotification('Event type created successfully!');
-      closeCreateEventTypeModal();
     }
 
     // Interactive form functionality
@@ -1835,20 +2218,15 @@
 
     function renderEventTypes() {
       const eventTypesGrid = document.getElementById('event-types-grid');
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+      let eventTypes = freshEventTypes || [];
 
       // Ensure each event type has a color for the left border
-      let updated = false;
       eventTypes = eventTypes.map(et => {
         if (!et.color) {
           et.color = '#34D399';
-          updated = true;
         }
         return et;
       });
-      if (updated) {
-        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-      }
 
       // Adjust grid width based on number of event types
       if (eventTypes.length <= 1) {
@@ -1894,11 +2272,11 @@
           ).join('')}</div>` : '';
         
         html += `
-          <div class="card flex flex-col gap-3" style="border-left: 4px solid ${eventType.color}">
+          <div class="card flex flex-col gap-3" style="border-left: 4px solid ${eventType.color || '#34D399'}">
             <div class="flex items-center justify-between">
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
-                  <h3 class="text-lg font-bold text-white">${eventType.name}</h3>
+                  <h3 class="text-lg font-bold text-white">${eventType.title || eventType.name || 'Untitled Event'}</h3>
                   ${visibilityBadge}
                   ${priorityBadge}
                 </div>
@@ -1943,18 +2321,31 @@
           const token = getAnyToken();
           if (token) {
             const clean = token.replace(/^"|"$/g, '');
-            await fetch(`${API_URL}/event-types/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+            const res = await fetch(`${API_URL}/event-types/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+            if (res.ok) {
+              // Clean up UserState for this event type
+              await fetch(`${API_URL}/users/me/state`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+                body: JSON.stringify({
+                  [`event-type-settings-${id}`]: null
+                })
+              });
+              
+              // Refresh event types from server after successful deletion
+              await fetchEventTypesFromServer();
+              renderEventTypes();
+              showNotification('Event type deleted successfully!');
+              closeDeleteEventTypeConfirmModal();
+              window.eventTypeToDelete = null;
+            } else {
+              showNotification('Failed to delete event type');
+            }
           }
         } catch (e) {
           console.error('Failed to delete event type from server', e);
+          showNotification('Failed to delete event type');
         }
-        let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-        eventTypes = eventTypes.filter(eventType => eventType.id !== id);
-        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-        renderEventTypes();
-        showNotification('Event type deleted successfully!');
-        closeDeleteEventTypeConfirmModal();
-        window.eventTypeToDelete = null;
       }
     }
 
@@ -1965,18 +2356,11 @@
     }
 
     async function cloneEventType(id) {
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      const originalEventType = eventTypes.find(eventType => eventType.id === id);
+      const originalEventType = freshEventTypes.find(eventType => eventType.id === id);
 
       if (originalEventType) {
-        const clonedEventType = {
-          ...originalEventType,
-          name: `${originalEventType.name} (Copy)`,
-          title: `${originalEventType.name} (Copy)`,
-          id: Date.now().toString()
-        };
-
-        clonedEventType.slug = generateSlug(clonedEventType.name, eventTypes);
+        const clonedName = `${originalEventType.title || originalEventType.name} (Copy)`;
+        const clonedSlug = generateSlug(clonedName, freshEventTypes || []);
 
         try {
           const token = getAnyToken();
@@ -1985,28 +2369,60 @@
             const res = await fetch(`${API_URL}/event-types`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-              body: JSON.stringify({ title: clonedEventType.name, slug: clonedEventType.slug, duration: clonedEventType.duration, description: clonedEventType.description })
+              body: JSON.stringify({ 
+                title: clonedName, 
+                slug: clonedSlug, 
+                duration: originalEventType.duration, 
+                description: originalEventType.description || ''
+              })
             });
             if (res.ok) {
-              const saved = await res.json();
-              clonedEventType.id = saved.id;
-              clonedEventType.slug = saved.slug;
+              const savedEventType = await res.json();
+              
+              // Clone additional settings to UserState
+              const originalSettings = originalEventType.location ? {
+                location: originalEventType.location,
+                customLocation: originalEventType.customLocation || '',
+                link: originalEventType.link || '',
+                color: originalEventType.color || '#34D399',
+                visibility: originalEventType.visibility || 'public',
+                priority: originalEventType.priority || 'normal',
+                tags: originalEventType.tags || [],
+                notifications: originalEventType.notifications || {
+                  availability: true,
+                  reminders: true,
+                  followUp: false,
+                  reschedule: true
+                }
+              } : {};
+              
+              if (Object.keys(originalSettings).length > 0) {
+                await fetch(`${API_URL}/users/me/state`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+                  body: JSON.stringify({
+                    [`event-type-settings-${savedEventType.id}`]: originalSettings
+                  })
+                });
+              }
+              
+              // Refresh event types from server after successful clone
+              await fetchEventTypesFromServer();
+              renderEventTypes();
+              showNotification('Event type cloned successfully!');
+            } else {
+              showNotification('Failed to clone event type');
             }
           }
         } catch (e) {
           console.error('Failed to clone event type on server', e);
+          showNotification('Failed to clone event type');
         }
-
-        eventTypes.push(clonedEventType);
-        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-        renderEventTypes();
-        showNotification('Event type cloned successfully!');
       }
     }
 
     function editEventType(id) {
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      const eventType = eventTypes.find(eventType => eventType.id === id);
+      const eventType = freshEventTypes.find(eventType => eventType.id === id);
       
       if (eventType) {
         // Store the event type being edited
@@ -2023,13 +2439,16 @@
 
     function populateEditForm(eventType) {
       // Basic Information
-      document.getElementById('edit-event-type-name').value = eventType.name;
+      document.getElementById('edit-event-type-name').value = eventType.title || eventType.name || '';
       document.getElementById('edit-event-type-duration').value = eventType.duration;
       document.getElementById('edit-event-type-description').value = eventType.description || '';
-      document.getElementById('edit-event-type-location').value = eventType.location;
+      document.getElementById('edit-event-type-location').value = eventType.location || 'zoom';
       document.getElementById('edit-event-type-custom-location').value = eventType.customLocation || '';
       document.getElementById('edit-event-type-link').value = eventType.link || '';
-      document.getElementById('edit-event-type-color').value = eventType.color;
+      document.getElementById('edit-event-type-color').value = eventType.color || '#34D399';
+      
+      // Trigger location change to show/hide appropriate fields
+      handleEditLocationChange();
       
       // Scheduling
       // Handle buffer times with new structure
@@ -2207,54 +2626,19 @@
         return;
       }
 
-      // Update the event type data
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      const existing = eventTypes.filter(et => et.id !== eventType.id);
-      let slug = eventType.slug;
-      if (name !== eventType.name) {
-        slug = generateSlug(name, existing);
-      }
-
-      const updatedEventType = {
-        ...eventType,
-        name,
-        title: name,
-        slug,
-        duration: parseInt(duration),
-        eventType: '1-on-1',
-        attendeeLimit: 1,
-        description,
-        location,
-        customLocation: location === 'custom' ? customLocation : '',
-        link: location !== 'office' ? link : '',
-        color,
-        bufferBefore: parseInt(bufferBefore),
-        bufferAfter: parseInt(bufferAfter),
-        advanceNotice: parseInt(advanceNotice),
-        bookingLimit: bookingLimit === 'custom' ? {
-          count: parseInt(customLimitCount),
-          period: customLimitPeriod
-        } : bookingLimit,
-        confirmationMessage,
-        questions,
-        requiredFields: {},
-        notifications: {
-          availability,
-          reminders,
-          followUp,
-          reschedule: rescheduleNotification
-        },
-        visibility: secret,
-        priority,
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : []
-      };
-
       try {
         const token = getAnyToken();
         if (token) {
           const clean = token.replace(/^"|"$/g, '');
-          await fetch(`${API_URL}/event-types/${eventType.id}`, {
-            method: 'PATCH',
+          
+          // Generate new slug if name changed
+          let slug = eventType.slug;
+          if (name !== (eventType.title || eventType.name)) {
+            slug = generateSlug(name, freshEventTypes || []);
+          }
+          
+          const res = await fetch(`${API_URL}/event-types/${eventType.id}`, {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
             body: JSON.stringify({ 
               title: name, 
@@ -2263,23 +2647,53 @@
               duration: parseInt(duration),
               questions: questions,
               requiredFields: {},
-              confirmationMessage: confirmationMessage
+              confirmationMessage: confirmationMessage,
+              bufferBefore: parseInt(bufferBefore),
+              bufferAfter: parseInt(bufferAfter),
+              advanceNotice: parseInt(advanceNotice),
+              slotInterval: parseInt(duration)
             })
           });
+          if (res.ok) {
+            // Save additional settings to UserState
+            const additionalSettings = {
+              location,
+              customLocation: location === 'custom' ? customLocation : '',
+              link: location !== 'office' ? link : '',
+              color,
+              visibility: secret,
+              priority,
+              tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+              notifications: {
+                availability,
+                reminders,
+                followUp,
+                reschedule: rescheduleNotification
+              }
+            };
+            
+            // Save to UserState
+            await fetch(`${API_URL}/users/me/state`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+              body: JSON.stringify({
+                [`event-type-settings-${eventType.id}`]: additionalSettings
+              })
+            });
+            
+            // Refresh event types from server after successful update
+            await fetchEventTypesFromServer();
+            renderEventTypes();
+            showNotification('Event type updated successfully!');
+            closeEditEventTypeModal();
+          } else {
+            console.error('Failed to update event type:', res.status, res.statusText);
+            showNotification('Failed to update event type');
+          }
         }
       } catch (e) {
         console.error('Failed to update event type on server', e);
-      }
-
-      eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      const index = eventTypes.findIndex(et => et.id === eventType.id);
-      if (index !== -1) {
-        eventTypes[index] = { ...eventTypes[index], ...updatedEventType };
-        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-
-        renderEventTypes();
-        showNotification('Event type updated successfully!');
-        closeEditEventTypeModal();
+        showNotification('Failed to update event type');
       }
     }
 
@@ -2315,38 +2729,6 @@
 
     // Initialize event types on page load
     document.addEventListener('DOMContentLoaded', function() {
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      if (eventTypes.length === 0) {
-        eventTypes.push({
-          name: '30-min Intro Call',
-          slug: '30-min-intro-call',
-          duration: 30,
-          eventType: '1-on-1',
-          attendeeLimit: 1,
-          description: '',
-          location: 'zoom',
-          customLocation: '',
-          link: '',
-          color: '#34D399',
-          bufferBefore: 0,
-          bufferAfter: 0,
-          advanceNotice: 0,
-          cancellation: 0,
-          timezone: 'auto',
-          bookingLimit: 0,
-          confirmationMessage: '',
-          questions: '',
-          requiredFields: { name: false, email: false, phone: false, company: false },
-          notifications: { availability: true, reminders: true, followUp: false, cancellation: true, reschedule: true },
-          visibility: 'public',
-          priority: 'normal',
-          tags: [],
-          id: Date.now().toString() + Math.floor(Math.random()*10000)
-        });
-        localStorage.setItem('calendarify-event-types', JSON.stringify(eventTypes));
-      }
-      renderEventTypes();
-      
       // Add event listeners for form interactions
       const locationSelect = document.getElementById('event-type-location');
       
@@ -3046,7 +3428,6 @@
       const tags = Array.from(document.querySelectorAll('#contact-tag-options input:checked')).map(cb => cb.value);
 
       try {
-        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
         const token = getAnyToken();
         const clean = token ? token.replace(/^"|"$/g, '') : '';
 
@@ -3058,8 +3439,8 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const newContact = await res.json();
 
-        contacts.push(newContact);
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
+        // Refresh contacts data from server
+        await fetchContactsFromServer();
         addContactRow(newContact);
 
         showNotification(`Contact "${name}" added successfully!`);
@@ -3385,9 +3766,10 @@
       select.innerHTML = '';
       if (res.ok) {
         const slots = await res.json();
+        const is12h = getClockFormat() === '12h';
         slots.forEach(iso => {
           const d = new Date(iso);
-          const display = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const display = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: is12h });
           const opt = document.createElement('option');
           opt.value = iso;
           opt.textContent = display;
@@ -4257,3 +4639,191 @@
         });
       });
     });
+
+    // Function to clear all localStorage data except authentication tokens and tab memory (for debugging)
+    window.clearAllLocalStorage = function() {
+      console.log('🗑️ Clearing all localStorage data except auth tokens and tab memory...');
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('calendarify-') && 
+            key !== 'calendarify-token' && 
+            key !== 'calendarify-current-section' && 
+            key !== 'calendarify-meetings-tab') {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`Removed: ${key}`);
+      });
+      console.log('✅ All localStorage data cleared (auth tokens and tab memory preserved)');
+    };
+
+    // Function to manually clear tab memory (for testing)
+    window.clearTabMemoryOnly = function() {
+      console.log('🗑️ Clearing ONLY tab memory...');
+      localStorage.removeItem('calendarify-current-section');
+      localStorage.removeItem('calendarify-meetings-tab');
+      console.log('✅ Tab memory cleared. Refresh the page to see the default section.');
+    };
+
+    // Function to check authentication status (for debugging)
+    window.checkAuthStatus = function() {
+      console.log('🔐 Checking authentication status...');
+      const sessionToken = sessionStorage.getItem('calendarify-token');
+      const persistentToken = localStorage.getItem('calendarify-token');
+      
+      console.log('Session token:', sessionToken ? 'Present' : 'None');
+      console.log('Persistent token:', persistentToken ? 'Present' : 'None');
+      
+      if (sessionToken || persistentToken) {
+        console.log('✅ User is authenticated');
+        return true;
+      } else {
+        console.log('❌ User is not authenticated');
+        return false;
+      }
+    };
+
+    // Function to check tab memory status (for debugging)
+    window.checkTabMemory = function() {
+      console.log('📋 Checking tab memory status...');
+      const currentSection = getCurrentSection();
+      const meetingsTab = getMeetingsTab();
+      
+      console.log('Current section:', currentSection);
+      console.log('Meetings tab:', meetingsTab);
+      
+      return { currentSection, meetingsTab };
+    };
+
+    // Function to manually set current section (for testing)
+    window.setCurrentSection = function(section) {
+      console.log(`🔧 Manually setting current section to: ${section}`);
+      saveCurrentSection(section);
+      console.log('✅ Section saved. Refresh the page to see the change.');
+    };
+
+    // Function to test section switching (for debugging)
+    window.testSectionSwitch = function(section) {
+      console.log(`🧪 Testing section switch to: ${section}`);
+      const sectionEl = document.querySelector(`[onclick*="showSection('${section}', this)"]`);
+      if (sectionEl) {
+        console.log(`Found section element:`, sectionEl);
+        showSection(section, sectionEl);
+      } else {
+        console.log(`❌ Could not find section element for: ${section}`);
+      }
+    };
+
+    // Function to test tab memory (for debugging)
+    window.testTabMemory = function() {
+      console.log('🧪 Testing tab memory...');
+      console.log('1. Current localStorage:', {
+        'calendarify-current-section': localStorage.getItem('calendarify-current-section'),
+        'calendarify-meetings-tab': localStorage.getItem('calendarify-meetings-tab')
+      });
+      
+      console.log('2. Switching to availability...');
+      testSectionSwitch('availability');
+      
+      setTimeout(() => {
+        console.log('3. After switch, localStorage:', {
+          'calendarify-current-section': localStorage.getItem('calendarify-current-section'),
+          'calendarify-meetings-tab': localStorage.getItem('calendarify-meetings-tab')
+        });
+        console.log('4. Now refresh the page to test if it remembers!');
+      }, 1000);
+    };
+
+    // Function to clear tab memory (for testing)
+    window.clearTabMemory = function() {
+      console.log('🗑️ Clearing tab memory...');
+      localStorage.removeItem('calendarify-current-section');
+      localStorage.removeItem('calendarify-meetings-tab');
+      console.log('✅ Tab memory cleared. Refresh the page to see the default section.');
+    };
+
+    // Initialize dashboard with fresh data (preserving auth tokens and tab memory)
+    async function initializeDashboard() {
+      console.log('🚀 Initializing dashboard with fresh data...');
+      
+      // Get saved section BEFORE clearing localStorage
+      const savedSection = getCurrentSection();
+      const savedMeetingsTab = getMeetingsTab();
+      
+      console.log(`📋 Saved section: ${savedSection}, saved meetings tab: ${savedMeetingsTab}`);
+      
+      // Load fresh data from server
+      await loadState();
+      await fetchEventTypesFromServer();
+      await fetchContactsFromServer();
+      await fetchWorkflowsFromServer();
+      await fetchTagsFromServer();
+      await fetchMeetingsFromServer();
+      
+      // Render initial sections
+      renderEventTypes();
+      renderContacts();
+      renderWorkflows();
+      
+      // Restore saved section and tab
+      console.log(`🔍 Looking for section element: [onclick*="showSection('${savedSection}', this)"]`);
+      const savedSectionEl = document.querySelector(`[onclick*="showSection('${savedSection}', this)"]`);
+      console.log(`🔍 Found element:`, savedSectionEl);
+      
+      if (savedSectionEl) {
+        console.log(`🔄 Restoring saved section: ${savedSection}`);
+        showSection(savedSection, savedSectionEl);
+      } else {
+        console.log('🔄 No saved section found, defaulting to event-types');
+        const defaultSectionEl = document.querySelector('[onclick*="showSection(\'event-types\', this)"]');
+        console.log(`🔍 Default element found:`, defaultSectionEl);
+        if (defaultSectionEl) {
+          showSection('event-types', defaultSectionEl);
+        }
+      }
+      
+      // Also try alternative selector method
+      setTimeout(() => {
+        console.log('🔄 Trying alternative selector method...');
+        const altSavedSectionEl = document.querySelector(`[data-section="${savedSection}"]`);
+        console.log(`🔍 Alternative element found:`, altSavedSectionEl);
+        if (altSavedSectionEl && !document.querySelector('.nav-item.active')) {
+          console.log(`🔄 Restoring saved section via alternative method: ${savedSection}`);
+          showSection(savedSection, altSavedSectionEl);
+        }
+      }, 100);
+      
+      console.log('✅ Dashboard initialized with fresh data (auth and tab memory preserved)');
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔍 DOM Content Loaded - Debug Info:');
+      console.log('Current localStorage before init:', {
+        'calendarify-current-section': localStorage.getItem('calendarify-current-section'),
+        'calendarify-meetings-tab': localStorage.getItem('calendarify-meetings-tab'),
+        'calendarify-token': localStorage.getItem('calendarify-token') ? 'Present' : 'None'
+      });
+      
+      initializeDashboard();
+    });
+
+    // Helper function to convert UTC minutes back to local minutes
+    function convertUTCMinutesToLocalTime(utcMinutes) {
+      const timezoneOffset = new Date().getTimezoneOffset(); // minutes (negative means local is ahead of UTC)
+      const localMinutes = utcMinutes - timezoneOffset; // Subtract offset to convert UTC to local
+      
+      // Handle day wrapping
+      if (localMinutes < 0) {
+        return localMinutes + 1440;
+      } else if (localMinutes >= 1440) {
+        return localMinutes - 1440;
+      }
+      
+      return localMinutes;
+    }
+
+    // Helper function to convert local time to UTC minutes

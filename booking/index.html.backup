@@ -161,11 +161,6 @@
             color: #E0E0E0;
         }
         
-        .time-slot.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
         .time-slot:hover {
             background-color: #34D399;
             color: #1A2E29;
@@ -282,11 +277,28 @@
 
     <main class="flex-grow container mx-auto px-4 py-8 md:py-16">
         <div class="bg-[#1E3A34] p-8 rounded-xl shadow-2xl w-full max-w-6xl mx-auto main-container" id="mainContainer">
+            <!-- Debug buttons (only show in development) -->
+            <div class="mb-4 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="reloadUserState()" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">
+                        🔄 Reload User State
+                    </button>
+                                    <button onclick="console.log('Current localStorage:', Object.fromEntries(Object.entries(localStorage).filter(([k]) => k.startsWith('calendarify-'))));" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                    📊 Log localStorage
+                </button>
+                    <button onclick="clearAvailabilityCache(); buildCalendar();" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                        🗓️ Refresh Calendar
+                    </button>
+                    <button onclick="testTimeSlotGeneration();" class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700">
+                        🧪 Test Time Slots
+                    </button>
+                </div>
+            </div>
+            
             <div class="flex flex-col lg:flex-row lg:space-x-8 main-content" id="mainContent">
                 <div class="lg:w-1/2">
                     <p class="text-sm text-gray-400">Book a meeting with <span id="username" class="text-[#34D399]"></span></p>
                     <h2 id="eventTitle" class="text-3xl font-bold text-white mt-1 mb-4"></h2>
-                    <div id="eventDetails" class="text-sm text-gray-400 mb-4"></div>
                     <div class="flex items-center text-gray-400 mb-2">
                         <span class="material-icons-outlined mr-2">schedule</span>
                         <span>Manage your availability</span>
@@ -473,7 +485,7 @@
                                     
             let event;
             try {
-                                                const res = await fetch(`${API_URL}/event-types/slug/${slug}?t=${Date.now()}`);
+                                                const res = await fetch(`${API_URL}/event-types/slug/${slug}`);
                                                 
                 if (!res.ok) {
                                         throw new Error('not found');
@@ -499,203 +511,123 @@
                 };
                             }
 
-                        // Event data is now purely from the backend API - no localStorage merging
-
-                        // Function to fetch fresh availability data from backend
-            async function fetchFreshAvailabilityData() {
-                try {
-                    // Fetch availability rules from backend
-                    const response = await fetch(`${API_URL}/availability/rules/admin`);
+            try {
+                const resState = await fetch(`${API_URL}/users/display/${display}/state`);
+                if (resState.ok) {
+                    const state = await resState.json();
                     
-                    if (response.ok) {
-                        const availabilityData = await response.json();
-                        
-                        // Convert availability rules to the format expected by the frontend
-                        const weeklyHours = {};
-                        const dayAvailability = {};
-                        
-                        // Initialize all days as unavailable
-                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                        dayNames.forEach(day => {
-                            dayAvailability[day] = false;
-                        });
-                        
-                        // Mark days with availability rules as available
-                        availabilityData.forEach(rule => {
-                            const dayName = dayNames[rule.dayOfWeek];
-                            dayAvailability[dayName] = true;
-                            
-                            // Convert UTC minutes to local time strings for display
-                            const localStartMinutes = convertUTCMinutesToLocalTime(rule.startMinute);
-                            const localEndMinutes = convertUTCMinutesToLocalTime(rule.endMinute);
-                            const localStartTime = minutesToTimeString(localStartMinutes);
-                            const localEndTime = minutesToTimeString(localEndMinutes);
-                            
-                            weeklyHours[dayName] = {
-                                start: localStartTime,
-                                end: localEndTime
-                            };
-                        });
-                        
-                        console.log('✅ Fetched availability data from backend:', { 
-                            weeklyHours, 
-                            dayAvailability 
-                        });
-                        
-                        return { weeklyHours, dayAvailability };
+                    Object.entries(state).forEach(([k,v]) => {
+                        localStorage.setItem(k, JSON.stringify(v));
+                    });
+                    
+                    // Log the availability data specifically
+                    if (state['calendarify-day-availability']) {
                     } else {
-                        console.error('Failed to fetch availability rules:', response.status, response.statusText);
                     }
-                } catch (error) {
-                    console.error('Failed to fetch availability data:', error);
-                }
-                return null;
-            }
-
-            // Always fetch fresh availability data from backend on initial load
-            let weeklyHours = {};
-            let dayAvailability = {};
-            
-            const freshData = await fetchFreshAvailabilityData();
-            if (freshData) {
-                weeklyHours = freshData.weeklyHours;
-                dayAvailability = freshData.dayAvailability;
-                console.log('✅ Loaded fresh availability data from backend:', { weeklyHours, dayAvailability });
-            } else {
-                // No fallback to localStorage - show error if backend fails
-                console.log('❌ Backend fetch failed - no availability data available');
-                weeklyHours = {};
-                dayAvailability = {};
-                
-                // Show error message to user
-                const errorMessage = document.createElement('div');
-                errorMessage.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
-                errorMessage.innerHTML = `
-                    <strong>No Availability Set</strong><br>
-                    The calendar owner has not set their availability yet. Please contact them to set up their availability before booking.
-                `;
-                
-                const container = document.querySelector('.container');
-                if (container) {
-                    container.insertBefore(errorMessage, container.firstChild);
-                }
-            }
-
-            // Function to reload availability data from backend
-            window.reloadUserState = async function() {
-                console.log('Reloading availability data from backend...');
-                try {
-                    // Use hardcoded display name for now since we know it's admin
-                    const response = await fetch(`${API_URL}/availability/rules/admin`);
                     
-                    if (response.ok) {
-                        const availabilityData = await response.json();
+                    // Try to get the complete event type data from the host's state
+                    const eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
+                    const completeEventType = eventTypes.find(et => et.slug === slug);
+                    if (completeEventType) {
+                        // Merge the complete data with the basic API data
+                        event = { ...event, ...completeEventType };
+                    }
+                } else {
+                }
+            } catch (e) {
+            }
+
+            // Debug function to reload user state
+            window.reloadUserState = async function() {
+                try {
+                    const resState = await fetch(`${API_URL}/users/display/${display}/state`);
+                    if (resState.ok) {
+                        const state = await resState.json();
                         
-                        // Convert availability rules to the format expected by the frontend
-                        const weeklyHours = {};
-                        const dayAvailability = {};
-                        
-                        // Initialize all days as unavailable
-                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                        dayNames.forEach(day => {
-                            dayAvailability[day] = false;
+                        Object.entries(state).forEach(([k,v]) => {
+                            localStorage.setItem(k, JSON.stringify(v));
                         });
                         
-                        // Mark days with availability rules as available
-                        availabilityData.forEach(rule => {
-                            const dayName = dayNames[rule.dayOfWeek];
-                            dayAvailability[dayName] = true;
-                            
-                            // Convert UTC minutes to local time strings for display
-                            const localStartMinutes = convertUTCMinutesToLocalTime(rule.startMinute);
-                            const localEndMinutes = convertUTCMinutesToLocalTime(rule.endMinute);
-                            const localStartTime = minutesToTimeString(localStartMinutes);
-                            const localEndTime = minutesToTimeString(localEndMinutes);
-                            
-                            weeklyHours[dayName] = {
-                                start: localStartTime,
-                                end: localEndTime
-                            };
-                        });
-                        
-                        console.log('Fresh availability data from backend:', { 
-                            weeklyHours, 
-                            dayAvailability 
-                        });
-                        
-                        // Update the global variables
-                        window.weeklyHours = weeklyHours;
-                        window.dayAvailability = dayAvailability;
+                        if (state['calendarify-day-availability']) {
+                        }
                         
                         // Refresh the calendar
                         if (typeof buildCalendar === 'function') {
                             await buildCalendar();
                         }
-                        console.log('Calendar refreshed with fresh data');
+                        
+                        alert('User state reloaded successfully!');
                     } else {
-                        console.error('Failed to fetch availability rules:', response.status, response.statusText);
+                        alert('Failed to reload user state');
                     }
-                } catch (error) {
-                    console.error('Failed to reload availability data:', error);
+                } catch (e) {
+                    alert('Error reloading user state: ' + e.message);
                 }
             };
 
+            // Function to fetch fresh availability data from backend
+            async function fetchFreshAvailabilityData() {
+                try {
+                    // Get the event type's user display name from the event object
+                    const displayName = event.user_display_name || 'admin';
+                    const response = await fetch(`${API_URL}/users/display/${displayName}/state`);
+                    
+                    if (response.ok) {
+                        const backendState = await response.json();
+                        const freshWeeklyHours = backendState['calendarify-weekly-hours'] || {};
+                        const freshDayAvailability = backendState['calendarify-day-availability'] || {};
+                        
+                        // Update localStorage with fresh data
+                        localStorage.setItem('calendarify-weekly-hours', JSON.stringify(freshWeeklyHours));
+                        localStorage.setItem('calendarify-day-availability', JSON.stringify(freshDayAvailability));
+                        
+                        return { weeklyHours: freshWeeklyHours, dayAvailability: freshDayAvailability };
+                    } else {
+                        console.error('Failed to fetch user state:', response.status, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch from backend:', error);
+                }
+                return null;
+            }
+
+            // Load availability data (try backend first, fallback to localStorage)
+            let weeklyHours = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+            let dayAvailability = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
+            
+            // If no data or empty data, try to fetch from backend
+            if (!weeklyHours || Object.keys(weeklyHours).length === 0) {
+                const freshData = await fetchFreshAvailabilityData();
+                if (freshData) {
+                    weeklyHours = freshData.weeklyHours;
+                    dayAvailability = freshData.dayAvailability;
+                } else {
+                    // Fallback to default hours
+                    const defaultHours = {
+                        monday: { start: '09:00', end: '17:00' },
+                        tuesday: { start: '09:00', end: '17:00' },
+                        wednesday: { start: '09:00', end: '17:00' },
+                        thursday: { start: '09:00', end: '17:00' },
+                        friday: { start: '09:00', end: '17:00' }
+                    };
+                    weeklyHours = defaultHours;
+                    localStorage.setItem('calendarify-weekly-hours', JSON.stringify(defaultHours));
+                }
+            }
+
             document.getElementById('eventTitle').textContent = `Book: ${event.title || event.name}`;
 
-            console.log('[EVENT DEBUG] Event object from backend:', event);
-            
             const eventDuration = parseInt(event.duration) || 30;
             const bufferBefore = parseInt(event.bufferBefore) || 0;
             const bufferAfter = parseInt(event.bufferAfter) || 0;
             const advanceNotice = parseInt(event.advanceNotice) || 0;
-            
-            console.log('[EVENT DEBUG] Parsed values:', { eventDuration, bufferBefore, bufferAfter, advanceNotice });
                         
-            // Display event details including buffer settings
-            const eventDetailsEl = document.getElementById('eventDetails');
-            if (eventDetailsEl) {
-                const details = [];
-                details.push(`Duration: ${eventDuration} minutes`);
-                if (bufferBefore > 0) details.push(`Buffer before: ${bufferBefore} minutes`);
-                if (bufferAfter > 0) details.push(`Buffer after: ${bufferAfter} minutes`);
-                if (advanceNotice > 0) details.push(`Advance notice: ${advanceNotice} minutes`);
-                
-                eventDetailsEl.innerHTML = details.join(' • ');
-            }
-                        
-            let currentDate = new Date(); // Use current date instead of hardcoded date
-            // Ensure we're working with UTC dates consistently
+            let currentDate = new Date();
             let selectedDate = null;
             let selectedTime = null;
             let timeSlots = {};
 
             // --- 12h/24h Toggle Functionality ---
-            function getClockFormat() {
-                let stored = localStorage.getItem('calendarify-booking-clock-format');
-                if (!stored) {
-                    localStorage.setItem('calendarify-booking-clock-format', '24h');
-                    return '24h';
-                }
-                return stored;
-            }
-
-            function setClockFormat(format) {
-                localStorage.setItem('calendarify-booking-clock-format', format);
-            }
-
-            function updateClockFormatUI() {
-                const is12h = getClockFormat() === '12h';
-                const toggle = document.getElementById('clock-format-toggle');
-                const circle = document.getElementById('toggle-circle');
-                if (toggle && circle) {
-                    toggle.setAttribute('aria-pressed', is12h ? 'true' : 'false');
-                    toggle.classList.toggle('bg-[#34D399]', is12h);
-                    toggle.classList.toggle('bg-[#19342e]', !is12h);
-                    circle.style.transform = is12h ? 'translateX(20px)' : 'translateX(0)';
-                    circle.style.backgroundColor = is12h ? '#fff' : '#34D399';
-                }
-            }
-
             async function toggleClockFormat() {
                 const is12h = getClockFormat() === '12h';
                 const newFormat = is12h ? '24h' : '12h';
@@ -711,6 +643,48 @@
             }
             // Make toggleClockFormat available globally for onclick handler
             window.toggleClockFormat = toggleClockFormat;
+
+            function getClockFormat() {
+                let stored = localStorage.getItem('calendarify-booking-clock-format');
+                if (!stored) {
+                    localStorage.setItem('calendarify-booking-clock-format', '24h');
+                    return '24h';
+                }
+                return stored;
+            }
+
+            // Helper function to convert local time to UTC
+            function convertLocalTimeToUTC(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                
+                // Create a date object for today and set the time in local timezone
+                const today = new Date();
+                const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes, 0, 0);
+                
+                // Convert to UTC by subtracting timezone offset
+                const utcDate = new Date(localDate.getTime() - (localDate.getTimezoneOffset() * 60000));
+                
+                // Return time string in UTC
+                return `${utcDate.getUTCHours().toString().padStart(2, '0')}:${utcDate.getUTCMinutes().toString().padStart(2, '0')}`;
+            }
+
+            function setClockFormat(format) {
+                localStorage.setItem('calendarify-booking-clock-format', format);
+            }
+
+            function updateClockFormatUI() {
+                const is12h = getClockFormat() === '12h';
+                const toggle = document.getElementById('clock-format-toggle');
+                const circle = document.getElementById('toggle-circle');
+                
+                if (toggle && circle) {
+                    toggle.setAttribute('aria-pressed', is12h ? 'true' : 'false');
+                    toggle.classList.toggle('bg-[#34D399]', is12h);
+                    toggle.classList.toggle('bg-[#19342e]', !is12h);
+                    circle.style.transform = is12h ? 'translateX(20px)' : 'translateX(0)';
+                    circle.style.backgroundColor = is12h ? '#fff' : '#34D399';
+                }
+            }
 
             // Converts time between formats, preserving the actual time
             function convertTimeFormat(value, fromFormat, toFormat) {
@@ -746,58 +720,42 @@
                 return value;
             }
 
-            // Function to convert UTC minutes back to local time for display
-            function convertUTCMinutesToLocalTime(utcMinutes) {
-                const timezoneOffset = new Date().getTimezoneOffset(); // minutes (negative means local is ahead of UTC)
-                const localMinutes = utcMinutes - timezoneOffset; // Subtract offset to convert UTC to local
-                
-                // Handle day wrapping
-                if (localMinutes < 0) {
-                    return localMinutes + 1440;
-                } else if (localMinutes >= 1440) {
-                    return localMinutes - 1440;
-                }
-                
-                return localMinutes;
-            }
-
-            // Function to convert minutes to time string
-            function minutesToTimeString(minutes) {
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-            }
-
             function formatDate(date) {
-                return date.toLocaleDateString(undefined, { 
+                const formatted = date.toLocaleDateString(undefined, { 
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                 });
+                
+                return formatted;
             }
 
             function formatTime(time) {
+                
                 const is12h = getClockFormat() === '12h';
-                return new Date(`2000-01-01T${time}`).toLocaleTimeString(undefined, {
+                const formatted = new Date(`2000-01-01T${time}`).toLocaleTimeString(undefined, {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: is12h
                 });
+                
+                return formatted;
             }
 
             function parseTime(str) {
                 const [time, ap] = str.trim().split(' ');
                 let [h, m] = time.split(':').map(Number);
+                
                 if (ap && ap.toUpperCase() === 'PM' && h !== 12) h += 12;
                 if (ap && ap.toUpperCase() === 'AM' && h === 12) h = 0;
+                
                 return { h, m };
             }
 
             function generateSlotsInRange(startStr, endStr, date) {
-                // Parse HH:MM strings into minutes since midnight (local)
-                const [startH, startM] = startStr.split(':').map(Number);
-                const [endH, endM] = endStr.split(':').map(Number);
+                const { h: startH, m: startM } = parseTime(startStr);
+                const { h: endH, m: endM } = parseTime(endStr);
 
                 const dayStart = startH * 60 + startM;
                 const dayEnd = endH * 60 + endM;
@@ -806,24 +764,11 @@
                 const effectiveStart = dayStart + bufferBefore;
                 const effectiveEnd = dayEnd - bufferAfter - eventDuration;
 
-                console.log(`[BUFFER DEBUG] ${startStr}-${endStr}:`, {
-                    dayStart,
-                    dayEnd,
-                    bufferBefore,
-                    bufferAfter,
-                    eventDuration,
-                    effectiveStart,
-                    effectiveEnd,
-                    availableSlots: Math.floor((effectiveEnd - effectiveStart) / 15) + 1
-                });
-
                 if (effectiveEnd < effectiveStart) {
-                    console.log(`[BUFFER DEBUG] No available slots - effectiveEnd (${effectiveEnd}) < effectiveStart (${effectiveStart})`);
-                                        return [];
+                    return [];
                 }
 
-                // Use event's configured slot interval; default to 30 minutes
-                const step = (event && parseInt(event.slotInterval)) ? parseInt(event.slotInterval) : 30;
+                const step = 15;
                 let currentMinutes = effectiveStart;
                 const slots = [];
                 
@@ -831,74 +776,108 @@
                     const slot = new Date(date);
                     slot.setHours(Math.floor(currentMinutes / 60), currentMinutes % 60, 0, 0);
 
-                    // Apply advance notice (treat 0 as "no past times today")
-                    const earliestAllowed = new Date(Date.now() + (advanceNotice || 0) * 60000);
-                    if (slot < earliestAllowed) {
-                        currentMinutes += step;
-                        continue;
+                    // Apply advance notice
+                    if (advanceNotice > 0) {
+                        const earliestAllowed = new Date(Date.now() + advanceNotice * 60000);
+                        
+                        if (slot < earliestAllowed) {
+                            currentMinutes += step;
+                            continue;
+                        }
+                    } else if (date.toDateString() === new Date().toDateString()) {
+                        // If no advance notice, don't show past times for today
+                        const now = new Date();
+                        
+                        if (slot <= now) {
+                            currentMinutes += step;
+                            continue;
+                        }
                     }
 
                     // Server handles buffer and booking conflicts, so just add the slot
-                    const timeStr = slot.toLocaleTimeString(undefined, {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: getClockFormat() === '12h'
-                    });
-                    slots.push(timeStr);
-                                        currentMinutes += step;
-                }
-                
-                                return slots;
-            }
-
-            async function generateTimeSlots(date) {
-                const dateStr = date.toISOString().split('T')[0];
-                console.log(`[SLOTS DEBUG] Fetching slots for ${event.slug} on ${dateStr}`);
-                
-                const res = await fetch(`${API_URL}/event-types/${event.slug}/slots?date=${dateStr}`);
-                console.log(`[SLOTS DEBUG] Server response:`, { status: res.status, ok: res.ok });
-                
-                if (res.ok) {
-                const data = await res.json();
-                    console.log(`[SLOTS DEBUG] Server returned ${data.length} slots:`, data);
-                
-                    if (data && data.length > 0) {
-                // Filters: only advance notice/current time; server already respects buffers/availability
-                const earliestAllowed = new Date(Date.now() + (advanceNotice || 0) * 60000);
-                const filtered = data.filter(iso => {
-                    const slotDate = new Date(iso);
-                    return slotDate >= earliestAllowed;
-                });
-                const formattedSlots = filtered.map(iso => {
-                    const slotDate = new Date(iso);
                     const is12h = getClockFormat() === '12h';
-                    return slotDate.toLocaleTimeString(undefined, {
+                    const timeStr = slot.toLocaleTimeString(undefined, {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: is12h
                     });
-                });
-                
-                        console.log(`[SLOTS DEBUG] Formatted slots:`, formattedSlots);
-                return formattedSlots;
-                    } else {
-                        console.log(`[SLOTS DEBUG] Server returned empty slots array`);
-                    }
-                } else {
-                    console.log(`[SLOTS DEBUG] Server request failed:`, res.status, res.statusText);
+                    slots.push(timeStr);
+                    
+                    currentMinutes += step;
                 }
                 
-                // Fallback: Generate time slots locally based on fresh weekly hours data
+                return slots;
+            }
+
+            async function generateTimeSlots(date) {
+                const dateStr = date.toISOString().split('T')[0];
+                const apiUrl = `${API_URL}/event-types/${event.slug}/slots?date=${dateStr}`;
+                
+                try {
+                    const res = await fetch(apiUrl);
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        
+                        if (data && data.length > 0) {
+                            
+                            // Convert UTC ISO strings to local time strings
+                            const formattedSlots = data.map(iso => {
+                                const utcDate = new Date(iso);
+                                const is12h = getClockFormat() === '12h';
+                                const formattedTime = utcDate.toLocaleTimeString(undefined, {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: is12h
+                                });
+                                
+                                return formattedTime;
+                                
+                                return formattedTime;
+                            });
+                            
+                            return formattedSlots;
+                        } else {
+                        }
+                    } else {
+                    }
+                } catch (error) {
+                }
+                
+                // Fallback: Generate time slots locally based on weekly hours
+                const weeklyHours = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
                 const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                const dayName = dayNames[date.getUTCDay()]; // Use UTC time to match backend
+                const dayName = dayNames[date.getDay()];
                 const dayHours = weeklyHours[dayName];
                 
                 if (dayHours && dayHours.start && dayHours.end) {
-                    const slots = generateSlotsInRange(dayHours.start, dayHours.end, date);
+                    // Convert local time to UTC for fallback generation
+                    const utcStart = convertLocalTimeToUTC(dayHours.start);
+                    const utcEnd = convertLocalTimeToUTC(dayHours.end);
+                    
+                        localStart: dayHours.start,
+                        localEnd: dayHours.end,
+                        utcStart,
+                        utcEnd
+                    });
+                    
+                    const slots = generateSlotsInRange(utcStart, utcEnd, date);
                     return slots;
                 } else {
-                    // No availability set for this day
-                    console.log(`No availability set for ${dayName}`);
+                    // Try to use default hours if none are set (in UTC)
+                    const defaultHours = {
+                        monday: { start: '07:00', end: '15:00' }, // 9:00-17:00 GMT+2
+                        tuesday: { start: '07:00', end: '15:00' },
+                        wednesday: { start: '07:00', end: '15:00' },
+                        thursday: { start: '07:00', end: '15:00' },
+                        friday: { start: '07:00', end: '15:00' }
+                    };
+                    
+                    if (defaultHours[dayName]) {
+                        const slots = generateSlotsInRange(defaultHours[dayName].start, defaultHours[dayName].end, date);
+                        return slots;
+                    }
+                    
                     return [];
                 }
             }
@@ -915,15 +894,27 @@
             clearAvailabilityCache();
 
             async function checkDateAvailability(date) {
+                    date: date.toISOString(),
+                    dateLocal: date.toLocaleDateString(),
+                    dayOfWeek: date.getDay(),
+                    dayName: ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][date.getDay()]
+                });
+
                 const dateKey = date.toISOString().split('T')[0];
                 
                 // Create cache key with timestamp to ensure fresh data
                 const cacheKey = `${dateKey}-${Date.now()}`;
                 
+                
                 // Check cache first (but with shorter TTL)
                 if (availabilityCache.has(dateKey)) {
                     const cached = availabilityCache.get(dateKey);
                     const cacheAge = Date.now() - cached.timestamp;
+                    
+                        cachedResult: cached.result,
+                        cacheAge: cacheAge,
+                        cacheAgeSeconds: Math.round(cacheAge / 1000)
+                    });
                     
                     // Cache expires after 30 seconds
                     if (cacheAge < 30000) {
@@ -931,33 +922,60 @@
                     } else {
                         availabilityCache.delete(dateKey);
                     }
+                } else {
                 }
 
-                // Check basic availability rules first (using UTC time to match backend)
+                // Check basic availability rules first (using local time)
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                // Use fresh dayAvailability data instead of localStorage
-                const dayAvail = dayAvailability;
-                const dayOfWeek = date.getUTCDay(); // Use UTC time to match backend
+                const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
+                const dayOfWeek = date.getDay();
                 const dayName = dayNames[dayOfWeek];
                 const isDayOff = dayAvail[dayName] === false;
                 const today = new Date();
-                const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const isPast = date < todayLocal;
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const isPast = date < todayStart;
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+                    dayAvail,
+                    dayOfWeek,
+                    dayName,
+                    isDayOff,
+                    today: today.toISOString(),
+                    todayStart: todayStart.toISOString(),
+                    isPast,
+                    isWeekend,
+                    dateLocal: date.toISOString(),
+                    dateDayOfWeek: date.getDay(),
+                    dateDayName: dayName
+                });
 
                 // If any basic rule fails, no availability
-                if (isPast || isDayOff) {
+                if (isPast || isWeekend || isDayOff) {
+                        isPast,
+                        isWeekend,
+                        isDayOff,
+                        reason: isPast ? 'past date' : isWeekend ? 'weekend' : 'day off'
+                    });
                     availabilityCache.set(dateKey, false);
                     return false;
                 }
+
 
                 // Check if there are actual time slots available
                 try {
                     const timeSlots = await generateTimeSlots(date);
                     const hasAvailability = timeSlots.length > 0;
+                    
+                        timeSlotsCount: timeSlots.length,
+                        hasAvailability,
+                        timeSlots: timeSlots
+                    });
+                    
                     availabilityCache.set(dateKey, {
                         result: hasAvailability,
                         timestamp: Date.now()
                     });
+                    
                     return hasAvailability;
                 } catch (e) {
                     console.error('[ERROR] Error checking availability for date:', date, e);
@@ -1035,11 +1053,19 @@
             setupRealtimeUpdates();
 
             async function displayTimeSlots() {
+                
                 const container = document.getElementById('timeSlotsContainer');
                 const dateHeader = document.getElementById('selectedDate');
                 const timeSlotsDiv = document.getElementById('timeSlots');
                 const confirmButton = document.getElementById('confirmButton');
                 const mainContainer = document.getElementById('mainContainer');
+                
+                    container: !!container,
+                    dateHeader: !!dateHeader,
+                    timeSlotsDiv: !!timeSlotsDiv,
+                    confirmButton: !!confirmButton,
+                    mainContainer: !!mainContainer
+                });
                 
                 if (!selectedDate) {
                     timeSlotsDiv.classList.remove('show');
@@ -1049,30 +1075,55 @@
                     return;
                 }
 
+                    selectedDate: selectedDate.toISOString(),
+                    selectedDateLocal: selectedDate.toLocaleDateString(),
+                    formattedDate: formatDate(selectedDate)
+                });
+
                 dateHeader.textContent = formatDate(selectedDate);
                 container.innerHTML = '';
 
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                // Use fresh dayAvailability data instead of localStorage
-                const dayAvail = dayAvailability;
-                const isDayOff = dayAvail[dayNames[selectedDate.getUTCDay()]] === false;
+                const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
+                const isDayOff = dayAvail[dayNames[selectedDate.getDay()]] === false;
+                const todayStart = new Date(new Date().setHours(0,0,0,0));
+                const isPastDate = selectedDate < todayStart;
 
-                if (selectedDate < new Date(new Date().setHours(0,0,0,0)) || isDayOff) {
+                    dayAvail,
+                    dayOfWeek: selectedDate.getDay(),
+                    dayName: dayNames[selectedDate.getDay()],
+                    isDayOff,
+                    todayStart: todayStart.toISOString(),
+                    isPastDate,
+                    selectedDateLocal: selectedDate.toISOString()
+                });
+
+                if (isPastDate || isDayOff) {
+                        isPastDate,
+                        isDayOff,
+                        reason: isPastDate ? 'past date' : 'day off'
+                    });
                     container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
                     confirmButton.style.opacity = '0.5';
                     confirmButton.style.pointerEvents = 'none';
                 } else {
                     let timeSlots = await generateTimeSlots(selectedDate);
 
+                        count: timeSlots.length,
+                        slots: timeSlots
+                    });
+
                     if (timeSlots.length === 0) {
                         container.innerHTML = '<p class="text-center text-gray-500">No availability</p>';
                         confirmButton.style.opacity = '0.5';
                         confirmButton.style.pointerEvents = 'none';
                     } else {
-                        timeSlots.forEach(time => {
+                        timeSlots.forEach((time, index) => {
                             const button = document.createElement('button');
-                            button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium';
+                            button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] hover:bg-[#2C4A43] hover:border-[#34D399] mb-2 show';
                             button.textContent = time;
+                            button.style.display = 'block'; // Ensure button is visible
+                            button.style.opacity = '1'; // Force visibility
                             button.addEventListener('click', () => {
                                 container.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
                                 button.classList.add('selected');
@@ -1082,12 +1133,20 @@
                             });
                             container.appendChild(button);
                         });
+                        
                     }
                 }
 
                 // Show time slots with animation and move entire container left
                 timeSlotsDiv.classList.add('show');
                 mainContainer.classList.add('extended');
+                
+                    timeSlotsDivExists: !!timeSlotsDiv,
+                    timeSlotsDivClasses: timeSlotsDiv ? timeSlotsDiv.className : 'N/A',
+                    timeSlotsDivStyle: timeSlotsDiv ? timeSlotsDiv.style.cssText : 'N/A',
+                    mainContainerClasses: mainContainer ? mainContainer.className : 'N/A',
+                    containerChildren: container ? container.children.length : 'N/A'
+                });
                 
                 // Animate time slots appearing
                 setTimeout(() => {
@@ -1098,17 +1157,27 @@
             }
 
             async function buildCalendar() {
+                
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
-                const firstDay = new Date(Date.UTC(year, month, 1));
-                const lastDay = new Date(Date.UTC(year, month + 1, 0));
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
                 const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+                
+                    currentDate: currentDate.toISOString(),
+                    year,
+                    month,
+                    firstDay: firstDay.toISOString(),
+                    lastDay: lastDay.toISOString(),
+                    daysInMonth: lastDay.getDate()
+                });
                 
                 document.getElementById('currentMonth').textContent = 
                     firstDay.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
                 
                 const calendarEl = document.getElementById('calendar');
                 calendarEl.innerHTML = '';
+                
                 
                 // Add day names
                 dayNames.forEach(day => {
@@ -1119,7 +1188,9 @@
                 });
                 
                 // Add empty cells for days before the first day of the month
-                for (let i = 0; i < firstDay.getUTCDay(); i++) {
+                const emptyCells = firstDay.getDay();
+                
+                for (let i = 0; i < emptyCells; i++) {
                     const div = document.createElement('div');
                     div.className = 'calendar-day empty';
                     calendarEl.appendChild(div);
@@ -1128,83 +1199,114 @@
                 const availabilityChecks = [];
                 const dayElements = [];
                 
-                // Get day availability settings - use fresh data instead of localStorage
-                const dayAvail = dayAvailability;
+                // Get day availability settings
+                const dayAvail = JSON.parse(localStorage.getItem('calendarify-day-availability') || '{}');
                 const dayNamesFull = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
                 
+                
                 // Add days of the month
+                
                 for (let day = 1; day <= lastDay.getDate(); day++) {
-                    const div = document.createElement('div');
-                    div.className = 'calendar-day cursor-pointer';
-                    div.textContent = day;
-                    
-                    const currentDay = new Date(Date.UTC(year, month, day));
-                    const today = new Date();
-                    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-                    const isPast = currentDay < todayUTC;
-                    const dayOfWeek = currentDay.getUTCDay();
+                    const date = new Date(year, month, day);
+                    const dayOfWeek = date.getDay();
                     const dayName = dayNamesFull[dayOfWeek];
                     const isDayOff = dayAvail[dayName] === false;
                     
-                    // Start with basic availability check - only check past dates, not weekends
-                    let isUnavailable = isPast || isDayOff;
+                        date: date.toISOString(),
+                        dayOfWeek,
+                        dayName,
+                        isDayOff
+                    });
                     
-                    // If not obviously unavailable, we'll check availability later
-                    if (!isUnavailable) {
-                        availabilityChecks.push({ day, element: div, date: currentDay });
-                    } else {
-                        // Preserve today class if it exists
-                        const isToday = currentDay.toDateString() === todayUTC.toDateString();
-                        div.className = 'calendar-day unavailable' + (isToday ? ' today' : '');
-                    }
-
-                    // Check if this is today (for visual highlighting)
-                    if (currentDay.toDateString() === todayUTC.toDateString()) {
+                    const div = document.createElement('div');
+                    div.className = 'calendar-day';
+                    div.textContent = day;
+                    
+                    // Check if it's today
+                    const today = new Date();
+                    if (date.toDateString() === today.toDateString()) {
                         div.classList.add('today');
                     }
-
-                    if (selectedDate && currentDay.toDateString() === selectedDate.toDateString()) {
+                    
+                    // Check if it's selected
+                    if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
                         div.classList.add('selected');
                     }
-
-                    dayElements.push(div);
+                    
+                    // Basic availability check (past dates, weekends, day off)
+                    const isPast = date < new Date(new Date().setHours(0,0,0,0));
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    
+                    if (isPast || isWeekend || isDayOff) {
+                            isPast,
+                            isWeekend,
+                            isDayOff,
+                            result: 'unavailable'
+                        });
+                        div.classList.add('unavailable');
+                    } else {
+                        // For available days, we'll check actual time slots later
+                        availabilityChecks.push({ date, element: div, day });
+                    }
+                    
+                    div.addEventListener('click', () => {
+                        if (!div.classList.contains('unavailable')) {
+                            selectDate(date);
+                        }
+                    });
+                    
                     calendarEl.appendChild(div);
+                    dayElements.push(div);
                 }
                 
-                // Check availability for dates that need it (in parallel for better performance)
-                if (availabilityChecks.length > 0) {
-                    const availabilityPromises = availabilityChecks.map(async ({ day, element, date }) => {
-                        try {
-                            const hasAvailability = await checkDateAvailability(date);
-                            return { day, element, hasAvailability };
-                        } catch (e) {
-                            console.error('[ERROR] Error checking availability for day', day, e);
-                            return { day, element, hasAvailability: false };
-                        }
-                    });
-                    
-                    const results = await Promise.all(availabilityPromises);
-                    
-                    results.forEach(({ element, hasAvailability }) => {
-                        // Preserve today class if it exists
-                        const isToday = element.classList.contains('today');
-                        
-                        if (hasAvailability) {
-                            element.className = 'calendar-day cursor-pointer' + (isToday ? ' today' : '');
-                            element.addEventListener('click', () => {
-                                calendarEl.querySelectorAll('.calendar-day').forEach(day => {
-                                    day.classList.remove('selected');
-                                });
-                                element.classList.add('selected');
-                                selectedDate = new Date(Date.UTC(year, month, parseInt(element.textContent)));
-                                displayTimeSlots();
-                            });
-                        } else {
-                            element.className = 'calendar-day unavailable' + (isToday ? ' today' : '');
-                        }
-                    });
-                }
+                // Check availability for remaining days in parallel
+                
+                const availabilityResults = await Promise.all(
+                    availabilityChecks.map(async ({ date, element, day }) => {
+                        const isAvailable = await checkDateAvailability(date);
+                        return { element, isAvailable };
+                    })
+                );
+                
+                // Apply availability results
+                availabilityResults.forEach(({ element, isAvailable }) => {
+                    if (!isAvailable) {
+                        element.classList.add('unavailable');
+                    }
+                });
+                
             }
+            
+            // Make buildCalendar globally accessible
+            window.buildCalendar = buildCalendar;
+
+            // Function to handle date selection
+            function selectDate(date) {
+                
+                // Remove previous selection
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('selected');
+                });
+                
+                // Add selection to clicked day
+                const dayElements = document.querySelectorAll('.calendar-day');
+                const dayNumber = date.getDate();
+                const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                const emptyCells = firstDayOfMonth.getDay();
+                const dayIndex = emptyCells + dayNumber - 1;
+                
+                if (dayElements[dayIndex]) {
+                    dayElements[dayIndex].classList.add('selected');
+                }
+                
+                selectedDate = date;
+                
+                // Display time slots for the selected date
+                displayTimeSlots();
+            }
+            
+            // Make selectDate globally accessible
+            window.selectDate = selectDate;
 
             function showBookingModal() {
                 // Debug: Log the event data to see what we're working with
@@ -1633,15 +1735,6 @@
                     if (res.ok) {
                         const createdBooking = await res.json();
                         console.log('Booking created successfully:', createdBooking);
-                        // Refresh availability and UI so the just-booked slot disappears immediately
-                        try {
-                            refreshAvailabilityAfterBooking();
-                            if (selectedDate) {
-                                await displayTimeSlots();
-                            }
-                        } catch (e) {
-                            console.warn('Failed to refresh availability after booking:', e);
-                        }
                         showBookingConfirmationModal(bookingData);
                     } else {
                         const errorData = await res.json();
@@ -1684,12 +1777,20 @@
 
             // Event listeners
             document.getElementById('prevMonth').addEventListener('click', async () => {
+                const oldDate = new Date(currentDate);
                 currentDate.setMonth(currentDate.getMonth() - 1);
+                    from: oldDate.toISOString(),
+                    to: currentDate.toISOString()
+                });
                 await buildCalendar();
             });
 
             document.getElementById('nextMonth').addEventListener('click', async () => {
+                const oldDate = new Date(currentDate);
                 currentDate.setMonth(currentDate.getMonth() + 1);
+                    from: oldDate.toISOString(),
+                    to: currentDate.toISOString()
+                });
                 await buildCalendar();
             });
 
@@ -1727,6 +1828,95 @@
             
             // Setup real-time validation
             setupRealTimeValidation();
+
+            // Test function for debugging time slot generation
+            window.testTimeSlotGeneration = function() {
+                const weeklyHours = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+                
+                // Test with Friday (5)
+                const testDate = new Date();
+                testDate.setDate(testDate.getDate() + (5 - testDate.getDay() + 7) % 7); // Next Friday
+                
+                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const dayName = dayNames[testDate.getDay()];
+                const dayHours = weeklyHours[dayName];
+                
+                if (dayHours && dayHours.start && dayHours.end) {
+                    const slots = generateSlotsInRange(dayHours.start, dayHours.end, testDate);
+                } else {
+                    const slots = generateSlotsInRange('09:00', '17:00', testDate);
+                }
+            };
+
+            window.testFallbackGeneration = function() {
+                const weeklyHours = JSON.parse(localStorage.getItem('calendarify-weekly-hours') || '{}');
+                
+                // Test with Friday (5)
+                const testDate = new Date();
+                testDate.setDate(testDate.getDate() + (5 - testDate.getDay() + 7) % 7); // Next Friday
+                
+                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const dayName = dayNames[testDate.getDay()];
+                const dayHours = weeklyHours[dayName];
+                
+                if (dayHours && dayHours.start && dayHours.end) {
+                    const utcStart = convertLocalTimeToUTC(dayHours.start);
+                    const utcEnd = convertLocalTimeToUTC(dayHours.end);
+                    
+                        localStart: dayHours.start,
+                        localEnd: dayHours.end,
+                        utcStart,
+                        utcEnd
+                    });
+                    
+                    const slots = generateSlotsInRange(utcStart, utcEnd, testDate);
+                } else {
+                    const slots = generateSlotsInRange('07:00', '15:00', testDate);
+                }
+            };
+
+            // Function to reload user state from backend
+            window.reloadUserState = async function() {
+                try {
+                    // Get the event type's user display name from the event object
+                    const displayName = event.user_display_name || 'admin';
+                    const response = await fetch(`http://localhost:3001/api/users/display/${displayName}/state`);
+                    
+                    if (response.ok) {
+                        const backendState = await response.json();
+                        const freshWeeklyHours = backendState['calendarify-weekly-hours'] || {};
+                        const freshDayAvailability = backendState['calendarify-day-availability'] || {};
+                        
+                            weeklyHours: freshWeeklyHours, 
+                            dayAvailability: freshDayAvailability 
+                        });
+                        
+                        // Update localStorage with fresh data
+                        localStorage.setItem('calendarify-weekly-hours', JSON.stringify(freshWeeklyHours));
+                        localStorage.setItem('calendarify-day-availability', JSON.stringify(freshDayAvailability));
+                        
+                        // Refresh the calendar
+                        await buildCalendar();
+                    } else {
+                        console.error('[DEBUG] Failed to fetch user state:', response.status, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('[DEBUG] Failed to reload user state:', error);
+                }
+            };
+
+            // Add debug buttons
+            const debugContainer = document.createElement('div');
+            debugContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
+            debugContainer.innerHTML = `
+                <button onclick="window.reloadUserState()" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">🔄 Reload User State</button>
+                <button onclick="console.log('calendarify-weekly-hours:', localStorage.getItem('calendarify-weekly-hours')); console.log('calendarify-day-availability:', localStorage.getItem('calendarify-day-availability'));" class="bg-green-500 text-white px-3 py-1 rounded text-sm">📋 Log localStorage</button>
+                <button onclick="window.buildCalendar()" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">📅 Refresh Calendar</button>
+                <button onclick="window.testTimeSlotGeneration()" class="bg-purple-500 text-white px-3 py-1 rounded text-sm">🧪 Test Time Slots</button>
+                <button onclick="window.testFallbackGeneration()" class="bg-red-500 text-white px-3 py-1 rounded text-sm">🔧 Test Fallback</button>
+                <button onclick="clearAvailabilityCache(); buildCalendar();" class="bg-orange-500 text-white px-3 py-1 rounded text-sm">🔄 Clear Cache & Refresh</button>
+            `;
+            document.body.appendChild(debugContainer);
         });
     </script>
 </body>

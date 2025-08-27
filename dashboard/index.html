@@ -466,11 +466,35 @@
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <div class="flex items-center gap-2 opacity-50" id="saturday-times">
                     <span class="custom-time-picker relative inline-flex items-center w-28">
-                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
                     </span>
                     <span class="text-[#A3B3AF] flex-shrink-0">to</span>
                     <span class="custom-time-picker relative inline-flex items-center w-28">
-                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
                     </span>
                   </div>
                   <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('saturday', this)">
@@ -483,11 +507,35 @@
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <div class="flex items-center gap-2 opacity-50" id="sunday-times">
                     <span class="custom-time-picker relative inline-flex items-center w-28">
-                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
                     </span>
                     <span class="text-[#A3B3AF] flex-shrink-0">to</span>
                     <span class="custom-time-picker relative inline-flex items-center w-28">
-                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
                     </span>
                   </div>
                   <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('sunday', this)">

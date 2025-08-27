@@ -272,9 +272,9 @@ def kill_existing_services():
 def start_backend():
     def _run():
         try:
-        os.chdir('backend')
-        run('npm install')
-        run('npm start')
+            os.chdir('backend')
+            run('npm install')
+            run('npm start')
         except Exception as e:
             print(f"Backend startup error: {e}")
     t = Thread(target=_run)
@@ -299,18 +299,18 @@ def serve_frontend():
     # with extensionless URL support.
     def _run():
         try:
-        # Run from the repository root regardless of the caller's cwd
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+            # Run from the repository root regardless of the caller's cwd
+            os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-        # Ensure the frontend runs on its own port to avoid conflicts with the
-        # backend (which uses PORT from the .env file).
-        env = os.environ.copy()
-        # Force the frontend to run on port 3000 regardless of the PORT value
-        # from .env which is used by the backend.
-        env['PORT'] = '3000'
+            # Ensure the frontend runs on its own port to avoid conflicts with the
+            # backend (which uses PORT from the .env file).
+            env = os.environ.copy()
+            # Force the frontend to run on port 3000 regardless of the PORT value
+            # from .env which is used by the backend.
+            env['PORT'] = '3000'
 
-        # Use the custom server.js that handles clean URLs
-        run('node server.js', env=env)
+            # Use the custom server.js that handles clean URLs
+            run('node server.js', env=env)
         except Exception as e:
             print(f"Frontend startup error: {e}")
     t = Thread(target=_run)
@@ -371,7 +371,7 @@ def main():
     print("\nPress Ctrl+C to stop all services.")
     
     try:
-    while True:
+        while True:
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n\nShutting down services...")

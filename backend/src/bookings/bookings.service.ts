@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { EventTypesService } from '../event-types/event-types.service';
+import { AvailabilityService } from '../availability/availability.service';
 
 interface CreateBookingDto {
   event_type_id: string;
@@ -26,7 +27,8 @@ interface CreatePublicBookingDto {
 export class BookingsService {
   constructor(
     private prisma: PrismaService,
-    private eventTypesService: EventTypesService
+    private eventTypesService: EventTypesService,
+    private availabilityService: AvailabilityService
   ) {}
 
   create(data: CreateBookingDto) {
@@ -40,15 +42,30 @@ export class BookingsService {
       throw new Error('Event type not found');
     }
 
+    // Parse requested times
+    const startTime = new Date(data.starts_at);
+    const endTime = new Date(data.ends_at);
+
+    // Guard: ensure the requested slot is still available (prevents double booking)
+    const isAvailable = await this.availabilityService.isSlotAvailable(
+      eventType.userId,
+      startTime,
+      endTime
+    );
+
+    if (!isAvailable) {
+      throw new Error('Selected time slot is not available');
+    }
+
     // Create the booking
     const booking = await this.prisma.booking.create({
       data: {
         event_type_id: eventType.id,
-        user_id: eventType.user_id,
+        user_id: eventType.userId,
         name: data.name,
         email: data.email,
-        starts_at: new Date(data.starts_at),
-        ends_at: new Date(data.ends_at),
+        starts_at: startTime,
+        ends_at: endTime,
       },
       include: {
         event_type: true,

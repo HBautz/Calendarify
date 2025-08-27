@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { EventTypesModule } from './event-types/event-types.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { AvailabilityModule } from './availability/availability.module';
+// import { TestingModule } from './testing/testing.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -23,6 +24,7 @@ import { AdminModule } from './admin/admin.module';
     EventTypesModule,
     BookingsModule,
     AvailabilityModule,
+    // TestingModule,
     IntegrationsModule,
     ContactsModule,
     WorkflowsModule,
