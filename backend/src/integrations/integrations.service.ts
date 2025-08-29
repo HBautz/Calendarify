@@ -217,18 +217,24 @@ export class IntegrationsService {
   }
 
   async handleZoomCallback(code: string, state: string) {
-    console.log('[DEBUG] handleZoomCallback code:', code);
+    console.log('[ZOOM DEBUG] handleZoomCallback called at:', new Date().toISOString());
+    console.log('[ZOOM DEBUG] Code:', code);
+    console.log('[ZOOM DEBUG] State:', state);
     this.zoomLog('handleZoomCallback start', { code, state });
+    
     const userId = this.decodeState(state);
+    console.log('[ZOOM DEBUG] Decoded userId:', userId);
+    
     const clientId = this.env('ZOOM_CLIENT_ID');
     const clientSecret = this.env('ZOOM_CLIENT_SECRET');
     const redirectUri = this.env('ZOOM_REDIRECT_URI');
-    console.log('[DEBUG] handleZoomCallback redirect_uri:', redirectUri);
+    console.log('[ZOOM DEBUG] OAuth config:', { clientId, redirectUri, hasSecret: !!clientSecret });
     if (!clientId || !clientSecret || !redirectUri) {
       this.zoomLog('missing env vars', { clientId, clientSecret, redirectUri });
       throw new Error('Missing Zoom OAuth environment variables');
     }
     // Exchange code for access token
+    console.log('[ZOOM DEBUG] Exchanging code for token...');
     const tokenRes = await fetch('https://zoom.us/oauth/token', {
       method: 'POST',
       headers: {
@@ -241,30 +247,44 @@ export class IntegrationsService {
         redirect_uri: redirectUri,
       }),
     });
+    console.log('[ZOOM DEBUG] Token exchange response status:', tokenRes.status);
+    console.log('[ZOOM DEBUG] Token exchange response headers:', Object.fromEntries(tokenRes.headers.entries()));
+    
     if (!tokenRes.ok) {
-      this.zoomLog('token exchange failed', await tokenRes.text());
+      const errorText = await tokenRes.text();
+      console.error('[ZOOM DEBUG] Token exchange failed:', errorText);
+      this.zoomLog('token exchange failed', errorText);
       throw new Error('Failed to obtain Zoom tokens');
     }
     const tokens = await tokenRes.json();
+    console.log('[ZOOM DEBUG] Token response received:', { access_token: tokens.access_token ? 'present' : 'missing', refresh_token: tokens.refresh_token ? 'present' : 'missing' });
     this.zoomLog('token response', tokens);
     // Get user info from Zoom
+    console.log('[ZOOM DEBUG] Fetching user info from Zoom...');
     const userRes = await fetch('https://api.zoom.us/v2/users/me', {
       headers: {
         'Authorization': `Bearer ${tokens.access_token}`,
       },
     });
+    console.log('[ZOOM DEBUG] User info response status:', userRes.status);
+    
     if (!userRes.ok) {
-      this.zoomLog('user fetch failed', await userRes.text());
+      const errorText = await userRes.text();
+      console.error('[ZOOM DEBUG] User info fetch failed:', errorText);
+      this.zoomLog('user fetch failed', errorText);
       throw new Error('Failed to fetch Zoom user info');
     }
     const userInfo = await userRes.json();
+    console.log('[ZOOM DEBUG] User info received:', { id: userInfo.id, email: userInfo.email, first_name: userInfo.first_name, last_name: userInfo.last_name });
     this.zoomLog('userInfo', userInfo);
     const externalId = userInfo.id;
     // Store in DB
+    console.log('[ZOOM DEBUG] Storing tokens in database...');
     const existing = await this.prisma.externalCalendar.findFirst({
       where: { user_id: userId, provider: 'zoom' },
     });
     if (existing) {
+      console.log('[ZOOM DEBUG] Updating existing Zoom connection');
       await this.prisma.externalCalendar.update({
         where: { id: existing.id },
         data: {
@@ -273,6 +293,7 @@ export class IntegrationsService {
         },
       });
     } else {
+      console.log('[ZOOM DEBUG] Creating new Zoom connection');
       await this.prisma.externalCalendar.create({
         data: {
           user_id: userId,
@@ -282,6 +303,7 @@ export class IntegrationsService {
         },
       });
     }
+    console.log('[ZOOM DEBUG] Zoom connection stored successfully');
     this.zoomLog('stored zoom tokens', { userId, externalId });
   }
 
@@ -624,6 +646,7 @@ export class IntegrationsService {
   }
 
   generateZoomAuthUrl(userId: string): string {
+    console.log('[ZOOM DEBUG] Generating auth URL for user:', userId);
     const clientId = this.env('ZOOM_CLIENT_ID');
     const redirectUri = this.env('ZOOM_REDIRECT_URI');
     const state = this.createState(userId);
@@ -635,8 +658,11 @@ export class IntegrationsService {
       state,
     });
     const url = `${base}?${params.toString()}`;
-    this.zoomLog('generateZoomAuthUrl', { userId, url });
-    console.log('[DEBUG] Generated Zoom OAuth URL:', url);
+    this.zoomLog('generateZoomAuthUrl', { userId, url, clientId, redirectUri });
+    console.log('[ZOOM DEBUG] Generated OAuth URL:', url);
+    console.log('[ZOOM DEBUG] Client ID:', clientId);
+    console.log('[ZOOM DEBUG] Redirect URI:', redirectUri);
+    console.log('[ZOOM DEBUG] State:', state);
     return url;
   }
 }

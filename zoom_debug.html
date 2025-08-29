@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoom Integration Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Zoom Integration Debug</h1>
+    
+    <div class="test info">
+        <h3>Step 1: Check Backend Connection</h3>
+        <button onclick="testBackend()">Test Backend</button>
+        <div id="backend-result"></div>
+    </div>
+    
+    <div class="test info">
+        <h3>Step 2: Test Zoom Auth URL (with token)</h3>
+        <button onclick="testZoomAuth()">Test Zoom Auth</button>
+        <div id="zoom-auth-result"></div>
+    </div>
+    
+    <div class="test info">
+        <h3>Step 3: Manual Zoom OAuth Test</h3>
+        <p>If the above tests pass, try this manual OAuth URL:</p>
+        <button onclick="testManualOAuth()">Open Manual OAuth</button>
+        <div id="manual-oauth-result"></div>
+    </div>
+    
+    <div class="test info">
+        <h3>Step 4: Environment Check</h3>
+        <button onclick="checkEnvironment()">Check Environment</button>
+        <div id="env-result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        
+        async function testBackend() {
+            const result = document.getElementById('backend-result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_URL}`);
+                if (response.ok) {
+                    result.innerHTML = '<div class="success">✅ Backend is running</div>';
+                } else {
+                    result.innerHTML = `<div class="error">❌ Backend error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Backend connection failed: ${error.message}</div>`;
+            }
+        }
+        
+        async function testZoomAuth() {
+            const result = document.getElementById('zoom-auth-result');
+            result.innerHTML = 'Testing...';
+            
+            // Try to get token from localStorage
+            const token = localStorage.getItem('calendarify-token') || 
+                         localStorage.getItem('calendarify-persistent-token');
+            
+            if (!token) {
+                result.innerHTML = '<div class="error">❌ No authentication token found. Please log in first.</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML = `
+                        <div class="success">
+                            ✅ Zoom auth URL generated successfully<br>
+                            <strong>URL:</strong> ${data.url}<br>
+                            <button onclick="window.open('${data.url}', '_blank')">Open in New Tab</button>
+                        </div>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    result.innerHTML = `<div class="error">❌ Zoom auth failed: ${response.status} - ${errorText}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Network error: ${error.message}</div>`;
+            }
+        }
+        
+        function testManualOAuth() {
+            const result = document.getElementById('manual-oauth-result');
+            const clientId = 'vfWc8HYwRtGyp7BwG8zCeQ'; // From .env
+            const redirectUri = 'http://localhost:3001/api/integrations/zoom/callback';
+            const manualUrl = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            
+            result.innerHTML = `
+                <div class="info">
+                    <strong>Manual OAuth URL:</strong><br>
+                    <pre>${manualUrl}</pre>
+                    <button onclick="window.open('${manualUrl}', '_blank')">Open Manual OAuth</button>
+                </div>
+            `;
+        }
+        
+        function checkEnvironment() {
+            const result = document.getElementById('env-result');
+            result.innerHTML = `
+                <div class="info">
+                    <h4>Environment Variables Check:</h4>
+                    <ul>
+                        <li><strong>ZOOM_CLIENT_ID:</strong> vfWc8HYwRtGyp7BwG8zCeQ ✅</li>
+                        <li><strong>ZOOM_REDIRECT_URI:</strong> http://localhost:3001/api/integrations/zoom/callback ✅</li>
+                        <li><strong>Backend URL:</strong> http://localhost:3001 ✅</li>
+                    </ul>
+                    <h4>Common Issues:</h4>
+                    <ul>
+                        <li>Zoom OAuth app in development mode</li>
+                        <li>Redirect URI mismatch in Zoom app settings</li>
+                        <li>OAuth app not activated</li>
+                        <li>Network/CORS issues</li>
+                    </ul>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

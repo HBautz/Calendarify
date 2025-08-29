@@ -43,7 +43,10 @@ export class IntegrationsController {
   @UseGuards(JwtAuthGuard)
   @Get('zoom/auth-url')
   zoomAuthUrl(@Req() req) {
+    console.log('[ZOOM DEBUG] Auth URL requested by user:', req.user.userId);
+    console.log('[ZOOM DEBUG] Request headers:', req.headers);
     const url = this.integrationsService.generateZoomAuthUrl(req.user.userId);
+    console.log('[ZOOM DEBUG] Generated auth URL:', url);
     return { url };
   }
 
@@ -131,11 +134,33 @@ export class IntegrationsController {
     return { message: 'Google Calendar disconnected' };
   }
 
+  @Get('zoom/test-callback')
+  testZoomCallback() {
+    console.log('[ZOOM DEBUG] Test callback endpoint hit');
+    return { message: 'Zoom callback endpoint is reachable', timestamp: new Date().toISOString() };
+  }
+
   @Get('zoom/callback')
-  async zoomCallback(@Query('code') code: string, @Query('state') state: string, @Res() res) {
-    await this.integrationsService.handleZoomCallback(code, state);
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    return res.redirect(`${baseUrl}/dashboard`);
+  async zoomCallback(@Query('code') code: string, @Query('state') state: string, @Res() res, @Req() req) {
+    console.log('[ZOOM DEBUG] Callback received at:', new Date().toISOString());
+    console.log('[ZOOM DEBUG] Callback URL:', req.url);
+    console.log('[ZOOM DEBUG] Callback query params:', { code, state });
+    console.log('[ZOOM DEBUG] Callback headers:', req.headers);
+    console.log('[ZOOM DEBUG] Callback user agent:', req.get('User-Agent'));
+    console.log('[ZOOM DEBUG] Callback referer:', req.get('Referer'));
+    console.log('[ZOOM DEBUG] Callback method:', req.method);
+    console.log('[ZOOM DEBUG] Callback IP:', req.ip);
+    
+    try {
+      await this.integrationsService.handleZoomCallback(code, state);
+      console.log('[ZOOM DEBUG] Callback handled successfully, redirecting to dashboard');
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${baseUrl}/dashboard`);
+    } catch (error) {
+      console.error('[ZOOM DEBUG] Callback error:', error);
+      console.error('[ZOOM DEBUG] Error stack:', error.stack);
+      return res.status(500).send('OAuth callback error: ' + error.message);
+    }
   }
 
   @Get('outlook/callback')

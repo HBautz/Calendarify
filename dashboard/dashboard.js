@@ -4400,16 +4400,36 @@
     async function connectZoomOAuth() {
       console.log('connectZoomOAuth called');
       const token = getAnyToken();
-      if (!token) return;
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
       const clean = token.replace(/^"|"$/g, '');
-      const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
-        headers: { Authorization: `Bearer ${clean}` },
-      });
-      console.log('[DEBUG] /integrations/zoom/auth-url status:', res.status);
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[DEBUG] Redirecting to', data.url);
-        window.location.href = data.url;
+      console.log('Making request to Zoom auth URL...');
+      try {
+        const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
+          headers: { Authorization: `Bearer ${clean}` },
+        });
+        console.log('[DEBUG] /integrations/zoom/auth-url status:', res.status);
+        console.log('[DEBUG] /integrations/zoom/auth-url headers:', Object.fromEntries(res.headers.entries()));
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('[DEBUG] Zoom auth URL response:', data);
+          console.log('[DEBUG] Redirecting to:', data.url);
+          
+          // Add a small delay to ensure logs are visible
+          setTimeout(() => {
+            window.location.href = data.url;
+          }, 100);
+        } else {
+          const errorText = await res.text();
+          console.error('[DEBUG] Zoom auth URL failed:', res.status, errorText);
+          alert('Failed to get Zoom authorization URL. Please try again.');
+        }
+      } catch (error) {
+        console.error('[DEBUG] Zoom auth URL request failed:', error);
+        alert('Network error while connecting to Zoom. Please check your connection and try again.');
       }
     }
     window.connectZoomOAuth = connectZoomOAuth;

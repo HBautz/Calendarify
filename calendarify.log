@@ -453,3 +453,257 @@ OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
 [ADVANCE-NOTICE-DEBUG]   earliest allowed: 2025-08-01T14:00:44.139Z
 [ADVANCE-NOTICE-DEBUG]   slots before filtering: 0
 [ADVANCE-NOTICE-DEBUG]   slots after filtering: 0
+2025-08-29 16:36:56,683 - INFO - ============================================================
+2025-08-29 16:36:56,683 - INFO - 🚀 CALENDARIFY PRODUCTION SERVER
+2025-08-29 16:36:56,683 - INFO - ============================================================
+2025-08-29 16:36:56,683 - INFO - Starting production-grade development server...
+2025-08-29 16:36:56,683 - INFO - ============================================================
+2025-08-29 16:36:56,683 - INFO - 🚀 SYSTEM DEPENDENCY CHECK
+2025-08-29 16:36:56,683 - INFO - ============================================================
+2025-08-29 16:36:56,683 - INFO - Running: node --version
+2025-08-29 16:36:56,727 - INFO - Command output: v20.19.4
+
+2025-08-29 16:36:56,727 - INFO - ✅ Node.js: v20.19.4
+2025-08-29 16:36:56,727 - INFO - Running: npm --version
+2025-08-29 16:36:56,918 - INFO - Command output: 10.8.2
+
+2025-08-29 16:36:56,918 - INFO - ✅ npm: 10.8.2
+2025-08-29 16:36:56,918 - INFO - Running: python3 --version
+2025-08-29 16:36:56,938 - INFO - Command output: Python 3.9.6
+
+2025-08-29 16:36:56,938 - INFO - ✅ Python: Python 3.9.6
+2025-08-29 16:36:56,938 - INFO - Running: psql --version
+2025-08-29 16:36:56,952 - INFO - Command output: psql (PostgreSQL) 14.18 (Homebrew)
+
+2025-08-29 16:36:56,953 - INFO - ✅ PostgreSQL: psql (PostgreSQL) 14.18 (Homebrew)
+2025-08-29 16:36:56,953 - INFO - Running: redis-cli --version
+2025-08-29 16:36:57,215 - INFO - Command output: redis-cli 8.0.2
+
+2025-08-29 16:36:57,216 - INFO - ✅ Redis: redis-cli 8.0.2
+2025-08-29 16:36:57,216 - INFO - ✅ All critical dependencies available
+2025-08-29 16:36:57,216 - INFO - ============================================================
+2025-08-29 16:36:57,216 - INFO - 🚀 DATABASE SETUP
+2025-08-29 16:36:57,216 - INFO - ============================================================
+2025-08-29 16:36:57,216 - INFO - Running: psql -lqt -h localhost
+2025-08-29 16:36:57,343 - INFO - Command output:  calendarify | heinebautz | UTF8     | C       | C     | 
+ postgres    | heinebautz | UTF8     | C       | C     | 
+ template0   | heinebautz | UTF8     | C       | C     | =c/heinebautz            +
+             |            |          |         |       | heinebautz=CTc/heinebautz
+ template1   | heinebautz | UTF8     | C       | C     | =c/heinebautz            +
+             |            |          |         |       | heinebautz=CTc/heinebautz
+
+
+2025-08-29 16:36:57,343 - INFO - ✅ Database 'calendarify' already exists
+2025-08-29 16:36:57,343 - INFO - Running Prisma database push...
+2025-08-29 16:36:57,343 - INFO - Running: npx prisma db push
+2025-08-29 16:36:57,343 - INFO - Working directory: /Users/heinebautz/portfolio-github/Calendarify/backend
+2025-08-29 16:36:58,596 - INFO - Command output: Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "calendarify", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v5.22.0) to ./../node_modules/@prisma/client in 87ms
+
+
+2025-08-29 16:36:58,596 - INFO - ✅ Database schema updated successfully
+2025-08-29 16:36:58,596 - INFO - ============================================================
+2025-08-29 16:36:58,596 - INFO - 🚀 STARTING BACKEND SERVER
+2025-08-29 16:36:58,596 - INFO - ============================================================
+2025-08-29 16:36:58,596 - INFO - Ensuring port 3001 is free...
+2025-08-29 16:36:58,596 - INFO - Running: lsof -ti :3001
+2025-08-29 16:36:58,638 - INFO - Running: pkill -f node.*:3001
+2025-08-29 16:36:59,660 - INFO - Running: netstat -tulpn
+2025-08-29 16:36:59,668 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:37:02,672 - INFO - Starting NestJS backend server...
+2025-08-29 16:37:02,675 - INFO - Waiting for backend to start...
+2025-08-29 16:39:03,022 - ERROR - ❌ Backend failed to start within 120 seconds
+2025-08-29 16:39:03,025 - ERROR - ❌ Backend startup failed
+2025-08-29 16:39:03,026 - INFO - 🧹 Cleaning up processes...
+2025-08-29 16:39:03,026 - INFO - Terminating backend process...
+2025-08-29 16:39:03,222 - INFO - Running: lsof -ti :3000
+2025-08-29 16:39:03,401 - INFO - Running: pkill -f node.*:3000
+2025-08-29 16:39:04,559 - INFO - Running: netstat -tulpn
+2025-08-29 16:39:04,580 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:39:07,680 - INFO - Running: lsof -ti :3001
+2025-08-29 16:39:07,782 - INFO - Running: pkill -f node.*:3001
+2025-08-29 16:39:08,921 - INFO - Running: netstat -tulpn
+2025-08-29 16:39:08,935 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:39:12,033 - INFO - ✅ Cleanup completed
+2025-08-29 16:42:12,698 - INFO - ============================================================
+2025-08-29 16:42:12,700 - INFO - 🚀 CALENDARIFY PRODUCTION SERVER
+2025-08-29 16:42:12,700 - INFO - ============================================================
+2025-08-29 16:42:12,700 - INFO - Starting production-grade development server...
+2025-08-29 16:42:12,700 - INFO - ============================================================
+2025-08-29 16:42:12,700 - INFO - 🚀 SYSTEM DEPENDENCY CHECK
+2025-08-29 16:42:12,700 - INFO - ============================================================
+2025-08-29 16:42:12,700 - INFO - Running: node --version
+2025-08-29 16:42:12,744 - INFO - Command output: v20.19.4
+
+2025-08-29 16:42:12,744 - INFO - ✅ Node.js: v20.19.4
+2025-08-29 16:42:12,744 - INFO - Running: npm --version
+2025-08-29 16:42:12,883 - INFO - Command output: 10.8.2
+
+2025-08-29 16:42:12,884 - INFO - ✅ npm: 10.8.2
+2025-08-29 16:42:12,884 - INFO - Running: python3 --version
+2025-08-29 16:42:12,899 - INFO - Command output: Python 3.9.6
+
+2025-08-29 16:42:12,899 - INFO - ✅ Python: Python 3.9.6
+2025-08-29 16:42:12,899 - INFO - Running: psql --version
+2025-08-29 16:42:12,914 - INFO - Command output: psql (PostgreSQL) 14.18 (Homebrew)
+
+2025-08-29 16:42:12,914 - INFO - ✅ PostgreSQL: psql (PostgreSQL) 14.18 (Homebrew)
+2025-08-29 16:42:12,914 - INFO - Running: redis-cli --version
+2025-08-29 16:42:12,924 - INFO - Command output: redis-cli 8.0.2
+
+2025-08-29 16:42:12,924 - INFO - ✅ Redis: redis-cli 8.0.2
+2025-08-29 16:42:12,924 - INFO - ✅ All critical dependencies available
+2025-08-29 16:42:12,924 - INFO - ============================================================
+2025-08-29 16:42:12,924 - INFO - 🚀 DATABASE SETUP
+2025-08-29 16:42:12,924 - INFO - ============================================================
+2025-08-29 16:42:12,924 - INFO - Running: psql -lqt -h localhost
+2025-08-29 16:42:12,952 - INFO - Command output:  calendarify | heinebautz | UTF8     | C       | C     | 
+ postgres    | heinebautz | UTF8     | C       | C     | 
+ template0   | heinebautz | UTF8     | C       | C     | =c/heinebautz            +
+             |            |          |         |       | heinebautz=CTc/heinebautz
+ template1   | heinebautz | UTF8     | C       | C     | =c/heinebautz            +
+             |            |          |         |       | heinebautz=CTc/heinebautz
+
+
+2025-08-29 16:42:12,952 - INFO - ✅ Database 'calendarify' already exists
+2025-08-29 16:42:12,952 - INFO - Running Prisma database push...
+2025-08-29 16:42:12,952 - INFO - Running: npx prisma db push
+2025-08-29 16:42:12,952 - INFO - Working directory: /Users/heinebautz/portfolio-github/Calendarify/backend
+2025-08-29 16:42:14,045 - INFO - Command output: Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "calendarify", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v5.22.0) to ./../node_modules/@prisma/client in 79ms
+
+
+2025-08-29 16:42:14,045 - INFO - ✅ Database schema updated successfully
+2025-08-29 16:42:14,046 - INFO - ============================================================
+2025-08-29 16:42:14,046 - INFO - 🚀 STARTING BACKEND SERVER
+2025-08-29 16:42:14,046 - INFO - ============================================================
+2025-08-29 16:42:14,046 - INFO - Ensuring port 3001 is free...
+2025-08-29 16:42:14,046 - INFO - Running: lsof -ti :3001
+2025-08-29 16:42:14,089 - INFO - Running: pkill -f node.*:3001
+2025-08-29 16:42:15,109 - INFO - Running: netstat -tulpn
+2025-08-29 16:42:15,119 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:42:18,129 - INFO - Starting NestJS backend server...
+2025-08-29 16:42:18,131 - INFO - Waiting for backend to start...
+2025-08-29 16:44:18,679 - ERROR - ❌ Backend failed to start within 120 seconds
+2025-08-29 16:44:18,683 - ERROR - ❌ Backend startup failed
+2025-08-29 16:44:18,683 - INFO - 🧹 Cleaning up processes...
+2025-08-29 16:44:18,683 - INFO - Terminating backend process...
+2025-08-29 16:44:18,812 - INFO - Running: lsof -ti :3000
+2025-08-29 16:44:18,861 - INFO - Running: pkill -f node.*:3000
+2025-08-29 16:44:19,885 - INFO - Running: netstat -tulpn
+2025-08-29 16:44:19,897 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:44:22,903 - INFO - Running: lsof -ti :3001
+2025-08-29 16:44:22,945 - INFO - Running: pkill -f node.*:3001
+2025-08-29 16:44:23,962 - INFO - Running: netstat -tulpn
+2025-08-29 16:44:23,973 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:44:26,979 - INFO - ✅ Cleanup completed
+2025-08-29 16:49:57,108 - INFO - ============================================================
+2025-08-29 16:49:57,109 - INFO - 🚀 CALENDARIFY PRODUCTION SERVER
+2025-08-29 16:49:57,109 - INFO - ============================================================
+2025-08-29 16:49:57,109 - INFO - Starting production-grade development server...
+2025-08-29 16:49:57,109 - INFO - ============================================================
+2025-08-29 16:49:57,109 - INFO - 🚀 SYSTEM DEPENDENCY CHECK
+2025-08-29 16:49:57,109 - INFO - ============================================================
+2025-08-29 16:49:57,109 - INFO - Running: node --version
+2025-08-29 16:49:57,185 - INFO - Command output: v20.19.4
+
+2025-08-29 16:49:57,185 - INFO - ✅ Node.js: v20.19.4
+2025-08-29 16:49:57,185 - INFO - Running: npm --version
+2025-08-29 16:49:57,594 - INFO - Command output: 10.8.2
+
+2025-08-29 16:49:57,595 - INFO - ✅ npm: 10.8.2
+2025-08-29 16:49:57,595 - INFO - Running: python3 --version
+2025-08-29 16:49:57,696 - INFO - Command output: Python 3.9.6
+
+2025-08-29 16:49:57,696 - INFO - ✅ Python: Python 3.9.6
+2025-08-29 16:49:57,697 - INFO - Running: psql --version
+2025-08-29 16:49:57,743 - INFO - Command output: psql (PostgreSQL) 14.18 (Homebrew)
+
+2025-08-29 16:49:57,744 - INFO - ✅ PostgreSQL: psql (PostgreSQL) 14.18 (Homebrew)
+2025-08-29 16:49:57,744 - INFO - Running: redis-cli --version
+2025-08-29 16:49:57,767 - INFO - Command output: redis-cli 8.0.2
+
+2025-08-29 16:49:57,767 - INFO - ✅ Redis: redis-cli 8.0.2
+2025-08-29 16:49:57,767 - INFO - ✅ All critical dependencies available
+2025-08-29 16:49:57,767 - INFO - ============================================================
+2025-08-29 16:49:57,767 - INFO - 🚀 DATABASE SETUP
+2025-08-29 16:49:57,768 - INFO - ============================================================
+2025-08-29 16:49:57,768 - INFO - Running: psql -lqt -h localhost
+2025-08-29 16:49:57,826 - INFO - Command output:  calendarify | heinebautz | UTF8     | C       | C     | 
+ postgres    | heinebautz | UTF8     | C       | C     | 
+ template0   | heinebautz | UTF8     | C       | C     | =c/heinebautz            +
+             |            |          |         |       | heinebautz=CTc/heinebautz
+ template1   | heinebautz | UTF8     | C       | C     | =c/heinebautz            +
+             |            |          |         |       | heinebautz=CTc/heinebautz
+
+
+2025-08-29 16:49:57,826 - INFO - ✅ Database 'calendarify' already exists
+2025-08-29 16:49:57,826 - INFO - Running Prisma database push...
+2025-08-29 16:49:57,826 - INFO - Running: npx prisma db push
+2025-08-29 16:49:57,827 - INFO - Working directory: /Users/heinebautz/portfolio-github/Calendarify/backend
+2025-08-29 16:50:02,037 - INFO - Command output: Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "calendarify", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v5.22.0) to ./../node_modules/@prisma/client in 377ms
+
+
+2025-08-29 16:50:02,041 - INFO - ✅ Database schema updated successfully
+2025-08-29 16:50:02,041 - INFO - ============================================================
+2025-08-29 16:50:02,041 - INFO - 🚀 STARTING BACKEND SERVER
+2025-08-29 16:50:02,041 - INFO - ============================================================
+2025-08-29 16:50:02,042 - INFO - Ensuring port 3001 is free...
+2025-08-29 16:50:02,042 - INFO - Running: lsof -ti :3001
+2025-08-29 16:50:02,273 - INFO - Running: pkill -f node.*:3001
+2025-08-29 16:50:03,425 - INFO - Running: netstat -tulpn
+2025-08-29 16:50:03,443 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:50:06,544 - INFO - Starting NestJS backend server...
+2025-08-29 16:50:06,567 - INFO - Waiting for backend to start...
+2025-08-29 16:50:06,568 - INFO - Running: pgrep -f npm run start:dev
+2025-08-29 16:50:06,669 - INFO - Command output: 99405
+
+2025-08-29 16:50:06,669 - INFO - ✅ Backend compilation detected, waiting for completion...
+2025-08-29 16:51:37,274 - INFO - ⏳ Backend compilation in progress... (90s elapsed)
+2025-08-29 16:52:06,603 - INFO - ⏳ Backend compilation in progress... (120s elapsed)
+2025-08-29 16:53:07,542 - INFO - ⏳ Backend compilation in progress... (180s elapsed)
+2025-08-29 16:53:36,812 - INFO - ⏳ Backend compilation in progress... (210s elapsed)
+2025-08-29 16:55:06,974 - ERROR - ❌ Backend failed to start within 300 seconds
+2025-08-29 16:55:06,976 - ERROR - ❌ Backend startup failed
+2025-08-29 16:55:06,976 - INFO - 🧹 Cleaning up processes...
+2025-08-29 16:55:06,976 - INFO - Terminating backend process...
+2025-08-29 16:55:07,274 - INFO - Running: lsof -ti :3000
+2025-08-29 16:55:07,600 - INFO - Running: pkill -f node.*:3000
+2025-08-29 16:55:08,839 - INFO - Running: netstat -tulpn
+2025-08-29 16:55:08,900 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:55:12,032 - INFO - Running: lsof -ti :3001
+2025-08-29 16:55:12,552 - INFO - Running: pkill -f node.*:3001
+2025-08-29 16:55:13,771 - INFO - Running: netstat -tulpn
+2025-08-29 16:55:13,784 - WARNING - Command stderr: netstat: n: unknown or uninstrumented protocol
+
+2025-08-29 16:55:16,866 - INFO - ✅ Cleanup completed

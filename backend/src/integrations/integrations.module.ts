@@ -6,5 +6,6 @@ import { IntegrationsService } from './integrations.service';
 @Module({
   controllers: [IntegrationsController],
   providers: [IntegrationsService, PrismaService],
+  exports: [IntegrationsService],
 })
 export class IntegrationsModule {}
