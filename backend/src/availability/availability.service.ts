@@ -48,15 +48,40 @@ export class AvailabilityService {
     startDate: Date, 
     endDate: Date
   ): Promise<AvailabilityOverride[]> {
-    const overrides = await this.prisma.availabilityOverride.findMany({
-      where: {
-        user_id: userId,
-        date: {
-          gte: startDate,
-          lte: endDate
-        }
-      }
+    console.log('[OVERRIDE DEBUG] getAvailabilityOverrides called:', {
+      userId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
     });
+
+    // Get all overrides for the user and filter by date range
+    const allOverrides = await this.prisma.availabilityOverride.findMany({
+      where: { user_id: userId }
+    });
+
+    console.log('[OVERRIDE DEBUG] All user overrides:', allOverrides.map(o => ({
+      id: o.id,
+      date: o.date.toISOString(),
+      dateLocal: o.date.toLocaleDateString(),
+      is_busy: o.is_busy,
+      start_minute: o.start_minute,
+      end_minute: o.end_minute
+    })));
+
+    // Filter overrides that fall within the date range
+    const overrides = allOverrides.filter(override => {
+      const overrideDate = override.date;
+      return overrideDate >= startDate && overrideDate <= endDate;
+    });
+
+    console.log('[OVERRIDE DEBUG] Filtered overrides:', overrides.map(o => ({
+      id: o.id,
+      date: o.date.toISOString(),
+      dateLocal: o.date.toLocaleDateString(),
+      is_busy: o.is_busy,
+      start_minute: o.start_minute,
+      end_minute: o.end_minute
+    })));
 
     return overrides.map(override => ({
       date: override.date,
@@ -64,6 +89,161 @@ export class AvailabilityService {
       endMinute: override.end_minute || undefined,
       isBusy: override.is_busy
     }));
+  }
+
+  /**
+   * Upsert a single-day availability override
+   */
+  async upsertAvailabilityOverride(
+    userId: string,
+    date: Date,
+    isAvailable: boolean,
+    startUtcMinute?: number,
+    endUtcMinute?: number
+  ): Promise<void> {
+    console.log('[OVERRIDE DEBUG] upsertAvailabilityOverride called:', {
+      userId,
+      inputDate: date.toISOString(),
+      isAvailable,
+      startUtcMinute,
+      endUtcMinute
+    });
+
+    // Date is already UTC midnight from controller
+    const dateUtc = date;
+    const isBusy = !isAvailable; // available=false means whole day busy
+
+    console.log('[OVERRIDE DEBUG] Normalized date:', {
+      originalDate: date.toISOString(),
+      normalizedDateUtc: dateUtc.toISOString(),
+      isBusy
+    });
+
+    // Manual upsert using (user_id, dateUtc) - but handle timezone issues
+    const targetDateString = dateUtc.toISOString().split('T')[0];
+    
+    // Find all overrides for this user and find the one that matches the target date
+    const allUserOverrides = await this.prisma.availabilityOverride.findMany({
+      where: { user_id: userId }
+    });
+    
+    const existing = allUserOverrides.find(o => 
+      o.date.toISOString().split('T')[0] === targetDateString
+    );
+
+    console.log('[OVERRIDE DEBUG] Existing override found:', existing ? {
+      id: existing.id,
+      date: existing.date.toISOString(),
+      is_busy: existing.is_busy,
+      start_minute: existing.start_minute,
+      end_minute: existing.end_minute
+    } : 'none');
+
+    if (existing) {
+      console.log('[OVERRIDE DEBUG] Updating existing override');
+      await this.prisma.availabilityOverride.update({
+        where: { id: existing.id },
+        data: {
+          is_busy: isBusy,
+          start_minute: startUtcMinute ?? null,
+          end_minute: endUtcMinute ?? null
+        }
+      });
+      console.log('[OVERRIDE DEBUG] Override updated successfully');
+    } else {
+      console.log('[OVERRIDE DEBUG] Creating new override');
+      await this.prisma.availabilityOverride.create({
+        data: {
+          user_id: userId,
+          date: dateUtc,
+          is_busy: isBusy,
+          start_minute: startUtcMinute ?? null,
+          end_minute: endUtcMinute ?? null
+        }
+      });
+      console.log('[OVERRIDE DEBUG] Override created successfully');
+    }
+  }
+
+  /**
+   * Delete an availability override for a given day
+   */
+  async deleteAvailabilityOverride(userId: string, date: Date): Promise<void> {
+    console.log('[OVERRIDE DEBUG] deleteAvailabilityOverride called:', {
+      userId,
+      inputDate: date.toISOString()
+    });
+
+    // Date is already UTC midnight from controller
+    const dateUtc = date;
+
+    console.log('[OVERRIDE DEBUG] Normalized date for deletion:', {
+      originalDate: date.toISOString(),
+      normalizedDateUtc: dateUtc.toISOString()
+    });
+
+    // First, let's see all overrides for this user to debug
+    const allOverrides = await this.prisma.availabilityOverride.findMany({
+      where: { user_id: userId }
+    });
+    console.log('[OVERRIDE DEBUG] All overrides for user:', allOverrides.map(o => ({
+      id: o.id,
+      date: o.date.toISOString(),
+      dateLocal: o.date.toLocaleDateString(),
+      is_busy: o.is_busy
+    })));
+    
+    // Also check what we're looking for
+    console.log('[OVERRIDE DEBUG] Looking for override with date:', {
+      dateUtc: dateUtc.toISOString(),
+      dateUtcLocal: dateUtc.toLocaleDateString(),
+      dateUtcTime: dateUtc.getTime()
+    });
+
+    // The issue is timezone-related. The dates in the database have timezone offsets.
+    // We need to find the override by matching the local date, not the UTC date.
+    
+    // Convert the target date to local date string (YYYY-MM-DD)
+    const targetDateString = dateUtc.toISOString().split('T')[0];
+    
+    // Find all overrides for this user and filter by local date
+    const allUserOverrides = await this.prisma.availabilityOverride.findMany({
+      where: { user_id: userId }
+    });
+    
+    console.log('[OVERRIDE DEBUG] All user overrides:', allUserOverrides.map(o => ({
+      id: o.id,
+      date: o.date.toISOString(),
+      dateLocal: o.date.toLocaleDateString(),
+      dateString: o.date.toISOString().split('T')[0],
+      is_busy: o.is_busy
+    })));
+    
+    // Find the override that matches the target date string
+    const existing = allUserOverrides.find(o => 
+      o.date.toISOString().split('T')[0] === targetDateString
+    );
+    
+    console.log('[OVERRIDE DEBUG] Target date string:', targetDateString);
+    console.log('[OVERRIDE DEBUG] Existing override to delete:', existing ? {
+      id: existing.id,
+      date: existing.date.toISOString(),
+      dateLocal: existing.date.toLocaleDateString(),
+      is_busy: existing.is_busy
+    } : 'none');
+
+    if (existing) {
+      const deleteResult = await this.prisma.availabilityOverride.delete({ where: { id: existing.id } });
+      console.log('[OVERRIDE DEBUG] Override deleted successfully:', deleteResult);
+      
+      // Verify deletion
+      const verifyDelete = await this.prisma.availabilityOverride.findFirst({
+        where: { user_id: userId, date: dateUtc }
+      });
+      console.log('[OVERRIDE DEBUG] Verification after delete:', verifyDelete ? 'STILL EXISTS' : 'SUCCESSFULLY DELETED');
+    } else {
+      console.log('[OVERRIDE DEBUG] No override found to delete');
+    }
   }
 
   /**
@@ -104,7 +284,9 @@ export class AvailabilityService {
     userId: string,
     startTime: Date,
     endTime: Date,
-    excludeBookingId?: string
+    excludeBookingId?: string,
+    bufferBefore: number = 0,
+    bufferAfter: number = 0
   ): Promise<boolean> {
     // Check if the time falls within availability rules
     const dayOfWeek = startTime.getUTCDay();
@@ -151,21 +333,30 @@ export class AvailabilityService {
       }
     }
 
-    // Check for conflicting bookings
-    const conflictingBookings = await this.prisma.booking.findFirst({
+    // Check for conflicting bookings (including buffers)
+    const overlapping = await this.prisma.booking.findMany({
       where: {
         user_id: userId,
         ...(excludeBookingId && { NOT: { id: excludeBookingId } }),
-        OR: [
-          {
-            starts_at: { lt: endTime },
-            ends_at: { gt: startTime }
-          }
-        ]
-      }
+        // Expand DB filter window to include potential buffer-only conflicts, inclusive on edges
+        starts_at: { lte: new Date(endTime.getTime() + bufferAfter * 60000) },
+        ends_at: { gte: new Date(startTime.getTime() - bufferBefore * 60000) }
+      },
+      select: { starts_at: true, ends_at: true }
     });
 
-    return !conflictingBookings;
+    const hasConflict = overlapping.some(b => {
+      const bookingStart = b.starts_at;
+      const bookingEnd = b.ends_at;
+      // Direct overlap
+      if (startTime < bookingEnd && endTime > bookingStart) return true;
+      // Buffer overlap
+      const bookingBufferStart = new Date(bookingStart.getTime() - bufferBefore * 60000);
+      const bookingBufferEnd = new Date(bookingEnd.getTime() + bufferAfter * 60000);
+      return startTime < bookingBufferEnd && endTime > bookingBufferStart;
+    });
+
+    return !hasConflict;
   }
 
   /**
@@ -249,21 +440,34 @@ export class AvailabilityService {
         const slotStart = new Date(currentTime);
         const slotEnd = new Date(currentTime.getTime() + duration * 60000);
 
-        // Robust availability check using DB-backed method to avoid edge-case mismatches
-        // This ensures no stale or missed overlaps, at the cost of a DB read per candidate
-        // If performance becomes an issue, retain pre-fetched check as a fast-path and fall back on this as a secondary guard
-        // const fastAvailable = this.checkSlotAvailability(...);
-        const isAvailable = await this.isSlotAvailable(
+        // Fast pre-fetched check (overrides, rules, and buffer-expanded bookings)
+        const fastAvailable = this.checkSlotAvailability(
+          slotStart,
+          slotEnd,
+          new Date(slotStart.getTime() - bufferBefore * 60000),
+          new Date(slotEnd.getTime() + bufferAfter * 60000),
+          existingBookings,
+          overrides,
+          date,
+          rule,
+          bufferBefore,
+          bufferAfter
+        );
+
+        // DB-backed guard to avoid any edge-case mismatches
+        const dbAvailable = await this.isSlotAvailable(
           userId,
           slotStart,
           slotEnd,
-          excludeBookingId
+          excludeBookingId,
+          bufferBefore,
+          bufferAfter
         );
 
         slots.push({
           start: slotStart,
           end: slotEnd,
-          isAvailable
+          isAvailable: fastAvailable && dbAvailable
         });
 
         // Move to next slot using the provided slot interval

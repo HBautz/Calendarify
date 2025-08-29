@@ -855,7 +855,7 @@
                 const dateStr = date.toISOString().split('T')[0];
                 console.log(`[SLOTS DEBUG] Fetching slots for ${event.slug} on ${dateStr}`);
                 
-                const res = await fetch(`${API_URL}/event-types/${event.slug}/slots?date=${dateStr}`);
+                const res = await fetch(`${API_URL}/event-types/${event.slug}/slots?date=${dateStr}&t=${Date.now()}`);
                 console.log(`[SLOTS DEBUG] Server response:`, { status: res.status, ok: res.ok });
                 
                 if (res.ok) {
@@ -883,12 +883,14 @@
                 return formattedSlots;
                     } else {
                         console.log(`[SLOTS DEBUG] Server returned empty slots array`);
+                        // Do NOT fallback when server explicitly returns no slots
+                        return [];
                     }
                 } else {
                     console.log(`[SLOTS DEBUG] Server request failed:`, res.status, res.statusText);
                 }
                 
-                // Fallback: Generate time slots locally based on fresh weekly hours data
+                // Fallback only when server request failed
                 const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                 const dayName = dayNames[date.getUTCDay()]; // Use UTC time to match backend
                 const dayHours = weeklyHours[dayName];
@@ -1215,8 +1217,9 @@
                 document.getElementById('modalEventTime').textContent = selectedTime;
                 document.getElementById('modalEventDuration').textContent = `${eventDuration} minutes`;
 
-                // Show/hide required fields based on questions
-                const questions = event.questions || [];
+                // Show/hide required fields based on questions or requiredFields fallback
+                const questions = Array.isArray(event.questions) ? event.questions : [];
+                const requiredFieldsFallback = event.requiredFields || {};
                                 
                 // Reset all fields to hidden first
                 document.getElementById('nameField').classList.add('hidden');
@@ -1231,26 +1234,50 @@
                 let hasContactFields = false;
                 const fieldRequirements = {};
                 
-                questions.forEach(questionObj => {
-                    const questionText = questionObj.text.toLowerCase();
-                    if (questionText.includes('name') || questionText.includes('full name')) {
+                if (questions.length > 0) {
+                    questions.forEach(questionObj => {
+                        const questionText = (questionObj.text || '').toLowerCase();
+                        if (questionText.includes('name') || questionText.includes('full name')) {
+                            document.getElementById('nameField').classList.remove('hidden');
+                            fieldRequirements.name = !!questionObj.required;
+                            hasContactFields = true;
+                        } else if (questionText.includes('email') || questionText.includes('email address')) {
+                            document.getElementById('emailField').classList.remove('hidden');
+                            fieldRequirements.email = !!questionObj.required;
+                            hasContactFields = true;
+                        } else if (questionText.includes('phone') || questionText.includes('phone number')) {
+                            document.getElementById('phoneField').classList.remove('hidden');
+                            fieldRequirements.phone = !!questionObj.required;
+                            hasContactFields = true;
+                        } else if (questionText.includes('company') || questionText.includes('work for')) {
+                            document.getElementById('companyField').classList.remove('hidden');
+                            fieldRequirements.company = !!questionObj.required;
+                            hasContactFields = true;
+                        }
+                    });
+                } else {
+                    // Fallback to boolean requiredFields (from older settings model)
+                    if (requiredFieldsFallback.name) {
                         document.getElementById('nameField').classList.remove('hidden');
-                        fieldRequirements.name = questionObj.required;
-                        hasContactFields = true;
-                    } else if (questionText.includes('email') || questionText.includes('email address')) {
-                        document.getElementById('emailField').classList.remove('hidden');
-                        fieldRequirements.email = questionObj.required;
-                        hasContactFields = true;
-                    } else if (questionText.includes('phone') || questionText.includes('phone number')) {
-                        document.getElementById('phoneField').classList.remove('hidden');
-                        fieldRequirements.phone = questionObj.required;
-                        hasContactFields = true;
-                    } else if (questionText.includes('company') || questionText.includes('work for')) {
-                        document.getElementById('companyField').classList.remove('hidden');
-                        fieldRequirements.company = questionObj.required;
+                        fieldRequirements.name = true;
                         hasContactFields = true;
                     }
-                });
+                    if (requiredFieldsFallback.email) {
+                        document.getElementById('emailField').classList.remove('hidden');
+                        fieldRequirements.email = true;
+                        hasContactFields = true;
+                    }
+                    if (requiredFieldsFallback.phone) {
+                        document.getElementById('phoneField').classList.remove('hidden');
+                        fieldRequirements.phone = true;
+                        hasContactFields = true;
+                    }
+                    if (requiredFieldsFallback.company) {
+                        document.getElementById('companyField').classList.remove('hidden');
+                        fieldRequirements.company = true;
+                        hasContactFields = true;
+                    }
+                }
                 
                 // Update field labels to show required indicators
                 if (fieldRequirements.name !== undefined) {
@@ -1670,6 +1697,24 @@
                 document.getElementById('confirmationDate').textContent = bookingData.date;
                 document.getElementById('confirmationTime').textContent = bookingData.time;
                 document.getElementById('confirmationDuration').textContent = `${bookingData.duration} minutes`;
+                // If event type has a custom confirmationMessage, show it above the Done button
+                const modal = document.getElementById('bookingConfirmationModal');
+                if (modal && event && event.confirmationMessage) {
+                    const existing = modal.querySelector('#custom-confirmation-message');
+                    if (!existing) {
+                        const p = document.createElement('p');
+                        p.id = 'custom-confirmation-message';
+                        p.className = 'text-[#A3B3AF] text-sm mb-4';
+                        p.textContent = event.confirmationMessage;
+                        // insert before the Done button container
+                        const btn = modal.querySelector('#closeBookingConfirmationModal');
+                        if (btn && btn.parentElement) {
+                            btn.parentElement.insertBefore(p, btn);
+                        }
+                    } else {
+                        existing.textContent = event.confirmationMessage;
+                    }
+                }
                 
                 // Close the booking modal first
                 closeBookingModal();

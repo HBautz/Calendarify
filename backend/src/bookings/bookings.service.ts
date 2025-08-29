@@ -50,11 +50,37 @@ export class BookingsService {
     const isAvailable = await this.availabilityService.isSlotAvailable(
       eventType.userId,
       startTime,
-      endTime
+      endTime,
+      undefined,
+      eventType.bufferBefore,
+      eventType.bufferAfter
     );
 
     if (!isAvailable) {
       throw new Error('Selected time slot is not available');
+    }
+
+    // Enforce booking limit for the event type
+    const limit = (eventType as any).bookingLimit;
+    if (limit && typeof limit === 'object' && limit.count > 0) {
+      const startWindow = new Date(startTime);
+      startWindow.setHours(0, 0, 0, 0);
+      let endWindow = new Date(startWindow);
+      if (limit.period === 'week') {
+        endWindow = new Date(startWindow.getTime() + 7 * 24 * 60 * 60000);
+      } else {
+        endWindow = new Date(startWindow.getTime() + 24 * 60 * 60000);
+      }
+      const count = await this.prisma.booking.count({
+        where: {
+          event_type_id: eventType.id,
+          starts_at: { gte: startWindow },
+          ends_at: { lt: endWindow },
+        }
+      });
+      if (count >= limit.count) {
+        throw new Error('Booking limit reached for this period');
+      }
     }
 
     // Create the booking

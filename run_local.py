@@ -241,62 +241,202 @@ def kill_existing_services():
     
     print("Checking for existing services...")
     
-    # Kill processes on port 3000 (frontend)
-    try:
-        result = subprocess.run(['lsof', '-ti:3000'], capture_output=True, text=True)
-        if result.stdout.strip():
-            pids = result.stdout.strip().split('\n')
-            for pid in pids:
-                if pid:
-                    print(f"Killing process {pid} on port 3000")
-                    os.kill(int(pid), signal.SIGTERM)
-    except Exception as e:
-        print(f"Warning: Could not kill processes on port 3000: {e}")
+    def kill_processes_on_port(port, max_retries=3):
+        """Kill processes on a specific port with retry logic"""
+        for attempt in range(max_retries):
+            try:
+                # First, try to kill any NestJS processes that might be using the port
+                if port == 3001:
+                    try:
+                        print(f"Killing any NestJS processes (attempt {attempt + 1})")
+                        subprocess.run(['pkill', '-f', 'nest start'], capture_output=True)
+                        subprocess.run(['pkill', '-f', 'npm start'], capture_output=True)
+                        time.sleep(2)
+                    except Exception as e:
+                        print(f"Warning: Could not kill NestJS processes: {e}")
+                
+                # Check for processes using the port
+                result = subprocess.run(['lsof', '-ti:{}'.format(port)], capture_output=True, text=True)
+                if result.stdout.strip():
+                    pids = result.stdout.strip().split('\n')
+                    for pid in pids:
+                        if pid:
+                            print(f"Killing process {pid} on port {port} (attempt {attempt + 1})")
+                            try:
+                                # Try graceful termination first
+                                os.kill(int(pid), signal.SIGTERM)
+                            except ProcessLookupError:
+                                # Process already dead
+                                continue
+                            except Exception as e:
+                                print(f"Warning: Could not kill process {pid}: {e}")
+                    
+                    # Wait for processes to die
+                    time.sleep(3)
+                    
+                    # Check if processes are still running using netstat for more reliable detection
+                    try:
+                        netstat_result = subprocess.run(['netstat', '-an'], capture_output=True, text=True)
+                        if netstat_result.returncode == 0:
+                            lines = netstat_result.stdout.split('\n')
+                            port_in_use = any(f':{port} ' in line and 'LISTEN' in line for line in lines)
+                            if port_in_use:
+                                print(f"Processes still running on port {port}, trying SIGKILL...")
+                                # Try lsof again to get PIDs
+                                result = subprocess.run(['lsof', '-ti:{}'.format(port)], capture_output=True, text=True)
+                                if result.stdout.strip():
+                                    pids = result.stdout.strip().split('\n')
+                                    for pid in pids:
+                                        if pid:
+                                            try:
+                                                os.kill(int(pid), signal.SIGKILL)
+                                            except ProcessLookupError:
+                                                continue
+                                            except Exception as e:
+                                                print(f"Warning: Could not force kill process {pid}: {e}")
+                                time.sleep(2)
+                            else:
+                                print(f"✓ All processes on port {port} terminated")
+                                break
+                        else:
+                            # Fallback to lsof check
+                            result = subprocess.run(['lsof', '-ti:{}'.format(port)], capture_output=True, text=True)
+                            if result.stdout.strip():
+                                print(f"Processes still running on port {port}, trying SIGKILL...")
+                                pids = result.stdout.strip().split('\n')
+                                for pid in pids:
+                                    if pid:
+                                        try:
+                                            os.kill(int(pid), signal.SIGKILL)
+                                        except ProcessLookupError:
+                                            continue
+                                        except Exception as e:
+                                            print(f"Warning: Could not force kill process {pid}: {e}")
+                                time.sleep(2)
+                            else:
+                                print(f"✓ All processes on port {port} terminated")
+                                break
+                    except Exception as e:
+                        print(f"Warning: Could not check port status: {e}")
+                        # Fallback to original lsof check
+                        result = subprocess.run(['lsof', '-ti:{}'.format(port)], capture_output=True, text=True)
+                        if not result.stdout.strip():
+                            print(f"✓ All processes on port {port} terminated")
+                            break
+                else:
+                    print(f"✓ No processes found on port {port}")
+                    break
+            except Exception as e:
+                print(f"Warning: Could not check processes on port {port}: {e}")
+                break
     
-    # Kill processes on port 3001 (backend)
-    try:
-        result = subprocess.run(['lsof', '-ti:3001'], capture_output=True, text=True)
-        if result.stdout.strip():
-            pids = result.stdout.strip().split('\n')
-            for pid in pids:
-                if pid:
-                    print(f"Killing process {pid} on port 3001")
-                    os.kill(int(pid), signal.SIGTERM)
-    except Exception as e:
-        print(f"Warning: Could not kill processes on port 3001: {e}")
+    # Kill processes on both ports
+    kill_processes_on_port(3000)  # frontend
+    kill_processes_on_port(3001)  # backend
     
-    # Wait a moment for processes to die
-    time.sleep(2)
+    # Additional wait to ensure ports are fully freed
+    print("Waiting for ports to be fully freed...")
+    time.sleep(3)
+    
+    # Verify ports are free using netstat for more reliable detection
+    for port in [3000, 3001]:
+        try:
+            netstat_result = subprocess.run(['netstat', '-an'], capture_output=True, text=True)
+            if netstat_result.returncode == 0:
+                lines = netstat_result.stdout.split('\n')
+                port_in_use = any(f':{port} ' in line and 'LISTEN' in line for line in lines)
+                if port_in_use:
+                    print(f"⚠️  Warning: Port {port} may still be in use")
+                else:
+                    print(f"✓ Port {port} is free")
+            else:
+                # Fallback to lsof
+                result = subprocess.run(['lsof', '-ti:{}'.format(port)], capture_output=True, text=True)
+                if result.stdout.strip():
+                    print(f"⚠️  Warning: Port {port} may still be in use")
+                else:
+                    print(f"✓ Port {port} is free")
+        except Exception as e:
+            print(f"Warning: Could not verify port {port}: {e}")
 
+
+def check_port_available(port, max_retries=5):
+    """Check if a port is available, with retry logic"""
+    for attempt in range(max_retries):
+        try:
+            # Use netstat as an alternative to lsof for more reliable port checking
+            result = subprocess.run(['netstat', '-an'], capture_output=True, text=True)
+            if result.returncode == 0:
+                # Check if port is in LISTEN state
+                lines = result.stdout.split('\n')
+                port_in_use = any(f':{port} ' in line and 'LISTEN' in line for line in lines)
+                if not port_in_use:
+                    return True
+                print(f"Port {port} still in use (attempt {attempt + 1}/{max_retries}), waiting...")
+                time.sleep(2)
+            else:
+                # Fallback to lsof
+                result = subprocess.run(['lsof', '-ti:{}'.format(port)], capture_output=True, text=True)
+                if not result.stdout.strip():
+                    return True
+                print(f"Port {port} still in use (attempt {attempt + 1}/{max_retries}), waiting...")
+                time.sleep(2)
+        except Exception as e:
+            print(f"Warning: Could not check port {port}: {e}")
+            # Try one more aggressive cleanup
+            try:
+                subprocess.run(['pkill', '-f', f':{port}'], capture_output=True)
+                time.sleep(1)
+            except:
+                pass
+            return True  # Assume available if we can't check
+    return False
 
 def start_backend():
+    """Start the backend server in a background thread"""
     def _run():
         try:
             os.chdir('backend')
-            run('npm install')
-            run('npm start')
+            print("Starting backend server...")
+            # Use Popen to start the process without blocking
+            subprocess.Popen('npm run start:dev', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception as e:
             print(f"Backend startup error: {e}")
+    
     t = Thread(target=_run)
     t.daemon = True
     t.start()
-    # Wait for backend to start
-    for _ in range(30):
-        try:
-            import requests
-            r = requests.get('http://localhost:3001/api', timeout=2)
-            if r.status_code == 200 or r.status_code == 404:
-                print('Backend is up!')
-                return
-        except Exception:
-            pass
+    
+    # Wait up to 30 seconds for backend to start
+    print("Waiting for backend to start (timeout: 30s)...")
+    for i in range(30):
         time.sleep(1)
-    print('Warning: Backend may not have started yet.')
+        
+        # Check if backend process is running on port 3001
+        result = subprocess.run(['lsof', '-ti:3001'], capture_output=True, text=True)
+        if result.stdout.strip():
+            print(f"✓ Backend process started after {i+1}s")
+            return True
+        
+        # Check if npm/node processes are running (compilation in progress)
+        result = subprocess.run(['pgrep', '-f', 'npm run start:dev'], capture_output=True, text=True)
+        if result.stdout.strip():
+            if i == 0:  # Only show this message once
+                print("✓ Backend compilation in progress...")
+            continue
+    
+    print("⚠️  Backend process may not have started yet (timeout reached)")
+    return False
 
+
+def check_service_health():
+    """Check if both services are still running"""
+    backend_running = subprocess.run(['lsof', '-ti:3001'], capture_output=True, text=True).stdout.strip() != ''
+    frontend_running = subprocess.run(['lsof', '-ti:3000'], capture_output=True, text=True).stdout.strip() != ''
+    return backend_running, frontend_running
 
 def serve_frontend():
-    # Use the Node server that comes with the project to serve the static files
-    # with extensionless URL support.
+    """Start the frontend server in a background thread"""
     def _run():
         try:
             # Run from the repository root regardless of the caller's cwd
@@ -310,24 +450,28 @@ def serve_frontend():
             env['PORT'] = '3000'
 
             # Use the custom server.js that handles clean URLs
-            run('node server.js', env=env)
+            print("Starting frontend server...")
+            subprocess.Popen('node server.js', shell=True, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception as e:
             print(f"Frontend startup error: {e}")
+    
     t = Thread(target=_run)
     t.daemon = True
     t.start()
-    # Wait for server
-    for _ in range(15):
-        try:
-            import requests
-            r = requests.get('http://localhost:3000', timeout=2)
-            if r.status_code == 200:
-                print('Frontend is up!')
-                return
-        except Exception:
-            pass
+    
+    # Wait up to 10 seconds for frontend to start
+    print("Waiting for frontend to start (timeout: 10s)...")
+    for i in range(10):
         time.sleep(1)
-    print('Warning: Frontend may not have started yet.')
+        
+        # Check if frontend process is running
+        result = subprocess.run(['lsof', '-ti:3000'], capture_output=True, text=True)
+        if result.stdout.strip():
+            print(f"✓ Frontend process started after {i+1}s")
+            return True
+    
+    print("⚠️  Frontend process may not have started yet (timeout reached)")
+    return False
 
 
 def main():
@@ -363,17 +507,76 @@ def main():
     # Kill any existing services before starting new ones
     kill_existing_services()
     
-    start_backend()
-    serve_frontend()
-    print("\nAll services started!")
-    print("Backend: http://localhost:3001")
-    print("Frontend: http://localhost:3000")
-    print("\nPress Ctrl+C to stop all services.")
+    # Start services in parallel
+    print("\nStarting services...")
+    backend_started = start_backend()
+    frontend_started = serve_frontend()
     
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
+    print("\n" + "="*50)
+    print("🎉 CALENDARIFY STARTUP COMPLETE!")
+    print("="*50)
+    
+    if backend_started and frontend_started:
+        print("✓ Both services started successfully!")
+    elif backend_started:
+        print("✓ Backend started")
+        print("⚠️  Frontend may still be starting up...")
+    elif frontend_started:
+        print("✓ Frontend started")
+        print("⚠️  Backend may still be starting up...")
+    else:
+        print("⚠️  Services may still be starting up...")
+    
+    print("\n🌐 Access your application:")
+    print("Frontend: http://localhost:3000")
+    print("Backend API: http://localhost:3001")
+    
+    if backend_started and frontend_started:
+        print("\n✅ Both services are ready!")
+        print("💡 You can now access the application.")
+    else:
+        print("\n⚠️  Some services may still be starting...")
+        print("💡 Check the URLs above - they should become available shortly.")
+        print("   • Backend typically takes 30-60 seconds to compile")
+        print("   • Frontend should be available immediately")
+    
+    # Determine if we should auto-exit based on service status
+    if backend_started and frontend_started:
+        print("\n✅ Both services are running successfully!")
+        print("💡 The script will keep running to maintain the services.")
+        print("   Press Ctrl+C to stop all services when you're done.")
+        
+        try:
+            # Keep running indefinitely since both services started successfully
+            # Check service health every 30 seconds
+            last_health_check = time.time()
+            while True:
+                time.sleep(1)
+                
+                # Periodic health check every 30 seconds
+                if time.time() - last_health_check > 30:
+                    backend_running, frontend_running = check_service_health()
+                    if not backend_running or not frontend_running:
+                        print(f"\n⚠️  Service health check failed:")
+                        print(f"   Backend: {'✓ Running' if backend_running else '✗ Stopped'}")
+                        print(f"   Frontend: {'✓ Running' if frontend_running else '✗ Stopped'}")
+                        print("   Services may have crashed. Check the logs for details.")
+                    last_health_check = time.time()
+        except KeyboardInterrupt:
+            pass
+    else:
+        print("\n⚠️  Some services may still be starting...")
+        print("💡 The script will auto-exit after 2 minutes if services don't start.")
+        print("   Press Ctrl+C to stop all services.")
+        
+        try:
+            # Auto-exit after 2 minutes only if services failed to start
+            start_time = time.time()
+            while time.time() - start_time < 120:  # 2 minutes timeout
+                time.sleep(1)
+            print("\n\nAuto-exiting after 2 minutes (services may not have started)...")
+        except KeyboardInterrupt:
+            pass
         print("\n\nShutting down services...")
         # Try to gracefully stop services
         try:
@@ -381,7 +584,12 @@ def main():
             requests.post('http://localhost:3001/api/admin/shutdown', timeout=1)
         except:
             pass
-        print("Services stopped. Goodbye!")
+        
+        # Kill any remaining processes on our ports
+        print("Cleaning up any remaining processes...")
+        kill_existing_services()
+        
+        print("✓ Services stopped. Goodbye!")
 
 
 if __name__ == '__main__':

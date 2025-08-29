@@ -996,3 +996,27 @@
       width: 96px;
       height: 96px;
     }
+
+    /* Availability calendar override highlights */
+    .override-partial {
+      background-color: rgba(139, 0, 0, 0.7); /* dark red at 70% */
+      color: #fff;
+    }
+
+    .override-unavailable {
+      background-color: rgba(239, 68, 68, 0.3); /* red-500 at 30% */
+      color: #fff;
+    }
+
+    /* Combined today + override highlights */
+    .calendar-day.today.override-unavailable {
+      background: linear-gradient(135deg, #F97316 50%, rgba(239, 68, 68, 0.3) 50%); /* orange + red */
+      color: #1A2E29;
+      font-weight: bold;
+    }
+
+    .calendar-day.today.override-partial {
+      background: linear-gradient(135deg, #F97316 50%, rgba(139, 0, 0, 0.7) 50%); /* orange + dark red */
+      color: #fff;
+      font-weight: bold;
+    }

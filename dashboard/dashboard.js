@@ -309,8 +309,15 @@
       const meetings = getMeetingsData(tab);
       console.log('Meetings for tab', tab, ':', meetings);
       
+      // Sort meetings by date (newest first)
+      const sortedMeetings = meetings.sort((a, b) => {
+        const dateA = new Date(a.start);
+        const dateB = new Date(b.start);
+        return dateB - dateA; // Newest first (descending order)
+      });
+      
       const is12h = getClockFormat() === '12h';
-      const tableHTML = meetings.map(meeting => {
+      const tableHTML = sortedMeetings.map(meeting => {
         const displayDate = new Date(meeting.start).toLocaleString(undefined, {
           month: 'short',
           day: 'numeric',
@@ -500,15 +507,27 @@
       questionCounter = 0;
     }
 
-    function saveOverride() {
+    async function saveOverride() {
       if (!selectedDate) {
         showNotification('No date selected');
         return;
       }
       
-      const dateString = selectedDate.toISOString().split('T')[0];
+      console.log('[OVERRIDE DEBUG] saveOverride called:', {
+        selectedDate,
+        selectedDateType: typeof selectedDate
+      });
+      
+      // selectedDate is stored as a string (YYYY-MM-DD) in selectDate
+      const dateString = typeof selectedDate === 'string' ? selectedDate : new Date(selectedDate).toISOString().split('T')[0];
       const toggleButton = document.querySelector('#override-modal button[onclick="toggleOverrideAvailability(this)"]');
       const isAvailable = toggleButton.getAttribute('aria-pressed') === 'true';
+      
+      console.log('[OVERRIDE DEBUG] Parsed values:', {
+        dateString,
+        isAvailable,
+        toggleButtonFound: !!toggleButton
+      });
       
       // Collect time slots if available
       let timeSlots = [];
@@ -527,45 +546,126 @@
         });
       }
       
-      // Save override to localStorage
-      calendarOverrides[dateString] = {
-        available: isAvailable,
-        timeSlots: timeSlots
-      };
+      console.log('[OVERRIDE DEBUG] Time slots collected:', timeSlots);
       
-      localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
-      syncState();
+      // Persist override to backend (first slot if provided)
+      try {
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        let body = { date: dateString, available: isAvailable };
+        if (isAvailable && timeSlots.length > 0) {
+          body = { ...body, start: timeSlots[0].start, end: timeSlots[0].end };
+        }
+        
+        console.log('[OVERRIDE DEBUG] Request body:', body);
+        console.log('[OVERRIDE DEBUG] API URL:', `${API_URL}/availability/overrides`);
+        
+        const res = await fetch(`${API_URL}/availability/overrides`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(clean && { Authorization: `Bearer ${clean}` }) },
+          body: JSON.stringify(body)
+        });
+        
+        console.log('[OVERRIDE DEBUG] Response status:', res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('[OVERRIDE DEBUG] Failed to save override:', res.status, errorText);
+          showNotification('Failed to save override');
+          return;
+        }
+        
+        console.log('[OVERRIDE DEBUG] Override saved successfully');
+      } catch (e) {
+        console.error('[OVERRIDE DEBUG] Error saving override:', e);
+        showNotification('Failed to save override');
+        return;
+      }
       
       // Update calendar display
+      await fetchCalendarOverrides();
       renderCalendar();
       
       showNotification('Override saved successfully');
       closeOverrideModal();
     }
 
-    function confirmDeleteOverride() {
+    async function confirmDeleteOverride() {
       if (!selectedDate) {
         showNotification('No date selected');
         return;
       }
       
-      const dateString = selectedDate.toISOString().split('T')[0];
+      console.log('[OVERRIDE DEBUG] confirmDeleteOverride called:', {
+        selectedDate,
+        selectedDateType: typeof selectedDate
+      });
       
-      // Remove override from localStorage
-      delete calendarOverrides[dateString];
-      localStorage.setItem('calendarify-overrides', JSON.stringify(calendarOverrides));
-      syncState();
+      // selectedDate is stored as a string (YYYY-MM-DD)
+      const dateString = typeof selectedDate === 'string' ? selectedDate : new Date(selectedDate).toISOString().split('T')[0];
+      
+      console.log('[OVERRIDE DEBUG] Delete date string:', dateString);
+      console.log('[OVERRIDE DEBUG] Current calendarOverrides before deletion:', calendarOverrides);
+      
+      // Remove override from backend
+      try {
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        const url = `${API_URL}/availability/overrides/${dateString}`;
+        
+        console.log('[OVERRIDE DEBUG] Delete URL:', url);
+        console.log('[OVERRIDE DEBUG] Token available:', !!clean);
+        
+        const res = await fetch(url, {
+          method: 'DELETE',
+          headers: { 
+            ...(clean && { Authorization: `Bearer ${clean}` }),
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        console.log('[OVERRIDE DEBUG] Delete response status:', res.status);
+        console.log('[OVERRIDE DEBUG] Delete response headers:', Object.fromEntries(res.headers.entries()));
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('[OVERRIDE DEBUG] Failed to delete override:', res.status, errorText);
+          showNotification('Failed to delete override');
+          return;
+        }
+        
+        const responseText = await res.text();
+        console.log('[OVERRIDE DEBUG] Delete response body:', responseText);
+        console.log('[OVERRIDE DEBUG] Override deleted successfully');
+      } catch (e) {
+        console.error('[OVERRIDE DEBUG] Error deleting override:', e);
+        showNotification('Failed to delete override');
+        return;
+      }
       
       // Update calendar display
+      console.log('[OVERRIDE DEBUG] Fetching updated overrides...');
+      // Add a small delay to ensure database has processed the delete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await fetchCalendarOverrides();
+      console.log('[OVERRIDE DEBUG] CalendarOverrides after fetch:', calendarOverrides);
+      
+      console.log('[OVERRIDE DEBUG] Re-rendering calendar...');
       renderCalendar();
       
       showNotification('Override deleted successfully');
-      closeDeleteConfirmModal();
+      // Close both modals
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('delete-confirm-modal').classList.add('hidden');
+      
+      // Add a brief visual feedback to show the change
+      console.log('[OVERRIDE DEBUG] Override deleted, calendar re-rendered with updated data');
     }
 
     function closeDeleteConfirmModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('delete-override-confirm-modal').classList.add('hidden');
+      document.getElementById('delete-confirm-modal').classList.add('hidden');
+      // Show the override modal again
+      document.getElementById('override-modal').classList.remove('hidden');
     }
 
     function createWorkflow() {
@@ -990,7 +1090,7 @@
         const stored = localStorage.getItem('calendarify-dashboard-clock-format');
         return stored === '12h' ? '12h' : '24h';
       } catch (_) {
-        return '24h';
+      return '24h';
       }
     }
 
@@ -1292,14 +1392,10 @@
       const timeContainer = document.getElementById(day + '-times');
       const circle = button.querySelector('div');
       
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== USER CLICKED DAY TOGGLE =====`);
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] User clicked: ${day}`);
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] Current state: isAvailable=${isAvailable}`);
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] Button aria-pressed before: "${button.getAttribute('aria-pressed')}"`);
+      
       
       if (isAvailable) {
         // Disable the day (unavailable)
-        console.log(`[🔍 TEMP DEBUG ${timestamp}] Disabling ${day} (making unavailable)`);
         button.setAttribute('aria-pressed', 'false');
         button.classList.remove('bg-[#34D399]');
         button.classList.add('bg-[#19342e]');
@@ -1313,10 +1409,8 @@
           input.classList.add('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
           input.classList.remove('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
         });
-        console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} disabled - time inputs disabled`);
       } else {
         // Enable the day (available)
-        console.log(`[🔍 TEMP DEBUG ${timestamp}] Enabling ${day} (making available)`);
         button.setAttribute('aria-pressed', 'true');
         button.classList.remove('bg-[#19342e]');
         button.classList.add('bg-[#34D399]');
@@ -1330,16 +1424,10 @@
           input.classList.remove('cursor-not-allowed', 'bg-[#111f1c]', 'text-[#6B7C78]');
           input.classList.add('cursor-pointer', 'bg-[#19342e]', 'text-[#E0E0E0]');
         });
-        console.log(`[🔍 TEMP DEBUG ${timestamp}] ${day} enabled - time inputs enabled`);
       }
       
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] Button aria-pressed after: "${button.getAttribute('aria-pressed')}"`);
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] ===== DAY TOGGLE COMPLETE =====`);
-      
       // Sync availability rules to backend (no localStorage caching)
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] Calling syncAvailabilityRules()...`);
       syncAvailabilityRules();
-      console.log(`[🔍 TEMP DEBUG ${timestamp}] Calling syncState()...`);
       syncState();
     }
 
@@ -1610,15 +1698,113 @@
     // --- Calendar Override System ---
     let currentDate = new Date();
     let selectedDate = null;
-    let calendarOverrides = JSON.parse(localStorage.getItem('calendarify-overrides') || '{}');
+    let calendarOverrides = {};
 
-    function initializeCalendar() {
+    async function fetchCalendarOverrides() {
+      try {
+        const token = getAnyToken();
+        if (!token) {
+          console.log('[OVERRIDE DEBUG] No token available for fetching overrides');
+          return;
+        }
+        
+        const clean = token.replace(/^"|"$/g, '');
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        // Get start and end of month
+        const startDate = new Date(year, month, 1);
+        // Fix: Use the last day of the month by getting the first day of next month and subtracting 1 day
+        const endDate = new Date(year, month + 1, 0);
+        // Ensure we include the full last day by adding 23:59:59
+        endDate.setHours(23, 59, 59, 999);
+        
+        console.log('[OVERRIDE DEBUG] Fetching overrides for month:', {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        });
+        
+        const response = await fetch(`${API_URL}/availability/overrides?start=${startDate.toISOString()}&end=${endDate.toISOString()}&t=${Date.now()}`, {
+          headers: { Authorization: `Bearer ${clean}` }
+        });
+        
+        console.log('[OVERRIDE DEBUG] Overrides response status:', response.status);
+        
+        if (response.ok) {
+          const overrides = await response.json();
+          console.log('[OVERRIDE DEBUG] Fetched overrides:', overrides);
+          console.log('[OVERRIDE DEBUG] Response headers:', Object.fromEntries(response.headers.entries()));
+          
+          // Convert backend format to frontend format
+          const oldCalendarOverrides = { ...calendarOverrides };
+          calendarOverrides = {};
+          overrides.forEach(override => {
+            const dateString = override.date.split('T')[0];
+            
+            // Convert UTC minutes to local time for display
+            let timeSlots = [];
+            if (override.startMinute !== undefined && override.endMinute !== undefined) {
+              // Create UTC midnight for the target date
+              const [year, month, day] = dateString.split('-').map(n => parseInt(n));
+              const utcMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+              
+              // Convert UTC minutes to local time by adding to UTC midnight
+              const startUtc = new Date(utcMidnight.getTime() + override.startMinute * 60000);
+              const endUtc = new Date(utcMidnight.getTime() + override.endMinute * 60000);
+              
+              // Convert to local time for display
+              const startLocal = new Date(startUtc.getTime());
+              const endLocal = new Date(endUtc.getTime());
+              
+              timeSlots = [{
+                start: `${startLocal.getHours().toString().padStart(2, '0')}:${startLocal.getMinutes().toString().padStart(2, '0')}`,
+                end: `${endLocal.getHours().toString().padStart(2, '0')}:${endLocal.getMinutes().toString().padStart(2, '0')}`
+              }];
+              
+              console.log('[OVERRIDE DEBUG] Time conversion for', dateString, ':', {
+                utcMinutes: { start: override.startMinute, end: override.endMinute },
+                localTime: { start: timeSlots[0].start, end: timeSlots[0].end },
+                utcMidnight: utcMidnight.toISOString(),
+                startUtc: startUtc.toISOString(),
+                endUtc: endUtc.toISOString(),
+                startLocal: startLocal.toISOString(),
+                endLocal: endLocal.toISOString()
+              });
+            }
+            
+            calendarOverrides[dateString] = {
+              available: !override.isBusy,
+              timeSlots: timeSlots
+            };
+          });
+          
+          console.log('[OVERRIDE DEBUG] Old calendarOverrides:', oldCalendarOverrides);
+          console.log('[OVERRIDE DEBUG] New calendarOverrides:', calendarOverrides);
+          console.log('[OVERRIDE DEBUG] Override count before:', Object.keys(oldCalendarOverrides).length);
+          console.log('[OVERRIDE DEBUG] Override count after:', Object.keys(calendarOverrides).length);
+        } else {
+          console.error('[OVERRIDE DEBUG] Failed to fetch overrides:', response.status);
+        }
+      } catch (error) {
+        console.error('[OVERRIDE DEBUG] Error fetching overrides:', error);
+      }
+    }
+
+    async function initializeCalendar() {
+      await fetchCalendarOverrides();
       renderCalendar();
     }
 
     function renderCalendar() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
+      
+      console.log('[OVERRIDE DEBUG] renderCalendar called:', {
+        year,
+        month,
+        calendarOverridesKeys: Object.keys(calendarOverrides),
+        calendarOverridesCount: Object.keys(calendarOverrides).length
+      });
       
       // Update month/year display
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -1640,15 +1826,32 @@
       // Add days of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const hasOverride = calendarOverrides[dateString];
+        const override = calendarOverrides[dateString];
         const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
         
         let dayClasses = 'calendar-day cursor-pointer';
         
-        if (hasOverride) {
-          dayClasses += ' active';
-        } else if (isToday) {
+        if (override) {
+          console.log('[OVERRIDE DEBUG] Found override for', dateString, ':', override);
+          // available=false -> fully unavailable (red)
+          if (override.available === false) {
+            dayClasses += ' override-unavailable';
+          } else if (override.available === true && Array.isArray(override.timeSlots) && override.timeSlots.length > 0) {
+            // has times -> partial (dark red)
+            dayClasses += ' override-partial';
+          } else {
+            // available=true but no time slots - this shouldn't happen, but if it does, no highlighting
+            console.log('[OVERRIDE DEBUG] Override exists but is available with no time slots - no highlighting applied');
+          }
+        }
+        
+        // Add today class if it's today (can be combined with override classes)
+        if (isToday) {
           dayClasses += ' today';
+        }
+        
+        if (!override && !isToday) {
+          console.log('[OVERRIDE DEBUG] No override for', dateString, '- applying normal styling');
         }
         
         calendarHTML += `<div class="${dayClasses}" onclick="selectDate('${dateString}')">${day}</div>`;
@@ -1657,13 +1860,15 @@
       document.getElementById('calendar-days').innerHTML = calendarHTML;
     }
 
-    function previousMonth() {
+    async function previousMonth() {
       currentDate.setMonth(currentDate.getMonth() - 1);
+      await fetchCalendarOverrides();
       renderCalendar();
     }
 
-    function nextMonth() {
+    async function nextMonth() {
       currentDate.setMonth(currentDate.getMonth() + 1);
+      await fetchCalendarOverrides();
       renderCalendar();
     }
 
@@ -1683,8 +1888,14 @@
       const existingOverride = calendarOverrides[dateString];
       if (existingOverride) {
         loadOverrideData(existingOverride);
+        // Show delete button if override exists
+        document.getElementById('delete-override-btn').classList.remove('hidden');
+        console.log('[OVERRIDE DEBUG] Delete button should be visible for', dateString);
       } else {
         resetOverrideForm();
+        // Hide delete button if no override exists
+        document.getElementById('delete-override-btn').classList.add('hidden');
+        console.log('[OVERRIDE DEBUG] Delete button should be hidden for', dateString);
       }
       
       openOverrideModal();
@@ -1699,6 +1910,15 @@
       document.getElementById('modal-backdrop').classList.add('hidden');
       document.getElementById('override-modal').classList.add('hidden');
       selectedDate = null;
+    }
+
+    function showDeleteOverrideConfirm() {
+      console.log('[OVERRIDE DEBUG] showDeleteOverrideConfirm called');
+      // Hide the override modal
+      document.getElementById('override-modal').classList.add('hidden');
+      // Show the delete confirmation modal (backdrop should already be visible)
+      document.getElementById('delete-confirm-modal').classList.remove('hidden');
+      console.log('[OVERRIDE DEBUG] Delete confirmation modal should now be visible');
     }
 
     function toggleOverrideAvailability(button) {
@@ -2133,6 +2353,7 @@
               duration: parseInt(duration),
               questions: questions,
               requiredFields: {},
+              bookingLimit: bookingLimit,
               confirmationMessage: confirmationMessage,
               bufferBefore: parseInt(bufferBefore),
               bufferAfter: parseInt(bufferAfter),
@@ -2647,6 +2868,7 @@
               duration: parseInt(duration),
               questions: questions,
               requiredFields: {},
+              bookingLimit: bookingLimit,
               confirmationMessage: confirmationMessage,
               bufferBefore: parseInt(bufferBefore),
               bufferAfter: parseInt(bufferAfter),
