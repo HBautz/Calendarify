@@ -180,7 +180,9 @@
               end: b.ends_at,     // Use server data directly
               // Do not pre-format date here; we format per current clock setting when rendering
               date: b.starts_at,
-              status: 'Confirmed'
+              status: 'Confirmed',
+              zoom_link: b.zoom_link, // Include Zoom link if available
+              google_meet_link: b.google_meet_link // Include Google Meet link if available
             };
             if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
           });
@@ -331,8 +333,8 @@
           meeting.status === 'Completed' ? 'badge-completed' :
           'badge-error';
         return `
-        <tr class="table-row" id="meeting-${meeting.id}">
-          <td class="py-2">
+        <tr class="table-row border-b border-[#2C4A43]" id="meeting-${meeting.id}">
+          <td class="py-3">
             <div class="flex items-center gap-2 justify-center">
               <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(meeting.invitee)}&amp;background=34D399&amp;color=1A2E29" alt="${meeting.invitee}" class="w-8 h-8 rounded-full">
               <div>
@@ -341,18 +343,34 @@
               </div>
             </div>
           </td>
-          <td class="py-2 text-center">${meeting.eventType}</td>
-          <td class="py-2 text-center">${displayDate}</td>
-          <td class="py-2 text-center"><span class="${badgeClass}">${meeting.status}</span></td>
-          <td class="py-2 text-center">
+          <td class="py-3 text-center">${meeting.eventType}</td>
+          <td class="py-3 text-center">${displayDate}</td>
+          <td class="py-3 text-center"><span class="${badgeClass}">${meeting.status}</span></td>
+          <td class="py-3 text-center">
+            <div class="flex flex-col gap-2 items-center">
+              ${meeting.zoom_link ? 
+                `<a href="${meeting.zoom_link}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                  <span class="material-icons-outlined text-xs">video_call</span>
+                  Join Zoom
+                </a>` : ''
+              }
+              ${meeting.google_meet_link ? 
+                `<a href="${meeting.google_meet_link}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors">
+                  <span class="material-icons-outlined text-xs">video_call</span>
+                  Join Meet
+                </a>` : ''
+              }
+              ${!meeting.zoom_link && !meeting.google_meet_link ? 
+                `<span class="text-[#A3B3AF] text-sm">No meeting link</span>` : ''
+              }
+            </div>
+          </td>
+          <td class="py-3 text-center">
             <div class="relative inline-block text-left">
               <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleMeetingMenu(this)">
                 <span class="material-icons-outlined">more_vert</span>
               </button>
               <div class="meeting-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg">
-                <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="joinMeeting('${meeting.id}')">
-                  <span class="material-icons-outlined text-xs">video_call</span>Join
-                </button>
                 ${tab === 'past' ? 
                   `<button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="deleteMeeting('${meeting.id}')">
                     <span class="material-icons-outlined text-xs">delete_forever</span>Delete
@@ -3774,14 +3792,23 @@
 
     // Meeting action functions
     function joinMeeting(meetingId) {
-      const id = typeof meetingId === 'string' ? parseInt(meetingId) : meetingId;
+      const id = meetingId; // Keep as string for UUID compatibility
       const meeting = getMeetingsData('upcoming').find(m => m.id === id) || 
                      getMeetingsData('past').find(m => m.id === id) ||
                      getMeetingsData('pending').find(m => m.id === id);
       
       if (meeting) {
-        showNotification(`Joining meeting with ${meeting.invitee}`);
-        // Here you would typically open the meeting link or video call
+        if (meeting.zoom_link) {
+          // Open Zoom link in new tab
+          window.open(meeting.zoom_link, '_blank');
+          showNotification(`Opening Zoom meeting with ${meeting.invitee}`);
+        } else if (meeting.google_meet_link) {
+          // Open Google Meet link in new tab
+          window.open(meeting.google_meet_link, '_blank');
+          showNotification(`Opening Google Meet with ${meeting.invitee}`);
+        } else {
+          showNotification(`No meeting link available for ${meeting.invitee}`);
+        }
       }
     }
 
@@ -4407,20 +4434,20 @@
       const clean = token.replace(/^"|"$/g, '');
       console.log('Making request to Zoom auth URL...');
       try {
-        const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
-          headers: { Authorization: `Bearer ${clean}` },
-        });
-        console.log('[DEBUG] /integrations/zoom/auth-url status:', res.status);
+      const res = await fetch(`${API_URL}/integrations/zoom/auth-url`, {
+        headers: { Authorization: `Bearer ${clean}` },
+      });
+      console.log('[DEBUG] /integrations/zoom/auth-url status:', res.status);
         console.log('[DEBUG] /integrations/zoom/auth-url headers:', Object.fromEntries(res.headers.entries()));
         
-        if (res.ok) {
-          const data = await res.json();
+      if (res.ok) {
+        const data = await res.json();
           console.log('[DEBUG] Zoom auth URL response:', data);
           console.log('[DEBUG] Redirecting to:', data.url);
           
           // Add a small delay to ensure logs are visible
           setTimeout(() => {
-            window.location.href = data.url;
+        window.location.href = data.url;
           }, 100);
         } else {
           const errorText = await res.text();
@@ -4607,6 +4634,7 @@
     window.closeConnectAppleModal = closeConnectAppleModal;
 
     async function submitAppleConnect() {
+      console.log('[DEBUG] submitAppleConnect called');
       const email = document.getElementById('apple-email').value.trim();
       const password = document.getElementById('apple-password').value.trim();
       if (!email || !password) {
@@ -4616,15 +4644,17 @@
       const token = getAnyToken();
       if (!token) return;
       const clean = token.replace(/^\"|\"$/g, '');
+      console.log('[DEBUG] Connecting to Apple Calendar with email:', email);
       const res = await fetch(`${API_URL}/integrations/apple/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
         body: JSON.stringify({ email, password }),
       });
+      console.log('[DEBUG] Apple connect response status:', res.status);
       if (res.ok) {
-        showNotification('Apple Calendar connected');
-        updateAppleCalendarButton();
-        closeConnectAppleModal();
+        console.log('[DEBUG] Apple Calendar connected successfully, fetching calendars...');
+        // After successful connection, fetch available calendars
+        await fetchAndShowAppleCalendars();
       } else if (res.status === 400) {
         showNotification('Invalid Apple credentials');
       } else if (res.status === 503) {
@@ -4633,7 +4663,135 @@
         showNotification('Failed to connect Apple Calendar');
       }
     }
+
+    async function fetchAndShowAppleCalendars() {
+      console.log('[DEBUG] fetchAndShowAppleCalendars called');
+      const token = getAnyToken();
+      if (!token) {
+        console.log('[DEBUG] No token found');
+        return;
+      }
+      const clean = token.replace(/^\"|\"$/g, '');
+      console.log('[DEBUG] Fetching calendars from:', `${API_URL}/integrations/apple/calendars`);
+      
+      try {
+        const res = await fetch(`${API_URL}/integrations/apple/calendars`, {
+          headers: { Authorization: `Bearer ${clean}` },
+        });
+        
+        console.log('[DEBUG] Calendar fetch response status:', res.status);
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('[DEBUG] Calendar data received:', data);
+          showAppleCalendarSelectionModal(data.calendars);
+        } else {
+          console.log('[DEBUG] Calendar fetch failed with status:', res.status);
+          // Show the modal anyway, but with an error message
+          showAppleCalendarSelectionModal([]);
+          showNotification('Connected but failed to fetch calendars. You can still save your connection.');
+        }
+      } catch (error) {
+        console.error('[DEBUG] Error fetching Apple calendars:', error);
+        showNotification('Failed to fetch Apple calendars');
+        closeConnectAppleModal();
+      }
+    }
+
+    function showAppleCalendarSelectionModal(calendars) {
+      console.log('[DEBUG] showAppleCalendarSelectionModal called with calendars:', calendars);
+      const modal = document.getElementById('apple-calendar-selection-modal');
+      const listContainer = document.getElementById('apple-calendars-list');
+      
+      console.log('[DEBUG] Modal element:', modal);
+      console.log('[DEBUG] List container element:', listContainer);
+      
+      if (!modal || !listContainer) {
+        console.error('[DEBUG] Modal elements not found!');
+        return;
+      }
+      
+      // Clear existing content
+      listContainer.innerHTML = '';
+      
+      // Populate calendar list
+      if (calendars.length === 0) {
+        const div = document.createElement('div');
+        div.className = 'p-3 text-center text-[#A3B3AF]';
+        div.innerHTML = 'No calendars found or failed to fetch calendars. Your connection will still be saved.';
+        listContainer.appendChild(div);
+      } else {
+        calendars.forEach(calendar => {
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-3 p-3 bg-[#19342e] rounded-lg border border-[#2C4A43]';
+          div.innerHTML = `
+            <input type="checkbox" id="calendar-${calendar.href}" value="${calendar.href}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <label for="calendar-${calendar.href}" class="text-white cursor-pointer flex-1">${calendar.name}</label>
+          `;
+          listContainer.appendChild(div);
+        });
+      }
+      
+      console.log('[DEBUG] About to show modal');
+      // Show modal
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      modal.classList.remove('hidden');
+      console.log('[DEBUG] Modal should now be visible');
+    }
+
+    function closeAppleCalendarSelectionModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('apple-calendar-selection-modal').classList.add('hidden');
+    }
+
+    function selectAllAppleCalendars() {
+      const checkboxes = document.querySelectorAll('#apple-calendars-list input[type="checkbox"]');
+      checkboxes.forEach(checkbox => checkbox.checked = true);
+    }
+
+    function deselectAllAppleCalendars() {
+      const checkboxes = document.querySelectorAll('#apple-calendars-list input[type="checkbox"]');
+      checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    async function confirmAppleCalendarSelection() {
+      const checkboxes = document.querySelectorAll('#apple-calendars-list input[type="checkbox"]:checked');
+      const selectedCalendars = Array.from(checkboxes).map(cb => cb.value);
+      
+      // Allow saving even if no calendars are selected (in case of connection issues)
+      if (selectedCalendars.length === 0) {
+        console.log('[DEBUG] No calendars selected, but proceeding with empty selection');
+      }
+      
+      const token = getAnyToken();
+      if (!token) return;
+      const clean = token.replace(/^\"|\"$/g, '');
+      
+      try {
+        const res = await fetch(`${API_URL}/integrations/apple/select`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ selectedCalendars }),
+        });
+        
+        if (res.ok) {
+          showNotification(`Selected ${selectedCalendars.length} calendar(s)`);
+          closeAppleCalendarSelectionModal();
+          closeConnectAppleModal();
+          updateAppleCalendarButton();
+        } else {
+          showNotification('Failed to save calendar selection');
+        }
+      } catch (error) {
+        console.error('Error saving calendar selection:', error);
+        showNotification('Failed to save calendar selection');
+      }
+    }
     window.submitAppleConnect = submitAppleConnect;
+    window.closeAppleCalendarSelectionModal = closeAppleCalendarSelectionModal;
+    window.selectAllAppleCalendars = selectAllAppleCalendars;
+    window.deselectAllAppleCalendars = deselectAllAppleCalendars;
+    window.confirmAppleCalendarSelection = confirmAppleCalendarSelection;
 
     function openDisconnectAppleModal() {
       document.getElementById('modal-backdrop').classList.remove('hidden');

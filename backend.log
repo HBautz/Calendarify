@@ -2,341 +2,215 @@
 > backend@0.0.1 start:dev
 > nest start --watch
 
-[2J[3J[H[[90m6:01:59 PM[0m] Starting compilation in watch mode...
+[2J[3J[H[[90m4:45:49 PM[0m] Starting compilation in watch mode...
 
-[[90m6:02:05 PM[0m] Found 0 errors. Watching for file changes.
+[[90m4:45:56 PM[0m] Found 0 errors. Watching for file changes.
 
 [SERVER DEBUG] Starting NestJS application...
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +28ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mNotificationsModule dependencies initialized[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +17ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAdminModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAvailabilityModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mIntegrationsModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mContactsModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWorkflowsModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTagsModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mEventTypesModule dependencies initialized[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBookingsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +27ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mNotificationsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +17ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAdminModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuthModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUsersModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAvailabilityModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mIntegrationsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mContactsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWorkflowsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTagsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mEventTypesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBookingsModule dependencies initialized[39m[38;5;3m +0ms[39m
 [SERVER DEBUG] Listening on port: 3001
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAppController {/api}:[39m[38;5;3m +15ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api, GET} route[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/logout, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, GET} route[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, PATCH} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/display/:name, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/display/:name/state, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/state, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/state, PATCH} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEventTypesController {/api/event-types}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/slug/:slug, GET} route[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, PUT} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:slug/slots, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:slug/book, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAvailabilityController {/api/availability}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/rules, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/rules/:displayName, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/overrides, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/rules, PATCH} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/overrides, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/overrides/:date, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBookingsController {/api/bookings}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings/:id, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings/:id, PATCH} route[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mIntegrationsController {/api/integrations}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/auth-url, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/callback, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/events, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/status, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google-meet, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/auth-url, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/auth-url, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/status, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/status, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/connect, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/status, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/calendars, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/select, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/test-callback, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/callback, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/callback, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mContactsController {/api/contacts}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, GET} route[39m[38;5;3m +1ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, PATCH} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id/tags, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id/tags/:tagName, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWorkflowsController {/api/workflows}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, PATCH} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTagsController {/api/tags}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags/:id, DELETE} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAdminController {/api/admin}:[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/status, GET} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/wipe, POST} route[39m[38;5;3m +0ms[39m
-[32m[Nest] 11357  - [39m08/29/2025, 6:02:06 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +80ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAppController {/api}:[39m[38;5;3m +15ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/register, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/logout, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/display/:name, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/display/:name/state, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/state, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/me/state, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mEventTypesController {/api/event-types}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/slug/:slug, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, PUT} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:slug/slots, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/event-types/:slug/book, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAvailabilityController {/api/availability}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/rules, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/rules/:displayName, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/overrides, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/rules, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/overrides, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/availability/overrides/:date, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBookingsController {/api/bookings}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/bookings/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mIntegrationsController {/api/integrations}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/auth-url, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/events, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google-meet, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/auth-url, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/auth-url, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/connect, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/calendars, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/apple/select, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/google/disconnect, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/test-callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/zoom/callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integrations/outlook/callback, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mContactsController {/api/contacts}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id/tags, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/contacts/:id/tags/:tagName, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWorkflowsController {/api/workflows}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/workflows/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTagsController {/api/tags}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/tags/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAdminController {/api/admin}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/status, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/admin/wipe, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 24276  - [39m08/30/2025, 4:45:57 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +71ms[39m
 [SERVER DEBUG] Server started successfully on port: 3001
-[OVERRIDE DEBUG] GET /overrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-07-31T22:00:00.000Z',
-  endDate: '2025-08-31T21:59:59.999Z'
+[ZOOM DEBUG] Auth URL requested by user: 24b84fe6-cb67-4c8b-aa42-a79756ce2174
+[ZOOM DEBUG] Request headers: {
+  host: 'localhost:3001',
+  connection: 'keep-alive',
+  'sec-ch-ua-platform': '"macOS"',
+  authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJpYXQiOjE3NTY1NTkwNTJ9.LHb9aFq_E3VLcQrBJ4ZMnD4c8dh6FMQpC1xli_EWa_Y',
+  'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+  'sec-ch-ua-mobile': '?0',
+  accept: '*/*',
+  origin: 'http://localhost:3000',
+  'sec-fetch-site': 'same-site',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-dest': 'empty',
+  referer: 'http://localhost:3000/',
+  'accept-encoding': 'gzip, deflate, br, zstd',
+  'accept-language': 'en-US,en;q=0.9',
+  'if-none-match': 'W/"222-WeyddFmkl2zGu9Q64QR51mVjkFg"'
 }
-[OVERRIDE DEBUG] Parsed dates: { start: '2025-07-31T22:00:00.000Z', end: '2025-08-31T21:59:59.999Z' }
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-07-31T22:00:00.000Z',
-  endDate: '2025-08-31T21:59:59.999Z'
+[ZOOM DEBUG] Generating auth URL for user: 24b84fe6-cb67-4c8b-aa42-a79756ce2174
+[ZOOM DEBUG] Generated OAuth URL: https://zoom.us/oauth/authorize?response_type=code&client_id=vfWc8HYwRtGyp7BwG8zCeQ&redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Fapi%2Fintegrations%2Fzoom%2Fcallback&state=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJ6Y3YiOiJQaWVsVjVxeVR6aFhvQzNGVnZjZ1NyTEFKQkNGc1Rzc0NYTTZOVnpfZ3R3IiwiaWF0IjoxNzU2NTY1OTA1LCJleHAiOjE3NTY1NjY1MDV9.ahvjf4I_Qammc4pVWqrNEik9jLOdiNTdR4n1I0LapW4&prompt=login+consent&code_challenge=DJgFmW3gylwpv5CxOd6fYBUq9ag3Mv3xr0tCT7Tg7DU&code_challenge_method=S256
+[ZOOM DEBUG] Client ID: vfWc8HYwRtGyp7BwG8zCeQ
+[ZOOM DEBUG] Redirect URI: http://localhost:3001/api/integrations/zoom/callback
+[ZOOM DEBUG] State: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJ6Y3YiOiJQaWVsVjVxeVR6aFhvQzNGVnZjZ1NyTEFKQkNGc1Rzc0NYTTZOVnpfZ3R3IiwiaWF0IjoxNzU2NTY1OTA1LCJleHAiOjE3NTY1NjY1MDV9.ahvjf4I_Qammc4pVWqrNEik9jLOdiNTdR4n1I0LapW4
+[ZOOM DEBUG] Generated auth URL: https://zoom.us/oauth/authorize?response_type=code&client_id=vfWc8HYwRtGyp7BwG8zCeQ&redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Fapi%2Fintegrations%2Fzoom%2Fcallback&state=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJ6Y3YiOiJQaWVsVjVxeVR6aFhvQzNGVnZjZ1NyTEFKQkNGc1Rzc0NYTTZOVnpfZ3R3IiwiaWF0IjoxNzU2NTY1OTA1LCJleHAiOjE3NTY1NjY1MDV9.ahvjf4I_Qammc4pVWqrNEik9jLOdiNTdR4n1I0LapW4&prompt=login+consent&code_challenge=DJgFmW3gylwpv5CxOd6fYBUq9ag3Mv3xr0tCT7Tg7DU&code_challenge_method=S256
+[ZOOM DEBUG] Auth URL params: {
+  client_id: 'vfWc8HYwRtGyp7BwG8zCeQ',
+  redirect_uri: 'http://localhost:3001/api/integrations/zoom/callback',
+  has_code_challenge: true,
+  code_challenge_method: 'S256',
+  prompt: 'login consent'
 }
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Returning overrides: [
-  {
-    date: 2025-08-28T22:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: true
-  },
-  {
-    date: 2025-08-28T00:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: false
-  }
-]
-[OVERRIDE DEBUG] GET /overrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-07-31T22:00:00.000Z',
-  endDate: '2025-08-31T21:59:59.999Z'
+[ZOOM DEBUG] Callback received at: 2025-08-30T14:58:32.883Z
+[ZOOM DEBUG] Callback URL: /api/integrations/zoom/callback?code=Mm924FJhACslPOtUr-7TrKnOYhENfKYzg&state=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJ6Y3YiOiJQaWVsVjVxeVR6aFhvQzNGVnZjZ1NyTEFKQkNGc1Rzc0NYTTZOVnpfZ3R3IiwiaWF0IjoxNzU2NTY1OTA1LCJleHAiOjE3NTY1NjY1MDV9.ahvjf4I_Qammc4pVWqrNEik9jLOdiNTdR4n1I0LapW4
+[ZOOM DEBUG] Callback query params: {
+  code: 'Mm924FJhACslPOtUr-7TrKnOYhENfKYzg',
+  state: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJ6Y3YiOiJQaWVsVjVxeVR6aFhvQzNGVnZjZ1NyTEFKQkNGc1Rzc0NYTTZOVnpfZ3R3IiwiaWF0IjoxNzU2NTY1OTA1LCJleHAiOjE3NTY1NjY1MDV9.ahvjf4I_Qammc4pVWqrNEik9jLOdiNTdR4n1I0LapW4',
+  error: undefined
 }
-[OVERRIDE DEBUG] Parsed dates: { start: '2025-07-31T22:00:00.000Z', end: '2025-08-31T21:59:59.999Z' }
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-07-31T22:00:00.000Z',
-  endDate: '2025-08-31T21:59:59.999Z'
+[ZOOM DEBUG] Callback headers: {
+  host: 'localhost:3001',
+  connection: 'keep-alive',
+  'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"macOS"',
+  'upgrade-insecure-requests': '1',
+  'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'sec-fetch-site': 'cross-site',
+  'sec-fetch-mode': 'navigate',
+  'sec-fetch-user': '?1',
+  'sec-fetch-dest': 'document',
+  'accept-encoding': 'gzip, deflate, br, zstd',
+  'accept-language': 'en-US,en;q=0.9'
 }
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Returning overrides: [
-  {
-    date: 2025-08-28T22:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: true
-  },
-  {
-    date: 2025-08-28T00:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: false
-  }
-]
-[OVERRIDE DEBUG] POST /overrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  body: { date: '2025-08-30', available: false }
+[ZOOM DEBUG] Callback user agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+[ZOOM DEBUG] Callback referer: undefined
+[ZOOM DEBUG] Callback method: GET
+[ZOOM DEBUG] Callback IP: ::1
+[ZOOM DEBUG] handleZoomCallback called at: 2025-08-30T14:58:32.893Z
+[ZOOM DEBUG] Code: Mm924FJhACslPOtUr-7TrKnOYhENfKYzg
+[ZOOM DEBUG] State: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNGI4NGZlNi1jYjY3LTRjOGItYWE0Mi1hNzk3NTZjZTIxNzQiLCJ6Y3YiOiJQaWVsVjVxeVR6aFhvQzNGVnZjZ1NyTEFKQkNGc1Rzc0NYTTZOVnpfZ3R3IiwiaWF0IjoxNzU2NTY1OTA1LCJleHAiOjE3NTY1NjY1MDV9.ahvjf4I_Qammc4pVWqrNEik9jLOdiNTdR4n1I0LapW4
+[ZOOM DEBUG] Decoded userId: 24b84fe6-cb67-4c8b-aa42-a79756ce2174
+[ZOOM DEBUG] OAuth config: {
+  clientId: 'vfWc8HYwRtGyp7BwG8zCeQ',
+  redirectUri: 'http://localhost:3001/api/integrations/zoom/callback',
+  hasSecret: true
 }
-[OVERRIDE DEBUG] Parsed date: { inputDate: '2025-08-30', parsedDate: '2025-08-30T00:00:00.000Z' }
-[OVERRIDE DEBUG] Time conversion: {
-  start: undefined,
-  end: undefined,
-  startUtcMinute: undefined,
-  endUtcMinute: undefined,
-  date: '2025-08-30T00:00:00.000Z',
-  localTimezone: 'Europe/Madrid'
+[ZOOM DEBUG] Exchanging code for token...
+[ZOOM DEBUG] Token exchange response status: 200
+[ZOOM DEBUG] Token exchange response headers: {
+  'alt-svc': 'h3=":443"; ma=86400',
+  'cache-control': 'no-store',
+  'cf-cache-status': 'DYNAMIC',
+  'cf-ray': '9775259d2b241a84-MAD',
+  connection: 'keep-alive',
+  'content-encoding': 'gzip',
+  'content-security-policy': "upgrade-insecure-requests; default-src https://*.zoom.us https://zoom.us blob: 'self'; img-src https: about: blob: data: 'self'; style-src https: safari-extension: chrome-extension: 'unsafe-inline' data: 'self'; font-src https: safari-extension: chrome-extension: blob: data: 'self'; connect-src * about: blob: data: 'self'; media-src * rtmp: blob: data: 'self'; frame-src https: ms-appx-web: zoommtg: zoomus: wvjbscheme: zoomprc: data: blob: 'self'; object-src 'none'; base-uri 'none';",
+  'content-type': 'application/json;charset=UTF-8',
+  date: 'Sat, 30 Aug 2025 14:58:33 GMT',
+  nel: '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}',
+  pragma: 'no-cache',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'report-to': '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=Pa%2FzRle6%2BTgznNNDrYYia6PMORUyRz%2FwlhOWKfJH2MtvfwWCXc91megKrYn%2FP7RmyyLutCTHbZTl6MT83iTS2V6PST%2BRHI%2FeZ6slBmCLFbc%2FYCk99yG3uzA%3D"}],"group":"cf-nel","max_age":604800}',
+  server: 'cloudflare',
+  'set-cookie': '_zm_feature=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:10 GMT; Secure; HttpOnly, zm_aid=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:10 GMT; Domain=zoom.us; Path=/; Secure; HttpOnly, zm_haid=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:10 GMT; Domain=zoom.us; Path=/; Secure; HttpOnly, zm_tmaid=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:10 GMT; Domain=zoom.us; Path=/; Secure; HttpOnly, zm_htmaid=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:10 GMT; Domain=zoom.us; Path=/; Secure; HttpOnly, cred=F0ECD434B7A585F550AB46661F762C19; Path=/; Secure; HttpOnly, _zm_page_auth=us05_c_XdWB_3ErR-inPOuEWuf4LQ; Domain=zoom.us; Path=/; Secure; HttpOnly, _zm_ssid=us05_c_6fz0wY5iRGaUTBAm9-Gsmg; Domain=zoom.us; Path=/; Secure; HttpOnly, _zm_ctaid=CDIkcY_PRXua3Qup49EHpg.1756565913238.e16bc94291eea6c78eef6d9e071989b9; Max-Age=7200; Expires=Sat, 30 Aug 2025 16:58:33 GMT; Domain=zoom.us; Path=/; Secure; HttpOnly, _zm_chtaid=316; Max-Age=7200; Expires=Sat, 30 Aug 2025 16:58:33 GMT; Domain=zoom.us; Path=/; Secure; HttpOnly, _zm_mtk_guid=df1bb4ea28fc47c890972198a762e72f; Max-Age=63072000; Expires=Mon, 30 Aug 2027 14:58:33 GMT; Domain=zoom.us; Path=/; Secure, __cf_bm=ozlcjQm7j6VUiDn7ifxwi4tj3WfiNNjG_DPVWpNNgmk-1756565913-1.0.1.1-wVGjGpfjDCXhWDHq4.1iTE.NyZ2LsTbg0is8qa3rNMd7D_YBEuVad8b2Y0PPom8zAGu5__bg8ba20GIp5pYJtdpPYTV7YHmQPaVBJ5wkfo4; path=/; expires=Sat, 30-Aug-25 15:28:33 GMT; domain=.zoom.us; HttpOnly; Secure; SameSite=None',
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'transfer-encoding': 'chunked',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'SAMEORIGIN',
+  'x-xss-protection': '1; mode=block',
+  'x-zm-trackingid': 'v=2.0;clid=us05;rid=WEB_907228f3811c2b0643d4adf8ebc41f46',
+  'x-zm-zoneid': 'VA2'
 }
-[OVERRIDE DEBUG] upsertAvailabilityOverride called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  inputDate: '2025-08-30T00:00:00.000Z',
-  isAvailable: false,
-  startUtcMinute: undefined,
-  endUtcMinute: undefined
+[ZOOM DEBUG] Token response received: { access_token: 'present', refresh_token: 'present' }
+[ZOOM DEBUG] Fetching user info from Zoom...
+[ZOOM DEBUG] User info response status: 200
+[ZOOM DEBUG] User info received: {
+  id: 'GzWaU00UTBeykcOSaQczCw',
+  email: 'bautz.heine@gmail.com',
+  first_name: 'Heine',
+  last_name: 'Bautz'
 }
-[OVERRIDE DEBUG] Normalized date: {
-  originalDate: '2025-08-30T00:00:00.000Z',
-  normalizedDateUtc: '2025-08-30T00:00:00.000Z',
-  isBusy: true
-}
-[OVERRIDE DEBUG] Existing override found: none
-[OVERRIDE DEBUG] Creating new override
-[OVERRIDE DEBUG] Override created successfully
-[OVERRIDE DEBUG] Override saved successfully
-[OVERRIDE DEBUG] GET /overrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-07-31T22:00:00.000Z',
-  endDate: '2025-08-31T21:59:59.999Z'
-}
-[OVERRIDE DEBUG] Parsed dates: { start: '2025-07-31T22:00:00.000Z', end: '2025-08-31T21:59:59.999Z' }
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-07-31T22:00:00.000Z',
-  endDate: '2025-08-31T21:59:59.999Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Returning overrides: [
-  {
-    date: 2025-08-28T22:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: true
-  },
-  {
-    date: 2025-08-28T00:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: false
-  },
-  {
-    date: 2025-08-30T00:00:00.000Z,
-    startMinute: undefined,
-    endMinute: undefined,
-    isBusy: true
-  }
-]
+[ZOOM DEBUG] Storing tokens in database...
+[ZOOM DEBUG] Creating new Zoom connection
+[ZOOM DEBUG] Zoom connection stored successfully
+[ZOOM DEBUG] Callback handled successfully, redirecting to dashboard
+[ZOOM DEBUG] Redirecting to http://localhost:3000/dashboard?zoom_success=true
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -358,14 +232,6 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
@@ -374,11 +240,6 @@
   startDate: '2025-08-31T00:00:00.000Z',
   endDate: '2025-08-31T00:00:00.000Z'
 }
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-29T00:00:00.000Z',
-  endDate: '2025-08-29T23:59:59.000Z'
-}
 [OVERRIDE DEBUG] All user overrides: [
   {
     id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
@@ -393,41 +254,6 @@
     date: '2025-08-28T00:00:00.000Z',
     dateLocal: '8/28/2025',
     is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
     start_minute: null,
     end_minute: null
   }
@@ -454,12 +280,28 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
   },
   {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
     start_minute: null,
     end_minute: null
   }
@@ -486,14 +328,6 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
@@ -502,11 +336,6 @@
   startDate: '2025-08-31T00:00:00.000Z',
   endDate: '2025-08-31T00:00:00.000Z'
 }
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T23:59:59.000Z'
-}
 [OVERRIDE DEBUG] All user overrides: [
   {
     id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
@@ -521,174 +350,11 @@
     date: '2025-08-28T00:00:00.000Z',
     dateLocal: '8/28/2025',
     is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
     start_minute: null,
     end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-31T00:00:00.000Z',
-  endDate: '2025-08-31T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -710,99 +376,9 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -824,58 +400,9 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -897,172 +424,9 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-31T00:00:00.000Z',
-  endDate: '2025-08-31T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -1084,58 +448,9 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -1157,172 +472,9 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-31T00:00:00.000Z',
-  endDate: '2025-08-31T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -1344,172 +496,9 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-31T00:00:00.000Z',
-  endDate: '2025-08-31T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
@@ -1531,104 +520,14 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
   startDate: '2025-08-31T00:00:00.000Z',
   endDate: '2025-08-31T00:00:00.000Z'
 }
-[OVERRIDE DEBUG] getAvailabilityOverrides called: {
-  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
-}
 [OVERRIDE DEBUG] All user overrides: [
   {
     id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
@@ -1643,59 +542,15 @@
     date: '2025-08-28T00:00:00.000Z',
     dateLocal: '8/28/2025',
     is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
     start_minute: null,
     end_minute: null
   }
 ]
 [OVERRIDE DEBUG] Filtered overrides: []
-[OVERRIDE DEBUG] All user overrides: [
-  {
-    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
-    date: '2025-08-28T22:00:00.000Z',
-    dateLocal: '8/29/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
-    date: '2025-08-28T00:00:00.000Z',
-    dateLocal: '8/28/2025',
-    is_busy: false,
-    start_minute: null,
-    end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
 }
 [OVERRIDE DEBUG] All user overrides: [
   {
@@ -1713,30 +568,13 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
+[OVERRIDE DEBUG] Filtered overrides: []
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
 }
 [OVERRIDE DEBUG] All user overrides: [
   {
@@ -1754,30 +592,13 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
+[OVERRIDE DEBUG] Filtered overrides: []
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
 }
 [OVERRIDE DEBUG] All user overrides: [
   {
@@ -1795,30 +616,13 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
+[OVERRIDE DEBUG] Filtered overrides: []
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
 }
 [OVERRIDE DEBUG] All user overrides: [
   {
@@ -1836,30 +640,406 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[CALENDAR] Creating calendar events for booking: dda45a62-db4c-428c-8b20-4b07f3bcda7a
+[CALENDAR] Found connected calendars: [ 'google', 'zoom' ]
+[CALENDAR DEBUG] Creating event with booking times: {
+  starts_at: 2025-08-31T07:00:00.000Z,
+  ends_at: 2025-08-31T07:30:00.000Z,
+  starts_at_iso: '2025-08-31T07:00:00.000Z',
+  ends_at_iso: '2025-08-31T07:30:00.000Z',
+  starts_at_local: '8/31/2025, 9:00:00 AM',
+  ends_at_local: '8/31/2025, 9:30:00 AM'
+}
+[CALENDAR DEBUG] Creating Google Calendar event with data (pre-tz): {
+  summary: 'Test with Heine Overn Bautz',
+  attendees: [
+    { email: 'heine@dragnordre.no', displayName: 'Heine Overn Bautz' }
+  ],
+  start: { dateTime: '2025-08-31T07:00:00.000Z' },
+  end: { dateTime: '2025-08-31T07:30:00.000Z' }
+}
+[CALENDAR DEBUG] Creating event with booking times: {
+  starts_at: 2025-08-31T07:00:00.000Z,
+  ends_at: 2025-08-31T07:30:00.000Z,
+  starts_at_iso: '2025-08-31T07:00:00.000Z',
+  ends_at_iso: '2025-08-31T07:30:00.000Z',
+  starts_at_local: '8/31/2025, 9:00:00 AM',
+  ends_at_local: '8/31/2025, 9:30:00 AM'
+}
+[CALENDAR DEBUG] Failed to fetch calendar timezone: 403 {
+  "error": {
+    "code": 403,
+    "message": "Request had insufficient authentication scopes.",
+    "errors": [
+      {
+        "message": "Insufficient Permission",
+        "domain": "global",
+        "reason": "insufficientPermissions"
+      }
+    ],
+    "status": "PERMISSION_DENIED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+        "domain": "googleapis.com",
+        "metadata": {
+          "service": "calendar-json.googleapis.com",
+          "method": "calendar.v3.Settings.Get"
+        }
+      }
+    ]
+  }
+}
+
+[CALENDAR DEBUG] Timezone selection: {
+  calendarTimeZone: null,
+  clientTimezone: 'Europe/Madrid',
+  chosenTimeZone: 'Europe/Madrid'
+}
+[CALENDAR DEBUG] Final event data being sent to Google (post-tz): {
+  "summary": "Test with Heine Overn Bautz",
+  "description": "Meeting with Heine Overn Bautz (heine@dragnordre.no)\n\nEvent Type: Test\n\nTest Desc",
+  "start": {
+    "dateTime": "2025-08-31T09:00:00",
+    "timeZone": "Europe/Madrid"
   },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
+  "end": {
+    "dateTime": "2025-08-31T09:30:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "attendees": [
+    {
+      "email": "heine@dragnordre.no",
+      "displayName": "Heine Overn Bautz"
+    }
+  ]
+}
+[CALENDAR DEBUG] Sending Google Calendar event with Meet: {
+  "summary": "Test with Heine Overn Bautz",
+  "description": "Meeting with Heine Overn Bautz (heine@dragnordre.no)\n\nEvent Type: Test\n\nTest Desc",
+  "start": {
+    "dateTime": "2025-08-31T09:00:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "end": {
+    "dateTime": "2025-08-31T09:30:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "attendees": [
+    {
+      "email": "heine@dragnordre.no",
+      "displayName": "Heine Overn Bautz"
+    }
+  ],
+  "conferenceData": {
+    "createRequest": {
+      "requestId": "meet-1756565926806",
+      "conferenceSolutionKey": {
+        "type": "hangoutsMeet"
+      }
+    }
+  },
+  "guestsCanModify": false,
+  "guestsCanInviteOthers": false,
+  "guestsCanSeeOtherGuests": true,
+  "conferenceDataVersion": 1
+}
+[CALENDAR] Zoom meeting created: 81903130917
+[CALENDAR] Zoom meeting created with link: https://us05web.zoom.us/j/81903130917?pwd=UCsXmaDc45RJW8scRmHTO402spLo8x.1
+[CALENDAR DEBUG] Creating Google Calendar event with data (pre-tz): {
+  summary: 'Test with Heine Overn Bautz',
+  attendees: [
+    { email: 'heine@dragnordre.no', displayName: 'Heine Overn Bautz' }
+  ],
+  start: { dateTime: '2025-08-31T07:00:00.000Z' },
+  end: { dateTime: '2025-08-31T07:30:00.000Z' }
+}
+[CALENDAR DEBUG] Failed to fetch calendar timezone: 403 {
+  "error": {
+    "code": 403,
+    "message": "Request had insufficient authentication scopes.",
+    "errors": [
+      {
+        "message": "Insufficient Permission",
+        "domain": "global",
+        "reason": "insufficientPermissions"
+      }
+    ],
+    "status": "PERMISSION_DENIED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+        "domain": "googleapis.com",
+        "metadata": {
+          "service": "calendar-json.googleapis.com",
+          "method": "calendar.v3.Settings.Get"
+        }
+      }
+    ]
   }
-]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
+}
+
+[CALENDAR DEBUG] Timezone selection: {
+  calendarTimeZone: null,
+  clientTimezone: undefined,
+  chosenTimeZone: null
+}
+[CALENDAR DEBUG] Final event data being sent to Google (post-tz): {
+  "summary": "Test with Heine Overn Bautz",
+  "description": "Meeting with Heine Overn Bautz (heine@dragnordre.no)\n\nEvent Type: Test\n\nTest Desc\n\nZoom Meeting Link: https://us05web.zoom.us/j/81903130917?pwd=UCsXmaDc45RJW8scRmHTO402spLo8x.1",
+  "start": {
+    "dateTime": "2025-08-31T07:00:00.000Z"
+  },
+  "end": {
+    "dateTime": "2025-08-31T07:30:00.000Z"
+  },
+  "attendees": [
+    {
+      "email": "heine@dragnordre.no",
+      "displayName": "Heine Overn Bautz"
+    }
+  ]
+}
+[CALENDAR DEBUG] Sending Google Calendar event with Meet: {
+  "summary": "Test with Heine Overn Bautz",
+  "description": "Meeting with Heine Overn Bautz (heine@dragnordre.no)\n\nEvent Type: Test\n\nTest Desc\n\nZoom Meeting Link: https://us05web.zoom.us/j/81903130917?pwd=UCsXmaDc45RJW8scRmHTO402spLo8x.1",
+  "start": {
+    "dateTime": "2025-08-31T07:00:00.000Z"
+  },
+  "end": {
+    "dateTime": "2025-08-31T07:30:00.000Z"
+  },
+  "attendees": [
+    {
+      "email": "heine@dragnordre.no",
+      "displayName": "Heine Overn Bautz"
+    }
+  ],
+  "conferenceData": {
+    "createRequest": {
+      "requestId": "meet-1756565927523",
+      "conferenceSolutionKey": {
+        "type": "hangoutsMeet"
+      }
+    }
+  },
+  "guestsCanModify": false,
+  "guestsCanInviteOthers": false,
+  "guestsCanSeeOtherGuests": true,
+  "conferenceDataVersion": 1
+}
+[CALENDAR] Google Calendar event created: c883i8k1pj2o7d5icop2m7hvgc
+[CALENDAR DEBUG] Full Google Calendar response: {
+  "kind": "calendar#event",
+  "etag": "\"3513131855381982\"",
+  "id": "c883i8k1pj2o7d5icop2m7hvgc",
+  "status": "confirmed",
+  "htmlLink": "https://www.google.com/calendar/event?eid=Yzg4M2k4azFwajJvN2Q1aWNvcDJtN2h2Z2MgYmF1dHouaGVpbmVAbQ",
+  "created": "2025-08-30T14:58:47.000Z",
+  "updated": "2025-08-30T14:58:47.690Z",
+  "summary": "Test with Heine Overn Bautz",
+  "description": "Meeting with Heine Overn Bautz (heine@dragnordre.no)\n\nEvent Type: Test\n\nTest Desc",
+  "creator": {
+    "email": "bautz.heine@gmail.com",
+    "self": true
+  },
+  "organizer": {
+    "email": "bautz.heine@gmail.com",
+    "self": true
+  },
+  "start": {
+    "dateTime": "2025-08-31T09:00:00+02:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "end": {
+    "dateTime": "2025-08-31T09:30:00+02:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "iCalUID": "c883i8k1pj2o7d5icop2m7hvgc@google.com",
+  "sequence": 0,
+  "attendees": [
+    {
+      "email": "heine@dragnordre.no",
+      "displayName": "Heine Overn Bautz",
+      "responseStatus": "needsAction"
+    }
+  ],
+  "hangoutLink": "https://meet.google.com/tte-xgne-nht",
+  "conferenceData": {
+    "createRequest": {
+      "requestId": "meet-1756565926806",
+      "conferenceSolutionKey": {
+        "type": "hangoutsMeet"
+      },
+      "status": {
+        "statusCode": "success"
+      }
+    },
+    "entryPoints": [
+      {
+        "entryPointType": "video",
+        "uri": "https://meet.google.com/tte-xgne-nht",
+        "label": "meet.google.com/tte-xgne-nht"
+      }
+    ],
+    "conferenceSolution": {
+      "key": {
+        "type": "hangoutsMeet"
+      },
+      "name": "Google Meet",
+      "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+    },
+    "conferenceId": "tte-xgne-nht"
+  },
+  "guestsCanInviteOthers": false,
+  "reminders": {
+    "useDefault": true
+  },
+  "eventType": "default"
+}
+[CALENDAR DEBUG] Conference data found: {
+  "createRequest": {
+    "requestId": "meet-1756565926806",
+    "conferenceSolutionKey": {
+      "type": "hangoutsMeet"
+    },
+    "status": {
+      "statusCode": "success"
+    }
+  },
+  "entryPoints": [
+    {
+      "entryPointType": "video",
+      "uri": "https://meet.google.com/tte-xgne-nht",
+      "label": "meet.google.com/tte-xgne-nht"
+    }
+  ],
+  "conferenceSolution": {
+    "key": {
+      "type": "hangoutsMeet"
+    },
+    "name": "Google Meet",
+    "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+  },
+  "conferenceId": "tte-xgne-nht"
+}
+[CALENDAR DEBUG] Entry points found: 1
+[CALENDAR] Google Meet link found: https://meet.google.com/tte-xgne-nht
+[CALENDAR] Google Meet created with link: https://meet.google.com/tte-xgne-nht
+[CALENDAR] Google Calendar event created: 73onvsof3b53tmmble6jil7pd0
+[CALENDAR DEBUG] Full Google Calendar response: {
+  "kind": "calendar#event",
+  "etag": "\"3513131856868350\"",
+  "id": "73onvsof3b53tmmble6jil7pd0",
+  "status": "confirmed",
+  "htmlLink": "https://www.google.com/calendar/event?eid=NzNvbnZzb2YzYjUzdG1tYmxlNmppbDdwZDAgYmF1dHouaGVpbmVAbQ",
+  "created": "2025-08-30T14:58:47.000Z",
+  "updated": "2025-08-30T14:58:48.434Z",
+  "summary": "Test with Heine Overn Bautz",
+  "description": "Meeting with Heine Overn Bautz (heine@dragnordre.no)\n\nEvent Type: Test\n\nTest Desc\n\nZoom Meeting Link: https://us05web.zoom.us/j/81903130917?pwd=UCsXmaDc45RJW8scRmHTO402spLo8x.1",
+  "creator": {
+    "email": "bautz.heine@gmail.com",
+    "self": true
+  },
+  "organizer": {
+    "email": "bautz.heine@gmail.com",
+    "self": true
+  },
+  "start": {
+    "dateTime": "2025-08-31T09:00:00+02:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "end": {
+    "dateTime": "2025-08-31T09:30:00+02:00",
+    "timeZone": "Europe/Madrid"
+  },
+  "iCalUID": "73onvsof3b53tmmble6jil7pd0@google.com",
+  "sequence": 0,
+  "attendees": [
+    {
+      "email": "heine@dragnordre.no",
+      "displayName": "Heine Overn Bautz",
+      "responseStatus": "needsAction"
+    }
+  ],
+  "hangoutLink": "https://meet.google.com/hyr-mptn-adh",
+  "conferenceData": {
+    "createRequest": {
+      "requestId": "meet-1756565927523",
+      "conferenceSolutionKey": {
+        "type": "hangoutsMeet"
+      },
+      "status": {
+        "statusCode": "success"
+      }
+    },
+    "entryPoints": [
+      {
+        "entryPointType": "video",
+        "uri": "https://meet.google.com/hyr-mptn-adh",
+        "label": "meet.google.com/hyr-mptn-adh"
+      }
+    ],
+    "conferenceSolution": {
+      "key": {
+        "type": "hangoutsMeet"
+      },
+      "name": "Google Meet",
+      "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+    },
+    "conferenceId": "hyr-mptn-adh"
+  },
+  "guestsCanInviteOthers": false,
+  "reminders": {
+    "useDefault": true
+  },
+  "eventType": "default"
+}
+[CALENDAR DEBUG] Conference data found: {
+  "createRequest": {
+    "requestId": "meet-1756565927523",
+    "conferenceSolutionKey": {
+      "type": "hangoutsMeet"
+    },
+    "status": {
+      "statusCode": "success"
+    }
+  },
+  "entryPoints": [
+    {
+      "entryPointType": "video",
+      "uri": "https://meet.google.com/hyr-mptn-adh",
+      "label": "meet.google.com/hyr-mptn-adh"
+    }
+  ],
+  "conferenceSolution": {
+    "key": {
+      "type": "hangoutsMeet"
+    },
+    "name": "Google Meet",
+    "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+  },
+  "conferenceId": "hyr-mptn-adh"
+}
+[CALENDAR DEBUG] Entry points found: 1
+[CALENDAR] Google Meet link found: https://meet.google.com/hyr-mptn-adh
+[CALENDAR] Successfully created event in google
+[CALENDAR] Successfully created event in zoom
+[CALENDAR] Captured Zoom link: https://us05web.zoom.us/j/81903130917?pwd=UCsXmaDc45RJW8scRmHTO402spLo8x.1
+[CALENDAR] Captured Google Meet link: https://meet.google.com/tte-xgne-nht
+[CALENDAR] Updated booking with meeting links: {
+  zoom_link: 'https://us05web.zoom.us/j/81903130917?pwd=UCsXmaDc45RJW8scRmHTO402spLo8x.1',
+  google_meet_link: 'https://meet.google.com/tte-xgne-nht'
+}
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T23:59:59.000Z'
 }
 [OVERRIDE DEBUG] All user overrides: [
   {
@@ -1877,30 +1057,13 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
-  },
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
   }
 ]
-[OVERRIDE DEBUG] Filtered overrides: [
-  {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
-    start_minute: null,
-    end_minute: null
-  }
-]
+[OVERRIDE DEBUG] Filtered overrides: []
 [OVERRIDE DEBUG] getAvailabilityOverrides called: {
   userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
-  startDate: '2025-08-30T00:00:00.000Z',
-  endDate: '2025-08-30T00:00:00.000Z'
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
 }
 [OVERRIDE DEBUG] All user overrides: [
   {
@@ -1918,23 +1081,774 @@
     is_busy: false,
     start_minute: null,
     end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
   },
   {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
-    is_busy: true,
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
     start_minute: null,
     end_minute: null
   }
 ]
-[OVERRIDE DEBUG] Filtered overrides: [
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
   {
-    id: '60b1316d-1dd1-4b8d-9538-5016d74475e7',
-    date: '2025-08-30T00:00:00.000Z',
-    dateLocal: '8/30/2025',
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
     is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
     start_minute: null,
     end_minute: null
   }
 ]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T23:59:59.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []
+[OVERRIDE DEBUG] getAvailabilityOverrides called: {
+  userId: '24b84fe6-cb67-4c8b-aa42-a79756ce2174',
+  startDate: '2025-08-31T00:00:00.000Z',
+  endDate: '2025-08-31T00:00:00.000Z'
+}
+[OVERRIDE DEBUG] All user overrides: [
+  {
+    id: '13c73a67-ecaf-4252-95d5-3714c54a12ce',
+    date: '2025-08-28T22:00:00.000Z',
+    dateLocal: '8/29/2025',
+    is_busy: true,
+    start_minute: null,
+    end_minute: null
+  },
+  {
+    id: '18a36d2a-c0c4-4a6d-9bc1-60bbb5f80b4a',
+    date: '2025-08-28T00:00:00.000Z',
+    dateLocal: '8/28/2025',
+    is_busy: false,
+    start_minute: null,
+    end_minute: null
+  }
+]
+[OVERRIDE DEBUG] Filtered overrides: []

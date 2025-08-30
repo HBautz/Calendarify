@@ -666,7 +666,8 @@
             let currentDate = new Date(); // Use current date instead of hardcoded date
             // Ensure we're working with UTC dates consistently
             let selectedDate = null;
-            let selectedTime = null;
+            let selectedTime = null; // display label
+            let selectedTimeISO = null; // exact ISO from server
             let timeSlots = {};
 
             // --- 12h/24h Toggle Functionality ---
@@ -828,8 +829,8 @@
                 const slots = [];
                 
                 while (currentMinutes <= effectiveEnd) {
-                    const slot = new Date(date);
-                    slot.setHours(Math.floor(currentMinutes / 60), currentMinutes % 60, 0, 0);
+                    // Create UTC time slot to match backend behavior
+                    const slot = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(currentMinutes / 60), currentMinutes % 60, 0, 0));
 
                     // Apply advance notice (treat 0 as "no past times today")
                     const earliestAllowed = new Date(Date.now() + (advanceNotice || 0) * 60000);
@@ -844,8 +845,8 @@
                         minute: '2-digit',
                         hour12: getClockFormat() === '12h'
                     });
-                    slots.push(timeStr);
-                                        currentMinutes += step;
+                    slots.push({ iso: slot.toISOString(), label: timeStr });
+                    currentMinutes += step;
                 }
                 
                                 return slots;
@@ -872,11 +873,12 @@
                 const formattedSlots = filtered.map(iso => {
                     const slotDate = new Date(iso);
                     const is12h = getClockFormat() === '12h';
-                    return slotDate.toLocaleTimeString(undefined, {
+                    const label = slotDate.toLocaleTimeString(undefined, {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: is12h
                     });
+                    return { iso, label };
                 });
                 
                         console.log(`[SLOTS DEBUG] Formatted slots:`, formattedSlots);
@@ -1074,11 +1076,12 @@
                         timeSlots.forEach(time => {
                             const button = document.createElement('button');
                             button.className = 'time-slot w-full text-center py-3 rounded-lg transition-all duration-150 font-medium';
-                            button.textContent = time;
+                            button.textContent = time.label;
                             button.addEventListener('click', () => {
                                 container.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
                                 button.classList.add('selected');
-                                selectedTime = time;
+                                selectedTime = time.label;
+                                selectedTimeISO = time.iso;
                                 confirmButton.style.opacity = '1';
                                 confirmButton.style.pointerEvents = 'auto';
                             });
@@ -1605,30 +1608,27 @@
                         return;
                     }
                     
-                    // Calculate start and end times
-                    // Parse the selected time (format: "10:00 AM" or "14:00")
-                    let startTime = new Date(selectedDate);
-                    let timeStr = selectedTime;
-                    
-                    // Convert 12-hour format to 24-hour if needed
-                    if (timeStr.includes('AM') || timeStr.includes('PM')) {
-                        const [time, period] = timeStr.split(' ');
-                        let [hours, minutes] = time.split(':').map(Number);
-                        
-                        if (period === 'PM' && hours !== 12) {
-                            hours += 12;
-                        } else if (period === 'AM' && hours === 12) {
-                            hours = 0;
-                        }
-                        
-                        startTime.setHours(hours, minutes, 0, 0);
+                    // Use the exact ISO from the selected slot when available
+                    let startTime;
+                    if (selectedTimeISO) {
+                        startTime = new Date(selectedTimeISO);
                     } else {
-                        const [hours, minutes] = timeStr.split(':').map(Number);
-                        startTime.setHours(hours, minutes, 0, 0);
+                        // Fallback: compute from displayed label (rare)
+                        let timeStr = selectedTime;
+                        let hours, minutes;
+                        if (timeStr.includes('AM') || timeStr.includes('PM')) {
+                            const [time, period] = timeStr.split(' ');
+                            [hours, minutes] = time.split(':').map(Number);
+                            if (period === 'PM' && hours !== 12) hours += 12;
+                            else if (period === 'AM' && hours === 12) hours = 0;
+                        } else {
+                            [hours, minutes] = timeStr.split(':').map(Number);
+                        }
+                        startTime = new Date(Date.UTC(
+                            selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hours, minutes, 0, 0
+                        ));
                     }
-                    
-                    const endTime = new Date(startTime);
-                    endTime.setMinutes(endTime.getMinutes() + eventDuration);
+                    const endTime = new Date(startTime.getTime() + (eventDuration * 60000));
                     
                     const bookingPayload = {
                         event_type_slug: slug,
@@ -1638,7 +1638,9 @@
                         company: bookingData.company || null,
                         starts_at: startTime.toISOString(),
                         ends_at: endTime.toISOString(),
-                        questions: bookingData.questions
+                        questions: bookingData.questions,
+                        client_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        client_offset_minutes: new Date().getTimezoneOffset()
                     };
                     
                     console.log('API URL:', `${API_URL}/bookings`);

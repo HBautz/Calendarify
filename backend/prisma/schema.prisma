@@ -75,6 +75,7 @@ model ExternalCalendar {
   refresh_token String?
   password      String?
   selected_calendar String?
+  selected_calendars Json? // Array of selected calendar URLs for Apple Calendar
 }
 
 model Booking {
@@ -87,6 +88,8 @@ model Booking {
   email        String
   starts_at    DateTime
   ends_at      DateTime
+  zoom_link    String?  // Store Zoom meeting link when created
+  google_meet_link String?  // Store Google Meet link when created
   notes        BookingNote[]
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt

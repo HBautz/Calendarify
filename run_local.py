@@ -132,11 +132,11 @@ class ProductionServer:
         
         if missing_critical:
             logger.error(f"❌ Critical dependencies missing: {', '.join(missing_critical)}")
-            return False
-        
+        return False
+
         if missing_optional:
             logger.warning(f"⚠️  Optional dependencies missing: {', '.join(missing_optional)}")
-        
+
         logger.info("✅ All critical dependencies available")
         return True
     
@@ -185,9 +185,9 @@ class ProductionServer:
             try:
                 self.run_command(["pkill", "-f", f"node.*:{port}"], check=False)
                 time.sleep(1)
-            except Exception:
-                pass
-            
+        except Exception:
+            pass
+
             # Strategy 3: Use netstat (alternative)
             try:
                 result = self.run_command(["netstat", "-tulpn"], check=False)
@@ -231,7 +231,7 @@ class ProductionServer:
             pass
         
         return False
-    
+
     def wait_for_port(self, port: int, timeout: int = 30) -> bool:
         """Wait for a port to become available."""
         start_time = time.time()
@@ -328,8 +328,8 @@ class ProductionServer:
                     else:
                         logger.info(f"⏳ Waiting for backend to start... ({elapsed}s elapsed)")
                 
-                time.sleep(2)
-            
+    time.sleep(2)
+
             logger.error(f"❌ Backend failed to start within {self.startup_timeout} seconds")
             return False
             

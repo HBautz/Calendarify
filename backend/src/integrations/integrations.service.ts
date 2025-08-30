@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import { PrismaService } from '../prisma.service';
 import { sign, verify } from 'jsonwebtoken';
 import { appendFileSync } from 'fs';
+import * as crypto from 'crypto';
 import * as path from 'path';
 import 'dotenv/config';
 import fetch from 'node-fetch'; // Use node-fetch v2 for Apple CalDAV requests
@@ -75,6 +76,29 @@ export class IntegrationsService {
       process.env.GOOGLE_CLIENT_SECRET || 'GOOGLE_CLIENT_SECRET',
       process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3001/api/integrations/google/callback',
     );
+  }
+
+  private createStatePayload(payload: any) {
+    return sign(payload, process.env.JWT_SECRET || 'changeme', {
+      expiresIn: '10m',
+    });
+  }
+
+  private decodeStatePayload<T = any>(state: string): T {
+    try {
+      return verify(state, process.env.JWT_SECRET || 'changeme') as T;
+    } catch {
+      throw new BadRequestException('Invalid OAuth state');
+    }
+  }
+
+  private generateCodeVerifier(): string {
+    return crypto.randomBytes(32).toString('base64url');
+  }
+
+  private computeCodeChallenge(verifier: string): string {
+    const hash = crypto.createHash('sha256').update(verifier).digest('base64');
+    return hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
   private createState(userId: string) {
@@ -222,7 +246,9 @@ export class IntegrationsService {
     console.log('[ZOOM DEBUG] State:', state);
     this.zoomLog('handleZoomCallback start', { code, state });
     
-    const userId = this.decodeState(state);
+    const decoded: any = this.decodeStatePayload(state);
+    const userId = decoded?.sub as string;
+    const codeVerifier = decoded?.zcv as string | undefined;
     console.log('[ZOOM DEBUG] Decoded userId:', userId);
     
     const clientId = this.env('ZOOM_CLIENT_ID');
@@ -245,6 +271,7 @@ export class IntegrationsService {
         grant_type: 'authorization_code',
         code,
         redirect_uri: redirectUri,
+        ...(codeVerifier ? { code_verifier: codeVerifier } : {}),
       }),
     });
     console.log('[ZOOM DEBUG] Token exchange response status:', tokenRes.status);
@@ -331,17 +358,33 @@ export class IntegrationsService {
   }
 
   async handleOutlookCallback(code: string, state: string) {
-    console.log('[DEBUG] handleOutlookCallback code:', code);
-    this.outlookLog('handleOutlookCallback start', { code, state });
+    console.log('[OUTLOOK DEBUG] handleOutlookCallback start');
+    console.log('[OUTLOOK DEBUG] Code length:', code?.length);
+    console.log('[OUTLOOK DEBUG] State:', state);
+    
+    this.outlookLog('handleOutlookCallback start', { code: code?.substring(0, 10) + '...', state });
+    
     const userId = this.decodeState(state);
     const clientId = OUTLOOK_CLIENT_ID;
     const clientSecret = process.env.OUTLOOK_CLIENT_SECRET;
     const redirectUri = OUTLOOK_REDIRECT_URI;
     const tenant = OUTLOOK_TENANT;
-    console.log('[DEBUG] handleOutlookCallback redirect_uri:', redirectUri);
+    
+    console.log('[OUTLOOK DEBUG] Environment check:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      hasRedirectUri: !!redirectUri,
+      tenant,
+      redirectUri
+    });
+    
     if (!clientId || !clientSecret || !redirectUri) {
-      this.outlookLog('missing env vars', { clientId, clientSecret, redirectUri });
-      throw new Error('Missing Outlook OAuth environment variables');
+      this.outlookLog('missing env vars', { 
+        hasClientId: !!clientId, 
+        hasClientSecret: !!clientSecret, 
+        hasRedirectUri: !!redirectUri 
+      });
+      throw new Error('Missing Outlook OAuth environment variables. Please check OUTLOOK_CLIENT_ID, OUTLOOK_CLIENT_SECRET, and OUTLOOK_REDIRECT_URI.');
     }
     const tokenRes = await fetch(
       `${tenant}/oauth2/v2.0/token`,
@@ -358,8 +401,10 @@ export class IntegrationsService {
       },
     );
     if (!tokenRes.ok) {
-      this.outlookLog('token exchange failed', await tokenRes.text());
-      throw new Error('Failed to obtain Outlook tokens');
+      const errorText = await tokenRes.text();
+      console.error('[OUTLOOK DEBUG] Token exchange failed:', tokenRes.status, errorText);
+      this.outlookLog('token exchange failed', { status: tokenRes.status, error: errorText });
+      throw new Error(`Failed to obtain Outlook tokens: ${tokenRes.status} - ${errorText}`);
     }
     const tokens = await tokenRes.json();
     this.outlookLog('token response', tokens);
@@ -535,6 +580,157 @@ export class IntegrationsService {
     });
   }
 
+  async getAppleCalendars(userId: string): Promise<{href: string, name: string}[]> {
+    console.log('[DEBUG] getAppleCalendars called for user:', userId);
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    
+    if (!record || !record.password) {
+      console.log('[DEBUG] No Apple Calendar record found for user:', userId);
+      throw new BadRequestException('Apple Calendar not connected');
+    }
+
+    console.log('[DEBUG] Found Apple Calendar record for email:', record.external_id);
+
+    try {
+      const auth = 'Basic ' + Buffer.from(`${record.external_id}:${record.password}`).toString('base64');
+      const headers = {
+        'Depth': '0',
+        'Authorization': auth,
+        'Content-Type': 'application/xml',
+        'User-Agent': 'calendarify-caldav',
+        'Accept': 'application/xml,text/xml;q=0.9,*/*;q=0.8',
+      };
+
+      console.log('[DEBUG] Step 1: Getting principal URL...');
+      // Step 1: Get principal URL
+      const principalUrl = await this.getApplePrincipalUrl(headers);
+      if (!principalUrl) {
+        console.log('[DEBUG] Failed to get principal URL');
+        throw new Error('Could not discover Apple Calendar principal URL');
+      }
+      console.log('[DEBUG] Got principal URL:', principalUrl);
+
+      console.log('[DEBUG] Step 2: Getting calendar home URL...');
+      // Step 2: Get calendar home URL
+      const calendarHomeUrl = await this.getAppleCalendarHomeUrl(principalUrl, headers);
+      if (!calendarHomeUrl) {
+        console.log('[DEBUG] Failed to get calendar home URL');
+        throw new Error('Could not discover Apple Calendar home URL');
+      }
+      console.log('[DEBUG] Got calendar home URL:', calendarHomeUrl);
+
+      console.log('[DEBUG] Step 3: Listing calendars...');
+      // Step 3: List available calendars
+      const calendars = await this.listAppleCalendars(calendarHomeUrl, headers);
+      console.log('[DEBUG] Found calendars:', calendars);
+      return calendars;
+    } catch (error) {
+      console.error('[INTEGRATIONS] Error fetching Apple calendars:', error);
+      throw new BadRequestException('Failed to fetch Apple calendars');
+    }
+  }
+
+  private async getApplePrincipalUrl(headers: any): Promise<string | null> {
+    console.log('[DEBUG] getApplePrincipalUrl: Making PROPFIND request to caldav.icloud.com');
+    const bodyRoot = `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><current-user-principal/></prop>\n</propfind>`;
+    const res = await fetch('https://caldav.icloud.com/', {
+      method: 'PROPFIND',
+      headers,
+      body: bodyRoot,
+    });
+    console.log('[DEBUG] getApplePrincipalUrl: Response status:', res.status);
+    if (![207].includes(res.status)) {
+      console.log('[DEBUG] getApplePrincipalUrl: Unexpected status code, returning null');
+      return null;
+    }
+    const text = await res.text();
+    console.log('[DEBUG] getApplePrincipalUrl: Response body (first 200 chars):', text.substring(0, 200));
+    const m = text.match(/<[^>]*current-user-principal[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+    if (!m) {
+      console.log('[DEBUG] getApplePrincipalUrl: No principal URL found in response');
+      return null;
+    }
+    let principalUrl = m[1].trim();
+    if (principalUrl.startsWith('/')) principalUrl = 'https://caldav.icloud.com' + principalUrl;
+    console.log('[DEBUG] getApplePrincipalUrl: Found principal URL:', principalUrl);
+    return principalUrl;
+  }
+
+  private async getAppleCalendarHomeUrl(principalUrl: string, headers: any): Promise<string | null> {
+    const bodyPrincipal = `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">\n  <prop><cal:calendar-home-set/></prop>\n</propfind>`;
+    const res = await fetch(principalUrl, {
+      method: 'PROPFIND',
+      headers,
+      body: bodyPrincipal,
+    });
+    if (![207].includes(res.status)) return null;
+    const text = await res.text();
+    const m = text.match(/<[^>]*calendar-home-set[^>]*>\s*<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i);
+    if (!m) return null;
+    let homeUrl = m[1].trim();
+    if (homeUrl.startsWith('/')) homeUrl = 'https://caldav.icloud.com' + homeUrl;
+    return homeUrl;
+  }
+
+  private async listAppleCalendars(calendarHomeUrl: string, headers: any): Promise<{href: string, name: string}[]> {
+    console.log('[DEBUG] listAppleCalendars: Making PROPFIND request to:', calendarHomeUrl);
+    const bodyCals = `<?xml version="1.0" encoding="UTF-8"?>\n<propfind xmlns="DAV:">\n  <prop><displayname/></prop>\n</propfind>`;
+    const res = await fetch(calendarHomeUrl, {
+      method: 'PROPFIND',
+      headers: {...headers, Depth: '1'},
+      body: bodyCals,
+    });
+    console.log('[DEBUG] listAppleCalendars: Response status:', res.status);
+    if (res.status !== 207) {
+      console.log('[DEBUG] listAppleCalendars: Unexpected status code, returning empty array');
+      return [];
+    }
+    const text = await res.text();
+    console.log('[DEBUG] listAppleCalendars: Response body (first 500 chars):', text.substring(0, 500));
+    
+    // Parse calendar list
+    const calendars: {href: string, name: string}[] = [];
+    const regex = /<response[^>]*>.*?<href>([^<]+)<\/href>.*?<displayname[^>]*>([^<]*)<\/displayname>/gs;
+    let m;
+    while ((m = regex.exec(text))) {
+      console.log('[DEBUG] listAppleCalendars: Found potential calendar:', m[1], m[2]);
+      console.log('[DEBUG] listAppleCalendars: href ends with /calendars/:', m[1].endsWith("/calendars/"));
+      console.log('[DEBUG] listAppleCalendars: name is empty:', m[2].trim() === "");
+      // Filter out system folders and containers
+      const skip = ["inbox", "outbox", "notification", ""].some(s => 
+        m[2].trim().toLowerCase() === s
+      ) || (m[1].endsWith("/calendars/") && m[2].trim() === ""); // Only skip the root calendars folder if it has no name
+      if (!skip) {
+        calendars.push({ href: m[1], name: m[2].trim() });
+        console.log('[DEBUG] listAppleCalendars: Added calendar:', m[2].trim());
+      } else {
+        console.log('[DEBUG] listAppleCalendars: Skipped calendar:', m[2].trim());
+      }
+    }
+    
+    console.log('[DEBUG] listAppleCalendars: Final calendar list:', calendars);
+    return calendars;
+  }
+
+  async updateAppleCalendarSelection(userId: string, selectedCalendars: string[]) {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'apple' },
+    });
+    
+    if (!record) {
+      throw new BadRequestException('Apple Calendar not connected');
+    }
+
+    await this.prisma.externalCalendar.update({
+      where: { id: record.id },
+      data: {
+        selected_calendars: selectedCalendars,
+      },
+    });
+  }
+
   private async fetchAppleCalendars(email: string, password: string) {
     const auth = 'Basic ' + Buffer.from(`${email}:${password}`).toString('base64');
     const headers = {
@@ -622,40 +818,24 @@ export class IntegrationsService {
     return cals;
   }
 
-  async listAppleCalendars(userId: string) {
-    const record = await this.prisma.externalCalendar.findFirst({
-      where: { user_id: userId, provider: 'apple' },
-    });
-    if (!record || !record.password) {
-      throw new BadRequestException('Apple Calendar not connected');
-    }
-    const cals = await this.fetchAppleCalendars(record.external_id, record.password);
-    if (!cals) throw new ServiceUnavailableException('Unable to reach Apple Calendar');
-    return cals;
-  }
 
-  async selectAppleCalendar(userId: string, href: string) {
-    const record = await this.prisma.externalCalendar.findFirst({
-      where: { user_id: userId, provider: 'apple' },
-    });
-    if (!record) throw new BadRequestException('Apple Calendar not connected');
-    await this.prisma.externalCalendar.update({
-      where: { id: record.id },
-      data: { selected_calendar: href },
-    });
-  }
 
   generateZoomAuthUrl(userId: string): string {
     console.log('[ZOOM DEBUG] Generating auth URL for user:', userId);
     const clientId = this.env('ZOOM_CLIENT_ID');
     const redirectUri = this.env('ZOOM_REDIRECT_URI');
-    const state = this.createState(userId);
+    const codeVerifier = this.generateCodeVerifier();
+    const codeChallenge = this.computeCodeChallenge(codeVerifier);
+    const state = this.createStatePayload({ sub: userId, zcv: codeVerifier });
     const base = 'https://zoom.us/oauth/authorize';
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: clientId ?? '',
       redirect_uri: redirectUri ?? '',
       state,
+      prompt: 'login consent',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
     });
     const url = `${base}?${params.toString()}`;
     this.zoomLog('generateZoomAuthUrl', { userId, url, clientId, redirectUri });

@@ -222,11 +222,12 @@
             <table class="w-full">
               <thead class="table-header">
                 <tr>
-                  <th class="text-center py-2 w-1/4">Invitee</th>
-                  <th class="text-center py-2 w-1/5">Event Type</th>
-                  <th class="text-center py-2 w-1/5">Date/Time</th>
-                  <th class="text-center py-2 w-1/6">Status</th>
-                  <th class="text-center py-2 w-1/6">Actions</th>
+                  <th class="text-center py-2 w-1/5">Invitee</th>
+                  <th class="text-center py-2 w-1/6">Event Type</th>
+                  <th class="text-center py-2 w-1/6">Date/Time</th>
+                  <th class="text-center py-2 w-1/8">Status</th>
+                  <th class="text-center py-2 w-1/5">Meeting Link</th>
+                  <th class="text-center py-2 w-1/8">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1136,6 +1137,37 @@
             <button type="submit" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Connect</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apple Calendar Selection Modal -->
+  <div id="apple-calendar-selection-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-lg">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Select Apple Calendars</h2>
+          <button onclick="closeAppleCalendarSelectionModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Choose which calendars to sync with Calendarify. Events will be created in the selected calendars.</p>
+          
+          <div id="apple-calendars-list" class="space-y-3 max-h-64 overflow-y-auto">
+            <!-- Calendar checkboxes will be populated here -->
+          </div>
+          
+          <div class="flex items-center gap-2 pt-2">
+            <button type="button" onclick="selectAllAppleCalendars()" class="text-[#34D399] hover:text-[#2fb67c] text-sm font-medium">Select All</button>
+            <span class="text-[#A3B3AF]">|</span>
+            <button type="button" onclick="deselectAllAppleCalendars()" class="text-[#34D399] hover:text-[#2fb67c] text-sm font-medium">Deselect All</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeAppleCalendarSelectionModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmAppleCalendarSelection()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Save Selection</button>
+        </div>
       </div>
     </div>
   </div>

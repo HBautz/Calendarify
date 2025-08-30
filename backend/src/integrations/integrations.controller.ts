@@ -47,6 +47,17 @@ export class IntegrationsController {
     console.log('[ZOOM DEBUG] Request headers:', req.headers);
     const url = this.integrationsService.generateZoomAuthUrl(req.user.userId);
     console.log('[ZOOM DEBUG] Generated auth URL:', url);
+    // Extra: surface redirect_uri and client_id for diagnostics
+    try {
+      const u = new URL(url);
+      console.log('[ZOOM DEBUG] Auth URL params:', {
+        client_id: u.searchParams.get('client_id'),
+        redirect_uri: u.searchParams.get('redirect_uri'),
+        has_code_challenge: !!u.searchParams.get('code_challenge'),
+        code_challenge_method: u.searchParams.get('code_challenge_method'),
+        prompt: u.searchParams.get('prompt'),
+      });
+    } catch {}
     return { url };
   }
 
@@ -114,7 +125,7 @@ export class IntegrationsController {
   @UseGuards(JwtAuthGuard)
   @Get('apple/calendars')
   async appleCalendars(@Req() req) {
-    const calendars = await this.integrationsService.listAppleCalendars(
+    const calendars = await this.integrationsService.getAppleCalendars(
       req.user.userId,
     );
     return { calendars };
@@ -122,9 +133,9 @@ export class IntegrationsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('apple/select')
-  async selectApple(@Req() req, @Body('href') href: string) {
-    await this.integrationsService.selectAppleCalendar(req.user.userId, href);
-    return { message: 'Apple calendar selected' };
+  async selectApple(@Req() req, @Body('selectedCalendars') selectedCalendars: string[]) {
+    await this.integrationsService.updateAppleCalendarSelection(req.user.userId, selectedCalendars);
+    return { message: 'Apple calendars updated' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -141,43 +152,81 @@ export class IntegrationsController {
   }
 
   @Get('zoom/callback')
-  async zoomCallback(@Query('code') code: string, @Query('state') state: string, @Res() res, @Req() req) {
+  async zoomCallback(@Query('code') code: string, @Query('state') state: string, @Query('error') error: string, @Res() res, @Req() req) {
     console.log('[ZOOM DEBUG] Callback received at:', new Date().toISOString());
     console.log('[ZOOM DEBUG] Callback URL:', req.url);
-    console.log('[ZOOM DEBUG] Callback query params:', { code, state });
+    console.log('[ZOOM DEBUG] Callback query params:', { code, state, error });
     console.log('[ZOOM DEBUG] Callback headers:', req.headers);
     console.log('[ZOOM DEBUG] Callback user agent:', req.get('User-Agent'));
     console.log('[ZOOM DEBUG] Callback referer:', req.get('Referer'));
     console.log('[ZOOM DEBUG] Callback method:', req.method);
     console.log('[ZOOM DEBUG] Callback IP:', req.ip);
     
+    // Handle OAuth errors
+    if (error) {
+      console.error('[ZOOM DEBUG] OAuth error:', error);
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      console.log('[ZOOM DEBUG] Redirecting back with zoom_error:', error, 'to', `${baseUrl}/dashboard?zoom_error=${encodeURIComponent(error)}`);
+      return res.redirect(`${baseUrl}/dashboard?zoom_error=${encodeURIComponent(error)}`);
+    }
+    
+    // Handle missing authorization code
+    if (!code) {
+      console.error('[ZOOM DEBUG] No authorization code received');
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      console.log('[ZOOM DEBUG] Redirecting back with zoom_error=no_code to', `${baseUrl}/dashboard?zoom_error=no_code`);
+      return res.redirect(`${baseUrl}/dashboard?zoom_error=no_code`);
+    }
+    
     try {
       await this.integrationsService.handleZoomCallback(code, state);
       console.log('[ZOOM DEBUG] Callback handled successfully, redirecting to dashboard');
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      return res.redirect(`${baseUrl}/dashboard`);
+      console.log('[ZOOM DEBUG] Redirecting to', `${baseUrl}/dashboard?zoom_success=true`);
+      return res.redirect(`${baseUrl}/dashboard?zoom_success=true`);
     } catch (error) {
       console.error('[ZOOM DEBUG] Callback error:', error);
       console.error('[ZOOM DEBUG] Error stack:', error.stack);
-      return res.status(500).send('OAuth callback error: ' + error.message);
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      console.log('[ZOOM DEBUG] Redirecting back with zoom_error:', error?.message, 'to', `${baseUrl}/dashboard?zoom_error=${encodeURIComponent(error.message)}`);
+      return res.redirect(`${baseUrl}/dashboard?zoom_error=${encodeURIComponent(error.message)}`);
     }
   }
 
   @Get('outlook/callback')
   async outlookCallback(@Req() req, @Res() res) {
-    console.log('Outlook callback query:', req.query);
+    console.log('[OUTLOOK DEBUG] Callback received at:', new Date().toISOString());
+    console.log('[OUTLOOK DEBUG] Callback URL:', req.url);
+    console.log('[OUTLOOK DEBUG] Callback query params:', req.query);
+    console.log('[OUTLOOK DEBUG] Callback headers:', req.headers);
+    
     const { code, error, error_description, state } = req.query as any;
 
     if (error) {
-      console.error('OAuth error:', error, error_description);
-      return res.status(400).send('OAuth error: ' + error);
+      console.error('[OUTLOOK DEBUG] OAuth error:', error, error_description);
+      console.error('[OUTLOOK DEBUG] Full error details:', { error, error_description, state });
+      
+      // Redirect to dashboard with error message instead of returning 400
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${baseUrl}/dashboard?outlook_error=${encodeURIComponent(error)}`);
     }
+    
     if (!code) {
-      return res.status(400).send('No code received');
+      console.error('[OUTLOOK DEBUG] No authorization code received');
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${baseUrl}/dashboard?outlook_error=no_code`);
     }
 
-    await this.integrationsService.handleOutlookCallback(code, state);
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    return res.redirect(`${baseUrl}/dashboard`);
+    try {
+      await this.integrationsService.handleOutlookCallback(code, state);
+      console.log('[OUTLOOK DEBUG] Callback handled successfully, redirecting to dashboard');
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${baseUrl}/dashboard?outlook_success=true`);
+    } catch (error) {
+      console.error('[OUTLOOK DEBUG] Callback error:', error);
+      console.error('[OUTLOOK DEBUG] Error stack:', error.stack);
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${baseUrl}/dashboard?outlook_error=${encodeURIComponent(error.message)}`);
+    }
   }
 }
