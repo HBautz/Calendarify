@@ -350,6 +350,18 @@
                     </div>
                 </div>
 
+                <!-- Location Selection -->
+                <div id="locationSelectionSection" class="bg-[#1A2E29] border border-[#2C4A43] p-6 rounded-lg hidden">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 bg-[#34D399] rounded-lg flex items-center justify-center">
+                            <span class="material-icons-outlined text-[#1A2E29] text-lg">location_on</span>
+                        </div>
+                        <h4 class="text-lg font-semibold text-white">Choose Meeting Location</h4>
+                    </div>
+                    <p class="text-[#A3B3AF] text-sm mb-4">Select your preferred meeting platform or location:</p>
+                    <div id="locationOptionsContainer" class="space-y-3"></div>
+                </div>
+
                 <!-- Contact Information -->
                 <div id="contactInfoSection" class="hidden">
                     <h4 class="text-lg font-medium text-white mb-4">Contact Information</h4>
@@ -669,6 +681,7 @@
             let selectedTime = null; // display label
             let selectedTimeISO = null; // exact ISO from server
             let timeSlots = {};
+            let selectedLocation = null;
 
             // --- 12h/24h Toggle Functionality ---
             function getClockFormat() {
@@ -1213,12 +1226,149 @@
 
             function showBookingModal() {
                 // Debug: Log the event data to see what we're working with
+                console.log('Event data in showBookingModal:', event);
+                console.log('Event locations:', event.locations);
                                                 
                 // Populate modal with booking details
                 document.getElementById('modalEventTitle').textContent = event.title || event.name;
                 document.getElementById('modalEventDate').textContent = formatDate(selectedDate);
                 document.getElementById('modalEventTime').textContent = selectedTime;
                 document.getElementById('modalEventDuration').textContent = `${eventDuration} minutes`;
+
+                // Render attendee location options if multiple
+                const locSection = document.getElementById('locationSelectionSection');
+                const locContainer = document.getElementById('locationOptionsContainer');
+                const availableLocations = Array.isArray(event.locations) ? event.locations : [];
+                locContainer.innerHTML = '';
+                selectedLocation = null;
+                if (availableLocations.length > 0) {
+                    locSection.classList.remove('hidden');
+                    availableLocations.forEach(loc => {
+                        let label, icon, description;
+                        
+                        switch(loc) {
+                            case 'zoom':
+                                label = 'Zoom Meeting';
+                                icon = 'videocam';
+                                description = 'Join via video conference';
+                                break;
+                            case 'google-meet':
+                                label = 'Google Meet';
+                                icon = 'video_call';
+                                description = 'Join via Google Meet';
+                                break;
+                            case 'phone':
+                                label = 'Phone Call';
+                                icon = 'phone';
+                                description = 'Call will be made to your number';
+                                break;
+                            case 'office':
+                                label = 'In-person Meeting';
+                                icon = 'location_on';
+                                description = 'Meet at the office location';
+                                break;
+                            case 'custom':
+                                label = event.customLocation || 'Custom Location';
+                                icon = 'place';
+                                description = event.customLocation || 'Custom meeting location';
+                                break;
+                            default:
+                                label = loc;
+                                icon = 'meeting_room';
+                                description = 'Meeting location';
+                        }
+                        
+                        const id = `loc_option_${loc}`;
+                        const div = document.createElement('div');
+                        div.className = 'relative';
+                        div.innerHTML = `
+                            <input type="radio" name="booking_location" id="${id}" value="${loc}" class="sr-only">
+                            <label for="${id}" class="flex items-center gap-4 p-4 bg-[#19342e] border border-[#2C4A43] rounded-lg cursor-pointer hover:border-[#34D399] hover:bg-[#1E3A34] transition-all duration-200 group">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 bg-[#2C4A43] rounded-lg flex items-center justify-center group-hover:bg-[#34D399] transition-colors duration-200">
+                                        <span class="material-icons-outlined text-[#A3B3AF] group-hover:text-[#1A2E29] text-lg">${icon}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-white font-medium">${label}</div>
+                                    <div class="text-[#A3B3AF] text-sm">${description}</div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <div class="w-5 h-5 border-2 border-[#2C4A43] rounded-full group-hover:border-[#34D399] transition-colors duration-200 flex items-center justify-center">
+                                        <div class="w-2.5 h-2.5 bg-[#34D399] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                        locContainer.appendChild(div);
+                        
+                        // Add click event listener to the label for better responsiveness
+                        const labelElement = div.querySelector('label');
+                        if (labelElement) {
+                            labelElement.addEventListener('click', (e) => {
+                                // Prevent double-triggering with the radio button
+                                e.preventDefault();
+                                const radio = document.getElementById(id);
+                                if (radio) {
+                                    radio.checked = true;
+                                    radio.dispatchEvent(new Event('change'));
+                                }
+                            });
+                        }
+                    });
+                    const firstRadio = locContainer.querySelector('input[type="radio"]');
+                    if (firstRadio) {
+                        firstRadio.checked = true;
+                        selectedLocation = firstRadio.value;
+                        // Trigger the change event to set initial visual state
+                        firstRadio.dispatchEvent(new Event('change'));
+                    }
+                    locContainer.querySelectorAll('input[type="radio"]').forEach(r => {
+                        r.addEventListener('change', () => {
+                            selectedLocation = r.value;
+                            updateContactFieldsForLocation();
+                            
+                            // Update visual selection state
+                            locContainer.querySelectorAll('label').forEach(label => {
+                                const radioId = label.getAttribute('for');
+                                const radio = document.getElementById(radioId);
+                                const iconContainer = label.querySelector('.w-10.h-10');
+                                const radioIndicator = label.querySelector('.w-5.h-5');
+                                const radioDot = label.querySelector('.w-2\\.5.h-2\\.5');
+                                
+                                if (radio && radio.checked) {
+                                    label.classList.add('border-[#34D399]', 'bg-[#1E3A34]');
+                                    label.classList.remove('border-[#2C4A43]', 'bg-[#19342e]');
+                                    iconContainer.classList.add('bg-[#34D399]');
+                                    iconContainer.classList.remove('bg-[#2C4A43]');
+                                    iconContainer.querySelector('span').classList.add('text-[#1A2E29]');
+                                    iconContainer.querySelector('span').classList.remove('text-[#A3B3AF]');
+                                    radioIndicator.classList.add('border-[#34D399]');
+                                    radioIndicator.classList.remove('border-[#2C4A43]');
+                                    radioDot.classList.remove('opacity-0');
+                                    radioDot.classList.add('opacity-100');
+                                } else {
+                                    label.classList.remove('border-[#34D399]', 'bg-[#1E3A34]');
+                                    label.classList.add('border-[#2C4A43]', 'bg-[#19342e]');
+                                    iconContainer.classList.remove('bg-[#34D399]');
+                                    iconContainer.classList.add('bg-[#2C4A43]');
+                                    iconContainer.querySelector('span').classList.remove('text-[#1A2E29]');
+                                    iconContainer.querySelector('span').classList.add('text-[#A3B3AF]');
+                                    radioIndicator.classList.remove('border-[#34D399]');
+                                    radioIndicator.classList.add('border-[#2C4A43]');
+                                    radioDot.classList.add('opacity-0');
+                                    radioDot.classList.remove('opacity-100');
+                                }
+                            });
+                        });
+                    });
+                } else if (availableLocations.length === 1) {
+                    locSection.classList.add('hidden');
+                    selectedLocation = availableLocations[0];
+                } else {
+                    locSection.classList.add('hidden');
+                    selectedLocation = 'custom';
+                }
 
                 // Show/hide required fields based on questions or requiredFields fallback
                 const questions = Array.isArray(event.questions) ? event.questions : [];
@@ -1282,6 +1432,19 @@
                     }
                 }
                 
+                // Auto-require by selected location
+                function updateContactFieldsForLocation() {
+                    if (selectedLocation === 'zoom' || selectedLocation === 'google-meet') {
+                        document.getElementById('emailField').classList.remove('hidden');
+                        fieldRequirements.email = true;
+                        hasContactFields = true;
+                    } else if (selectedLocation === 'phone') {
+                        document.getElementById('phoneField').classList.remove('hidden');
+                        fieldRequirements.phone = true;
+                        hasContactFields = true;
+                    }
+                }
+
                 // Update field labels to show required indicators
                 if (fieldRequirements.name !== undefined) {
                     const nameLabel = document.querySelector('#nameField label');
@@ -1428,6 +1591,11 @@
                 });
                 
                 // Validate each field based on its requirement
+                if (selectedLocation === 'zoom' || selectedLocation === 'google-meet') {
+                    fieldRequirements.email = true;
+                } else if (selectedLocation === 'phone') {
+                    fieldRequirements.phone = true;
+                }
                 if (fieldRequirements.name !== undefined) {
                     const nameValue = document.getElementById('bookingName').value.trim();
                     if (fieldRequirements.name && !nameValue) {
@@ -1640,7 +1808,8 @@
                         ends_at: endTime.toISOString(),
                         questions: bookingData.questions,
                         client_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        client_offset_minutes: new Date().getTimezoneOffset()
+                        client_offset_minutes: new Date().getTimezoneOffset(),
+                        chosen_location: selectedLocation
                     };
                     
                     console.log('API URL:', `${API_URL}/bookings`);

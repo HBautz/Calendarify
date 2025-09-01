@@ -182,7 +182,8 @@
               date: b.starts_at,
               status: 'Confirmed',
               zoom_link: b.zoom_link, // Include Zoom link if available
-              google_meet_link: b.google_meet_link // Include Google Meet link if available
+              google_meet_link: b.google_meet_link, // Include Google Meet link if available
+              chosen_location: b.chosen_location // Include chosen location for non-video meetings
             };
             if (start < now) meetingsData.past.push(info); else meetingsData.upcoming.push(info);
           });
@@ -256,15 +257,19 @@
       } else if (section === 'event-types') {
         await fetchEventTypesFromServer();
         renderEventTypes();
+        // Update location gates when event-types section is shown
+        await updateLocationGates();
       } else if (section === 'workflows') {
         await fetchWorkflowsFromServer();
         renderWorkflows();
       } else if (section === 'integrations') {
-        setTimeout(() => {
+        setTimeout(async () => {
           updateGoogleCalendarButton();
           updateZoomButton();
           updateOutlookCalendarButton();
           updateAppleCalendarButton();
+          // Update location gates when integrations section is shown
+          await updateLocationGates();
         }, 100);
       }
     }
@@ -311,11 +316,11 @@
       const meetings = getMeetingsData(tab);
       console.log('Meetings for tab', tab, ':', meetings);
       
-      // Sort meetings by date (newest first)
+      // Sort meetings by date (soonest first)
       const sortedMeetings = meetings.sort((a, b) => {
         const dateA = new Date(a.start);
         const dateB = new Date(b.start);
-        return dateB - dateA; // Newest first (descending order)
+        return dateA - dateB; // Soonest first (ascending order)
       });
       
       const is12h = getClockFormat() === '12h';
@@ -361,7 +366,7 @@
                 </a>` : ''
               }
               ${!meeting.zoom_link && !meeting.google_meet_link ? 
-                `<span class="text-[#A3B3AF] text-sm">No meeting link</span>` : ''
+                `<span class="text-[#A3B3AF] text-sm">${meeting.chosen_location ? formatChosenLocation(meeting.chosen_location) : 'No meeting link'}</span>` : ''
               }
             </div>
           </td>
@@ -446,6 +451,23 @@
     }
 
     // Utility functions
+    function formatChosenLocation(location) {
+      switch(location) {
+        case 'zoom':
+          return 'Zoom Meeting';
+        case 'google-meet':
+          return 'Google Meet';
+        case 'phone':
+          return 'Phone Call';
+        case 'office':
+          return 'In-person Meeting';
+        case 'custom':
+          return 'Custom Location';
+        default:
+          return location;
+      }
+    }
+
     function copyLink(slug) {
       const prefix = window.PREPEND_URL || window.FRONTEND_URL || window.location.origin;
       const display = freshUserState['calendarify-display-name'] || '';
@@ -511,10 +533,12 @@
       menu.classList.toggle('hidden');
     }
 
-    function openCreateEventTypeModal() {
+    async function openCreateEventTypeModal() {
       document.getElementById('modal-backdrop').classList.remove('hidden');
       document.getElementById('create-event-type-modal').classList.remove('hidden');
       document.getElementById('create-menu').classList.add('hidden');
+      // Update location gates when create modal is opened
+      await updateLocationGates();
     }
 
     function closeCreateEventTypeModal() {
@@ -2286,7 +2310,13 @@
       const name = document.getElementById('event-type-name').value.trim();
       const duration = document.getElementById('event-type-duration').value;
       const description = document.getElementById('event-type-description').value.trim();
-      const location = document.getElementById('event-type-location').value;
+      // Collect locations
+      const locations = [];
+      if (document.getElementById('loc-zoom')?.checked) locations.push('zoom');
+      if (document.getElementById('loc-google-meet')?.checked) locations.push('google-meet');
+      if (document.getElementById('loc-phone')?.checked) locations.push('phone');
+      if (document.getElementById('loc-office')?.checked) locations.push('office');
+      if (document.getElementById('loc-custom')?.checked) locations.push('custom');
       const customLocation = document.getElementById('event-type-custom-location').value.trim();
       const link = document.getElementById('event-type-link').value.trim();
       const color = document.getElementById('event-type-color').value;
@@ -2334,7 +2364,8 @@
       const rescheduleNotification = document.getElementById('event-type-reschedule-notification').checked;
       const secret = document.getElementById('event-type-secret').value;
       const priority = document.getElementById('event-type-priority').value;
-      const tags = document.getElementById('event-type-tags').value.trim();
+      const tags = getEventTypeSelectedTags();
+      const addToContacts = document.getElementById('event-type-add-to-contacts')?.checked || false;
 
       if (!name) {
         showNotification('Event type name is required');
@@ -2344,14 +2375,11 @@
         showNotification('Duration is required');
         return;
       }
-      if (!location) {
-        showNotification('Location is required');
+      if (locations.length === 0) {
+        showNotification('Select at least one location');
         return;
       }
-      if (location !== 'office' && location !== 'custom' && !link) {
-        showNotification('Meeting link is required');
-        return;
-      }
+      // No static link required; Zoom/Meet are created automatically if selected
       if (!color) {
         showNotification('Color is required');
         return;
@@ -2384,19 +2412,18 @@
             
             // Save additional settings to UserState
             const additionalSettings = {
-              location,
-              customLocation: location === 'custom' ? customLocation : '',
-              link: location !== 'office' ? link : '',
+              locations,
+              customLocation: locations.includes('custom') ? customLocation : '',
+              link: link || '',
               color,
-              visibility: secret,
-              priority,
-              tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-              notifications: {
-                availability,
-                reminders,
-                followUp,
-                reschedule: rescheduleNotification
-              }
+              bufferBefore,
+              bufferAfter,
+              advanceNotice,
+              bookingLimit,
+              confirmationMessage,
+              questions,
+              addToContacts,
+              tags
             };
             
             // Save to UserState
@@ -2425,20 +2452,228 @@
 
     // Interactive form functionality
 
+    function questionExists(containerId, questionText) {
+      const container = document.getElementById(containerId);
+      if (!container) return false;
+      
+      const questionDivs = container.querySelectorAll('[id^="question_div_question_"]');
+      for (const div of questionDivs) {
+        const questionId = div.id.replace('question_div_', '');
+        const textInput = document.getElementById(`question_text_${questionId}`);
+        if (textInput && textInput.value.trim() === questionText) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     function handleLocationChange() {
-      const location = document.getElementById('event-type-location').value;
       const customLocationContainer = document.getElementById('custom-location-container');
       const meetingLinkContainer = document.getElementById('meeting-link-container');
+      const customChecked = document.getElementById('loc-custom')?.checked;
       
-      if (location === 'custom') {
-        customLocationContainer.style.display = 'block';
-        meetingLinkContainer.style.display = 'none';
-      } else if (location === 'office') {
-        customLocationContainer.style.display = 'none';
-        meetingLinkContainer.style.display = 'none';
-      } else {
-        customLocationContainer.style.display = 'none';
-        meetingLinkContainer.style.display = 'block';
+      if (customLocationContainer) {
+        customLocationContainer.style.display = customChecked ? 'block' : 'none';
+      }
+      if (meetingLinkContainer) {
+        meetingLinkContainer.style.display = customChecked ? 'block' : 'none';
+      }
+      
+      // Handle automatic question addition for Zoom/Google Meet (email required)
+      const zoomChecked = document.getElementById('loc-zoom')?.checked;
+      const meetChecked = document.getElementById('loc-google-meet')?.checked;
+      const phoneChecked = document.getElementById('loc-phone')?.checked;
+      
+      const questionsContainer = 'questions-container';
+      
+      // Add email question for Zoom or Google Meet
+      if ((zoomChecked || meetChecked) && !questionExists(questionsContainer, 'What is your email address?')) {
+        addQuestion(questionsContainer, {
+          text: 'What is your email address?',
+          required: true
+        });
+      }
+      
+      // Remove email question if neither Zoom nor Google Meet is selected
+      if (!zoomChecked && !meetChecked) {
+        removeRequiredQuestionByText(questionsContainer, 'What is your email address?');
+      }
+      
+      // Add phone question for phone calls
+      if (phoneChecked && !questionExists(questionsContainer, 'What is your phone number?')) {
+        addQuestion(questionsContainer, {
+          text: 'What is your phone number?',
+          required: true
+        });
+      }
+      
+      // Remove phone question if phone is not selected
+      if (!phoneChecked) {
+        removeRequiredQuestionByText(questionsContainer, 'What is your phone number?');
+      }
+    }
+
+    async function updateLocationGates() {
+      try {
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        const headers = clean ? { Authorization: `Bearer ${clean}` } : {};
+        const [zoomRes, googleRes] = await Promise.all([
+          fetch(`${API_URL}/integrations/zoom/status`, { headers }),
+          fetch(`${API_URL}/integrations/google/status`, { headers })
+        ]);
+        const zoomJson = zoomRes.ok ? await zoomRes.json() : { connected: false };
+        const googleJson = googleRes.ok ? await googleRes.json() : { connected: false };
+        
+        // Store previous states for comparison
+        const previousZoomState = window.zoomIntegrationConnected;
+        const previousGoogleState = window.googleIntegrationConnected;
+        
+        // Update current states
+        window.zoomIntegrationConnected = zoomJson.connected;
+        window.googleIntegrationConnected = googleJson.connected;
+        
+        // Update create form checkboxes
+        const zoomCb = document.getElementById('loc-zoom');
+        const zoomStatus = document.getElementById('loc-zoom-status');
+        if (zoomCb) {
+          zoomCb.disabled = !zoomJson.connected;
+          if (!zoomJson.connected) {
+            zoomCb.checked = false;
+            updateCheckboxVisualState(zoomCb);
+          }
+        }
+        if (zoomStatus) {
+          zoomStatus.textContent = zoomJson.connected ? '' : '(connect Zoom to enable)';
+        }
+        
+        const meetCb = document.getElementById('loc-google-meet');
+        const meetStatus = document.getElementById('loc-meet-status');
+        if (meetCb) {
+          meetCb.disabled = !googleJson.connected;
+          if (!googleJson.connected) {
+            meetCb.checked = false;
+            updateCheckboxVisualState(meetCb);
+          }
+        }
+        if (meetStatus) {
+          meetStatus.textContent = googleJson.connected ? '' : '(connect Google to enable)';
+        }
+
+        // Handle edit form checkboxes
+        const editZoomCb = document.getElementById('edit-loc-zoom');
+        const editZoomStatus = document.getElementById('edit-loc-zoom-status');
+        if (editZoomCb) {
+          editZoomCb.disabled = !zoomJson.connected;
+          if (!zoomJson.connected) {
+            editZoomCb.checked = false;
+            updateCheckboxVisualState(editZoomCb);
+          }
+        }
+        if (editZoomStatus) {
+          editZoomStatus.textContent = zoomJson.connected ? '' : '(connect Zoom to enable)';
+        }
+        
+        const editMeetCb = document.getElementById('edit-loc-google-meet');
+        const editMeetStatus = document.getElementById('edit-loc-meet-status');
+        if (editMeetCb) {
+          editMeetCb.disabled = !googleJson.connected;
+          if (!googleJson.connected) {
+            editMeetCb.checked = false;
+            updateCheckboxVisualState(editMeetCb);
+          }
+        }
+        if (editMeetStatus) {
+          editMeetStatus.textContent = googleJson.connected ? '' : '(connect Google to enable)';
+        }
+        
+        // Check if integrations were disconnected and update existing event types
+        if (previousZoomState && !zoomJson.connected) {
+          await handleIntegrationDisconnection('zoom');
+        }
+        if (previousGoogleState && !googleJson.connected) {
+          await handleIntegrationDisconnection('google');
+        }
+        
+      } catch (e) {
+        console.warn('Failed to update location gates', e);
+      }
+    }
+
+    async function handleIntegrationDisconnection(integrationType) {
+      try {
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        const headers = clean ? { Authorization: `Bearer ${clean}` } : {};
+        
+        // Get current user state to check existing event types
+        const stateRes = await fetch(`${API_URL}/users/me/state`, { headers });
+        if (!stateRes.ok) return;
+        
+        const userState = await stateRes.json();
+        const data = userState || {};
+        let updatedEventTypes = [];
+        let affectedEventTypes = [];
+        
+        // Check all event type settings for the disconnected integration
+        Object.keys(data).forEach(key => {
+          if (key.startsWith('event-type-settings-')) {
+            const settings = data[key];
+            const locations = Array.isArray(settings.locations) ? settings.locations : [];
+            const locationToRemove = integrationType === 'zoom' ? 'zoom' : 'google-meet';
+            
+            if (locations.includes(locationToRemove)) {
+              // Remove the disconnected integration from locations
+              const updatedLocations = locations.filter(loc => loc !== locationToRemove);
+              const eventTypeId = key.replace('event-type-settings-', '');
+              
+              updatedEventTypes.push({
+                key,
+                settings: {
+                  ...settings,
+                  locations: updatedLocations
+                }
+              });
+              
+              // Get event type name for notification
+              const eventType = freshEventTypes.find(et => et.id === eventTypeId);
+              if (eventType) {
+                affectedEventTypes.push(eventType.title || eventType.name || 'Untitled Event');
+              }
+            }
+          }
+        });
+        
+        // Update user state with modified event types
+        if (updatedEventTypes.length > 0) {
+          const updateData = {};
+          updatedEventTypes.forEach(item => {
+            updateData[item.key] = item.settings;
+          });
+          
+          await fetch(`${API_URL}/users/me/state`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+            body: JSON.stringify(updateData)
+          });
+          
+          // Refresh event types from server
+          await fetchEventTypesFromServer();
+          renderEventTypes();
+          
+          // Show notification to user
+          const integrationName = integrationType === 'zoom' ? 'Zoom' : 'Google Calendar';
+          const locationName = integrationType === 'zoom' ? 'Zoom' : 'Google Meet';
+          
+          if (affectedEventTypes.length === 1) {
+            showNotification(`${integrationName} was disconnected. "${affectedEventTypes[0]}" has been updated to remove ${locationName} location.`);
+          } else if (affectedEventTypes.length > 1) {
+            showNotification(`${integrationName} was disconnected. ${affectedEventTypes.length} event types have been updated to remove ${locationName} location.`);
+          }
+        }
+        
+      } catch (e) {
+        console.error('Failed to handle integration disconnection:', e);
       }
     }
 
@@ -2448,16 +2683,126 @@
     document.addEventListener('DOMContentLoaded', function() {
       
       // Add event listeners for form interactions
-      const locationSelect = document.getElementById('event-type-location');
+      ;['loc-custom','loc-zoom','loc-google-meet','loc-phone','loc-office'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', handleLocationChange);
+      });
       
-      if (locationSelect) {
-        locationSelect.addEventListener('change', handleLocationChange);
-      }
+      // Add event listeners for edit form interactions
+      ;['edit-loc-custom','edit-loc-zoom','edit-loc-google-meet','edit-loc-phone','edit-loc-office'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', handleEditLocationChange);
+      });
+      
+      // Add custom checkbox styling functionality
+      setupCustomCheckboxes();
+      updateLocationGates();
+      
+      // Set up periodic integration status check (every 30 seconds)
+      setInterval(async () => {
+        await updateLocationGates();
+      }, 30000);
     });
 
+    function setupCustomCheckboxes() {
+      // Setup for create event type modal
+      const createCheckboxes = ['loc-zoom', 'loc-google-meet', 'loc-phone', 'loc-office', 'loc-custom'];
+      createCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+          checkbox.addEventListener('change', function() {
+            // Prevent selection if disabled
+            if (this.disabled) {
+              this.checked = false;
+              return;
+            }
+            updateCheckboxVisualState(this);
+          });
+          
+          // Add click prevention for disabled checkboxes
+          const label = checkbox.closest('label');
+          if (label) {
+            label.addEventListener('click', function(e) {
+              if (checkbox.disabled) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Show notification to user
+                const integrationName = id.includes('zoom') ? 'Zoom' : 'Google Calendar';
+                const locationName = id.includes('zoom') ? 'Zoom' : 'Google Meet';
+                showNotification(`Please connect ${integrationName} in the Integrations section to use ${locationName} meetings.`);
+                
+                return false;
+              }
+            });
+          }
+        }
+      });
+
+      // Setup for edit event type modal
+      const editCheckboxes = ['edit-loc-zoom', 'edit-loc-google-meet', 'edit-loc-phone', 'edit-loc-office', 'edit-loc-custom'];
+      editCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+          checkbox.addEventListener('change', function() {
+            // Prevent selection if disabled
+            if (this.disabled) {
+              this.checked = false;
+              return;
+            }
+            updateCheckboxVisualState(this);
+          });
+          
+          // Add click prevention for disabled checkboxes
+          const label = checkbox.closest('label');
+          if (label) {
+            label.addEventListener('click', function(e) {
+              if (checkbox.disabled) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Show notification to user
+                const integrationName = id.includes('zoom') ? 'Zoom' : 'Google Calendar';
+                const locationName = id.includes('zoom') ? 'Zoom' : 'Google Meet';
+                showNotification(`Please connect ${integrationName} in the Integrations section to use ${locationName} meetings.`);
+                
+                return false;
+              }
+            });
+          }
+        }
+      });
+    }
+
+    function updateCheckboxVisualState(checkbox) {
+      const label = checkbox.closest('label');
+      const checkmark = label.querySelector('svg');
+      const checkboxContainer = label.querySelector('.w-5.h-5');
+      
+      if (checkbox.checked) {
+        checkmark.classList.remove('opacity-0');
+        checkmark.classList.add('opacity-100');
+        checkboxContainer.classList.add('border-[#34D399]', 'bg-[#34D399]');
+        checkboxContainer.classList.remove('border-[#2C4A43]');
+        label.classList.add('border-[#34D399]', 'bg-[#1E3A34]');
+        label.classList.remove('border-[#2C4A43]', 'bg-[#1E3A34]');
+      } else {
+        checkmark.classList.add('opacity-0');
+        checkmark.classList.remove('opacity-100');
+        checkboxContainer.classList.remove('border-[#34D399]', 'bg-[#34D399]');
+        checkboxContainer.classList.add('border-[#2C4A43]');
+        label.classList.remove('border-[#34D399]');
+        label.classList.add('border-[#2C4A43]');
+      }
+    }
+
     function renderEventTypes() {
+      console.log('=== RENDER EVENT TYPES DEBUG ===');
       const eventTypesGrid = document.getElementById('event-types-grid');
+      console.log('Event types grid element:', eventTypesGrid);
       let eventTypes = freshEventTypes || [];
+      console.log('Event types to render:', eventTypes);
+      console.log('=== END RENDER DEBUG ===');
 
       // Ensure each event type has a color for the left border
       eventTypes = eventTypes.map(et => {
@@ -2541,7 +2886,10 @@
         `;
       });
       
+      console.log('Generated HTML length:', html.length);
+      console.log('Generated HTML preview:', html.substring(0, 500));
       eventTypesGrid.innerHTML = html;
+      console.log('HTML set to grid');
     }
 
     function deleteEventType(id) {
@@ -2660,28 +3008,371 @@
       }
     }
 
-    function editEventType(id) {
+    // Edit Event Type Tag Management Functions
+    function updateEditEventTypeSelectedTags(tags) {
+      const container = document.getElementById('edit-event-type-selected-tags');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      tags.forEach(tag => {
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        const tagElement = document.createElement('span');
+        tagElement.className = 'bg-[#34D399] text-[#1A2E29] px-2 py-1 rounded text-xs flex items-center gap-1';
+        tagElement.setAttribute('data-tag-name', tagName);
+        tagElement.innerHTML = `
+          ${tagName}
+          <button onclick="removeEditEventTypeTag('${tagName}')" class="hover:text-red-500">
+            <span class="material-icons-outlined text-xs">close</span>
+          </button>
+        `;
+        container.appendChild(tagElement);
+      });
+    }
+
+    function getEditEventTypeSelectedTags() {
+      const container = document.getElementById('edit-event-type-selected-tags');
+      if (!container) return [];
+      
+      const tagElements = container.querySelectorAll('span');
+      return Array.from(tagElements).map(el => {
+        return el.getAttribute('data-tag-name') || '';
+      }).filter(tag => tag !== '');
+    }
+
+    function removeEditEventTypeTag(tagToRemove) {
+      const currentTags = getEditEventTypeSelectedTags();
+      const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
+      updateEditEventTypeSelectedTags(updatedTags);
+      
+      // Update the add to contacts checkbox based on remaining tags
+      updateAddToContactsCheckbox();
+    }
+
+    async function openEditEventTypeTagSelector() {
+      const modal = document.getElementById('event-type-tag-selector-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        await populateEventTypeTagSelector();
+      } else {
+        console.error('Tag selector modal not found');
+      }
+    }
+
+    async function populateEventTypeTagSelector() {
+      const container = document.getElementById('event-type-tag-selector-list');
+      if (!container) {
+        console.error('Tag selector container not found');
+        return;
+      }
+      
+      const currentTags = getEditEventTypeSelectedTags();
+      
+      // Fetch tags from server
+      let allTags = [];
+      try {
+        allTags = await fetchTagsFromServer();
+      } catch (error) {
+        console.error('Failed to fetch tags from server:', error);
+        // Fallback to localStorage if server fetch fails
+        allTags = JSON.parse(localStorage.getItem('tags') || '[]');
+      }
+      
+      container.innerHTML = '';
+      allTags.forEach(tag => {
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        const isSelected = currentTags.includes(tagName);
+        const button = document.createElement('button');
+        button.className = `block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e] ${isSelected ? 'bg-[#34D399] text-[#1A2E29]' : ''}`;
+        button.textContent = tagName;
+        button.onclick = () => toggleEditEventTypeTag(tagName);
+        container.appendChild(button);
+      });
+      
+      if (allTags.length === 0) {
+        container.innerHTML = '<p class="text-[#A3B3AF] text-center py-4">No tags available. Create some tags first.</p>';
+      }
+    }
+
+    function toggleEditEventTypeTag(tag) {
+      const currentTags = getEditEventTypeSelectedTags();
+      const isSelected = currentTags.includes(tag);
+      
+      if (isSelected) {
+        removeEditEventTypeTag(tag);
+      } else {
+        const updatedTags = [...currentTags, tag];
+        updateEditEventTypeSelectedTags(updatedTags);
+      }
+      
+      // Update the add to contacts checkbox based on tags
+      updateAddToContactsCheckbox();
+      
+      // Refresh the selector to show updated selection state
+      populateEventTypeTagSelector();
+    }
+
+    function updateAddToContactsCheckbox() {
+      const currentTags = getEditEventTypeSelectedTags();
+      const addToContactsCheckbox = document.getElementById('edit-event-type-add-to-contacts');
+      
+      if (addToContactsCheckbox) {
+        if (currentTags.length > 0) {
+          addToContactsCheckbox.checked = true;
+          addToContactsCheckbox.disabled = true;
+        } else {
+          addToContactsCheckbox.disabled = false;
+        }
+      }
+    }
+
+    function closeEventTypeTagSelector() {
+      const modal = document.getElementById('event-type-tag-selector-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    async function confirmEventTypeTagSelection() {
+      closeEventTypeTagSelector();
+      // Refresh the tag list in case new tags were created
+      await populateEventTypeTagSelector();
+    }
+
+    // Create Event Type Tag Management Functions
+    function updateEventTypeSelectedTags(tags) {
+      const container = document.getElementById('event-type-selected-tags');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      tags.forEach(tag => {
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        const tagElement = document.createElement('span');
+        tagElement.className = 'bg-[#34D399] text-[#1A2E29] px-2 py-1 rounded text-xs flex items-center gap-1';
+        tagElement.setAttribute('data-tag-name', tagName);
+        tagElement.innerHTML = `
+          ${tagName}
+          <button onclick="removeEventTypeTag('${tagName}')" class="hover:text-red-500">
+            <span class="material-icons-outlined text-xs">close</span>
+          </button>
+        `;
+        container.appendChild(tagElement);
+      });
+    }
+
+    function getEventTypeSelectedTags() {
+      const container = document.getElementById('event-type-selected-tags');
+      if (!container) return [];
+      
+      const tagElements = container.querySelectorAll('span');
+      return Array.from(tagElements).map(el => {
+        return el.getAttribute('data-tag-name') || '';
+      }).filter(tag => tag !== '');
+    }
+
+    function removeEventTypeTag(tagToRemove) {
+      const currentTags = getEventTypeSelectedTags();
+      const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
+      updateEventTypeSelectedTags(updatedTags);
+      
+      // Update the add to contacts checkbox based on remaining tags
+      updateCreateAddToContactsCheckbox();
+    }
+
+    function openEventTypeTagSelector() {
+      const modal = document.getElementById('event-type-tag-selector-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        populateCreateEventTypeTagSelector();
+      } else {
+        console.error('Tag selector modal not found');
+      }
+    }
+
+    async function populateCreateEventTypeTagSelector() {
+      const container = document.getElementById('event-type-tag-selector-list');
+      if (!container) {
+        console.error('Tag selector container not found');
+        return;
+      }
+      
+      const currentTags = getEventTypeSelectedTags();
+      
+      // Fetch tags from server
+      let allTags = [];
+      try {
+        allTags = await fetchTagsFromServer();
+      } catch (error) {
+        console.error('Failed to fetch tags from server:', error);
+        // Fallback to localStorage if server fetch fails
+        allTags = JSON.parse(localStorage.getItem('tags') || '[]');
+      }
+      
+      container.innerHTML = '';
+      allTags.forEach(tag => {
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        const isSelected = currentTags.includes(tagName);
+        const button = document.createElement('button');
+        button.className = `block w-full text-left px-4 py-2 text-[#E0E0E0] hover:bg-[#19342e] ${isSelected ? 'bg-[#34D399] text-[#1A2E29]' : ''}`;
+        button.textContent = tagName;
+        button.onclick = () => toggleEventTypeTag(tagName);
+        container.appendChild(button);
+      });
+      
+      if (allTags.length === 0) {
+        container.innerHTML = '<p class="text-[#A3B3AF] text-center py-4">No tags available. Create some tags first.</p>';
+      }
+    }
+
+    function toggleEventTypeTag(tag) {
+      const currentTags = getEventTypeSelectedTags();
+      const isSelected = currentTags.includes(tag);
+      
+      if (isSelected) {
+        removeEventTypeTag(tag);
+      } else {
+        const updatedTags = [...currentTags, tag];
+        updateEventTypeSelectedTags(updatedTags);
+      }
+      
+      // Update the add to contacts checkbox based on tags
+      updateCreateAddToContactsCheckbox();
+      
+      // Refresh the selector to show updated selection state
+      populateCreateEventTypeTagSelector();
+    }
+
+    function updateCreateAddToContactsCheckbox() {
+      const currentTags = getEventTypeSelectedTags();
+      const addToContactsCheckbox = document.getElementById('event-type-add-to-contacts');
+      
+      if (addToContactsCheckbox) {
+        if (currentTags.length > 0) {
+          addToContactsCheckbox.checked = true;
+          addToContactsCheckbox.disabled = true;
+        } else {
+          addToContactsCheckbox.disabled = false;
+        }
+      }
+    }
+
+    // Make tag management functions globally accessible
+    window.openEditEventTypeTagSelector = openEditEventTypeTagSelector;
+    window.closeEventTypeTagSelector = closeEventTypeTagSelector;
+    window.confirmEventTypeTagSelection = confirmEventTypeTagSelection;
+    window.removeEditEventTypeTag = removeEditEventTypeTag;
+    window.openEventTypeTagSelector = openEventTypeTagSelector;
+    window.removeEventTypeTag = removeEventTypeTag;
+    window.openCreateTagModal = openCreateTagModal;
+
+    // Test function to verify editEventType is accessible
+    window.testEditFunction = function() {
+      console.log('Test function called');
+      console.log('editEventType function exists:', typeof window.editEventType);
+      console.log('freshEventTypes:', freshEventTypes);
+      
+      // Check if event types are rendered
+      const eventTypesGrid = document.getElementById('event-types-grid');
+      console.log('Event types grid:', eventTypesGrid);
+      console.log('Event types grid innerHTML length:', eventTypesGrid ? eventTypesGrid.innerHTML.length : 'no grid');
+      
+      // Check for edit buttons
+      const editButtons = document.querySelectorAll('[onclick*="editEventType"]');
+      console.log('Found edit buttons:', editButtons.length);
+      editButtons.forEach((btn, index) => {
+        console.log(`Edit button ${index}:`, btn.outerHTML);
+        console.log(`Edit button parent:`, btn.parentElement.outerHTML);
+        console.log(`Edit button grandparent:`, btn.parentElement.parentElement.outerHTML);
+      });
+      
+      
+      // Try to manually trigger the edit button
+      const editButton = document.querySelector('[onclick*="editEventType"]');
+      if (editButton) {
+        console.log('Attempting to manually click edit button...');
+        editButton.click();
+      } else {
+        console.log('No edit button found to test');
+      }
+      
+      return 'Test function working';
+    };
+
+    window.editEventType = async function editEventType(id) {
+      if (!freshEventTypes || freshEventTypes.length === 0) {
+        showNotification('No event types loaded. Please refresh the page.');
+        return;
+      }
+      
       const eventType = freshEventTypes.find(eventType => eventType.id === id);
       
       if (eventType) {
-        // Store the event type being edited
-        window.editingEventType = eventType;
-        
-        // Populate the form with existing data
-        populateEditForm(eventType);
-        
-        // Show the edit modal
-        document.getElementById('modal-backdrop').classList.remove('hidden');
-        document.getElementById('edit-event-type-modal').classList.remove('hidden');
+        try {
+          // Store the event type being edited
+          window.editingEventType = eventType;
+          
+          // Update location gates before populating form
+          await updateLocationGates();
+          
+          // Populate the form with existing data
+          populateEditForm(eventType);
+          
+          // Show the edit modal
+          const backdrop = document.getElementById('modal-backdrop');
+          const modal = document.getElementById('edit-event-type-modal');
+          
+          if (backdrop && modal) {
+            backdrop.classList.remove('hidden');
+            modal.classList.remove('hidden');
+          } else {
+            console.error('Modal elements not found');
+          }
+        } catch (error) {
+          console.error('Error in editEventType:', error);
+          showNotification('Error opening edit modal: ' + error.message);
+        }
+      } else {
+        console.error('Event type not found for id:', id);
+        showNotification('Event type not found for id: ' + id);
       }
     }
 
     function populateEditForm(eventType) {
       // Basic Information
-      document.getElementById('edit-event-type-name').value = eventType.title || eventType.name || '';
-      document.getElementById('edit-event-type-duration').value = eventType.duration;
-      document.getElementById('edit-event-type-description').value = eventType.description || '';
-      document.getElementById('edit-event-type-location').value = eventType.location || 'zoom';
+      const nameElement = document.getElementById('edit-event-type-name');
+      const durationElement = document.getElementById('edit-event-type-duration');
+      const descriptionElement = document.getElementById('edit-event-type-description');
+      
+      if (nameElement) nameElement.value = eventType.title || eventType.name || '';
+      if (durationElement) durationElement.value = eventType.duration;
+      if (descriptionElement) descriptionElement.value = eventType.description || '';
+      // Locations
+      const locs = Array.isArray(eventType.locations) ? eventType.locations : (eventType.location ? [eventType.location] : []);
+      const editLocZoom = document.getElementById('edit-loc-zoom');
+      const editLocGoogleMeet = document.getElementById('edit-loc-google-meet');
+      const editLocPhone = document.getElementById('edit-loc-phone');
+      const editLocOffice = document.getElementById('edit-loc-office');
+      const editLocCustom = document.getElementById('edit-loc-custom');
+      
+      if (editLocZoom) {
+        editLocZoom.checked = locs.includes('zoom');
+        updateCheckboxVisualState(editLocZoom);
+      }
+      if (editLocGoogleMeet) {
+        editLocGoogleMeet.checked = locs.includes('google-meet');
+        updateCheckboxVisualState(editLocGoogleMeet);
+      }
+      if (editLocPhone) {
+        editLocPhone.checked = locs.includes('phone');
+        updateCheckboxVisualState(editLocPhone);
+      }
+      if (editLocOffice) {
+        editLocOffice.checked = locs.includes('office');
+        updateCheckboxVisualState(editLocOffice);
+      }
+      if (editLocCustom) {
+        editLocCustom.checked = locs.includes('custom');
+        updateCheckboxVisualState(editLocCustom);
+      }
       document.getElementById('edit-event-type-custom-location').value = eventType.customLocation || '';
       document.getElementById('edit-event-type-link').value = eventType.link || '';
       document.getElementById('edit-event-type-color').value = eventType.color || '#34D399';
@@ -2770,17 +3461,13 @@
       
       // Required Fields - removed, now handled by questions system
       
-      // Notifications
-      document.getElementById('edit-event-type-availability').checked = eventType.notifications?.availability !== false;
-      document.getElementById('edit-event-type-reminders').checked = eventType.notifications?.reminders !== false;
-      document.getElementById('edit-event-type-follow-up').checked = eventType.notifications?.followUp === true;
-
-      document.getElementById('edit-event-type-reschedule-notification').checked = eventType.notifications?.reschedule !== false;
+      // Advanced Settings (reduced)
+      const addBox = document.getElementById('edit-event-type-add-to-contacts');
+      if (addBox) addBox.checked = !!eventType.addToContacts;
+      updateEditEventTypeSelectedTags(eventType.tags || []);
       
-      // Advanced Settings
-      document.getElementById('edit-event-type-secret').value = eventType.visibility;
-      document.getElementById('edit-event-type-priority').value = eventType.priority;
-      document.getElementById('edit-event-type-tags').value = eventType.tags ? eventType.tags.join(', ') : '';
+      // Update the add to contacts checkbox based on tags
+      updateAddToContactsCheckbox();
       
       // Update form visibility based on current values
       handleEditLocationChange();
@@ -2794,7 +3481,12 @@
       const name = document.getElementById('edit-event-type-name').value.trim();
       const duration = document.getElementById('edit-event-type-duration').value;
       const description = document.getElementById('edit-event-type-description').value.trim();
-      const location = document.getElementById('edit-event-type-location').value;
+      const editLocations = [];
+      if (document.getElementById('edit-loc-zoom')?.checked) editLocations.push('zoom');
+      if (document.getElementById('edit-loc-google-meet')?.checked) editLocations.push('google-meet');
+      if (document.getElementById('edit-loc-phone')?.checked) editLocations.push('phone');
+      if (document.getElementById('edit-loc-office')?.checked) editLocations.push('office');
+      if (document.getElementById('edit-loc-custom')?.checked) editLocations.push('custom');
       const customLocation = document.getElementById('edit-event-type-custom-location').value.trim();
       const link = document.getElementById('edit-event-type-link').value.trim();
       const color = document.getElementById('edit-event-type-color').value;
@@ -2835,14 +3527,8 @@
       }
       const confirmationMessage = document.getElementById('edit-event-type-confirmation-message').value.trim();
       const questions = getQuestionsData('edit-questions-container');
-      const availability = document.getElementById('edit-event-type-availability').checked;
-      const reminders = document.getElementById('edit-event-type-reminders').checked;
-      const followUp = document.getElementById('edit-event-type-follow-up').checked;
-
-      const rescheduleNotification = document.getElementById('edit-event-type-reschedule-notification').checked;
-      const secret = document.getElementById('edit-event-type-secret').value;
-      const priority = document.getElementById('edit-event-type-priority').value;
-      const tags = document.getElementById('edit-event-type-tags').value.trim();
+      const addToContacts = document.getElementById('edit-event-type-add-to-contacts')?.checked || false;
+      const tags = getEditEventTypeSelectedTags();
 
       if (!name) {
         showNotification('Event type name is required');
@@ -2852,14 +3538,11 @@
         showNotification('Duration is required');
         return;
       }
-      if (!location) {
-        showNotification('Location is required');
+      if (editLocations.length === 0) {
+        showNotification('Select at least one location');
         return;
       }
-      if (location !== "office" && location !== "custom" && !link) {
-        showNotification('Meeting link is required');
-        return;
-      }
+      // No static link required for Zoom/Meet when selected
       if (!color) {
         showNotification('Color is required');
         return;
@@ -2897,19 +3580,18 @@
           if (res.ok) {
             // Save additional settings to UserState
             const additionalSettings = {
-              location,
-              customLocation: location === 'custom' ? customLocation : '',
-              link: location !== 'office' ? link : '',
+              locations: editLocations,
+              customLocation: editLocations.includes('custom') ? customLocation : '',
+              link: link || '',
               color,
-              visibility: secret,
-              priority,
-              tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-              notifications: {
-                availability,
-                reminders,
-                followUp,
-                reschedule: rescheduleNotification
-              }
+              bufferBefore,
+              bufferAfter,
+              advanceNotice,
+              bookingLimit,
+              confirmationMessage,
+              questions,
+              addToContacts,
+              tags
             };
             
             // Save to UserState
@@ -2949,19 +3631,48 @@
     // Edit form interactive functions
 
     function handleEditLocationChange() {
-      const location = document.getElementById('edit-event-type-location').value;
       const customLocationContainer = document.getElementById('edit-custom-location-container');
       const meetingLinkContainer = document.getElementById('edit-meeting-link-container');
+      const customChecked = document.getElementById('edit-loc-custom')?.checked;
       
-      if (location === 'custom') {
-        customLocationContainer.style.display = 'block';
-        meetingLinkContainer.style.display = 'none';
-      } else if (location === 'office') {
-        customLocationContainer.style.display = 'none';
-        meetingLinkContainer.style.display = 'none';
-      } else {
-        customLocationContainer.style.display = 'none';
-        meetingLinkContainer.style.display = 'block';
+      if (customLocationContainer) {
+        customLocationContainer.style.display = customChecked ? 'block' : 'none';
+      }
+      if (meetingLinkContainer) {
+        meetingLinkContainer.style.display = customChecked ? 'block' : 'none';
+      }
+      
+      // Handle automatic question addition for Zoom/Google Meet (email required)
+      const zoomChecked = document.getElementById('edit-loc-zoom')?.checked;
+      const meetChecked = document.getElementById('edit-loc-google-meet')?.checked;
+      const phoneChecked = document.getElementById('edit-loc-phone')?.checked;
+      
+      const questionsContainer = 'edit-questions-container';
+      
+      // Add email question for Zoom or Google Meet
+      if ((zoomChecked || meetChecked) && !questionExists(questionsContainer, 'What is your email address?')) {
+        addQuestion(questionsContainer, {
+          text: 'What is your email address?',
+          required: true
+        });
+      }
+      
+      // Remove email question if neither Zoom nor Google Meet is selected
+      if (!zoomChecked && !meetChecked) {
+        removeRequiredQuestionByText(questionsContainer, 'What is your email address?');
+      }
+      
+      // Add phone question for phone calls
+      if (phoneChecked && !questionExists(questionsContainer, 'What is your phone number?')) {
+        addQuestion(questionsContainer, {
+          text: 'What is your phone number?',
+          required: true
+        });
+      }
+      
+      // Remove phone question if phone is not selected
+      if (!phoneChecked) {
+        removeRequiredQuestionByText(questionsContainer, 'What is your phone number?');
       }
     }
 
@@ -4930,10 +5641,24 @@
       
       questionDiv.innerHTML = `
         <div class="flex items-center justify-between mb-3">
-          <h4 class="text-[#E0E0E0] font-medium">${questionData ? questionData.text : 'Question'}</h4>
+          <div class="flex-1 mr-3">
+            <input type="text" 
+                   id="question_text_${questionId}" 
+                   class="w-full bg-[#1A2E29] border border-[#2C4A43] rounded px-3 py-2 text-[#E0E0E0] placeholder-[#A3B3AF] focus:border-[#34D399] focus:outline-none" 
+                   value="${questionData ? questionData.text : 'Question'}" 
+                   placeholder="Enter your question">
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button type="button" onclick="moveQuestionUp('${questionId}')" class="text-[#A3B3AF] hover:text-[#34D399] transition-colors" title="Move up">
+              <span class="material-icons-outlined text-lg">keyboard_arrow_up</span>
+            </button>
+            <button type="button" onclick="moveQuestionDown('${questionId}')" class="text-[#A3B3AF] hover:text-[#34D399] transition-colors" title="Move down">
+              <span class="material-icons-outlined text-lg">keyboard_arrow_down</span>
+            </button>
           <button type="button" onclick="removeQuestion('${questionId}')" class="text-red-400 hover:text-red-300 transition-colors">
             <span class="material-icons-outlined text-lg">delete</span>
           </button>
+          </div>
         </div>
         <div class="space-y-3">
           <div class="flex items-center gap-3">
@@ -4948,11 +5673,78 @@
       container.appendChild(questionDiv);
     }
 
+    function moveQuestionUp(questionId) {
+      const questionDiv = document.getElementById(`question_div_${questionId}`);
+      if (!questionDiv) return;
+      
+      const previousSibling = questionDiv.previousElementSibling;
+      if (previousSibling && previousSibling.id.startsWith('question_div_')) {
+        questionDiv.parentNode.insertBefore(questionDiv, previousSibling);
+      }
+    }
+
+    function moveQuestionDown(questionId) {
+      const questionDiv = document.getElementById(`question_div_${questionId}`);
+      if (!questionDiv) return;
+      
+      const nextSibling = questionDiv.nextElementSibling;
+      if (nextSibling && nextSibling.id.startsWith('question_div_')) {
+        questionDiv.parentNode.insertBefore(nextSibling, questionDiv);
+      }
+    }
+
+    function removeRequiredQuestionByText(containerId, questionText) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      const questionDivs = container.querySelectorAll('[id^="question_div_question_"]');
+      for (const div of questionDivs) {
+        const questionId = div.id.replace('question_div_', '');
+        const textInput = document.getElementById(`question_text_${questionId}`);
+        const requiredCheckbox = document.getElementById(`question_required_${questionId}`);
+        
+        if (textInput && requiredCheckbox && requiredCheckbox.checked && textInput.value.trim() === questionText) {
+          div.remove();
+          break;
+        }
+      }
+    }
+
     function removeQuestion(questionId) {
       const questionDiv = document.getElementById(`question_div_${questionId}`);
-      if (questionDiv) {
-        questionDiv.remove();
+      if (!questionDiv) return;
+      
+      // Check if this is a required question that can't be deleted
+      const textInput = document.getElementById(`question_text_${questionId}`);
+      const requiredCheckbox = document.getElementById(`question_required_${questionId}`);
+      
+      if (textInput && requiredCheckbox && requiredCheckbox.checked) {
+        const questionText = textInput.value.trim();
+        
+        // Check if this is an email question and Zoom/Google Meet is still selected
+        if (questionText === 'What is your email address?' || questionText.includes('email')) {
+          const zoomChecked = document.getElementById('loc-zoom')?.checked || document.getElementById('edit-loc-zoom')?.checked;
+          const meetChecked = document.getElementById('loc-google-meet')?.checked || document.getElementById('edit-loc-google-meet')?.checked;
+          
+          if (zoomChecked || meetChecked) {
+            showNotification('Cannot delete email question while Zoom or Google Meet is selected. Please deselect these locations first.');
+            return;
+          }
+        }
+        
+        // Check if this is a phone question and phone is still selected
+        if (questionText === 'What is your phone number?' || questionText.includes('phone')) {
+          const phoneChecked = document.getElementById('loc-phone')?.checked || document.getElementById('edit-loc-phone')?.checked;
+          
+          if (phoneChecked) {
+            showNotification('Cannot delete phone question while phone location is selected. Please deselect phone location first.');
+            return;
+          }
+        }
       }
+      
+      // If we get here, it's safe to delete the question
+      questionDiv.remove();
     }
 
     function getQuestionsData(containerId) {
@@ -4964,12 +5756,12 @@
       
       questionDivs.forEach(div => {
         const questionId = div.id.replace('question_div_', '');
-        const titleElement = div.querySelector('h4');
+        const textInput = document.getElementById(`question_text_${questionId}`);
         const requiredCheckbox = document.getElementById(`question_required_${questionId}`);
         
-        if (titleElement && titleElement.textContent.trim()) {
+        if (textInput && textInput.value.trim()) {
           questions.push({
-            text: titleElement.textContent.trim(),
+            text: textInput.value.trim(),
             required: requiredCheckbox ? requiredCheckbox.checked : false
           });
         }

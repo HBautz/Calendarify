@@ -236,6 +236,40 @@ export class IntegrationsService {
     return !!(record && (record.access_token || record.refresh_token));
   }
 
+  async refreshGoogleToken(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'google' },
+    });
+    
+    if (!record || !record.refresh_token) {
+      console.log('[GOOGLE DEBUG] refreshGoogleToken - no refresh token', { userId });
+      return false;
+    }
+
+    try {
+      const oauth2Client = this.oauthClient();
+      oauth2Client.setCredentials({
+        refresh_token: record.refresh_token,
+      });
+
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      console.log('[GOOGLE DEBUG] refreshGoogleToken - success', { userId, hasAccessToken: !!credentials.access_token });
+
+      await this.prisma.externalCalendar.update({
+        where: { id: record.id },
+        data: {
+          access_token: credentials.access_token,
+          refresh_token: credentials.refresh_token || record.refresh_token, // Keep old refresh token if new one not provided
+        },
+      });
+
+      return true;
+    } catch (error) {
+      console.error('[GOOGLE DEBUG] refreshGoogleToken - error', { userId, error: error.message });
+      return false;
+    }
+  }
+
   connectGoogleMeet(data: any) {
     return { message: 'google meet integration stub', data };
   }
@@ -317,6 +351,7 @@ export class IntegrationsService {
         data: {
           external_id: externalId,
           access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token ?? existing.refresh_token,
         },
       });
     } else {
@@ -327,6 +362,7 @@ export class IntegrationsService {
           provider: 'zoom',
           external_id: externalId,
           access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token ?? null,
         },
       });
     }
@@ -341,6 +377,61 @@ export class IntegrationsService {
     const connected = !!(record && (record.access_token || record.refresh_token));
     this.zoomLog('isZoomConnected', { userId, connected });
     return connected;
+  }
+
+  async refreshZoomToken(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'zoom' },
+    });
+    
+    if (!record || !record.refresh_token) {
+      this.zoomLog('refreshZoomToken - no refresh token', { userId });
+      return false;
+    }
+
+    try {
+      const clientId = this.env('ZOOM_CLIENT_ID');
+      const clientSecret = this.env('ZOOM_CLIENT_SECRET');
+      
+      if (!clientId || !clientSecret) {
+        this.zoomLog('refreshZoomToken - missing env vars', { userId });
+        return false;
+      }
+
+      const tokenRes = await fetch('https://zoom.us/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: record.refresh_token,
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        const errorText = await tokenRes.text();
+        this.zoomLog('refreshZoomToken - failed', { userId, status: tokenRes.status, error: errorText });
+        return false;
+      }
+
+      const tokens = await tokenRes.json();
+      this.zoomLog('refreshZoomToken - success', { userId, hasAccessToken: !!tokens.access_token, hasRefreshToken: !!tokens.refresh_token });
+
+      await this.prisma.externalCalendar.update({
+        where: { id: record.id },
+        data: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token || record.refresh_token, // Keep old refresh token if new one not provided
+        },
+      });
+
+      return true;
+    } catch (error) {
+      this.zoomLog('refreshZoomToken - error', { userId, error: error.message });
+      return false;
+    }
   }
 
   async disconnectZoom(userId: string) {
@@ -453,6 +544,61 @@ export class IntegrationsService {
     const connected = !!(record && (record.access_token || record.refresh_token));
     this.outlookLog('isOutlookConnected', { userId, connected });
     return connected;
+  }
+
+  async refreshOutlookToken(userId: string): Promise<boolean> {
+    const record = await this.prisma.externalCalendar.findFirst({
+      where: { user_id: userId, provider: 'outlook' },
+    });
+    
+    if (!record || !record.refresh_token) {
+      this.outlookLog('refreshOutlookToken - no refresh token', { userId });
+      return false;
+    }
+
+    try {
+      const clientId = OUTLOOK_CLIENT_ID;
+      const clientSecret = process.env.OUTLOOK_CLIENT_SECRET;
+      const tenant = OUTLOOK_TENANT;
+      
+      if (!clientId || !clientSecret) {
+        this.outlookLog('refreshOutlookToken - missing env vars', { userId });
+        return false;
+      }
+
+      const tokenRes = await fetch(`${tenant}/oauth2/v2.0/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: record.refresh_token,
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        const errorText = await tokenRes.text();
+        this.outlookLog('refreshOutlookToken - failed', { userId, status: tokenRes.status, error: errorText });
+        return false;
+      }
+
+      const tokens = await tokenRes.json();
+      this.outlookLog('refreshOutlookToken - success', { userId, hasAccessToken: !!tokens.access_token, hasRefreshToken: !!tokens.refresh_token });
+
+      await this.prisma.externalCalendar.update({
+        where: { id: record.id },
+        data: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token || record.refresh_token, // Keep old refresh token if new one not provided
+        },
+      });
+
+      return true;
+    } catch (error) {
+      this.outlookLog('refreshOutlookToken - error', { userId, error: error.message });
+      return false;
+    }
   }
 
   async disconnectOutlook(userId: string) {
@@ -824,24 +970,25 @@ export class IntegrationsService {
     console.log('[ZOOM DEBUG] Generating auth URL for user:', userId);
     const clientId = this.env('ZOOM_CLIENT_ID');
     const redirectUri = this.env('ZOOM_REDIRECT_URI');
-    const codeVerifier = this.generateCodeVerifier();
-    const codeChallenge = this.computeCodeChallenge(codeVerifier);
-    const state = this.createStatePayload({ sub: userId, zcv: codeVerifier });
+    // For web server OAuth, omit PKCE to avoid Zoom 4700 issues on some app configs
+    const state = this.createStatePayload({ sub: userId });
     const base = 'https://zoom.us/oauth/authorize';
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: clientId ?? '',
       redirect_uri: redirectUri ?? '',
       state,
-      prompt: 'login consent',
-      code_challenge: codeChallenge,
-      code_challenge_method: 'S256',
     });
+    const accountId = this.env('ZOOM_ACCOUNT_ID');
+    if (accountId) {
+      params.set('account_id', accountId);
+    }
     const url = `${base}?${params.toString()}`;
-    this.zoomLog('generateZoomAuthUrl', { userId, url, clientId, redirectUri });
+    this.zoomLog('generateZoomAuthUrl', { userId, url, clientId, redirectUri, accountIdPresent: !!accountId });
     console.log('[ZOOM DEBUG] Generated OAuth URL:', url);
     console.log('[ZOOM DEBUG] Client ID:', clientId);
     console.log('[ZOOM DEBUG] Redirect URI:', redirectUri);
+    console.log('[ZOOM DEBUG] Note: PKCE disabled for Zoom Web OAuth flow');
     console.log('[ZOOM DEBUG] State:', state);
     return url;
   }

@@ -14,6 +14,10 @@ async function bootstrap() {
   
   const port = process.env.PORT ?? 3001;
   console.log('[SERVER DEBUG] Listening on port:', port);
+  // Quick diagnostics for Zoom OAuth environment
+  console.log('[SERVER DEBUG] ZOOM_CLIENT_ID:', (process.env.ZOOM_CLIENT_ID || '').slice(0, 6) || 'missing');
+  console.log('[SERVER DEBUG] ZOOM_REDIRECT_URI:', process.env.ZOOM_REDIRECT_URI || 'missing');
+  console.log('[SERVER DEBUG] ZOOM_SCOPES:', process.env.ZOOM_SCOPES || 'default');
   await app.listen(port);
   console.log('[SERVER DEBUG] Server started successfully on port:', port);
 }

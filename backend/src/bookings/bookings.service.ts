@@ -110,15 +110,105 @@ export class BookingsService {
       },
       include: {
         event_type: true,
+        notes: true,
       },
     });
 
+    // Determine chosen location from payload (optional)
+    const chosenLocation = (data as any).chosen_location || null;
+
+    // Persist attendee-provided context as notes for later display
+    try {
+      const notesPayload: any = {
+        chosen_location: (data as any).chosen_location || null,
+        phone: (data as any).phone || null,
+        company: (data as any).company || null,
+        questions: Array.isArray((data as any).questions) ? (data as any).questions : [],
+      };
+      const notesToCreate: { note: string }[] = [];
+      // Store a compact machine-parsable summary
+      notesToCreate.push({ note: `meta:${JSON.stringify(notesPayload)}` });
+      // Also store a human-readable summary line
+      const humanSummary = `Attendee details — Location: ${notesPayload.chosen_location || 'n/a'}; Phone: ${notesPayload.phone || 'n/a'}; Company: ${notesPayload.company || 'n/a'}`;
+      notesToCreate.push({ note: humanSummary });
+
+      if (notesToCreate.length) {
+        await this.prisma.bookingNote.createMany({
+          data: notesToCreate.map(n => ({ booking_id: booking.id, note: n.note })),
+        });
+      }
+    } catch (e) {
+      console.warn('[BOOKINGS] Failed to persist booking notes:', e);
+    }
+
     // Create calendar events in all connected calendars
-    await this.createCalendarEvents({ ...booking, client_timezone: data.client_timezone, client_offset_minutes: data.client_offset_minutes });
+    await this.createCalendarEvents({
+      ...booking,
+      client_timezone: data.client_timezone,
+      client_offset_minutes: data.client_offset_minutes,
+      chosen_location: chosenLocation,
+      // Attach locations from event type settings if present
+      event_type: {
+        ...booking.event_type,
+        locations: (eventType as any).locations || [],
+        customLocation: (eventType as any).customLocation || '',
+        tags: (eventType as any).tags || [],
+        addToContacts: (eventType as any).addToContacts === true,
+      }
+    });
 
     // TODO: Add support for phone, company, and questions in a future update
     // For now, we'll store this data in the booking notes table
     // This requires fixing the Prisma client types
+
+    try {
+      // If configured, upsert attendee into contacts and apply tags
+      const addToContacts = (eventType as any).addToContacts === true || ((eventType as any).tags?.length > 0);
+      if (addToContacts) {
+        const existing = await this.prisma.contact.findFirst({ where: { user_id: eventType.userId, email: data.email } });
+        const baseContact = {
+          user_id: eventType.userId,
+          name: data.name,
+          email: data.email,
+          phone: (data as any).phone || null,
+          company: (data as any).company || null,
+          notes: undefined as any,
+          favorite: false,
+        };
+        let contactId: string;
+        if (!existing) {
+          const created = await this.prisma.contact.create({ data: baseContact });
+          contactId = created.id;
+        } else {
+          const updateData: any = {};
+          if (!existing.name && data.name) updateData.name = data.name;
+          if (!existing.phone && (data as any).phone) updateData.phone = (data as any).phone;
+          if (!existing.company && (data as any).company) updateData.company = (data as any).company;
+          // Merge notes minimally by not touching existing notes
+          if (Object.keys(updateData).length > 0) {
+            await this.prisma.contact.update({ where: { id: existing.id }, data: updateData });
+          }
+          contactId = existing.id;
+        }
+
+        const tags: string[] = Array.isArray((eventType as any).tags) ? (eventType as any).tags : [];
+        if (tags.length > 0) {
+          for (const tagName of tags) {
+            // Ensure tag exists and relation is created
+            let tag = await this.prisma.tag.findFirst({ where: { user_id: eventType.userId, name: tagName } });
+            if (!tag) {
+              tag = await this.prisma.tag.create({ data: { user_id: eventType.userId, name: tagName } });
+            }
+            const rel = await this.prisma.contactTag.findFirst({ where: { contact_id: contactId, tag_id: tag.id } });
+            if (!rel) {
+              await this.prisma.contactTag.create({ data: { contact_id: contactId, tag_id: tag.id } });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[BOOKINGS] Failed to upsert contact or apply tags:', e);
+    }
 
     return booking;
   }
@@ -136,12 +226,27 @@ export class BookingsService {
 
       let zoomLink: string | null = null;
       let googleMeetLink: string | null = null;
+      const chosenLocation: string | null = booking.chosen_location || null;
+      
+      console.log('[CALENDAR DEBUG] Chosen location:', chosenLocation);
+      console.log('[CALENDAR DEBUG] Booking data:', {
+        id: booking.id,
+        chosen_location: booking.chosen_location,
+        event_type: booking.event_type?.title
+      });
 
       // Create events in each connected calendar
       const eventPromises = connectedCalendars.map(async (calendar, index) => {
         const result = await this.createEventInCalendar(booking, calendar);
         
         // If this is a Zoom calendar and it created a meeting, capture the link and update other calendars
+        console.log('[CALENDAR DEBUG] Checking Zoom result:', {
+          provider: calendar.provider,
+          hasResult: !!result,
+          hasJoinUrl: !!(result && result.join_url),
+          joinUrl: result?.join_url
+        });
+        
         if (calendar.provider === 'zoom' && result && result.join_url) {
           zoomLink = result.join_url;
           console.log('[CALENDAR] Zoom meeting created with link:', zoomLink);
@@ -152,9 +257,9 @@ export class BookingsService {
             const updatedEventData = result.updatedEventData;
             switch (otherCalendar.provider) {
               case 'google':
-                return this.createGoogleCalendarEvent(otherCalendar, updatedEventData);
+                return this.createGoogleCalendarEvent(otherCalendar, updatedEventData, booking);
               case 'outlook':
-                return this.createOutlookCalendarEvent(otherCalendar, updatedEventData);
+                return this.createOutlookCalendarEvent(otherCalendar, updatedEventData, booking);
               default:
                 return Promise.resolve();
             }
@@ -167,6 +272,23 @@ export class BookingsService {
         if (calendar.provider === 'google' && result && result.meetLink) {
           googleMeetLink = result.meetLink;
           console.log('[CALENDAR] Google Meet created with link:', googleMeetLink);
+
+          // If Google Meet was created, push description with Meet link to other calendars
+          const otherCalendars = connectedCalendars.filter((_, i) => i !== index);
+          const updatedEventData = {
+            ...result.updatedEventData,
+          };
+          const otherEventPromises = otherCalendars.map(otherCalendar => {
+            switch (otherCalendar.provider) {
+              case 'google':
+                return this.createGoogleCalendarEvent(otherCalendar, updatedEventData, booking);
+              case 'outlook':
+                return this.createOutlookCalendarEvent(otherCalendar, updatedEventData, booking);
+              default:
+                return Promise.resolve();
+            }
+          });
+          await Promise.allSettled(otherEventPromises);
         }
         
         return result;
@@ -195,12 +317,22 @@ export class BookingsService {
         console.log('[CALENDAR] Captured Google Meet link:', googleMeetLink);
       }
       
+      console.log('[CALENDAR DEBUG] Final update data:', updateData);
+      console.log('[CALENDAR DEBUG] Booking ID for update:', booking.id);
+      
       if (Object.keys(updateData).length > 0) {
-        await this.prisma.booking.update({
+        const updatedBooking = await this.prisma.booking.update({
           where: { id: booking.id },
           data: updateData
         });
         console.log('[CALENDAR] Updated booking with meeting links:', updateData);
+        console.log('[CALENDAR DEBUG] Updated booking from database:', {
+          id: updatedBooking.id,
+          zoom_link: (updatedBooking as any).zoom_link,
+          google_meet_link: (updatedBooking as any).google_meet_link
+        });
+      } else {
+        console.log('[CALENDAR DEBUG] No meeting links to update');
       }
 
     } catch (error) {
@@ -242,9 +374,13 @@ export class BookingsService {
       case 'google':
         return this.createGoogleCalendarEvent(calendar, eventData, booking);
       case 'zoom':
-        const zoomResult = await this.createZoomMeeting(calendar, eventData);
-        // Use the updated event data for other calendars
-        return { ...zoomResult, eventData: zoomResult.updatedEventData };
+        // Only create Zoom meeting if explicitly chosen
+        if ((booking.chosen_location || '').toLowerCase() === 'zoom') {
+          const zoomResult = await this.createZoomMeeting(calendar, eventData);
+          // Use the updated event data for other calendars
+          return { ...zoomResult, eventData: zoomResult.updatedEventData };
+        }
+        return { eventData };
       case 'outlook':
         return this.createOutlookCalendarEvent(calendar, eventData, booking);
       case 'apple':
@@ -276,6 +412,32 @@ export class BookingsService {
         } else {
           const txt = await tzRes.text();
           console.warn('[CALENDAR DEBUG] Failed to fetch calendar timezone:', tzRes.status, txt);
+          
+          // If token is expired, try to refresh it
+          if (tzRes.status === 401) {
+            console.log('[CALENDAR] Google token expired during timezone fetch, attempting refresh...');
+            
+            const refreshed = await this.integrationsService.refreshGoogleToken(calendar.user_id);
+            if (refreshed) {
+              console.log('[CALENDAR] Google token refreshed, retrying timezone fetch...');
+              // Get the updated calendar record with fresh token
+              const updatedCalendar = await this.prisma.externalCalendar.findFirst({
+                where: { user_id: calendar.user_id, provider: 'google' },
+              });
+              
+              if (updatedCalendar) {
+                // Retry timezone fetch with fresh token
+                const retryTzRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/settings/timezone', {
+                  headers: { 'Authorization': `Bearer ${updatedCalendar.access_token}` }
+                });
+                if (retryTzRes.ok) {
+                  const tzJson = await retryTzRes.json();
+                  calendarTimeZone = tzJson?.value || null;
+                  console.log('[CALENDAR] Google timezone fetched after token refresh:', calendarTimeZone);
+                }
+              }
+            }
+          }
         }
       } catch (e) {
         console.warn('[CALENDAR DEBUG] Error fetching calendar timezone:', e);
@@ -340,28 +502,33 @@ export class BookingsService {
         }
       }
 
-      // Add Google Meet to the event
-      const eventWithMeet = {
-        ...finalEventBody,
-        conferenceData: {
-          createRequest: {
-            requestId: `meet-${Date.now()}`,
-            conferenceSolutionKey: {
-              type: 'hangoutsMeet'
-            }
+      // Add Google Meet to the event ONLY if chosen_location is google-meet
+      const shouldCreateMeet = (booking?.chosen_location || '').toLowerCase() === 'google-meet';
+      const baseEvent = { ...finalEventBody };
+      const eventWithMeet = shouldCreateMeet
+        ? {
+            ...finalEventBody,
+            conferenceData: {
+              createRequest: {
+                requestId: `meet-${Date.now()}`,
+                conferenceSolutionKey: {
+                  type: 'hangoutsMeet'
+                }
+              }
+            },
+            guestsCanModify: false,
+            guestsCanInviteOthers: false,
+            guestsCanSeeOtherGuests: true,
+            conferenceDataVersion: 1
           }
-        },
-        // Explicitly request Google Meet to be created
-        guestsCanModify: false,
-        guestsCanInviteOthers: false,
-        guestsCanSeeOtherGuests: true,
-        // Add conference parameters to ensure Meet is created
-        conferenceDataVersion: 1
-      };
+        : baseEvent;
 
       console.log('[CALENDAR DEBUG] Sending Google Calendar event with Meet:', JSON.stringify(eventWithMeet, null, 2));
 
-      const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1`, {
+      const url = shouldCreateMeet
+        ? `https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1`
+        : `https://www.googleapis.com/calendar/v3/calendars/primary/events`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${calendar.access_token}`,
@@ -372,6 +539,59 @@ export class BookingsService {
 
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // If token is expired, try to refresh it
+        if (response.status === 401) {
+          console.log('[CALENDAR] Google token expired, attempting refresh...');
+          
+          const refreshed = await this.integrationsService.refreshGoogleToken(calendar.user_id);
+          if (refreshed) {
+            console.log('[CALENDAR] Google token refreshed, retrying event creation...');
+            // Get the updated calendar record with fresh token
+            const updatedCalendar = await this.prisma.externalCalendar.findFirst({
+              where: { user_id: calendar.user_id, provider: 'google' },
+            });
+            
+            if (updatedCalendar) {
+              // Retry with fresh token
+              const retryResponse = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${updatedCalendar.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(eventWithMeet),
+              });
+
+              if (!retryResponse.ok) {
+                const retryErrorText = await retryResponse.text();
+                throw new Error(`Google Calendar API error after refresh: ${retryResponse.status} - ${retryErrorText}`);
+              }
+
+              const result = await retryResponse.json();
+              console.log('[CALENDAR] Google Calendar event created after token refresh:', result.id);
+              
+              // Extract Google Meet link if available
+              let meetLink = null;
+              if (shouldCreateMeet && result.conferenceData) {
+                if (result.conferenceData.entryPoints) {
+                  const meetEntry = result.conferenceData.entryPoints.find((entry: any) => entry.entryPointType === 'video');
+                  if (meetEntry) {
+                    meetLink = meetEntry.uri;
+                    console.log('[CALENDAR] Google Meet link found after refresh:', meetLink);
+                  }
+                }
+              }
+              
+              const updatedEventData = meetLink
+                ? { ...eventData, description: `${eventData.description}\n\nGoogle Meet Link: ${meetLink}` }
+                : eventData;
+
+              return { ...result, meetLink, updatedEventData };
+            }
+          }
+        }
+        
         throw new Error(`Google Calendar API error: ${response.status} - ${errorText}`);
       }
 
@@ -381,7 +601,7 @@ export class BookingsService {
       
       // Extract Google Meet link if available
       let meetLink = null;
-      if (result.conferenceData) {
+      if (shouldCreateMeet && result.conferenceData) {
         console.log('[CALENDAR DEBUG] Conference data found:', JSON.stringify(result.conferenceData, null, 2));
         if (result.conferenceData.entryPoints) {
           console.log('[CALENDAR DEBUG] Entry points found:', result.conferenceData.entryPoints.length);
@@ -396,10 +616,16 @@ export class BookingsService {
           console.log('[CALENDAR DEBUG] No entryPoints in conferenceData');
         }
       } else {
-        console.log('[CALENDAR DEBUG] No conferenceData in response');
+        if (shouldCreateMeet) {
+          console.log('[CALENDAR DEBUG] No conferenceData in response');
+        }
       }
       
-      return { ...result, meetLink };
+      const updatedEventData = meetLink
+        ? { ...eventData, description: `${eventData.description}\n\nGoogle Meet Link: ${meetLink}` }
+        : eventData;
+
+      return { ...result, meetLink, updatedEventData };
     } catch (error) {
       console.error('[CALENDAR] Google Calendar event creation failed:', error);
       throw error;
@@ -437,6 +663,49 @@ export class BookingsService {
 
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // If token is expired, try to refresh it
+        if (response.status === 401) {
+          console.log('[CALENDAR] Zoom token expired, attempting refresh...');
+          
+          const refreshed = await this.integrationsService.refreshZoomToken(calendar.user_id);
+          if (refreshed) {
+            console.log('[CALENDAR] Zoom token refreshed, retrying meeting creation...');
+            // Get the updated calendar record with fresh token
+            const updatedCalendar = await this.prisma.externalCalendar.findFirst({
+              where: { user_id: calendar.user_id, provider: 'zoom' },
+            });
+            
+            if (updatedCalendar) {
+              // Retry with fresh token
+              const retryResponse = await fetch('https://api.zoom.us/v2/users/me/meetings', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${updatedCalendar.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(zoomMeetingData),
+              });
+
+              if (!retryResponse.ok) {
+                const retryErrorText = await retryResponse.text();
+                throw new Error(`Zoom API error after refresh: ${retryResponse.status} - ${retryErrorText}`);
+              }
+
+              const result = await retryResponse.json();
+              console.log('[CALENDAR] Zoom meeting created after token refresh:', result.id);
+              
+              // Update the event description to include the Zoom meeting link
+              const updatedEventData = {
+                ...eventData,
+                description: `${eventData.description}\n\nZoom Meeting Link: ${result.join_url}`,
+              };
+
+              return { ...result, updatedEventData };
+            }
+          }
+        }
+        
         throw new Error(`Zoom API error: ${response.status} - ${errorText}`);
       }
 
@@ -477,6 +746,32 @@ export class BookingsService {
           userTimeZone = tzJson?.timeZone || null;
         } else {
           console.warn('[CALENDAR DEBUG] Failed to fetch Outlook timezone:', tzRes.status);
+          
+          // If token is expired, try to refresh it
+          if (tzRes.status === 401) {
+            console.log('[CALENDAR] Outlook token expired during timezone fetch, attempting refresh...');
+            
+            const refreshed = await this.integrationsService.refreshOutlookToken(calendar.user_id);
+            if (refreshed) {
+              console.log('[CALENDAR] Outlook token refreshed, retrying timezone fetch...');
+              // Get the updated calendar record with fresh token
+              const updatedCalendar = await this.prisma.externalCalendar.findFirst({
+                where: { user_id: calendar.user_id, provider: 'outlook' },
+              });
+              
+              if (updatedCalendar) {
+                // Retry timezone fetch with fresh token
+                const retryTzRes = await fetch('https://graph.microsoft.com/v1.0/me/mailboxSettings', {
+                  headers: { 'Authorization': `Bearer ${updatedCalendar.access_token}` }
+                });
+                if (retryTzRes.ok) {
+                  const tzJson = await retryTzRes.json();
+                  userTimeZone = tzJson?.timeZone || null;
+                  console.log('[CALENDAR] Outlook timezone fetched after token refresh:', userTimeZone);
+                }
+              }
+            }
+          }
         }
       } catch (e) {
         console.warn('[CALENDAR DEBUG] Error fetching Outlook timezone:', e);
@@ -581,6 +876,42 @@ export class BookingsService {
 
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // If token is expired, try to refresh it
+        if (response.status === 401) {
+          console.log('[CALENDAR] Outlook token expired, attempting refresh...');
+          
+          const refreshed = await this.integrationsService.refreshOutlookToken(calendar.user_id);
+          if (refreshed) {
+            console.log('[CALENDAR] Outlook token refreshed, retrying event creation...');
+            // Get the updated calendar record with fresh token
+            const updatedCalendar = await this.prisma.externalCalendar.findFirst({
+              where: { user_id: calendar.user_id, provider: 'outlook' },
+            });
+            
+            if (updatedCalendar) {
+              // Retry with fresh token
+              const retryResponse = await fetch('https://graph.microsoft.com/v1.0/me/events', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${updatedCalendar.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(outlookEventData),
+              });
+
+              if (!retryResponse.ok) {
+                const retryErrorText = await retryResponse.text();
+                throw new Error(`Outlook API error after refresh: ${retryResponse.status} - ${retryErrorText}`);
+              }
+
+              const result = await retryResponse.json();
+              console.log('[CALENDAR] Outlook Calendar event created after token refresh:', result.id);
+              return result;
+            }
+          }
+        }
+        
         console.error('[CALENDAR DEBUG] Outlook API error response:', response.status, errorText);
         throw new Error(`Outlook API error: ${response.status} - ${errorText}`);
       }
@@ -846,7 +1177,7 @@ export class BookingsService {
         event_type: true,
         notes: true,
       },
-      orderBy: { starts_at: 'asc' },
+      orderBy: { starts_at: 'asc' }, // soonest -> latest
     });
   }
 

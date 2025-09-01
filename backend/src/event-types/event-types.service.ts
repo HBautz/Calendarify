@@ -114,7 +114,38 @@ export class EventTypesService {
       }
     });
 
-    return eventType ? this.mapToEventType(eventType) : null;
+    if (!eventType) {
+      return null;
+    }
+
+    // Base mapped event type
+    const mapped = this.mapToEventType(eventType);
+
+    // Augment with public-safe per-event-type settings from UserState
+    try {
+      const state = await this.prisma.userState.findUnique({ where: { user_id: eventType.user_id } });
+      const data = (state?.data as any) || {};
+      const settingsKey = `event-type-settings-${eventType.id}`;
+      const settings = data[settingsKey] || {};
+
+      // Normalize: support legacy single location -> array
+      const legacyLocation = settings.location;
+      const locations: string[] = Array.isArray(settings.locations)
+        ? settings.locations
+        : legacyLocation
+          ? [legacyLocation]
+          : [];
+
+      (mapped as any).locations = locations;
+      (mapped as any).customLocation = settings.customLocation || '';
+      (mapped as any).link = settings.link || '';
+      (mapped as any).tags = Array.isArray(settings.tags) ? settings.tags : [];
+      (mapped as any).addToContacts = settings.addToContacts === true || ((mapped as any).tags?.length > 0);
+    } catch (e) {
+      // Non-fatal; just return mapped without extras
+    }
+
+    return mapped;
   }
 
   /**
