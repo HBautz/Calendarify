@@ -3,8 +3,8 @@ INCOMING: GET /
 OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
 INCOMING: GET /
 OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
-INCOMING: GET /dashboard?zoom_success=true
-OUTGOING: 200 /dashboard?zoom_success=true (/Users/heinebautz/portfolio-github/Calendarify/dashboard/index.html)
+INCOMING: GET /dashboard
+OUTGOING: 200 /dashboard (/Users/heinebautz/portfolio-github/Calendarify/dashboard/index.html)
 INCOMING: GET /dashboard/dashboard.css
 INCOMING: GET /auth.js
 INCOMING: GET /config.js

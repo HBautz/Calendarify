@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { WorkflowExecutionService } from '../workflows/workflow-execution.service';
 
 export interface Contact {
   id: string;
@@ -17,7 +18,10 @@ export interface Contact {
 
 @Injectable()
 export class ContactsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private workflowExecutionService: WorkflowExecutionService
+  ) {}
 
   async list(userId: string): Promise<Contact[]> {
     const contacts = await this.prisma.contact.findMany({
@@ -32,19 +36,27 @@ export class ContactsService {
       orderBy: { name: 'asc' }
     });
 
-    return contacts.map(contact => ({
-      id: contact.id,
-      userId: contact.user_id,
-      name: contact.name,
-      email: contact.email,
-      phone: contact.phone || undefined,
-      company: contact.company || undefined,
-      notes: contact.notes || undefined,
-      favorite: contact.favorite,
-      tags: contact.tags.map(ct => ct.tag.name),
-      createdAt: contact.created_at,
-      updatedAt: contact.updated_at
-    }));
+    return contacts.map(contact => {
+      console.log('[CONTACTS DEBUG] Raw contact:', contact);
+      console.log('[CONTACTS DEBUG] Contact tags:', contact.tags);
+      
+      const mappedContact = {
+        id: contact.id,
+        userId: contact.user_id,
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone || undefined,
+        company: contact.company || undefined,
+        notes: contact.notes || undefined,
+        favorite: contact.favorite,
+        tags: contact.tags.map(ct => ct.tag.name),
+        createdAt: contact.created_at,
+        updatedAt: contact.updated_at
+      };
+      
+      console.log('[CONTACTS DEBUG] Mapped contact:', mappedContact);
+      return mappedContact;
+    });
   }
 
   async create(userId: string, data: {
@@ -128,6 +140,13 @@ export class ContactsService {
           tag_id: tag.id
         }
       });
+
+      // Trigger workflows for tag added
+      try {
+        await this.workflowExecutionService.onTagAdded(userId, tagName, contactId);
+      } catch (error) {
+        console.warn('[CONTACTS] Failed to trigger workflows:', error);
+      }
     }
   }
 

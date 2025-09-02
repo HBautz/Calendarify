@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { EventTypesService } from '../event-types/event-types.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { WorkflowExecutionService } from '../workflows/workflow-execution.service';
 
 interface CreateBookingDto {
   event_type_id: string;
@@ -33,7 +34,8 @@ export class BookingsService {
     @Inject(forwardRef(() => EventTypesService))
     private eventTypesService: EventTypesService,
     private availabilityService: AvailabilityService,
-    private integrationsService: IntegrationsService
+    private integrationsService: IntegrationsService,
+    private workflowExecutionService: WorkflowExecutionService
   ) {}
 
   async create(data: CreateBookingDto) {
@@ -113,6 +115,17 @@ export class BookingsService {
         notes: true,
       },
     });
+
+    // Trigger workflows for meeting scheduled
+    try {
+      await this.workflowExecutionService.onMeetingScheduled(
+        eventType.userId,
+        eventType.title,
+        booking.id
+      );
+    } catch (error) {
+      console.warn('[BOOKINGS] Failed to trigger workflows:', error);
+    }
 
     // Determine chosen location from payload (optional)
     const chosenLocation = (data as any).chosen_location || null;
@@ -202,6 +215,16 @@ export class BookingsService {
             const rel = await this.prisma.contactTag.findFirst({ where: { contact_id: contactId, tag_id: tag.id } });
             if (!rel) {
               await this.prisma.contactTag.create({ data: { contact_id: contactId, tag_id: tag.id } });
+              
+              // IMPORTANT: Trigger workflows for automatically applied tags from event types
+              // This ensures that workflows with "Tag Added" trigger work for auto-tags
+              try {
+                await this.workflowExecutionService.onTagAdded(eventType.userId, tagName, contactId);
+                console.log(`[BOOKINGS] Triggered workflow execution for auto-applied tag "${tagName}"`);
+              } catch (workflowError) {
+                console.warn(`[BOOKINGS] Failed to trigger workflows for auto-applied tag "${tagName}":`, workflowError);
+                // Don't fail the booking creation if workflow triggering fails
+              }
             }
           }
         }

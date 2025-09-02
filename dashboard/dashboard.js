@@ -89,6 +89,7 @@
       const res = await fetch(`${API_URL}/contacts`, { headers: { Authorization: `Bearer ${clean}` } });
       if (res.ok) {
         const contacts = await res.json();
+        console.log('[DEBUG] Fetched contacts:', contacts);
         freshContacts = contacts;
         return contacts;
       }
@@ -3721,9 +3722,178 @@
     }
     
     // Contact actions
-    function viewContact(email) {
-      showNotification(`Viewing contact: ${email}`);
-      // Here you would typically open a modal or navigate to contact details
+    async function viewContact(email) {
+      try {
+        const contacts = await fetchContactsFromServer();
+        const contact = contacts.find(c => c.email === email);
+        
+        if (!contact) {
+          showNotification('Contact not found');
+          return;
+        }
+        
+        console.log('[CONTACT VIEW] Contact data:', contact);
+        
+        // Open the contact view modal
+        const modal = document.getElementById('contact-view-modal');
+        const title = document.getElementById('contact-view-title');
+        const content = document.getElementById('contact-view-content');
+        
+        title.textContent = contact.name;
+        
+        // Build comprehensive contact view
+        let contentHtml = '';
+        
+        // Basic Information Section
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">info</span>
+              Basic Information
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex items-center gap-3">
+                <span class="material-icons-outlined text-[#34D399]">email</span>
+                <div class="flex-1">
+                  <div class="text-[#A3B3AF] text-sm">Email</div>
+                  <div class="text-[#E0E0E0] font-medium" id="contact-email-display">${contact.email}</div>
+                  <input type="email" id="contact-email-edit" value="${contact.email}" class="hidden w-full bg-[#223c36] border border-[#2C4A43] rounded px-2 py-1 text-[#E0E0E0] text-sm" />
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-icons-outlined text-[#34D399]">phone</span>
+                <div class="flex-1">
+                  <div class="text-[#A3B3AF] text-sm">Phone</div>
+                  <div class="text-[#E0E0E0] font-medium" id="contact-phone-display">${contact.phone || '-'}</div>
+                  <input type="tel" id="contact-phone-edit" value="${contact.phone || ''}" class="hidden w-full bg-[#223c36] border border-[#2C4A43] rounded px-2 py-1 text-[#E0E0E0] text-sm" />
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-icons-outlined text-[#34D399]">business</span>
+                <div class="flex-1">
+                  <div class="text-[#A3B3AF] text-sm">Company</div>
+                  <div class="text-[#E0E0E0] font-medium" id="contact-company-display">${contact.company || '-'}</div>
+                  <input type="text" id="contact-company-edit" value="${contact.company || ''}" class="hidden w-full bg-[#223c36] border border-[#2C4A43] rounded px-2 py-1 text-[#E0E0E0] text-sm" />
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-icons-outlined text-[#34D399]">star</span>
+                <div class="flex-1">
+                  <div class="text-[#A3B3AF] text-sm">Status</div>
+                  <div class="text-[#E0E0E0] font-medium" id="contact-favorite-display">${contact.favorite ? 'Favorite' : 'Regular Contact'}</div>
+                  <select id="contact-favorite-edit" class="hidden w-full bg-[#223c36] border border-[#2C4A43] rounded px-2 py-1 text-[#E0E0E0] text-sm">
+                    <option value="false" ${!contact.favorite ? 'selected' : ''}>Regular Contact</option>
+                    <option value="true" ${contact.favorite ? 'selected' : ''}>Favorite</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Tags Section
+        let tagsHtml = '';
+        if (contact.tags && contact.tags.length > 0) {
+          tagsHtml = contact.tags.map(tag => `<span class="bg-[#2C4A43] text-[#34D399] px-3 py-1 rounded-full text-sm font-medium">${tag}</span>`).join('');
+        } else {
+          tagsHtml = '<span class="text-[#A3B3AF] italic">No tags assigned</span>';
+        }
+        
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
+              Tags & Categories
+            </h4>
+            <div class="flex flex-wrap gap-2">
+              ${tagsHtml}
+            </div>
+          </div>
+        `;
+        
+        // Notes Section
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">note</span>
+              Notes
+            </h4>
+            <div class="text-[#E0E0E0] bg-[#223c36] p-3 rounded border border-[#2C4A43]" id="contact-notes-display">
+              ${contact.notes || 'No notes available'}
+            </div>
+            <textarea id="contact-notes-edit" class="hidden w-full bg-[#223c36] border border-[#2C4A43] rounded px-3 py-2 text-[#E0E0E0] text-sm h-24 resize-none" placeholder="Enter notes...">${contact.notes || ''}</textarea>
+          </div>
+        `;
+        
+        // Meeting History Section
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">event</span>
+              Meeting History
+            </h4>
+            <div id="meeting-history-content" class="text-[#A3B3AF] italic">
+              Loading meeting history...
+            </div>
+          </div>
+        `;
+        
+        // Custom Fields Section (Future-proof)
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">tune</span>
+              Additional Information
+            </h4>
+            <div id="custom-fields-content" class="text-[#A3B3AF] italic">
+              No additional fields available
+            </div>
+          </div>
+        `;
+        
+        // Contact Activity Section
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">timeline</span>
+              Contact Activity
+            </h4>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-[#34D399] rounded-full"></div>
+                <div class="flex-1">
+                  <div class="text-[#E0E0E0] text-sm">Contact created</div>
+                  <div class="text-[#A3B3AF] text-xs">${new Date(contact.createdAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-[#34D399] rounded-full"></div>
+                <div class="flex-1">
+                  <div class="text-[#E0E0E0] text-sm">Last updated</div>
+                  <div class="text-[#A3B3AF] text-xs">${new Date(contact.updatedAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        content.innerHTML = contentHtml;
+        
+        // Load meeting history
+        await loadMeetingHistory(contact.email);
+        
+        // Store current contact for editing
+        currentEditingContact = contact;
+        
+        // Load custom fields (future-proof)
+        await loadCustomFields(contact);
+        
+        document.getElementById('modal-backdrop').classList.remove('hidden');
+        modal.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error viewing contact:', error);
+        showNotification('Failed to load contact details');
+      }
     }
     
     function bookContact(email) {
@@ -3956,14 +4126,18 @@
         // Add tags to the list
         if (tags && tags.length > 0) {
           tags.forEach((tag, index) => {
+            // Handle both string and object tag formats
+            const tagName = typeof tag === 'string' ? tag : (tag.name || tag.id || 'Unknown Tag');
+            const tagId = typeof tag === 'string' ? tag : tag.id;
+            
             const item = document.createElement('div');
             item.className = 'flex items-center justify-between p-3 bg-[#19342e] border border-[#2C4A43] rounded-lg hover:border-[#34D399] transition-colors';
             item.innerHTML = `
               <div class="flex items-center gap-3">
                 <span class="material-icons-outlined text-[#34D399]">local_offer</span>
-                <span class="text-[#E0E0E0] font-medium">${tag}</span>
+                <span class="text-[#E0E0E0] font-medium">${tagName}</span>
               </div>
-              <button onclick="removeTag('${tag}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
+              <button onclick="removeTag('${tagId}')" class="p-1 text-[#A3B3AF] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors" title="Remove tag">
                 <span class="material-icons-outlined text-sm">delete</span>
               </button>
             `;
@@ -4124,8 +4298,15 @@
       availableTagsHeader.textContent = 'Add Tags:';
       list.appendChild(availableTagsHeader);
       
-      // Get all available tags from localStorage
-      const allTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
+      // Get all available tags from server
+      const token = getAnyToken();
+      const clean = token ? token.replace(/^"|"$/g, '') : '';
+      const tagsRes = await fetch(`${API_URL}/tags`, { headers: { Authorization: `Bearer ${clean}` } });
+      let allTags = [];
+      if (tagsRes.ok) {
+        const serverTags = await tagsRes.json();
+        allTags = serverTags.map(tag => tag.name);
+      }
       const availableTags = allTags.filter(tag => !contact.tags || !contact.tags.includes(tag));
       
       if (availableTags.length === 0) {
@@ -4217,7 +4398,7 @@
 
     async function addTagToContact(contactEmail, tagName) {
       try {
-        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+        const contacts = await fetchContactsFromServer();
         const contact = contacts.find(c => c.email === contactEmail);
 
         if (!contact) {
@@ -4233,9 +4414,6 @@
           body: JSON.stringify({ tagName })
         });
 
-        if (!contact.tags) contact.tags = [];
-        if (!contact.tags.includes(tagName)) contact.tags.push(tagName);
-        localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
         showNotification(`Tag "${tagName}" added to ${contact.name}`);
         await renderContacts();
         await showContactTagsModal(contactEmail);
@@ -4247,7 +4425,7 @@
 
     async function removeTagFromContact(contactEmail, tagName) {
       try {
-        const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+        const contacts = await fetchContactsFromServer();
         const contact = contacts.find(c => c.email === contactEmail);
 
         if (!contact) {
@@ -4262,18 +4440,36 @@
           headers: { Authorization: `Bearer ${clean}` }
         });
 
-        if (contact.tags && contact.tags.includes(tagName)) {
-          contact.tags = contact.tags.filter(tag => tag !== tagName);
-          localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-          showNotification(`Tag "${tagName}" removed from ${contact.name}`);
-          await renderContacts();
-          await showContactTagsModal(contactEmail);
-        } else {
-          showNotification(`Tag "${tagName}" is not assigned to ${contact.name}`);
-        }
+        showNotification(`Tag "${tagName}" removed from ${contact.name}`);
+        await renderContacts();
+        await showContactTagsModal(contactEmail);
       } catch (error) {
         console.error('Error removing tag from contact:', error);
         showNotification('Failed to remove tag from contact');
+      }
+    }
+
+    function formatTimeAgo(date) {
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+      
+      if (diffInSeconds < 60) {
+        return 'Just now';
+      } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      } else if (diffInSeconds < 2592000) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+      } else if (diffInSeconds < 31536000) {
+        const months = Math.floor(diffInSeconds / 2592000);
+        return `${months} month${months > 1 ? 's' : ''} ago`;
+      } else {
+        const years = Math.floor(diffInSeconds / 31536000);
+        return `${years} year${years > 1 ? 's' : ''} ago`;
       }
     }
 
@@ -4281,14 +4477,41 @@
       const tbody = document.querySelector('#contacts-section tbody');
       if (!tbody) return;
       
-      let tagsHtml = '';
-      if (!contact.tags || contact.tags.length === 0) {
-        tagsHtml = '<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal(\'' + contact.email + '\')">No Tags</span>';
-      } else if (contact.tags.length <= 2) {
-        tagsHtml = contact.tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
-      } else {
-        tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${contact.tags.length} Tags</span>`;
+      console.log('[DEBUG] Adding contact row:', contact);
+      console.log('[DEBUG] Contact tags:', contact.tags);
+      console.log('[DEBUG] Tags type:', typeof contact.tags);
+      console.log('[DEBUG] Tags is array:', Array.isArray(contact.tags));
+      
+      // Ensure tags is always an array of strings
+      let tags = [];
+      if (contact.tags && Array.isArray(contact.tags)) {
+        tags = contact.tags.map(tag => {
+          if (typeof tag === 'string') {
+            return tag;
+          } else if (typeof tag === 'object' && tag !== null) {
+            console.log('[DEBUG] Tag object found:', tag);
+            // Try to extract the name from the tag object
+            if (tag.name) return tag.name;
+            if (tag.tag && tag.tag.name) return tag.tag.name;
+            return JSON.stringify(tag);
+          }
+          return String(tag);
+        });
       }
+      
+      console.log('[DEBUG] Processed tags:', tags);
+      
+      let tagsHtml = '';
+      if (tags.length === 0) {
+        tagsHtml = '<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal(\'' + contact.email + '\')">No Tags</span>';
+      } else if (tags.length <= 2) {
+        tagsHtml = tags.map(t => `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${t}</span>`).join('');
+      } else {
+        tagsHtml = `<span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">${tags[0]}</span><span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('${contact.email}')">+${tags.length - 1}</span>`;
+      }
+      // Format the last updated time
+      const lastUpdated = contact.updatedAt ? formatTimeAgo(new Date(contact.updatedAt)) : 'Never';
+      
       const row = document.createElement('tr');
       row.className = 'table-row';
       row.id = `contact-${contact.email}`;
@@ -4300,6 +4523,7 @@
         </td>
         <td class="py-2 text-center">${contact.name}</td>
         <td class="py-2 text-center">${contact.email}</td>
+        <td class="py-2 text-center text-[#A3B3AF]">${lastUpdated}</td>
         <td class="py-2 text-center"><div class="flex flex-wrap gap-1 justify-center">${tagsHtml}</div></td>
         <td class="py-2 text-center">
           <div class="flex gap-2 justify-center">
@@ -4329,6 +4553,14 @@
 
       try {
         const contacts = await fetchContactsFromServer();
+        
+        // Sort contacts by last updated time (newest first)
+        contacts.sort((a, b) => {
+          const dateA = a.updatedAt ? new Date(a.updatedAt) : new Date(0);
+          const dateB = b.updatedAt ? new Date(b.updatedAt) : new Date(0);
+          return dateB - dateA;
+        });
+        
         contacts.forEach(c => addContactRow(c));
         filterContacts();
       } catch (error) {
@@ -4356,6 +4588,281 @@
       document.getElementById('contact-favorite').checked = false;
       const tagContainer = document.getElementById('contact-tag-options');
       if (tagContainer) tagContainer.innerHTML = '';
+    }
+
+    function closeContactViewModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+      document.getElementById('contact-view-modal').classList.add('hidden');
+      
+      // Reset edit mode
+      if (currentEditingContact) {
+        exitContactEditMode();
+        currentEditingContact = null;
+      }
+    }
+
+    async function loadMeetingHistory(contactEmail) {
+      try {
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        
+        const res = await fetch(`${API_URL}/bookings`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (res.ok) {
+          const bookings = await res.json();
+          const contactBookings = bookings.filter(booking => booking.email === contactEmail);
+          
+          const historyContent = document.getElementById('meeting-history-content');
+          if (contactBookings.length === 0) {
+            historyContent.innerHTML = '<span class="text-[#A3B3AF] italic">No meetings found</span>';
+          } else {
+            const historyHtml = contactBookings.map(booking => `
+              <div class="flex items-center justify-between p-3 bg-[#223c36] rounded border border-[#2C4A43] mb-2">
+                <div class="flex-1">
+                  <div class="text-[#E0E0E0] font-medium">${booking.event_type?.title || 'Unknown Event'}</div>
+                  <div class="text-[#A3B3AF] text-sm">${new Date(booking.starts_at).toLocaleDateString()} at ${new Date(booking.starts_at).toLocaleTimeString()}</div>
+                </div>
+                <div class="text-[#34D399] text-sm font-medium">
+                  ${new Date(booking.starts_at) > new Date() ? 'Upcoming' : 'Completed'}
+                </div>
+              </div>
+            `).join('');
+            historyContent.innerHTML = historyHtml;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading meeting history:', error);
+        const historyContent = document.getElementById('meeting-history-content');
+        historyContent.innerHTML = '<span class="text-[#EF4444] italic">Failed to load meeting history</span>';
+      }
+    }
+
+    async function loadCustomFields(contact) {
+      try {
+        const customFieldsContent = document.getElementById('custom-fields-content');
+        
+        // This function is designed to be future-proof
+        // It will automatically detect and display any additional fields added to contacts
+        const standardFields = ['id', 'userId', 'name', 'email', 'phone', 'company', 'notes', 'favorite', 'tags', 'createdAt', 'updatedAt'];
+        const customFields = Object.keys(contact).filter(key => !standardFields.includes(key));
+        
+        if (customFields.length === 0) {
+          customFieldsContent.innerHTML = '<span class="text-[#A3B3AF] italic">No additional fields available</span>';
+        } else {
+          let customFieldsHtml = '';
+          customFields.forEach(field => {
+            const value = contact[field];
+            if (value !== null && value !== undefined && value !== '') {
+              let displayValue = value;
+              if (typeof value === 'object') {
+                displayValue = JSON.stringify(value);
+              }
+              customFieldsHtml += `
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="material-icons-outlined text-[#34D399]">add_circle</span>
+                  <div>
+                    <div class="text-[#A3B3AF] text-sm capitalize">${field.replace(/([A-Z])/g, ' $1').trim()}</div>
+                    <div class="text-[#E0E0E0] font-medium">${displayValue}</div>
+                  </div>
+                </div>
+              `;
+            }
+          });
+          
+          if (customFieldsHtml) {
+            customFieldsContent.innerHTML = customFieldsHtml;
+          } else {
+            customFieldsContent.innerHTML = '<span class="text-[#A3B3AF] italic">No additional fields available</span>';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading custom fields:', error);
+        const customFieldsContent = document.getElementById('custom-fields-content');
+        customFieldsContent.innerHTML = '<span class="text-[#EF4444] italic">Failed to load custom fields</span>';
+      }
+    }
+
+    // Quick Action Functions
+    function copyContactEmail() {
+      const emailElement = document.querySelector('#contact-view-content .text-[#E0E0E0].font-medium');
+      if (emailElement) {
+        const email = emailElement.textContent;
+        navigator.clipboard.writeText(email).then(() => {
+          showNotification('Email copied to clipboard!');
+        }).catch(() => {
+          showNotification('Failed to copy email');
+        });
+      }
+    }
+
+    function copyContactPhone() {
+      const phoneElement = document.querySelector('#contact-view-content .text-[#E0E0E0].font-medium');
+      if (phoneElement) {
+        const phone = phoneElement.textContent;
+        if (phone && phone.includes('@') === false) { // Simple check to ensure it's a phone number
+          navigator.clipboard.writeText(phone).then(() => {
+            showNotification('Phone number copied to clipboard!');
+          }).catch(() => {
+            showNotification('Failed to copy phone number');
+          });
+        } else {
+          showNotification('No phone number available');
+        }
+      }
+    }
+
+    function sendEmailToContact() {
+      const emailElement = document.querySelector('#contact-view-content .text-[#E0E0E0].font-medium');
+      if (emailElement) {
+        const email = emailElement.textContent;
+        if (email && email.includes('@')) {
+          window.open(`mailto:${email}`, '_blank');
+        } else {
+          showNotification('No valid email address found');
+        }
+      }
+    }
+
+    function duplicateContact() {
+      showNotification('Duplicate contact functionality coming soon!');
+    }
+
+    // Contact Edit Mode Functions
+    let currentEditingContact = null;
+
+    function toggleContactEditMode() {
+      const editBtn = document.getElementById('edit-contact-btn');
+      const saveSection = document.getElementById('contact-save-section');
+      
+      if (editBtn.classList.contains('editing')) {
+        // Exit edit mode
+        exitContactEditMode();
+      } else {
+        // Enter edit mode
+        enterContactEditMode();
+      }
+    }
+
+    function enterContactEditMode() {
+      const editBtn = document.getElementById('edit-contact-btn');
+      const saveSection = document.getElementById('contact-save-section');
+      
+      // Show edit mode
+      editBtn.classList.add('editing');
+      editBtn.innerHTML = '<span class="material-icons-outlined">visibility</span>';
+      editBtn.title = 'Exit Edit Mode';
+      
+      // Show save section
+      saveSection.classList.remove('hidden');
+      
+      // Hide display elements and show edit elements
+      document.getElementById('contact-email-display').classList.add('hidden');
+      document.getElementById('contact-email-edit').classList.remove('hidden');
+      document.getElementById('contact-phone-display').classList.add('hidden');
+      document.getElementById('contact-phone-edit').classList.remove('hidden');
+      document.getElementById('contact-company-display').classList.add('hidden');
+      document.getElementById('contact-company-edit').classList.remove('hidden');
+      document.getElementById('contact-favorite-display').classList.add('hidden');
+      document.getElementById('contact-favorite-edit').classList.remove('hidden');
+      document.getElementById('contact-notes-display').classList.remove('hidden');
+      document.getElementById('contact-notes-edit').classList.remove('hidden');
+    }
+
+    function exitContactEditMode() {
+      const editBtn = document.getElementById('edit-contact-btn');
+      const saveSection = document.getElementById('contact-save-section');
+      
+      // Hide edit mode
+      editBtn.classList.remove('editing');
+      editBtn.innerHTML = '<span class="material-icons-outlined">edit</span>';
+      editBtn.title = 'Edit Contact';
+      
+      // Hide save section
+      saveSection.classList.add('hidden');
+      
+      // Show display elements and hide edit elements
+      document.getElementById('contact-email-display').classList.remove('hidden');
+      document.getElementById('contact-email-edit').classList.add('hidden');
+      document.getElementById('contact-phone-display').classList.remove('hidden');
+      document.getElementById('contact-phone-edit').classList.add('hidden');
+      document.getElementById('contact-company-display').classList.remove('hidden');
+      document.getElementById('contact-company-edit').classList.add('hidden');
+      document.getElementById('contact-favorite-display').classList.remove('hidden');
+      document.getElementById('contact-favorite-edit').classList.add('hidden');
+      document.getElementById('contact-notes-display').classList.remove('hidden');
+      document.getElementById('contact-notes-edit').classList.add('hidden');
+    }
+
+    function cancelContactEdit() {
+      // Reset form values to original
+      if (currentEditingContact) {
+        document.getElementById('contact-email-edit').value = currentEditingContact.email;
+        document.getElementById('contact-phone-edit').value = currentEditingContact.phone || '';
+        document.getElementById('contact-company-edit').value = currentEditingContact.company || '';
+        document.getElementById('contact-favorite-edit').value = currentEditingContact.favorite.toString();
+        document.getElementById('contact-notes-edit').value = currentEditingContact.notes || '';
+      }
+      
+      exitContactEditMode();
+    }
+
+    async function saveContactChanges() {
+      try {
+        const email = document.getElementById('contact-email-edit').value;
+        const phone = document.getElementById('contact-phone-edit').value;
+        const company = document.getElementById('contact-company-edit').value;
+        const favorite = document.getElementById('contact-favorite-edit').value === 'true';
+        const notes = document.getElementById('contact-notes-edit').value;
+
+        if (!email) {
+          showNotification('Email is required');
+          return;
+        }
+
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        
+        // Update contact
+        const res = await fetch(`${API_URL}/contacts/${currentEditingContact.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({
+            email,
+            phone: phone || null,
+            company: company || null,
+            favorite,
+            notes: notes || null
+          })
+        });
+
+        if (res.ok) {
+          showNotification('Contact updated successfully!');
+          
+          // Update the current contact object
+          currentEditingContact.email = email;
+          currentEditingContact.phone = phone || null;
+          currentEditingContact.company = company || null;
+          currentEditingContact.favorite = favorite;
+          currentEditingContact.notes = notes || null;
+          
+          // Update display values
+          document.getElementById('contact-email-display').textContent = email;
+          document.getElementById('contact-phone-display').textContent = phone || '-';
+          document.getElementById('contact-company-display').textContent = company || '-';
+          document.getElementById('contact-favorite-display').textContent = favorite ? 'Favorite' : 'Regular Contact';
+          document.getElementById('contact-notes-display').textContent = notes || 'No notes available';
+          
+          // Exit edit mode
+          exitContactEditMode();
+          
+          // Refresh contacts list
+          await renderContacts();
+        } else {
+          showNotification('Failed to update contact');
+        }
+      } catch (error) {
+        console.error('Error updating contact:', error);
+        showNotification('Failed to update contact');
+      }
     }
 
     async function saveContact() {

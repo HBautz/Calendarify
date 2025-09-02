@@ -146,16 +146,20 @@
     
     input[type="number"] {
       appearance: textfield;
-      -moz-appearance: textfield;
-    }
+            -moz-appearance: textfield;
+      }
+      
+      /* Style for disabled options in select */
+      select option:disabled {
+        color: #A3B3AF;
+        font-style: italic;
+        background-color: #19342e;
+      }
   </style>
-  <script src="../../auth.js" defer></script>
-  <script defer>
-    window.API_URL = 'http://localhost:3001/api';
-    if (!sessionStorage.getItem('calendarify-token') && !localStorage.getItem('calendarify-token')) {
-      window.location.replace('/log-in');
-    }
-  </script>
+      <script src="../../auth.js"></script>
+    <script>
+      window.API_URL = 'http://localhost:3001/api';
+    </script>
 </head>
 <body id="dashboard-body" class="min-h-screen flex flex-col hidden">
   <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
@@ -169,23 +173,36 @@
 
   <main class="flex flex-1 overflow-hidden">
     <aside class="w-64 p-6 border-r border-[#1E3A34] bg-[#111f1c] overflow-y-auto">
-      <h2 class="text-lg font-semibold text-white mb-4">Actions</h2>
-      <div id="actions" class="space-y-4">
-        <div draggable="true" data-type="Send Email" class="draggable">
-          <span class="material-icons-outlined text-[#34D399]">email</span>
-          <span>Send Email</span>
-        </div>
-        <div draggable="true" data-type="Delay" class="draggable">
-          <span class="material-icons-outlined text-[#34D399]">hourglass_empty</span>
-          <span>Delay</span>
-        </div>
-        <div draggable="true" data-type="Create Meeting" class="draggable">
-          <span class="material-icons-outlined text-[#34D399]">calendar_today</span>
-          <span>Create Meeting</span>
-        </div>
-        <div draggable="true" data-type="Add Tag" class="draggable">
-          <span class="material-icons-outlined text-[#34D399]">label</span>
-          <span>Add Tag</span>
+      <div class="bg-[#1E3A34] p-4 rounded-lg">
+        <h3 class="text-lg font-semibold text-white mb-4">Actions</h3>
+        <div id="actions" class="space-y-2">
+          <div class="draggable bg-[#19342e] p-3 rounded-lg cursor-move hover:bg-[#2C4A43] transition-colors border border-[#2C4A43] opacity-50" data-type="Send Email" style="pointer-events: none;">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#34D399]">email</span>
+              <div>
+                <div class="text-white font-medium">Send Email</div>
+                <div class="text-[#A3B3AF] text-sm">Coming Soon</div>
+              </div>
+            </div>
+          </div>
+          <div class="draggable bg-[#19342e] p-3 rounded-lg cursor-move hover:bg-[#2C4A43] transition-colors border border-[#2C4A43] opacity-50" data-type="Delay" style="pointer-events: none;">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#34D399]">schedule</span>
+              <div>
+                <div class="text-white font-medium">Delay</div>
+                <div class="text-[#A3B3AF] text-sm">Coming Soon</div>
+              </div>
+            </div>
+          </div>
+          <div class="draggable bg-[#19342e] p-3 rounded-lg cursor-move hover:bg-[#2C4A43] transition-colors border border-[#2C4A43]" data-type="Add Tag" draggable="true">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
+              <div>
+                <div class="text-white font-medium">Add Tag</div>
+                <div class="text-[#A3B3AF] text-sm">Add tags to contacts or meetings</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </aside>
@@ -199,9 +216,13 @@
       <div class="mb-4">
         <label for="trigger-select" class="block text-sm text-[#A3B3AF] mb-2">Trigger</label>
         <select id="trigger-select" class="select-field w-64">
-          <option value="Invitee Schedules">Invitee Schedules</option>
-          <option value="Meeting Cancelled">Meeting Cancelled</option>
-          <option value="Meeting Rescheduled">Meeting Rescheduled</option>
+          <option value="Meeting Scheduled">Meeting Scheduled</option>
+          <option value="Tag Added">Tag Added</option>
+          <option value="Attendee Rescheduled" disabled>Attendee Rescheduled (Coming Soon)</option>
+          <option value="Host Rescheduled" disabled>Host Rescheduled (Coming Soon)</option>
+          <option value="Attendee Canceled" disabled>Attendee Canceled (Coming Soon)</option>
+          <option value="Host Canceled" disabled>Host Canceled (Coming Soon)</option>
+          <option value="Meeting Ended" disabled>Meeting Ended (Coming Soon)</option>
         </select>
       </div>
       <div id="trigger-properties" class="mb-4"></div>
@@ -257,23 +278,94 @@
     document.addEventListener('DOMContentLoaded', async () => {
       const id = localStorage.getItem('calendarify-current-workflow');
       if (id) {
-        const token = getToken();
-        const clean = token.replace(/^"|"$/g, '');
-        const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
-        if (res.ok) {
-          currentWorkflow = await res.json();
-          if (currentWorkflow.trigger) {
-            triggerSelect.value = currentWorkflow.trigger;
+        try {
+          const token = getAnyToken();
+          if (!token) {
+            console.error('No authentication token found for loading workflow');
+            return;
           }
-          if (currentWorkflow.name) {
-            nameInput.value = currentWorkflow.name;
+          const clean = token.replace(/^"|"$/g, '');
+          const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
+          if (res.ok) {
+            currentWorkflow = await res.json();
+            console.log('Loaded workflow:', currentWorkflow);
+            
+            // Extract workflow data from the correct location
+            const workflowData = currentWorkflow.data || currentWorkflow;
+            console.log('Workflow data:', workflowData);
+            
+            // Set workflow name
+            if (workflowData.name || currentWorkflow.name) {
+              nameInput.value = workflowData.name || currentWorkflow.name;
+            }
+            
+            // Set trigger
+            if (workflowData.trigger) {
+              triggerSelect.value = workflowData.trigger;
+            }
+            
+            // Render trigger properties first to ensure UI is ready
+            await renderTriggerProperties();
+            
+            // Restore trigger-specific data after properties are rendered
+            if (workflowData.trigger === 'Meeting Scheduled' && workflowData.triggerEventTypes) {
+              const optionsDiv = document.getElementById('event-type-options');
+              if (optionsDiv) {
+                workflowData.triggerEventTypes.forEach(eventType => {
+                  const checkbox = optionsDiv.querySelector(`input[value="${eventType}"]`);
+                  if (checkbox) {
+                    checkbox.checked = true;
+                    const customCheckbox = checkbox.closest('label').querySelector('.custom-checkbox');
+                    if (customCheckbox) {
+                      customCheckbox.classList.add('checked');
+                    }
+                  }
+                });
+                // Update button text
+                const btn = document.getElementById('event-type-btn');
+                if (btn && workflowData.triggerEventTypes.length > 0) {
+                  btn.firstElementChild.textContent = workflowData.triggerEventTypes.join(', ');
+                }
+              }
+            } else if (workflowData.trigger === 'Tag Added' && workflowData.triggerTags) {
+              const optionsDiv = document.getElementById('tag-options');
+              if (optionsDiv) {
+                workflowData.triggerTags.forEach(tag => {
+                  const checkbox = optionsDiv.querySelector(`input[value="${tag}"]`);
+                  if (checkbox) {
+                    checkbox.checked = true;
+                    const customCheckbox = checkbox.closest('label').querySelector('.custom-checkbox');
+                    if (customCheckbox) {
+                      customCheckbox.classList.add('checked');
+                    }
+                  }
+                });
+                // Update button text
+                const btn = document.getElementById('tag-btn');
+                if (btn && workflowData.triggerTags.length > 0) {
+                  btn.firstElementChild.textContent = workflowData.triggerTags.join(', ');
+                }
+              }
+            }
+            
+            // Restore workflow steps
+            if (workflowData.steps && Array.isArray(workflowData.steps)) {
+              console.log('Restoring steps:', workflowData.steps);
+              workflowData.steps.forEach(step => {
+                const stepElement = createStep(step);
+                canvas.appendChild(stepElement);
+              });
+            }
+          } else {
+            console.error('Failed to load workflow:', res.statusText);
           }
-          if (currentWorkflow.steps) {
-            currentWorkflow.steps.forEach(t => canvas.appendChild(createStep(t)));
-          }
+        } catch (error) {
+          console.error('Error loading workflow:', error);
         }
+      } else {
+        // No workflow to edit, just render trigger properties
+        await renderTriggerProperties();
       }
-      await renderTriggerProperties();
     });
 
     saveBtn.addEventListener('click', async () => {
@@ -282,32 +374,89 @@
         props: JSON.parse(s.dataset.props || '{}')
       }));
       const trigger = triggerSelect.value;
-      const optionsDiv = document.getElementById('event-type-options');
-      const triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
       const name = nameInput.value || 'Untitled Workflow';
-      const token = getToken();
-      const clean = token.replace(/^"|"$/g, '');
-      if (currentWorkflow) {
-        currentWorkflow.name = name;
-        currentWorkflow.trigger = trigger;
-        currentWorkflow.triggerEventTypes = triggerEventTypes;
-        currentWorkflow.steps = steps;
-        await fetch(`${API_URL}/workflows/${currentWorkflow.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-          body: JSON.stringify({ name, description: currentWorkflow.description, data: currentWorkflow }),
-        });
-      } else {
-        const res = await fetch(`${API_URL}/workflows`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-          body: JSON.stringify({ name, description: '', data: { trigger, triggerEventTypes, steps, status: true } }),
-        });
-        currentWorkflow = await res.json();
+      
+      // Get trigger-specific data
+      let triggerEventTypes = [];
+      let triggerTags = [];
+      
+      if (trigger === 'Meeting Scheduled') {
+        const optionsDiv = document.getElementById('event-type-options');
+        triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
+      } else if (trigger === 'Tag Added') {
+        const optionsDiv = document.getElementById('tag-options');
+        triggerTags = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
       }
-      localStorage.removeItem('calendarify-current-workflow');
-      localStorage.setItem('calendarify-redirect-to', 'workflows');
-      window.location.href = '/dashboard';
+      const token = getAnyToken();
+      if (!token) {
+        console.error('No authentication token found');
+        alert('Please log in to save workflows');
+        return;
+      }
+      const clean = token.replace(/^"|"$/g, '');
+      
+      try {
+        if (currentWorkflow) {
+          // Update existing workflow
+          const updateData = {
+            name,
+            description: currentWorkflow.description || '',
+            data: {
+              trigger,
+              triggerEventTypes,
+              triggerTags,
+              steps,
+              status: true
+            }
+          };
+          
+          console.log('Updating workflow with data:', updateData);
+          
+          const res = await fetch(`${API_URL}/workflows/${currentWorkflow.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+            body: JSON.stringify(updateData),
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to update workflow: ${res.statusText}`);
+          }
+          
+          // Update local workflow object
+          currentWorkflow.name = name;
+          currentWorkflow.data = updateData.data;
+          
+          console.log('Workflow updated successfully');
+        } else {
+          const res = await fetch(`${API_URL}/workflows`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+            body: JSON.stringify({ 
+              name, 
+              description: '', 
+              data: { 
+                trigger, 
+                triggerEventTypes, 
+                triggerTags, 
+                steps, 
+                status: true 
+              } 
+            }),
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to create workflow: ${res.statusText}`);
+          }
+          currentWorkflow = await res.json();
+          console.log('Workflow created successfully');
+        }
+        
+        // Redirect to dashboard after successful save
+        localStorage.removeItem('calendarify-current-workflow');
+        localStorage.setItem('calendarify-redirect-to', 'workflows');
+        window.location.href = '/dashboard';
+      } catch (error) {
+        console.error('Error saving workflow:', error);
+        alert(`Failed to save workflow: ${error.message}`);
+      }
     });
 
     document.querySelectorAll('#actions .draggable').forEach(el => {
@@ -364,6 +513,18 @@
         } else {
           text.textContent = 'Delay: Configure...';
         }
+      } else if (type === 'Add Tag') {
+        if (props.tags && props.tags.length > 0) {
+          if (props.tags.length === 1) {
+            text.textContent = `Add Tag: ${props.tags[0]}`;
+          } else if (props.tags.length === 2) {
+            text.textContent = `Add Tags: ${props.tags.join(', ')}`;
+          } else {
+            text.textContent = `Add Tags: ${props.tags.length} tags`;
+          }
+        } else {
+          text.textContent = 'Add Tag: Configure...';
+        }
       } else {
         text.textContent = type;
       }
@@ -419,8 +580,10 @@
 
     async function renderTriggerProperties() {
       triggerProps.innerHTML = '';
-      const triggersWithEventTypes = ['Invitee Schedules', 'Meeting Cancelled', 'Meeting Rescheduled'];
-      if (triggersWithEventTypes.includes(triggerSelect.value)) {
+      const selectedTrigger = triggerSelect.value;
+      
+      // Handle Meeting Scheduled trigger
+      if (selectedTrigger === 'Meeting Scheduled') {
         let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
         if (eventTypes.length === 0) {
           // Try to fetch from server if not in localStorage
@@ -440,7 +603,6 @@
           }
         }
         
-        // No default event types - let user create their own
         triggerProps.innerHTML = `
           <label class="block text-sm text-[#A3B3AF] mb-2">Event Types</label>
           <div class="multi-select">
@@ -449,6 +611,9 @@
               <span class="material-icons-outlined">expand_more</span>
             </button>
             <div id="event-type-options" class="multi-select-options"></div>
+            <button type="button" id="select-all-event-types" class="mt-2 px-3 py-1 bg-[#34D399] text-[#1A2E29] rounded-lg text-sm font-medium hover:bg-[#2C4A43] transition-colors">
+              Select All
+            </button>
           </div>`;
 
         const optionsDiv = document.getElementById('event-type-options');
@@ -460,15 +625,35 @@
           </label>
         `).join('');
         const btn = document.getElementById('event-type-btn');
+        const selectAllBtn = document.getElementById('select-all-event-types');
+        
         const updateText = () => {
           const selected = [...optionsDiv.querySelectorAll('input:checked')].map(c => c.value);
           btn.firstElementChild.textContent = selected.length ? selected.join(', ') : 'Select...';
         };
+        
         btn.addEventListener('click', () => {
           optionsDiv.style.display = optionsDiv.style.display === 'none' || !optionsDiv.style.display ? 'block' : 'none';
         });
+        
+        selectAllBtn.addEventListener('click', () => {
+          const checkboxes = optionsDiv.querySelectorAll('input[type="checkbox"]');
+          const allChecked = [...checkboxes].every(cb => cb.checked);
+          
+          checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+            const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
+            if (customCheckbox) {
+              customCheckbox.classList.toggle('checked', cb.checked);
+            }
+          });
+          
+          selectAllBtn.textContent = allChecked ? 'Select All' : 'Deselect All';
+          updateText();
+        });
+        
         document.addEventListener('click', (e) => {
-          if (!btn.contains(e.target) && !optionsDiv.contains(e.target)) {
+          if (!btn.contains(e.target) && !optionsDiv.contains(e.target) && !selectAllBtn.contains(e.target)) {
             optionsDiv.style.display = 'none';
           }
         });
@@ -488,9 +673,10 @@
         });
         
         // Set initial state for existing workflow
-        if (currentWorkflow && currentWorkflow.triggerEventTypes) {
+        const workflowData = currentWorkflow?.data || currentWorkflow;
+        if (workflowData && workflowData.triggerEventTypes) {
           optionsDiv.querySelectorAll('input').forEach(cb => {
-            if (currentWorkflow.triggerEventTypes.includes(cb.value)) {
+            if (workflowData.triggerEventTypes.includes(cb.value)) {
               cb.checked = true;
               const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
               if (customCheckbox) {
@@ -500,6 +686,159 @@
           });
         }
         updateText();
+      }
+      
+      // Handle Tag Added trigger
+      else if (selectedTrigger === 'Tag Added') {
+        let tags = [];
+        
+        // Try to get tags from localStorage first
+        try {
+          const storedTags = localStorage.getItem('calendarify-tags');
+          if (storedTags) {
+            const parsedTags = JSON.parse(storedTags);
+            if (Array.isArray(parsedTags) && parsedTags.length > 0) {
+              tags = parsedTags;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to parse stored tags:', error);
+        }
+        
+        // If no tags in localStorage, try to fetch from server
+        if (tags.length === 0) {
+          try {
+            const token = getToken();
+            if (token) {
+              const clean = token.replace(/^"|"$/g, '');
+              const res = await fetch(`${API_URL}/tags`, { headers: { Authorization: `Bearer ${clean}` } });
+              if (res.ok) {
+                const serverTags = await res.json();
+                if (Array.isArray(serverTags) && serverTags.length > 0) {
+                  tags = serverTags;
+                  localStorage.setItem('calendarify-tags', JSON.stringify(serverTags));
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch tags from server:', error);
+          }
+        }
+        
+        // Ensure we have some default tags if none are available
+        if (tags.length === 0) {
+          tags = ['Client', 'VIP', 'Lead', 'Follow-up', 'Qualified'];
+        }
+        
+        // Normalize tag structure to ensure consistent format
+        const normalizedTags = tags.map(tag => {
+          if (typeof tag === 'string') {
+            return { name: tag };
+          } else if (tag && typeof tag === 'object' && tag.name) {
+            return { name: tag.name };
+          } else {
+            return { name: String(tag) };
+          }
+        });
+        
+        console.log('Normalized tags for Tag Added trigger:', normalizedTags);
+        
+        triggerProps.innerHTML = `
+          <label class="block text-sm text-[#A3B3AF] mb-2">Tags</label>
+          <div class="multi-select">
+            <button type="button" id="tag-btn" class="multi-select-button">
+              <span>Select...</span>
+              <span class="material-icons-outlined">expand_more</span>
+            </button>
+            <div id="tag-options" class="multi-select-options"></div>
+            <button type="button" id="select-all-tags" class="mt-2 px-3 py-1 bg-[#34D399] text-[#1A2E29] rounded-lg text-sm font-medium hover:bg-[#2C4A43] transition-colors">
+              Select All
+            </button>
+          </div>`;
+
+        const optionsDiv = document.getElementById('tag-options');
+        optionsDiv.innerHTML = normalizedTags.map(tag => `
+          <label class="flex items-center gap-3 p-2 hover:bg-[#19342e] rounded cursor-pointer transition-colors">
+            <div class="custom-checkbox" data-value="${tag.name}"></div>
+            <input type="checkbox" value="${tag.name}" style="display: none;">
+            <span class="text-[#E0E0E0]">${tag.name}</span>
+          </label>
+        `).join('');
+        
+        const btn = document.getElementById('tag-btn');
+        const selectAllBtn = document.getElementById('select-all-tags');
+        
+        const updateText = () => {
+          const selected = [...optionsDiv.querySelectorAll('input:checked')].map(c => c.value);
+          btn.firstElementChild.textContent = selected.length ? selected.join(', ') : 'Select...';
+        };
+        
+        btn.addEventListener('click', () => {
+          optionsDiv.style.display = optionsDiv.style.display === 'none' || !optionsDiv.style.display ? 'block' : 'none';
+        });
+        
+        selectAllBtn.addEventListener('click', () => {
+          const checkboxes = optionsDiv.querySelectorAll('input[type="checkbox"]');
+          const allChecked = [...checkboxes].every(cb => cb.checked);
+          
+          checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+            const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
+            if (customCheckbox) {
+              customCheckbox.classList.toggle('checked', cb.checked);
+            }
+          });
+          
+          selectAllBtn.textContent = allChecked ? 'Select All' : 'Deselect All';
+          updateText();
+        });
+        
+        document.addEventListener('click', (e) => {
+          if (!btn.contains(e.target) && !optionsDiv.contains(e.target) && !selectAllBtn.contains(e.target)) {
+            optionsDiv.style.display = 'none';
+          }
+        });
+        
+        // Handle custom checkbox interactions
+        optionsDiv.addEventListener('click', (e) => {
+          const label = e.target.closest('label');
+          if (label) {
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            const customCheckbox = label.querySelector('.custom-checkbox');
+            
+            if (checkbox && customCheckbox) {
+              checkbox.checked = !checkbox.checked;
+              customCheckbox.classList.toggle('checked', checkbox.checked);
+              updateText();
+            }
+          }
+        });
+        
+        // Set initial state for existing workflow
+        const workflowData = currentWorkflow?.data || currentWorkflow;
+        if (workflowData && workflowData.triggerTags) {
+          optionsDiv.querySelectorAll('input').forEach(cb => {
+            if (workflowData.triggerTags.includes(cb.value)) {
+              cb.checked = true;
+              const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
+              if (customCheckbox) {
+                customCheckbox.classList.add('checked');
+              }
+            }
+          });
+        }
+        updateText();
+      }
+      
+      // Handle coming soon triggers
+      else if (['Attendee Rescheduled', 'Host Rescheduled', 'Attendee Canceled', 'Host Canceled', 'Meeting Ended'].includes(selectedTrigger)) {
+        triggerProps.innerHTML = `
+          <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
+            <div class="flex items-center gap-3">
+              <span class="material-icons-outlined text-[#34D399]">info</span>
+              <span class="text-[#A3B3AF]">This trigger is coming soon!</span>
+            </div>
+          </div>`;
       }
     }
 
@@ -842,38 +1181,54 @@
 
     confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
   </script>
-  <script defer>
-    // Check authentication and redirect if not logged in
-    async function checkAuth() {
-      const token = getToken();
-      if (!token) {
-        window.location.replace('/log-in');
-        return;
-      }
-      
-      try {
-        const cleanToken = token.replace(/^"|"$/g, '');
-        const res = await fetch(`${API_URL}/users/me`, {
-          headers: { Authorization: `Bearer ${cleanToken}` },
-        });
-        
-        if (!res.ok) {
-          clearToken();
-          window.location.replace('/log-in');
-          return;
-        }
-        
-        // User is authenticated, show the editor
-        document.body.classList.remove('hidden');
-      } catch (error) {
-        console.error('Auth check error:', error);
-        clearToken();
-        window.location.replace('/log-in');
-      }
-    }
-    
-    // Check auth on page load
-    checkAuth();
-  </script>
+     <script>
+     // Authentication check for workflow editor
+     async function checkAuth() {
+       console.log('🔐 Checking authentication for workflow editor...');
+       
+       try {
+         // Check if auth functions are available
+         if (typeof getAnyToken !== 'function') {
+           console.log('⚠️ Auth functions not available, showing editor anyway');
+           document.body.classList.remove('hidden');
+           return;
+         }
+         
+         const token = getAnyToken();
+         if (!token) {
+           console.log('⚠️ No token found, redirecting to login');
+           window.location.replace('/log-in');
+           return;
+         }
+         
+         // Validate token with server
+         const cleanToken = token.replace(/^"|"$/g, '');
+         console.log('🔍 Validating token with server...');
+         const res = await fetch(`${API_URL}/users/me`, {
+           headers: { Authorization: `Bearer ${cleanToken}` },
+         });
+         
+         if (!res.ok) {
+           console.log('❌ Token validation failed, redirecting to login');
+           if (typeof clearToken === 'function') {
+             clearToken();
+           }
+           window.location.replace('/log-in');
+           return;
+         }
+         
+         // User is authenticated, show the editor
+         console.log('✅ Authentication successful, showing workflow editor');
+         document.body.classList.remove('hidden');
+       } catch (error) {
+         console.error('❌ Auth check error:', error);
+         // On error, redirect to login
+         window.location.replace('/log-in');
+       }
+     }
+     
+     // Check auth on page load
+     checkAuth();
+   </script>
 </body>
 </html>

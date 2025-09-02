@@ -16,6 +16,7 @@ export interface Workflow {
    */
   trigger?: string;
   triggerEventTypes?: string[];
+  triggerTags?: string[];
   steps?: any[];
   status?: boolean;
 }
@@ -34,6 +35,7 @@ export class WorkflowsService {
       lastEdited: raw.updated_at ? new Date(raw.updated_at).toISOString() : undefined,
       trigger: data.trigger,
       triggerEventTypes: data.triggerEventTypes,
+      triggerTags: data.triggerTags,
       steps: data.steps,
       status: typeof data.status === 'boolean' ? data.status : undefined,
       data,

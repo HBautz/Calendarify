@@ -650,7 +650,7 @@
                 <th class="text-center py-3 px-4 w-16">Favorite</th>
                 <th class="text-center py-3 px-4 w-1/5">Name</th>
                 <th class="text-center py-3 px-4 w-1/4">Email</th>
-                <th class="text-center py-3 px-4 w-1/5">Company</th>
+                <th class="text-center py-3 px-4 w-1/5">Last Updated</th>
                 <th class="text-center py-3 px-4 w-1/6">Tags</th>
                 <th class="text-center py-3 px-4 w-32">Actions</th>
               </tr>
@@ -664,7 +664,7 @@
                 </td>
                 <td class="py-3 px-4 text-center text-white font-medium">Jane Doe</td>
                 <td class="py-3 px-4 text-center text-[#E0E0E0]">jane@example.com</td>
-                <td class="py-3 px-4 text-center text-[#A3B3AF]">Acme Corp</td>
+                <td class="py-3 px-4 text-center text-[#A3B3AF]">2 hours ago</td>
                 <td class="py-3 px-4 text-center">
                   <div class="flex flex-wrap gap-1 justify-center">
                     <span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('jane@example.com')">Client</span>
@@ -697,7 +697,7 @@
                 </td>
                 <td class="py-3 px-4 text-center text-white font-medium">John Smith</td>
                 <td class="py-3 px-4 text-center text-[#E0E0E0]">john@company.com</td>
-                <td class="py-3 px-4 text-center text-[#A3B3AF]">Tech Solutions</td>
+                <td class="text-center text-[#A3B3AF]">1 day ago</td>
                 <td class="py-3 px-4 text-center">
                   <div class="flex flex-wrap gap-1 justify-center">
                     <span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('john@company.com')">VIP</span>
@@ -2234,6 +2234,72 @@
       <button onclick="confirmModalContactTagSelection()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
         Confirm
       </button>
+    </div>
+  </div>
+
+  <!-- Contact View Modal -->
+  <div id="contact-view-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:600px; max-width:800px; max-height:90vh; overflow-y:auto;">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">person</span>
+        <h3 id="contact-view-title" class="text-xl font-bold text-white">Contact Details</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="edit-contact-btn" onclick="toggleContactEditMode()" class="text-[#34D399] hover:text-white transition-colors">
+          <span class="material-icons-outlined">edit</span>
+        </button>
+        <button onclick="closeContactViewModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+    </div>
+    
+    <div id="contact-view-content" class="space-y-6">
+      <!-- Contact details will be populated here -->
+    </div>
+    
+    <!-- Quick Actions Section -->
+    <div id="contact-quick-actions" class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43] mt-6">
+      <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+        <span class="material-icons-outlined text-[#34D399]">flash_on</span>
+        Quick Actions
+      </h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button onclick="copyContactEmail()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">content_copy</span>
+          <span class="text-xs">Copy Email</span>
+        </button>
+        <button onclick="copyContactPhone()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">phone</span>
+          <span class="text-xs">Copy Phone</span>
+        </button>
+        <button onclick="sendEmailToContact()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">email</span>
+          <span class="text-xs">Send Email</span>
+        </button>
+        <button onclick="duplicateContact()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">content_copy</span>
+          <span class="text-xs">Duplicate</span>
+        </button>
+      </div>
+      
+      <!-- Save Button (Hidden by default) -->
+      <div id="contact-save-section" class="hidden mt-4 pt-4 border-t border-[#2C4A43]">
+        <div class="flex gap-3 justify-center">
+          <button onclick="saveContactChanges()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center gap-2">
+            <span class="material-icons-outlined">save</span>
+            Save Changes
+          </button>
+          <button onclick="cancelContactEdit()" class="bg-[#EF4444] text-white px-6 py-2 rounded-lg hover:bg-[#DC2626] transition-colors font-bold flex items-center gap-2">
+            <span class="material-icons-outlined">cancel</span>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-end pt-6 border-t border-[#2C4A43]">
+      <button onclick="closeContactViewModal()" class="px-6 py-2 text-[#A3B3AF] hover:text-white transition-colors font-medium">Close</button>
     </div>
   </div>
 

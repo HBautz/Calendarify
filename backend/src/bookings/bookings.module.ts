@@ -5,9 +5,10 @@ import { PrismaService } from '../prisma.service';
 import { AvailabilityModule } from '../availability/availability.module';
 import { EventTypesModule } from '../event-types/event-types.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
+import { WorkflowsModule } from '../workflows/workflows.module';
 
 @Module({
-  imports: [AvailabilityModule, forwardRef(() => EventTypesModule), IntegrationsModule],
+  imports: [AvailabilityModule, forwardRef(() => EventTypesModule), IntegrationsModule, WorkflowsModule],
   controllers: [BookingsController],
   providers: [BookingsService, PrismaService],
   exports: [BookingsService],
