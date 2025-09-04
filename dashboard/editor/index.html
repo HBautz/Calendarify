@@ -12,65 +12,413 @@
       font-family: 'Inter', sans-serif;
       background-color: #1A2E29;
       color: #E0E0E0;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
-    .draggable, .step {
-      background-color: #1E3A34;
-      border: 1px solid #2C4A43;
+
+    .workflow-editor {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: #1E3A34;
+      border-bottom: 1px solid #2C4A43;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .workflow-name-input {
+      background: #1E3A34 !important;
+      border: 1px solid #2C4A43 !important;
       border-radius: 0.5rem;
-      padding: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: #E0E0E0 !important;
+      width: 300px;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .workflow-name-input:focus {
+      outline: none;
+      border-color: #34D399;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+    }
+    
+    .workflow-name-input::placeholder {
+      color: #A3B3AF;
+    }
+
+    .save-btn {
+      background: #34D399;
+      color: #ffffff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .save-btn:hover {
+      background: #10b981;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+    }
+
+    .flowchart-canvas {
+      flex: 1;
+      background: #1a1a1a;
+      position: relative;
+      overflow: auto;
+      cursor: grab;
+      margin-top: 80px;
+      scrollbar-width: thin;
+      scrollbar-color: #374151 #1a1a1a;
+    }
+    
+    .flowchart-canvas::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    .flowchart-canvas::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    
+    .flowchart-canvas::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 4px;
+    }
+    
+    .flowchart-canvas::-webkit-scrollbar-thumb:hover {
+      background: #34D399;
+    }
+
+    .flowchart-canvas:active {
+      cursor: grabbing;
+    }
+
+    .flowchart-container {
+      min-width: 100%;
+      min-height: 100%;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .flowchart-node {
+      position: absolute;
+      background: #1E3A34;
+      border: 2px solid #2C4A43;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      min-width: 200px;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 10;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .flowchart-node:hover {
+      border-color: #34D399;
+      box-shadow: 0 10px 15px -3px rgba(52, 211, 153, 0.3), 0 4px 6px -2px rgba(52, 211, 153, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .flowchart-node.trigger {
+      background: linear-gradient(135deg, #1E3A34 0%, #19342e 100%);
+      border-color: #34D399;
+      border-width: 3px;
+    }
+    
+    .flowchart-node.trigger::after {
+      content: 'Click to configure';
+      position: absolute;
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      color: #34D399;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    
+    .flowchart-node.trigger.configured::after {
+      display: none;
+    }
+
+    .flowchart-node.action {
+      background: linear-gradient(135deg, #1E3A34 0%, #223c36 100%);
+      border-color: #2C4A43;
+    }
+
+    .flowchart-node.selected {
+      border-color: #34D399;
+      box-shadow: 0 0 25px rgba(52, 211, 153, 0.5);
+    }
+
+    .node-header {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      cursor: grab;
+      margin-bottom: 0.5rem;
+      position: relative;
     }
-    .step.dragging {
-      opacity: 0.5;
-    }
-    .step-actions {
-      margin-left: auto;
+    
+    .node-actions {
       display: flex;
       gap: 0.25rem;
+      margin-left: auto;
     }
-    .step-actions button {
+    
+    .node-action-btn {
+      background: none;
+      border: none;
       color: #A3B3AF;
-      padding: 2px;
+      cursor: pointer;
+      padding: 0.25rem;
       border-radius: 0.25rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .step-actions button:hover {
+    
+    .node-action-btn:hover {
+      background: rgba(52, 211, 153, 0.1);
       color: #34D399;
-      background-color: #19342e;
     }
-    .select-field {
-      background: #1E3A34;
-      border: 1px solid #2C4A43;
-      border-radius: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      color: #E0E0E0;
+    
+    .node-action-btn .material-icons-outlined {
+      font-size: 1rem;
     }
-    .html-editor {
-      background: #1E3A34;
-      border: 1px solid #2C4A43;
-      border-radius: 0.5rem;
-      padding: 0.5rem 0.75rem;
+
+    .node-icon {
+      color: #34D399;
+      font-size: 1.25rem;
+    }
+
+    .node-title {
+      font-weight: 600;
       color: #E0E0E0;
-      min-height: 6rem;
+      font-size: 0.9rem;
+    }
+
+    .node-content {
+      color: #A3B3AF;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .connection-line {
+      position: absolute;
+      background: #2C4A43;
+      z-index: 5;
+      transition: all 0.2s;
+      height: 2px;
+      transform-origin: 0 0;
+    }
+
+    .connection-line:hover {
+      background: #34D399;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+    }
+
+    .add-action-orb {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: #34D399;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 15;
+      box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+    }
+
+    .add-action-orb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(52, 211, 153, 0.5);
+    }
+
+    .add-action-orb .material-icons-outlined {
+      color: #1A2E29;
+      font-size: 1.25rem;
+    }
+
+    .insert-action-orb {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 25;
+      box-shadow: 0 3px 8px rgba(52, 211, 153, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .insert-action-orb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(52, 211, 153, 0.5);
+    }
+
+    .insert-action-orb .material-icons-outlined {
+      color: #1A2E29;
+      font-size: 1rem;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: #374151;
+      border: 1px solid #4b5563;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
       overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #4b5563;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #E0E0E0;
+    }
+
+    .modal-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: #A3B3AF;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      color: #E0E0E0;
+      background: #19342e;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      color: #A3B3AF;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-select {
+      width: 100%;
+      background: #1E3A34 !important;
+      border: 1px solid #2C4A43 !important;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      color: #E0E0E0 !important;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #34D399;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+    }
+    
+    .form-select option {
+      background: #1E3A34;
+      color: #E0E0E0;
+    }
+    
+    /* Ensure all form elements use dark theme */
+    select.form-select {
+      background: #1E3A34 !important;
+      color: #E0E0E0 !important;
+    }
+    
+    select.form-select option {
+      background: #1E3A34 !important;
+      color: #E0E0E0 !important;
+    }
+    
+    /* Override browser defaults for select elements */
+    select {
+      background: #1E3A34 !important;
+      color: #E0E0E0 !important;
+    }
+    
+    select option {
+      background: #1E3A34 !important;
+      color: #E0E0E0 !important;
+    }
+
     .multi-select {
       position: relative;
-      width: 16rem;
+      width: 100%;
     }
+
     .multi-select-button {
       background: #1E3A34;
       border: 1px solid #2C4A43;
       border-radius: 0.5rem;
-      padding: 0.5rem 0.75rem;
+      padding: 0.75rem;
       color: #E0E0E0;
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
+      cursor: pointer;
+      transition: all 0.2s;
     }
+
+    .multi-select-button:hover {
+      border-color: #34D399;
+      background: #2C4A43;
+    }
+
     .multi-select-options {
       position: absolute;
       left: 0;
@@ -80,1155 +428,2602 @@
       background: #1E3A34;
       border: 1px solid #2C4A43;
       border-radius: 0.5rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
       z-index: 50;
-      max-height: 150px;
+      max-height: 200px;
       overflow-y: auto;
       display: none;
-      padding: 0.25rem 0;
+      padding: 0.5rem 0;
     }
-    .multi-select-options label {
+
+    .multi-select-options.show {
+      display: block;
+    }
+
+    .multi-select-option {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.25rem 0.75rem;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      color: #E0E0E0;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 0.25rem;
+      margin: 0 0.5rem;
+    }
+
+    .multi-select-option:hover {
+      background: #2C4A43;
+    }
+
+    .multi-select-option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: #34D399;
+    }
+
+    .select-all-btn {
+      background: #34D399;
+      color: #ffffff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
       font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0.5rem;
+    }
+
+    .select-all-btn:hover {
+      background: #10b981;
+      transform: translateY(-1px);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #4b5563;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: #E0E0E0;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      border: 1px solid #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
       color: #E0E0E0;
     }
-    .multi-select-options input[type="checkbox"] {
-      display: none;
-    }
-    
-    .custom-checkbox {
-      position: relative;
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      background: #19342e;
-      border: 2px solid #2C4A43;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-    }
-    
-    .custom-checkbox:hover {
-      border-color: #34D399;
-      background: #1E3A34;
-    }
-    
-    .custom-checkbox.checked {
+
+    .btn-primary {
       background: #34D399;
-      border-color: #34D399;
+      color: #ffffff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    
-    .custom-checkbox.checked::after {
-      content: '✓';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #1A2E29;
-      font-size: 12px;
-      font-weight: bold;
-      line-height: 1;
+
+    .btn-primary:hover {
+      background: #10b981;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
     }
-    .modal-backdrop {
-      background-color: rgba(0,0,0,0.6);
+
+    .btn-primary:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      opacity: 0.6;
     }
-    
-    /* Hide default number input arrows */
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
+
+    .coming-soon {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
-    
-    input[type="number"] {
-      appearance: textfield;
-            -moz-appearance: textfield;
-      }
-      
-      /* Style for disabled options in select */
-      select option:disabled {
-        color: #A3B3AF;
-        font-style: italic;
-        background-color: #19342e;
-      }
+
+    .coming-soon .form-select {
+      cursor: not-allowed;
+    }
+
+    .coming-soon-badge {
+      background: #f59e0b;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* Notification styles */
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      min-width: 300px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: #34D399;
+      color: white;
+    }
+
+    .notification.error {
+      background: #EF4444;
+      color: white;
+    }
   </style>
-      <script src="../../auth.js"></script>
-    <script>
-      window.API_URL = 'http://localhost:3001/api';
-    </script>
 </head>
-<body id="dashboard-body" class="min-h-screen flex flex-col hidden">
-  <header class="bg-[#111f1c] border-b border-[#1E3A34] px-6 py-4 flex items-center justify-between">
-    <a href="/dashboard" class="flex items-center gap-2 text-[#E0E0E0] hover:text-white">
-      <span class="material-icons-outlined text-[#34D399]">arrow_back</span>
-      <span class="font-medium">Back to Dashboard</span>
-    </a>
-    <h1 class="text-xl font-bold text-white">Workflow Editor</h1>
-    <button id="save-workflow" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43]">Save</button>
-  </header>
+<body>
+  <div class="workflow-editor">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" id="workflow-name" class="workflow-name-input" placeholder="Enter workflow name...">
+      <button id="save-workflow" class="save-btn" onclick="saveWorkflow()">Save Workflow</button>
+    </div>
 
-  <main class="flex flex-1 overflow-hidden">
-    <aside class="w-64 p-6 border-r border-[#1E3A34] bg-[#111f1c] overflow-y-auto">
-      <div class="bg-[#1E3A34] p-4 rounded-lg">
-        <h3 class="text-lg font-semibold text-white mb-4">Actions</h3>
-        <div id="actions" class="space-y-2">
-          <div class="draggable bg-[#19342e] p-3 rounded-lg cursor-move hover:bg-[#2C4A43] transition-colors border border-[#2C4A43] opacity-50" data-type="Send Email" style="pointer-events: none;">
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-[#34D399]">email</span>
-              <div>
-                <div class="text-white font-medium">Send Email</div>
-                <div class="text-[#A3B3AF] text-sm">Coming Soon</div>
-              </div>
-            </div>
-          </div>
-          <div class="draggable bg-[#19342e] p-3 rounded-lg cursor-move hover:bg-[#2C4A43] transition-colors border border-[#2C4A43] opacity-50" data-type="Delay" style="pointer-events: none;">
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-[#34D399]">schedule</span>
-              <div>
-                <div class="text-white font-medium">Delay</div>
-                <div class="text-[#A3B3AF] text-sm">Coming Soon</div>
-              </div>
-            </div>
-          </div>
-          <div class="draggable bg-[#19342e] p-3 rounded-lg cursor-move hover:bg-[#2C4A43] transition-colors border border-[#2C4A43]" data-type="Add Tag" draggable="true">
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-[#34D399]">local_offer</span>
-              <div>
-                <div class="text-white font-medium">Add Tag</div>
-                <div class="text-[#A3B3AF] text-sm">Add tags to contacts or meetings</div>
-              </div>
-            </div>
-          </div>
+    <!-- Flowchart Canvas -->
+    <div class="flowchart-canvas" id="flowchart-canvas">
+      <div class="flowchart-container" id="flowchart-container">
+        <!-- Trigger node will be added here -->
         </div>
-      </div>
-    </aside>
+        </div>
+        </div>
 
-    <section class="flex-1 p-6 overflow-y-auto">
-      <h2 class="text-lg font-semibold text-white mb-4">Workflow Canvas</h2>
-      <div class="mb-4">
-        <label for="workflow-name" class="block text-sm text-[#A3B3AF] mb-2">Workflow Name</label>
-        <input id="workflow-name" class="select-field w-64" placeholder="Workflow name">
+  <!-- Trigger Modal -->
+  <div id="trigger-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="material-icons-outlined node-icon">play_circle</span>
+        <h3 class="modal-title">Configure Trigger</h3>
+        <button class="modal-close" onclick="closeTriggerModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
       </div>
-      <div class="mb-4">
-        <label for="trigger-select" class="block text-sm text-[#A3B3AF] mb-2">Trigger</label>
-        <select id="trigger-select" class="select-field w-64">
+      
+      <div class="form-group">
+        <label class="form-label">Trigger Type</label>
+        <select id="trigger-select" class="form-select">
           <option value="Meeting Scheduled">Meeting Scheduled</option>
           <option value="Tag Added">Tag Added</option>
-          <option value="Attendee Rescheduled" disabled>Attendee Rescheduled (Coming Soon)</option>
-          <option value="Host Rescheduled" disabled>Host Rescheduled (Coming Soon)</option>
-          <option value="Attendee Canceled" disabled>Attendee Canceled (Coming Soon)</option>
-          <option value="Host Canceled" disabled>Host Canceled (Coming Soon)</option>
-          <option value="Meeting Ended" disabled>Meeting Ended (Coming Soon)</option>
+          <option value="Attendee Rescheduled" disabled class="coming-soon">Attendee Rescheduled <span class="coming-soon-badge">Coming Soon</span></option>
+          <option value="Host Rescheduled" disabled class="coming-soon">Host Rescheduled <span class="coming-soon-badge">Coming Soon</span></option>
+          <option value="Attendee Canceled" disabled class="coming-soon">Attendee Canceled <span class="coming-soon-badge">Coming Soon</span></option>
+          <option value="Host Canceled" disabled class="coming-soon">Host Canceled <span class="coming-soon-badge">Coming Soon</span></option>
+          <option value="Meeting Ended" disabled class="coming-soon">Meeting Ended <span class="coming-soon-badge">Coming Soon</span></option>
         </select>
       </div>
-      <div id="trigger-properties" class="mb-4"></div>
-      <div id="canvas" class="min-h-[400px] bg-[#1E3A34] border border-[#2C4A43] rounded-xl p-4 space-y-4"></div>
-    </section>
-  </main>
 
-  <!-- Step Edit Modal -->
-  <div id="step-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center z-50">
-    <div class="bg-[#1E3A34] p-6 rounded-lg w-96">
-      <h3 id="step-modal-title" class="text-lg font-bold text-white mb-4">Edit Step</h3>
-      <div id="step-modal-content" class="space-y-4"></div>
-      <div class="mt-6 flex justify-end gap-3">
-        <button id="step-modal-cancel" class="select-field px-4">Cancel</button>
-        <button id="step-modal-save" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold hover:bg-[#2C4A43]">Save</button>
+      <div id="trigger-properties"></div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeTriggerModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveTrigger()">Save Trigger</button>
       </div>
     </div>
   </div>
 
-  <!-- Confirmation Modal -->
-  <div id="confirm-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center z-50">
-    <div class="bg-[#1E3A34] p-6 rounded-lg w-80 max-w-sm mx-auto">
-      <div class="flex items-center gap-3 mb-4">
-        <span class="material-icons-outlined text-2xl text-red-400">warning</span>
-        <h3 class="text-lg font-bold text-white">Confirm Action</h3>
+  <!-- Action Modal -->
+  <div id="action-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="material-icons-outlined node-icon">settings</span>
+        <h3 class="modal-title">Add Action</h3>
+        <button class="modal-close" onclick="closeActionModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
       </div>
-      <p id="confirm-message" class="text-[#A3B3AF] mb-6">Are you sure?</p>
-      <div class="flex gap-3">
-        <button id="confirm-cancel" class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors">Cancel</button>
-        <button id="confirm-yes" class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors">Delete</button>
+      
+      <div class="form-group">
+        <label class="form-label">Action Type</label>
+        <select id="action-select" class="form-select">
+          <option value="Add Tag">Add Tag</option>
+          <option value="Send Email" disabled class="coming-soon">Send Email <span class="coming-soon-badge">Coming Soon</span></option>
+          <option value="Create Meeting" disabled class="coming-soon">Create Meeting <span class="coming-soon-badge">Coming Soon</span></option>
+        </select>
+      </div>
+
+      <div id="action-properties"></div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeActionModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveAction()" id="action-save-btn">Add Action</button>
       </div>
     </div>
   </div>
 
   <script defer>
-    const canvas = document.getElementById('canvas');
-    const saveBtn = document.getElementById('save-workflow');
-    const nameInput = document.getElementById('workflow-name');
-    const triggerSelect = document.getElementById('trigger-select');
-    const triggerProps = document.getElementById('trigger-properties');
-    const stepModal = document.getElementById('step-modal');
-    const stepModalTitle = document.getElementById('step-modal-title');
-    const stepModalContent = document.getElementById('step-modal-content');
-    const stepModalCancel = document.getElementById('step-modal-cancel');
-    const stepModalSave = document.getElementById('step-modal-save');
-    const confirmModal = document.getElementById('confirm-modal');
-    const confirmMessage = document.getElementById('confirm-message');
-    const confirmCancel = document.getElementById('confirm-cancel');
-    const confirmYes = document.getElementById('confirm-yes');
+    // Constants and utilities
+    const API_URL = 'http://localhost:3001/api';
+    
+    function getAnyToken() {
+      return sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
+    }
+    
+    // Global variables
     let currentWorkflow = null;
-    let editingStep = null;
+    let currentNodeId = 0;
+    let nodes = [];
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let canvasOffset = { x: 0, y: 0 };
+    let selectedNode = null;
 
+    // Production-grade Connection and Orb Management System
+    const WorkflowManager = {
+      connections: new Map(), // connectionId -> connection object
+      orbs: new Map(), // nodeId -> orb element
+      insertOrbs: new Map(), // connectionId -> insert orb element
+      connectionCounter: 0,
+      
+      // Initialize the system
+      init() {
+        this.connections.clear();
+        this.orbs.clear();
+        this.insertOrbs.clear();
+        this.connectionCounter = 0;
+        console.log('WorkflowManager initialized');
+      },
+      
+      // Create a connection between two nodes
+      createConnection(fromNode, toNode, createInsertOrb = true) {
+        if (!this.isValidConnection(fromNode, toNode)) {
+          console.warn('Invalid connection attempt:', fromNode?.id, '->', toNode?.id);
+          return null;
+        }
+        
+        const connectionId = `conn-${++this.connectionCounter}`;
+        
+        // Remove any existing connection between these nodes
+        this.removeConnectionBetween(fromNode, toNode);
+        
+        const line = this.createConnectionLine(connectionId);
+        const connection = {
+          id: connectionId,
+          from: fromNode,
+          to: toNode,
+          line: line,
+          created: Date.now()
+        };
+        
+        this.connections.set(connectionId, connection);
+        this.updateConnectionPosition(connection);
+        
+        // Create insert orb in the middle of the connection (only if requested)
+        if (createInsertOrb) {
+          this.createInsertOrb(connection);
+        }
+        
+        console.log('Created connection:', connectionId);
+        return connection;
+      },
+      
+      // Create the visual connection line element
+      createConnectionLine(id) {
+        const line = document.createElement('div');
+        line.id = id;
+        line.className = 'connection-line';
+        line.style.cssText = `
+          position: absolute;
+          background: linear-gradient(90deg, #34D399 0%, #10B981 100%);
+          height: 3px;
+          border-radius: 2px;
+          transform-origin: 0 0;
+          z-index: 10;
+          opacity: 0;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
+          pointer-events: none;
+        `;
+        
+        container.appendChild(line);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+          line.style.opacity = '1';
+        });
+        
+        return line;
+      },
+      
+      // Create insert orb in the middle of a connection
+      createInsertOrb(connection) {
+        if (!connection || !connection.from || !connection.to) {
+          return;
+        }
+        
+        const insertOrb = document.createElement('div');
+        insertOrb.className = 'insert-action-orb';
+        insertOrb.dataset.connectionId = connection.id;
+        insertOrb.style.cssText = `
+          position: absolute;
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 25;
+          opacity: 0;
+          transform: scale(0.8);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 3px 8px rgba(52, 211, 153, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+        `;
+        
+        insertOrb.innerHTML = `
+          <span class="material-icons-outlined" style="color: #1A2E29; font-size: 1rem;">add</span>
+        `;
+        
+        // Add click handler
+        insertOrb.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.handleInsertOrbClick(connection);
+        });
+        
+        // Add hover effects
+        insertOrb.addEventListener('mouseenter', () => {
+          insertOrb.style.transform = 'scale(1.1)';
+          insertOrb.style.boxShadow = '0 4px 12px rgba(52, 211, 153, 0.5)';
+        });
+        
+        insertOrb.addEventListener('mouseleave', () => {
+          insertOrb.style.transform = 'scale(1)';
+          insertOrb.style.boxShadow = '0 3px 8px rgba(52, 211, 153, 0.3)';
+        });
+        
+        container.appendChild(insertOrb);
+        this.insertOrbs.set(connection.id, insertOrb);
+        
+        // Position the insert orb
+        this.updateInsertOrbPosition(connection);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+          insertOrb.style.opacity = '1';
+          insertOrb.style.transform = 'scale(1)';
+        });
+        
+        console.log('Created insert orb for connection:', connection.id);
+      },
+      
+      // Update insert orb position
+      updateInsertOrbPosition(connection) {
+        const insertOrb = this.insertOrbs.get(connection.id);
+        if (!insertOrb || !connection.from || !connection.to) {
+          return;
+        }
+        
+        try {
+          const fromRect = connection.from.getBoundingClientRect();
+          const toRect = connection.to.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!fromRect || !toRect || !containerRect) {
+            return;
+          }
+          
+          // Calculate middle point of the connection
+          const fromX = fromRect.left - containerRect.left + fromRect.width / 2;
+          const fromY = fromRect.bottom - containerRect.top;
+          const toX = toRect.left - containerRect.left + toRect.width / 2;
+          const toY = toRect.top - containerRect.top;
+          
+          const middleX = (fromX + toX) / 2;
+          const middleY = (fromY + toY) / 2;
+          
+          // Position the insert orb
+          insertOrb.style.left = `${middleX - 16}px`; // 16 is half of orb width
+          insertOrb.style.top = `${middleY - 16}px`; // 16 is half of orb height
+          
+        } catch (error) {
+          console.error('Error updating insert orb position:', error);
+        }
+      },
+      
+      // Handle insert orb click
+      handleInsertOrbClick(connection) {
+        console.log('Insert orb clicked for connection:', connection.id);
+        // Store the connection info for insertion
+        window.insertConnection = connection;
+        openActionModal('insert');
+      },
+      
+      // Update connection position
+      updateConnectionPosition(connection) {
+        if (!connection || !connection.line || !connection.from || !connection.to) {
+          return;
+        }
+        
+        try {
+          const fromRect = connection.from.getBoundingClientRect();
+          const toRect = connection.to.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!fromRect || !toRect || !containerRect) {
+            return;
+          }
+          
+          // Calculate connection points (center bottom of fromNode to center top of toNode)
+          // Use Math.round to prevent sub-pixel positioning that can cause shifting
+          const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
+          const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
+          const toY = Math.round(toRect.top - containerRect.top + 1);
+          
+          // Calculate distance and angle
+          const deltaX = toX - fromX;
+          const deltaY = toY - fromY;
+          const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const angle = Math.atan2(deltaY, deltaX);
+          
+          // Apply positioning
+          connection.line.style.left = `${fromX}px`;
+          connection.line.style.top = `${fromY}px`;
+          connection.line.style.width = `${length}px`;
+          connection.line.style.transform = `rotate(${angle}rad)`;
+          connection.line.style.display = 'block';
+          
+          // Debug logging for connection line positioning
+          console.log(`Connection line ${connection.id} positioned:`, {
+            fromNode: connection.from.id,
+            toNode: connection.to.id,
+            fromX, fromY, toX, toY,
+            length, angle: `${(angle * 180 / Math.PI).toFixed(2)}°`,
+            linePosition: `left: ${fromX}px, top: ${fromY}px, width: ${length}px`
+          });
+          
+          // Update insert orb position
+          this.updateInsertOrbPosition(connection);
+          
+        } catch (error) {
+          console.error('Error updating connection position:', error);
+        }
+      },
+      
+      // Remove a specific connection
+      removeConnection(connectionId) {
+        const connection = this.connections.get(connectionId);
+        if (connection) {
+          if (connection.line && connection.line.parentNode) {
+            connection.line.style.opacity = '0';
+            setTimeout(() => {
+              if (connection.line.parentNode) {
+                connection.line.remove();
+              }
+            }, 300);
+          }
+          
+          // Remove insert orb
+          const insertOrb = this.insertOrbs.get(connectionId);
+          if (insertOrb) {
+            insertOrb.style.opacity = '0';
+            insertOrb.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+              if (insertOrb.parentNode) {
+                insertOrb.remove();
+              }
+            }, 300);
+            this.insertOrbs.delete(connectionId);
+          }
+          
+          this.connections.delete(connectionId);
+          console.log('Removed connection:', connectionId);
+        }
+      },
+      
+      // Remove connection between two specific nodes
+      removeConnectionBetween(fromNode, toNode) {
+        for (const [id, connection] of this.connections) {
+          if ((connection.from === fromNode && connection.to === toNode) ||
+              (connection.from === toNode && connection.to === fromNode)) {
+            this.removeConnection(id);
+            break;
+          }
+        }
+      },
+      
+      // Remove all connections involving a node
+      removeNodeConnections(node) {
+        const connectionsToRemove = [];
+        for (const [id, connection] of this.connections) {
+          if (connection.from === node || connection.to === node) {
+            connectionsToRemove.push(id);
+          }
+        }
+        
+        connectionsToRemove.forEach(id => this.removeConnection(id));
+        console.log(`Removed ${connectionsToRemove.length} connections for node:`, node.id);
+      },
+      
+      // Update all connection positions
+      updateAllConnections() {
+        for (const connection of this.connections.values()) {
+          this.updateConnectionPosition(connection);
+        }
+      },
+      
+      // Validate if a connection is valid
+      isValidConnection(fromNode, toNode) {
+        if (!fromNode || !toNode) return false;
+        if (!fromNode.parentNode || !toNode.parentNode) return false;
+        if (fromNode === toNode) return false;
+        
+        // Check if connection already exists
+        for (const connection of this.connections.values()) {
+          if ((connection.from === fromNode && connection.to === toNode) ||
+              (connection.from === toNode && connection.to === fromNode)) {
+            return false;
+          }
+        }
+        
+        return true;
+      },
+      
+      // Get connections for a specific node
+      getNodeConnections(node) {
+        const nodeConnections = [];
+        for (const connection of this.connections.values()) {
+          if (connection.from === node || connection.to === node) {
+            nodeConnections.push(connection);
+          }
+        }
+        return nodeConnections;
+      },
+      
+      // Clean up all connections
+      cleanup() {
+        for (const connection of this.connections.values()) {
+          if (connection.line && connection.line.parentNode) {
+            connection.line.remove();
+          }
+        }
+        
+        for (const insertOrb of this.insertOrbs.values()) {
+          if (insertOrb.parentNode) {
+            insertOrb.remove();
+          }
+        }
+        
+        this.connections.clear();
+        this.insertOrbs.clear();
+        console.log('WorkflowManager connections and insert orbs cleaned up');
+      }
+    };
+    
+    // Production-grade Action Orb Management System
+    const OrbManager = {
+      orbs: new Map(), // nodeId -> orb element
+      
+      // Initialize the orb system
+      init() {
+        this.orbs.clear();
+        console.log('OrbManager initialized');
+      },
+      
+      // Add an orb to a node
+      addOrb(node, position = 'bottom') {
+        if (!this.isValidNode(node)) {
+          console.warn('Invalid node for orb:', node?.id);
+          return null;
+        }
+        
+        console.log(`OrbManager.addOrb called for node: ${node.id}, position: ${position}`);
+        
+        // Remove existing orb if it exists
+        this.removeOrb(node);
+        
+        const orb = this.createOrbElement(node.id, position);
+        this.orbs.set(node.id, orb);
+        
+        this.positionOrb(orb, node, position);
+        container.appendChild(orb);
+        
+        console.log('Added orb to node:', node.id);
+        return orb;
+      },
+      
+      // Add orb at the exact midpoint between two nodes
+      addOrbAtMidpoint(fromNode, toNode) {
+        if (!this.isValidNode(fromNode) || !this.isValidNode(toNode)) {
+          console.warn('OrbManager.addOrbAtMidpoint: Invalid nodes provided');
+          return null;
+        }
+        
+        const orbId = `orb-${fromNode.id}-${toNode.id}`;
+        console.log(`OrbManager.addOrbAtMidpoint called between: ${fromNode.id} and ${toNode.id}`);
+        
+        // Remove existing orb if it exists
+        this.removeOrbById(orbId);
+        
+        const orb = this.createOrbElement(orbId, 'midpoint');
+        this.orbs.set(orbId, orb);
+        
+        this.positionOrbAtMidpoint(orb, fromNode, toNode);
+        container.appendChild(orb);
+        
+        console.log('Added orb at midpoint between:', fromNode.id, 'and', toNode.id);
+        return orb;
+      },
+      
+      // Create the orb element
+      createOrbElement(nodeId, position) {
+        const orb = document.createElement('div');
+        orb.className = 'add-action-orb';
+        orb.dataset.nodeId = nodeId;
+        orb.dataset.position = position;
+        orb.style.cssText = `
+          position: absolute;
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 20;
+          opacity: 0;
+          transform: scale(1);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+        `;
+        
+        orb.innerHTML = `
+          <span class="material-icons-outlined" style="color: #1A2E29; font-size: 1.25rem;">add</span>
+        `;
+        
+        // Add click handler
+        orb.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.handleOrbClick(nodeId);
+        });
+        
+        // Add hover effects
+        orb.addEventListener('mouseenter', () => {
+          if (position === 'midpoint') {
+            orb.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      } else {
+            orb.style.transform = 'scale(1.1)';
+          }
+          orb.style.boxShadow = '0 6px 20px rgba(52, 211, 153, 0.5)';
+        });
+        
+        orb.addEventListener('mouseleave', () => {
+          if (position === 'midpoint') {
+            orb.style.transform = 'translate(-50%, -50%) scale(1)';
+          } else {
+            orb.style.transform = 'scale(1)';
+          }
+          orb.style.boxShadow = '0 4px 12px rgba(52, 211, 153, 0.3)';
+        });
+        
+        // Animate in
+        requestAnimationFrame(() => {
+          orb.style.opacity = '1';
+          // Only apply translate for midpoint orbs, regular orbs use normal positioning
+          if (position === 'midpoint') {
+            orb.style.transform = 'translate(-50%, -50%) scale(1)';
+          } else {
+            orb.style.transform = 'scale(1)';
+          }
+        });
+        
+        return orb;
+      },
+      
+      // Position the orb relative to its node with robust positioning
+      positionOrb(orb, node, position) {
+        if (!orb || !node) {
+          console.warn('OrbManager.positionOrb: Missing orb or node');
+          return;
+        }
+        
+        try {
+          // Get node position relative to container
+          const nodeRect = node.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!nodeRect || !containerRect) {
+            console.warn('OrbManager.positionOrb: Could not get bounding rects');
+            return;
+          }
+          
+          // Calculate relative positions
+          const nodeLeft = nodeRect.left - containerRect.left;
+          const nodeTop = nodeRect.top - containerRect.top;
+          const nodeWidth = nodeRect.width;
+          const nodeHeight = nodeRect.height;
+          
+          // Orb dimensions
+          const orbSize = 40;
+          const orbHalfSize = orbSize / 2;
+          
+          // Calculate position based on placement
+          let left, top;
+          
+          switch (position) {
+            case 'bottom':
+              // Center horizontally, place below node with proper spacing
+              left = nodeLeft + (nodeWidth / 2) - orbHalfSize;
+              top = nodeTop + nodeHeight + 20; // 20px spacing below node
+              break;
+              
+            case 'top':
+              // Center horizontally, place above node with proper spacing
+              left = nodeLeft + (nodeWidth / 2) - orbHalfSize;
+              top = nodeTop - orbSize - 20; // 20px spacing above node
+              break;
+              
+            case 'right':
+              // Center vertically, place to the right with proper spacing
+              left = nodeLeft + nodeWidth + 20; // 20px spacing to the right
+              top = nodeTop + (nodeHeight / 2) - orbHalfSize;
+              break;
+              
+            case 'left':
+              // Center vertically, place to the left with proper spacing
+              left = nodeLeft - orbSize - 20; // 20px spacing to the left
+              top = nodeTop + (nodeHeight / 2) - orbHalfSize;
+              break;
+              
+            default:
+              console.warn('OrbManager.positionOrb: Unknown position:', position);
+              // Default to bottom
+              left = nodeLeft + (nodeWidth / 2) - orbHalfSize;
+              top = nodeTop + nodeHeight + 20;
+          }
+          
+          // Ensure orb stays within container bounds (with padding)
+          const containerPadding = 20;
+          const maxLeft = containerRect.width - orbSize - containerPadding;
+          const maxTop = containerRect.height - orbSize - containerPadding;
+          
+          left = Math.max(containerPadding, Math.min(left, maxLeft));
+          top = Math.max(containerPadding, Math.min(top, maxTop));
+          
+          // Apply positioning
+          orb.style.left = `${left}px`;
+          orb.style.top = `${top}px`;
+          
+          // Debug logging
+          console.log(`Orb positioned: ${position} at (${left}, ${top}) for node ${node.id}`);
+          
+        } catch (error) {
+          console.error('OrbManager.positionOrb: Error positioning orb:', error);
+          // Fallback positioning
+          orb.style.left = '50%';
+          orb.style.top = '50%';
+          orb.style.transform = 'translate(-50%, -50%)';
+        }
+      },
+      
+      // Position orb at the exact midpoint of the connection line
+      positionOrbAtMidpoint(orb, fromNode, toNode) {
+        if (!orb || !fromNode || !toNode) {
+          console.warn('OrbManager.positionOrbAtMidpoint: Missing orb or nodes');
+          return;
+        }
+        
+        try {
+          // Get node positions relative to container (same logic as connection lines)
+          const fromRect = fromNode.getBoundingClientRect();
+          const toRect = toNode.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!fromRect || !toRect || !containerRect) {
+            console.warn('OrbManager.positionOrbAtMidpoint: Could not get bounding rects');
+            return;
+          }
+          
+          // Calculate connection points (exactly like connection lines)
+          // Use Math.round to prevent sub-pixel positioning that can cause shifting
+          const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
+          const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
+          const toY = Math.round(toRect.top - containerRect.top + 1);
+          
+          // Calculate midpoint of the connection line
+          const midpointX = (fromX + toX) / 2;
+          const midpointY = (fromY + toY) / 2;
+          
+          // Orb dimensions
+          const orbSize = 40;
+          const orbHalfSize = orbSize / 2;
+          
+          // Position orb at midpoint (centered on the connection line)
+          // Use the exact midpoint coordinates and center the orb using transform
+          // Add small visual offset to account for CSS rendering differences
+          const finalLeft = midpointX - 1; // 1px left offset for visual centering
+          const finalTop = midpointY;
+          
+          // Apply positioning - orb will be centered on these coordinates
+          orb.style.left = `${finalLeft}px`;
+          orb.style.top = `${finalTop}px`;
+          orb.style.transform = 'translate(-50%, -50%)';
+          
+          // Debug elements removed for clean visual
+          
+          // Debug logging
+          console.log(`Orb positioned at connection line midpoint: (${finalLeft}, ${finalTop}) between ${fromNode.id} and ${toNode.id}`);
+          console.log(`Connection points: from(${fromX}, ${fromY}) to(${toX}, ${toY})`);
+          console.log(`Calculated midpoint: (${midpointX}, ${midpointY})`);
+          console.log(`Orb positioned at midpoint with transform: translate(-50%, -50%)`);
+          console.log(`Orb center should be exactly at: (${midpointX}, ${midpointY})`);
+          console.log(`Node details:`, {
+            fromNode: {
+              id: fromNode.id,
+              rect: fromRect,
+              centerX: fromRect.left - containerRect.left + fromRect.width / 2,
+              centerY: fromRect.top - containerRect.top + fromRect.height / 2
+            },
+            toNode: {
+              id: toNode.id,
+              rect: toRect,
+              centerX: toRect.left - containerRect.left + toRect.width / 2,
+              centerY: toRect.top - containerRect.top + toRect.height / 2
+            }
+          });
+          
+        } catch (error) {
+          console.error('OrbManager.positionOrbAtMidpoint: Error positioning orb:', error);
+          // Fallback positioning
+          orb.style.left = '50%';
+          orb.style.top = '50%';
+          orb.style.transform = 'translate(-50%, -50%)';
+        }
+      },
+      
+      // Remove orb by ID
+      removeOrbById(orbId) {
+        const orb = this.orbs.get(orbId);
+        if (orb) {
+          orb.remove();
+          this.orbs.delete(orbId);
+          console.log('Removed orb:', orbId);
+        }
+      },
+      
+      // Remove orb from a node
+      removeOrb(node) {
+        if (!node || !node.id) return;
+        
+        const orb = this.orbs.get(node.id);
+        if (orb) {
+          orb.style.opacity = '0';
+          orb.style.transform = 'scale(0.8)';
+          
+          setTimeout(() => {
+            if (orb.parentNode) {
+              orb.remove();
+            }
+          }, 300);
+          
+          this.orbs.delete(node.id);
+          console.log('Removed orb from node:', node.id);
+        }
+      },
+      
+      // Remove all orbs
+      removeAllOrbs() {
+        for (const orb of this.orbs.values()) {
+          if (orb.parentNode) {
+            orb.remove();
+          }
+        }
+        this.orbs.clear();
+        console.log('Removed all orbs');
+      },
+      
+      // Update orb positions for all nodes
+      updateAllOrbPositions() {
+        for (const [nodeId, orb] of this.orbs) {
+          const node = document.getElementById(nodeId);
+          if (node) {
+            this.positionOrb(orb, node, orb.dataset.position);
+          }
+        }
+      },
+      
+      // Handle orb click
+      handleOrbClick(nodeId) {
+        console.log('Orb clicked for node:', nodeId);
+        openActionModal(nodeId);
+      },
+      
+      // Check if node is valid for orb
+      isValidNode(node) {
+        return node && node.id && node.parentNode;
+      },
+      
+      // Get orb for a node
+      getOrb(node) {
+        return node ? this.orbs.get(node.id) : null;
+      },
+      
+      // Check if node has an orb
+      hasOrb(node) {
+        return node ? this.orbs.has(node.id) : false;
+      },
+      
+      // Update all orb positions (useful after node movements)
+      updateAllOrbPositions() {
+        console.log('OrbManager: Updating all orb positions...');
+        
+        this.orbs.forEach((orb, orbId) => {
+          const position = orb.dataset.position;
+          
+          if (position === 'midpoint') {
+            // Handle midpoint orbs
+            // orbId format: "orb-node-4-node-5"
+            const nodeIdPart = orbId.replace('orb-', ''); // "node-4-node-5"
+            const parts = nodeIdPart.split('-'); // ["node", "4", "node", "5"]
+            
+            if (parts.length >= 4) {
+              // Reconstruct node IDs: "node-4" and "node-5"
+              const fromNodeId = `${parts[0]}-${parts[1]}`;
+              const toNodeId = `${parts[2]}-${parts[3]}`;
+              const fromNode = document.getElementById(fromNodeId);
+              const toNode = document.getElementById(toNodeId);
+              
+              if (fromNode && toNode) {
+                this.positionOrbAtMidpoint(orb, fromNode, toNode);
+        } else {
+                console.warn(`OrbManager: Could not update midpoint orb ${orbId} - missing nodes: ${fromNodeId}(${!!fromNode}), ${toNodeId}(${!!toNode})`);
+              }
+            }
+          } else {
+            // Handle regular orbs
+            const node = document.getElementById(orbId);
+            if (node && position) {
+              this.positionOrb(orb, node, position);
+            } else {
+              console.warn(`OrbManager: Could not update orb for node ${orbId}`);
+        }
+      }
+    });
+
+        console.log(`OrbManager: Updated ${this.orbs.size} orb positions`);
+      },
+      
+      // Clean up all orbs
+      cleanup() {
+        this.removeAllOrbs();
+        console.log('OrbManager cleaned up');
+      }
+    };
+    
+    // Workflow Structure Manager - orchestrates connections and orbs
+    const StructureManager = {
+      rebuildTimeout: null,
+      
+      // Rebuild the entire workflow structure with debouncing
+      rebuild() {
+        // Clear any pending rebuild
+        if (this.rebuildTimeout) {
+          clearTimeout(this.rebuildTimeout);
+        }
+        
+        // Debounce rebuilds to prevent multiple rapid calls
+        this.rebuildTimeout = setTimeout(() => {
+          this.performRebuild();
+        }, 50);
+      },
+      
+      // Perform the actual rebuild
+      performRebuild() {
+        console.log('Performing workflow structure rebuild...');
+        
+        // Don't rebuild if there are no nodes or only one node
+        if (nodes.length <= 1) {
+          console.log('Skipping rebuild - insufficient nodes:', nodes.length);
+          return;
+        }
+        
+        // Clean up existing structure
+        WorkflowManager.cleanup();
+        OrbManager.cleanup();
+        
+        // Sort nodes by vertical position to ensure proper order
+        const sortedNodes = [...nodes].sort((a, b) => {
+          const aRect = a.element.getBoundingClientRect();
+          const bRect = b.element.getBoundingClientRect();
+          return aRect.top - bRect.top;
+        });
+        
+        console.log('Sorted nodes:', sortedNodes.map(n => ({ id: n.id, type: n.type })));
+        
+        // Rebuild connections and orbs in order
+        for (let i = 0; i < sortedNodes.length - 1; i++) {
+          const currentNode = sortedNodes[i];
+          const nextNode = sortedNodes[i + 1];
+          
+          console.log(`Creating connection: ${currentNode.id} -> ${nextNode.id}`);
+          // Create connection between current and next node (without insert orb)
+          WorkflowManager.createConnection(currentNode.element, nextNode.element, false);
+        }
+        
+        // Add orbs at connection midpoints and after the last node
+        for (let i = 0; i < sortedNodes.length; i++) {
+          const node = sortedNodes[i];
+          const isLastNode = i === sortedNodes.length - 1;
+          
+          console.log(`Node ${i}: ${node.id} (${node.type}), isLast: ${isLastNode}`);
+          
+          if (!isLastNode) {
+            // Add orb at the midpoint between this node and the next node
+            const nextNode = sortedNodes[i + 1];
+            console.log(`Adding orb between ${node.id} and ${nextNode.id}`);
+            OrbManager.addOrbAtMidpoint(node.element, nextNode.element);
+        } else {
+            // Add orb below the last node
+            console.log(`Adding orb below last node: ${node.id}`);
+            OrbManager.addOrb(node.element, 'bottom');
+          }
+        }
+        
+        // Update all orb positions to ensure proper alignment
+        OrbManager.updateAllOrbPositions();
+        
+        console.log('Workflow structure rebuilt with', WorkflowManager.connections.size, 'connections and', OrbManager.orbs.size, 'orbs');
+      },
+      
+      // Initialize the structure
+      init() {
+        WorkflowManager.init();
+        OrbManager.init();
+        console.log('StructureManager initialized');
+      },
+      
+      // Clean up everything
+      cleanup() {
+        // Clear any pending rebuild
+        if (this.rebuildTimeout) {
+          clearTimeout(this.rebuildTimeout);
+          this.rebuildTimeout = null;
+        }
+        
+        WorkflowManager.cleanup();
+        OrbManager.cleanup();
+        console.log('StructureManager cleaned up');
+      }
+    };
+
+    // Initialize the canvas for the workflow editor
+    function initializeCanvas() {
+      console.log('Initializing canvas...');
+      
+      // Set up canvas event listeners
+      container.addEventListener('mousedown', startDrag);
+      container.addEventListener('mousemove', drag);
+      container.addEventListener('mouseup', endDrag);
+      
+      console.log('Canvas initialized');
+    }
+    
+    // Canvas drag functionality
+    function startDrag(e) {
+      if (e.target === container) {
+        isDragging = true;
+        dragStart = { x: e.clientX, y: e.clientY };
+        container.style.cursor = 'grabbing';
+      }
+    }
+    
+    function drag(e) {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      
+      canvasOffset.x += deltaX;
+      canvasOffset.y += deltaY;
+      
+      container.style.transform = `translate(${canvasOffset.x}px, ${canvasOffset.y}px)`;
+      
+      dragStart = { x: e.clientX, y: e.clientY };
+    }
+    
+    function endDrag() {
+      isDragging = false;
+      container.style.cursor = 'grab';
+    }
+    
+    // Test function for debugging
+    function testWorkflow() {
+      console.log('=== WORKFLOW TEST ===');
+      console.log('Current workflow:', currentWorkflow);
+      console.log('Nodes:', nodes);
+      console.log('Connections:', connections);
+      console.log('Workflow name input:', document.getElementById('workflow-name').value);
+      
+      // Test trigger node
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      if (triggerNode) {
+        console.log('Trigger node:', triggerNode);
+        console.log('Trigger data:', triggerNode.data);
+        } else {
+        console.log('No trigger node found');
+      }
+      
+      // Test action nodes
+              const actionNodes = nodes.filter(n => n.type !== 'trigger');
+      console.log('Action nodes:', actionNodes);
+      
+      // Test API connection
+      const token = getAnyToken();
+      console.log('Token available:', !!token);
+      console.log('API URL:', API_URL);
+    }
+    
+    // Notification function
+    function showNotification(message, type = 'success') {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+      notification.style.background = type === 'success' ? '#34D399' : '#EF4444';
+      notification.style.color = '#ffffff';
+      notification.style.minWidth = '300px';
+      
+      notification.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span>${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" class="button ml-4 text-white hover:text-gray-200">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Animate in
+      setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateX(full)';
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 300);
+      }, 5000);
+    }
+
+    // DOM elements
+    const canvas = document.getElementById('flowchart-canvas');
+    const container = document.getElementById('flowchart-container');
+    const workflowNameInput = document.getElementById('workflow-name');
+    const saveBtn = document.getElementById('save-workflow');
+    const triggerModal = document.getElementById('trigger-modal');
+    const actionModal = document.getElementById('action-modal');
+
+    // Initialize the editor
     document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Initialize the new management systems
+        StructureManager.init();
+        
+        initializeCanvas();
+        await loadWorkflow();
+        createInitialTriggerNode();
+        console.log('Workflow editor initialized successfully');
+      } catch (error) {
+        console.error('Error initializing workflow editor:', error);
+        alert('Failed to initialize workflow editor. Please refresh the page.');
+      }
+    });
+
+    function initializeCanvas() {
+      // Canvas dragging functionality
+      canvas.addEventListener('mousedown', (e) => {
+        if (e.target === canvas || e.target === container) {
+          isDragging = true;
+          dragStart = { x: e.clientX, y: e.clientY };
+          canvas.style.cursor = 'grabbing';
+        }
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          const deltaX = e.clientX - dragStart.x;
+          const deltaY = e.clientY - dragStart.y;
+          
+          canvasOffset.x += deltaX;
+          canvasOffset.y += deltaY;
+          
+          container.style.transform = `translate(${canvasOffset.x}px, ${canvasOffset.y}px)`;
+          
+          dragStart = { x: e.clientX, y: e.clientY };
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+      });
+
+      canvas.addEventListener('mouseleave', () => {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+      });
+
+      // Save button event
+              // saveBtn.addEventListener('click', saveWorkflow); // Removed duplicate - onclick already handles this
+    }
+
+    async function loadWorkflow() {
       const id = localStorage.getItem('calendarify-current-workflow');
       if (id) {
         try {
           const token = getAnyToken();
-          if (!token) {
-            console.error('No authentication token found for loading workflow');
-            return;
-          }
+          if (!token) return;
+          
           const clean = token.replace(/^"|"$/g, '');
-          const res = await fetch(`${API_URL}/workflows/${id}`, { headers: { Authorization: `Bearer ${clean}` } });
+          const res = await fetch(`${API_URL}/workflows/${id}`, { 
+            headers: { Authorization: `Bearer ${clean}` } 
+          });
+          
           if (res.ok) {
             currentWorkflow = await res.json();
             console.log('Loaded workflow:', currentWorkflow);
             
-            // Extract workflow data from the correct location
             const workflowData = currentWorkflow.data || currentWorkflow;
-            console.log('Workflow data:', workflowData);
+            console.log('Workflow data to load:', workflowData);
             
-            // Set workflow name
             if (workflowData.name || currentWorkflow.name) {
-              nameInput.value = workflowData.name || currentWorkflow.name;
+              const name = workflowData.name || currentWorkflow.name;
+              workflowNameInput.value = name;
+              console.log('Set workflow name input to:', name);
             }
             
-            // Set trigger
-            if (workflowData.trigger) {
-              triggerSelect.value = workflowData.trigger;
-            }
-            
-            // Render trigger properties first to ensure UI is ready
-            await renderTriggerProperties();
-            
-            // Restore trigger-specific data after properties are rendered
-            if (workflowData.trigger === 'Meeting Scheduled' && workflowData.triggerEventTypes) {
-              const optionsDiv = document.getElementById('event-type-options');
-              if (optionsDiv) {
-                workflowData.triggerEventTypes.forEach(eventType => {
-                  const checkbox = optionsDiv.querySelector(`input[value="${eventType}"]`);
-                  if (checkbox) {
-                    checkbox.checked = true;
-                    const customCheckbox = checkbox.closest('label').querySelector('.custom-checkbox');
-                    if (customCheckbox) {
-                      customCheckbox.classList.add('checked');
-                    }
-                  }
-                });
-                // Update button text
-                const btn = document.getElementById('event-type-btn');
-                if (btn && workflowData.triggerEventTypes.length > 0) {
-                  btn.firstElementChild.textContent = workflowData.triggerEventTypes.join(', ');
-                }
-              }
-            } else if (workflowData.trigger === 'Tag Added' && workflowData.triggerTags) {
-              const optionsDiv = document.getElementById('tag-options');
-              if (optionsDiv) {
-                workflowData.triggerTags.forEach(tag => {
-                  const checkbox = optionsDiv.querySelector(`input[value="${tag}"]`);
-                  if (checkbox) {
-                    checkbox.checked = true;
-                    const customCheckbox = checkbox.closest('label').querySelector('.custom-checkbox');
-                    if (customCheckbox) {
-                      customCheckbox.classList.add('checked');
-                    }
-                  }
-                });
-                // Update button text
-                const btn = document.getElementById('tag-btn');
-                if (btn && workflowData.triggerTags.length > 0) {
-                  btn.firstElementChild.textContent = workflowData.triggerTags.join(', ');
-                }
-              }
-            }
-            
-            // Restore workflow steps
+            // Load existing nodes and connections
             if (workflowData.steps && Array.isArray(workflowData.steps)) {
-              console.log('Restoring steps:', workflowData.steps);
-              workflowData.steps.forEach(step => {
-                const stepElement = createStep(step);
-                canvas.appendChild(stepElement);
+              console.log('Loading steps:', workflowData.steps);
+              
+              // Clear existing nodes first
+              nodes.forEach(node => {
+                if (node.element) {
+                  node.element.remove();
+                }
               });
+              nodes = [];
+              connections = [];
+              
+              // Check if we have trigger data at the top level (for existing workflows)
+              if (workflowData.trigger) {
+                console.log('Found trigger at top level:', workflowData.trigger);
+                const triggerData = {
+                  type: workflowData.trigger,
+                  properties: {
+                    eventTypes: workflowData.triggerEventTypes || [],
+                    tags: workflowData.triggerTags || []
+                  }
+                };
+                updateTriggerNode(triggerData);
+                
+                // Remove guide text when loading existing workflow with configured trigger
+                const helpText = container.querySelector('div[style*="Configure your trigger above"]');
+                if (helpText) {
+                  helpText.remove();
+                } else {
+                  // Try alternative selectors
+                  const allDivs = container.querySelectorAll('div');
+                  allDivs.forEach((div) => {
+                    if (div.innerHTML && div.innerHTML.includes('Configure your trigger above')) {
+                      div.remove();
+                    }
+                  });
+                }
+                
+                // Also remove the CSS pseudo-element guide text by updating the trigger node
+                const triggerNode = container.querySelector('.flowchart-node.trigger');
+                if (triggerNode) {
+                  triggerNode.classList.add('configured');
+                }
+                
+                // Restore selected tags/event types for editing
+                if (workflowData.trigger === 'Tag Added' && workflowData.triggerTags) {
+                  window.selectedTags = [...workflowData.triggerTags];
+                }
+                if (workflowData.trigger === 'Meeting Scheduled' && workflowData.triggerEventTypes) {
+                  window.selectedEventTypes = [...workflowData.triggerEventTypes];
+                }
+        } else {
+                // Try to find trigger in steps (for new format)
+                const triggerStep = workflowData.steps.find(step => step.type === 'trigger');
+                
+                if (triggerStep) {
+                  updateTriggerNode(triggerStep);
+                  
+                  // Restore selected tags/event types for editing
+                  if (triggerStep.type === 'Tag Added' && triggerStep.properties?.tags) {
+                    window.selectedTags = [...triggerStep.properties.tags];
+                    console.log('Restored selected tags:', window.selectedTags);
+                  }
+                  if (triggerStep.type === 'Meeting Scheduled' && triggerStep.properties?.eventTypes) {
+                    window.selectedEventTypes = [...triggerStep.properties.eventTypes];
+                    console.log('Restored selected event types:', window.selectedEventTypes);
+                  }
+                }
+              }
+              
+              // Load actions
+              workflowData.steps.forEach((step, index) => {
+                if (step.type !== 'trigger') {
+                  console.log('Loading action step:', step);
+                  addActionNode(step, index);
+                }
+              });
+              
+              // Rebuild the workflow structure after loading all nodes
+              setTimeout(() => {
+                StructureManager.rebuild();
+              }, 100);
+              }
             }
-          } else {
-            console.error('Failed to load workflow:', res.statusText);
-          }
-        } catch (error) {
+          } catch (error) {
           console.error('Error loading workflow:', error);
         }
+      }
+    }
+
+    function createInitialTriggerNode() {
+      const triggerNode = createNode('trigger', 'Click to configure trigger', 'play_circle', 'Click to configure trigger');
+      triggerNode.style.left = '50%';
+      triggerNode.style.top = '50px';
+      triggerNode.style.transform = 'translateX(-50%)';
+      
+      // Override the click handler for the trigger node specifically
+      triggerNode.removeEventListener('click', (e) => selectNode(triggerNode));
+      triggerNode.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTriggerModal();
+      });
+      
+      container.appendChild(triggerNode);
+      nodes.push({ id: triggerNode.id, type: 'trigger', element: triggerNode });
+      
+      // No need to rebuild here - rebuild will be called when actions are added
+      
+      // Add movement listeners
+      addNodeMovementListeners();
+      
+      // Add helpful text
+      const helpText = document.createElement('div');
+      helpText.style.position = 'absolute';
+      helpText.style.left = '50%';
+      helpText.style.top = '200px';
+      helpText.style.transform = 'translateX(-50%)';
+                  helpText.style.color = '#9ca3af';
+      helpText.style.fontSize = '0.875rem';
+      helpText.style.textAlign = 'center';
+      helpText.innerHTML = 'Configure your trigger above, then add actions below to build your workflow';
+      container.appendChild(helpText);
+    }
+
+    function createNode(type, title, icon, content) {
+      const node = document.createElement('div');
+      node.className = `flowchart-node ${type}`;
+      node.id = `node-${++currentNodeId}`;
+      
+      if (type !== 'trigger') {
+        node.innerHTML = `
+          <div class="node-header">
+            <span class="material-icons-outlined node-icon">${icon}</span>
+            <div class="node-title">${title}</div>
+            <div class="node-actions">
+              <button class="node-action-btn edit-btn" title="Edit Action">
+                <span class="material-icons-outlined">edit</span>
+            </button>
+              <button class="node-action-btn delete-btn" title="Delete Action">
+                <span class="material-icons-outlined">delete</span>
+              </button>
+            </div>
+          </div>
+          <div class="node-content">${content}</div>
+        `;
+        
+        // Add edit and delete handlers
+        const editBtn = node.querySelector('.edit-btn');
+        const deleteBtn = node.querySelector('.delete-btn');
+        
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editAction(node);
+        });
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteAction(node);
+        });
       } else {
-        // No workflow to edit, just render trigger properties
-        await renderTriggerProperties();
+        node.innerHTML = `
+          <div class="node-header">
+            <span class="material-icons-outlined node-icon">${icon}</span>
+            <div class="node-title">${title}</div>
+          </div>
+          <div class="node-content">${content}</div>
+        `;
+      }
+      
+      // Add click handler for selection
+      node.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNode(node);
+      });
+      
+      return node;
+    }
+    
+    function selectNode(node) {
+      // Deselect previously selected node
+      if (selectedNode) {
+        selectedNode.classList.remove('selected');
+      }
+      
+      // Select new node
+      selectedNode = node;
+      node.classList.add('selected');
+    }
+    
+    // Deselect when clicking on canvas
+    container.addEventListener('click', (e) => {
+      if (e.target === container) {
+        if (selectedNode) {
+          selectedNode.classList.remove('selected');
+          selectedNode = null;
+              }
+            }
+          });
+
+
+    function openTriggerModal() {
+      triggerModal.classList.remove('hidden');
+      
+      // Check if we're editing an existing trigger
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      if (triggerNode && triggerNode.data) {
+        // Pre-populate the trigger type
+        const triggerSelect = document.getElementById('trigger-select');
+        if (triggerSelect) {
+          triggerSelect.value = triggerNode.data.type;
+        }
+        
+        // Restore selected tags if it's a Tag Added trigger
+        if (triggerNode.data.type === 'Tag Added' && triggerNode.data.properties?.tags) {
+          window.selectedTags = [...triggerNode.data.properties.tags];
+        }
+        
+        // Restore selected event types if it's a Meeting Scheduled trigger
+        if (triggerNode.data.type === 'Meeting Scheduled' && triggerNode.data.properties?.eventTypes) {
+          window.selectedEventTypes = [...triggerNode.data.properties.eventTypes];
+        }
+      } else {
+        // Reset for new trigger
+        window.selectedTags = [];
+      }
+      
+      renderTriggerProperties();
+    }
+
+    function closeTriggerModal() {
+      triggerModal.classList.add('hidden');
+    }
+
+    function openActionModal(parentNodeId) {
+      actionModal.classList.remove('hidden');
+      selectedNode = parentNodeId;
+      
+      // Check if this is an insert operation
+      if (parentNodeId === 'insert') {
+        const modalTitle = actionModal.querySelector('.modal-title');
+        if (modalTitle) {
+          modalTitle.textContent = 'Insert Action';
+        }
+        
+        const actionSaveBtn = document.getElementById('action-save-btn');
+        if (actionSaveBtn) {
+          actionSaveBtn.textContent = 'Insert Action';
+        }
+      }
+      
+      // Check if we're editing an existing action
+      const existingNode = nodes.find(n => n.id === parentNodeId);
+      if (existingNode && existingNode.type !== 'trigger') {
+        // Set the modal title to indicate editing
+        const modalTitle = actionModal.querySelector('.modal-title');
+        if (modalTitle) {
+          modalTitle.textContent = 'Edit Action';
+        }
+        
+        // Update button text
+        const actionSaveBtn = document.getElementById('action-save-btn');
+        if (actionSaveBtn) {
+          actionSaveBtn.textContent = 'Update Action';
+        }
+        
+        // Pre-populate the action type
+        const actionSelect = document.getElementById('action-select');
+        if (actionSelect) {
+          actionSelect.value = existingNode.data.type;
+        }
+      } else {
+        // Reset modal title for new actions
+        const modalTitle = actionModal.querySelector('.modal-title');
+        if (modalTitle) {
+          modalTitle.textContent = 'Add Action';
+        }
+        
+        // Reset button text
+        const actionSaveBtn = document.getElementById('action-save-btn');
+        if (actionSaveBtn) {
+          actionSaveBtn.textContent = 'Add Action';
+        }
+      }
+      
+      // Reset selected action tag
+      window.selectedActionTag = '';
+      renderActionProperties();
+    }
+
+    function closeActionModal() {
+      actionModal.classList.add('hidden');
+      selectedNode = null;
+      
+      // Reset insert state
+      window.insertConnection = null;
+      
+      // Reset modal title
+      const modalTitle = actionModal.querySelector('.modal-title');
+      if (modalTitle) {
+        modalTitle.textContent = 'Add Action';
+      }
+      
+      // Reset button text
+      const actionSaveBtn = document.getElementById('action-save-btn');
+      if (actionSaveBtn) {
+        actionSaveBtn.textContent = 'Add Action';
+      }
+    }
+
+    function renderTriggerProperties() {
+      const container = document.getElementById('trigger-properties');
+      const triggerType = document.getElementById('trigger-select').value;
+      
+      let html = '';
+      
+      if (triggerType === 'Meeting Scheduled') {
+        html = `
+          <div class="form-group">
+            <label class="form-label">Event Types</label>
+            <div class="multi-select">
+              <button type="button" class="multi-select-button" onclick="toggleMultiSelect('event-type')">
+                <span>Select event types...</span>
+                <span class="material-icons-outlined">expand_more</span>
+                    </button>
+              <div class="multi-select-options" id="event-type-options">
+                <!-- Event types will be populated here -->
+                  </div>
+              <button type="button" class="select-all-btn" onclick="selectAllEventTypes()">Select All</button>
+                  </div>
+                </div>
+        `;
+      } else if (triggerType === 'Tag Added') {
+        html = `
+          <div class="form-group">
+            <label class="form-label">Tags</label>
+            <div class="multi-select">
+              <button type="button" class="multi-select-button" onclick="toggleMultiSelect('tag')">
+                <span id="tag-display">Select tags...</span>
+                <span class="material-icons-outlined">expand_more</span>
+              </button>
+              <div class="multi-select-options" id="tag-options">
+                <!-- Tags will be populated here -->
+                  </div>
+              <button type="button" class="select-all-btn" onclick="selectAllTags()">Select All</button>
+                </div>
+            <div class="mt-3" id="tag-confirm" style="display: none;">
+              <button type="button" class="btn-primary w-full" onclick="confirmTagSelection()">
+                Confirm Tag Selection
+              </button>
+              </div>
+            </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+      
+      // Reset selected tags when changing trigger type
+      if (triggerType === 'Tag Added') {
+        window.selectedTags = [];
+        // Hide confirm button initially
+        setTimeout(() => {
+          const confirmBtn = document.getElementById('tag-confirm');
+          if (confirmBtn) {
+            confirmBtn.style.display = 'none';
+          }
+        }, 100);
+      }
+      
+      // Populate options
+      if (triggerType === 'Meeting Scheduled') {
+        populateEventTypes();
+      } else if (triggerType === 'Tag Added') {
+        populateTags();
+      }
+      
+      // Reset selected arrays when changing trigger type
+      if (triggerType === 'Tag Added') {
+        // Don't reset if we're editing and have existing tags
+        if (!window.selectedTags || window.selectedTags.length === 0) {
+          window.selectedTags = [];
+        }
+        window.selectedEventTypes = [];
+      } else if (triggerType === 'Meeting Scheduled') {
+        // Don't reset if we're editing and have existing event types
+        if (!window.selectedEventTypes || window.selectedEventTypes.length === 0) {
+          window.selectedEventTypes = [];
+        }
+        window.selectedTags = [];
+      } else {
+        window.selectedTags = [];
+        window.selectedEventTypes = [];
+      }
+    }
+
+    function renderActionProperties() {
+      const container = document.getElementById('action-properties');
+      const actionType = document.getElementById('action-select').value;
+      
+      let html = '';
+      
+      if (actionType === 'Add Tag') {
+        html = `
+          <div class="form-group">
+            <label class="form-label">Tag to Add</label>
+              <div class="multi-select">
+              <button type="button" class="multi-select-button" onclick="toggleMultiSelect('action-tag')">
+                <span id="action-tag-display">Select tag...</span>
+                <span class="material-icons-outlined">expand_more</span>
+                </button>
+              <div class="multi-select-options" id="action-tag-options">
+                <!-- Available tags will be populated here -->
+                </div>
+              </div>
+            <div class="mt-3" id="action-tag-confirm" style="display: none;">
+              <button type="button" class="btn-primary w-full" onclick="confirmActionTag()">
+                Confirm Tag Selection
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // Reset selected tag when changing action type
+        window.selectedActionTag = '';
+        
+        // Hide confirm button initially
+        setTimeout(() => {
+          const confirmBtn = document.getElementById('action-tag-confirm');
+          if (confirmBtn) {
+            confirmBtn.style.display = 'none';
+          }
+        }, 100);
+        
+        // Populate the action tag options after rendering
+        setTimeout(() => populateActionTags(), 100);
+      }
+      
+      container.innerHTML = html;
+    }
+
+    async function populateEventTypes() {
+      try {
+        const token = getAnyToken();
+        if (!token) return;
+        
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/event-types`, { 
+          headers: { Authorization: `Bearer ${clean}` } 
+        });
+        
+        if (res.ok) {
+          const eventTypes = await res.json();
+          const container = document.getElementById('event-type-options');
+          
+          container.innerHTML = eventTypes.map(et => `
+            <label class="multi-select-option" onclick="selectEventType('${et.title}')">
+              <span>${et.title}</span>
+            </label>
+          `).join('');
+          
+          // Restore selected event types if they exist
+          if (window.selectedEventTypes && window.selectedEventTypes.length > 0) {
+            const display = document.querySelector('#event-type-options').previousElementSibling.querySelector('span');
+            if (display) {
+              display.textContent = window.selectedEventTypes.join(', ');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching event types:', error);
+      }
+    }
+
+    async function populateTags() {
+      try {
+        const token = getAnyToken();
+        if (!token) return;
+        
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/tags`, { 
+          headers: { Authorization: `Bearer ${clean}` } 
+        });
+        
+        if (res.ok) {
+          const tags = await res.json();
+          const container = document.getElementById('tag-options');
+          
+          container.innerHTML = tags.map(tag => `
+            <label class="multi-select-option" onclick="selectTag('${tag.name}')">
+              <span>${tag.name}</span>
+            </label>
+          `).join('');
+          
+          // Restore selected tags if they exist
+          if (window.selectedTags && window.selectedTags.length > 0) {
+            const display = document.getElementById('tag-display');
+            if (display) {
+              display.textContent = window.selectedTags.join(', ');
+              display.style.color = '#34D399';
+            }
+            
+            // Show confirm button if tags are selected
+            const confirmBtn = document.getElementById('tag-confirm');
+            if (confirmBtn) {
+              confirmBtn.style.display = 'block';
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    }
+
+    async function populateActionTags() {
+      try {
+        const token = getAnyToken();
+        if (!token) return;
+        
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/tags`, { 
+          headers: { Authorization: `Bearer ${clean}` } 
+        });
+        
+        if (res.ok) {
+          const tags = await res.json();
+          const container = document.getElementById('action-tag-options');
+          
+          container.innerHTML = tags.map(tag => `
+            <label class="multi-select-option" onclick="selectActionTag('${tag.name}')">
+              <span>${tag.name}</span>
+            </label>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error fetching action tags:', error);
+      }
+    }
+
+    function toggleMultiSelect(type) {
+      const options = document.getElementById(`${type}-options`);
+      if (options) {
+        options.classList.toggle('show');
+        
+        // Close other open dropdowns
+        document.querySelectorAll('.multi-select-options').forEach(other => {
+          if (other !== options) {
+            other.classList.remove('show');
+          }
+        });
+      }
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.multi-select')) {
+        document.querySelectorAll('.multi-select-options').forEach(dropdown => {
+          dropdown.classList.remove('show');
+        });
       }
     });
 
-    saveBtn.addEventListener('click', async () => {
-      const steps = Array.from(canvas.querySelectorAll('.step')).map(s => ({
-        type: s.dataset.type,
-        props: JSON.parse(s.dataset.props || '{}')
-      }));
-      const trigger = triggerSelect.value;
-      const name = nameInput.value || 'Untitled Workflow';
-      
-      // Get trigger-specific data
-      let triggerEventTypes = [];
-      let triggerTags = [];
-      
-      if (trigger === 'Meeting Scheduled') {
-        const optionsDiv = document.getElementById('event-type-options');
-        triggerEventTypes = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
-      } else if (trigger === 'Tag Added') {
-        const optionsDiv = document.getElementById('tag-options');
-        triggerTags = optionsDiv ? Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value) : [];
+    function selectEventType(eventTypeName) {
+      // Initialize selectedEventTypes array if it doesn't exist
+      if (!window.selectedEventTypes) {
+        window.selectedEventTypes = [];
       }
-      const token = getAnyToken();
-      if (!token) {
-        console.error('No authentication token found');
-        alert('Please log in to save workflows');
+      
+      // Toggle event type selection
+      const index = window.selectedEventTypes.indexOf(eventTypeName);
+      if (index > -1) {
+        window.selectedEventTypes.splice(index, 1);
+      } else {
+        window.selectedEventTypes.push(eventTypeName);
+      }
+      
+      // Update display
+      const display = document.querySelector('#event-type-options').previousElementSibling.querySelector('span');
+      if (display) {
+        if (window.selectedEventTypes.length > 0) {
+          display.textContent = window.selectedEventTypes.join(', ');
+        } else {
+          display.textContent = 'Select event types...';
+        }
+      }
+      
+      // Close the dropdown
+      const options = document.getElementById('event-type-options');
+      if (options) {
+        options.classList.remove('show');
+      }
+    }
+    
+    function selectAllEventTypes() {
+      // Get all available event types from the options
+      const eventTypeOptions = document.querySelectorAll('#event-type-options .multi-select-option span');
+      if (eventTypeOptions.length > 0) {
+        window.selectedEventTypes = Array.from(eventTypeOptions).map(span => span.textContent);
+        
+        // Update display
+        const display = document.querySelector('#event-type-options').previousElementSibling.querySelector('span');
+        if (display) {
+          display.textContent = window.selectedEventTypes.join(', ');
+        }
+      }
+    }
+
+    function selectAllTags() {
+      // Get all available tags from the options
+      const tagOptions = document.querySelectorAll('#tag-options .multi-select-option span');
+      if (tagOptions.length > 0) {
+        window.selectedTags = Array.from(tagOptions).map(span => span.textContent);
+        
+        // Update display
+        const display = document.getElementById('tag-display');
+        if (display) {
+          display.textContent = window.selectedTags.join(', ');
+        }
+        
+        // Show confirm button
+        const confirmBtn = document.getElementById('tag-confirm');
+        if (confirmBtn) {
+          confirmBtn.style.display = 'block';
+        }
+      }
+    }
+
+        function selectActionTag(tagName) {
+      const display = document.getElementById('action-tag-display');
+      if (display) {
+        display.textContent = tagName;
+      }
+      
+      // Close the dropdown
+      const options = document.getElementById('action-tag-options');
+      if (options) {
+        options.classList.remove('show');
+      }
+      
+      // Store the selected tag for later use
+      window.selectedActionTag = tagName;
+
+      // Show confirm button
+      const confirmBtn = document.getElementById('action-tag-confirm');
+      if (confirmBtn) {
+        confirmBtn.style.display = 'block';
+      }
+    }
+    
+    function confirmTagSelection() {
+      // Hide confirm button after confirmation
+      const confirmBtn = document.getElementById('tag-confirm');
+      if (confirmBtn) {
+        confirmBtn.style.display = 'none';
+      }
+      
+      // Update display to show confirmed selection
+      const display = document.getElementById('tag-display');
+      if (display && window.selectedTags && window.selectedTags.length > 0) {
+        display.textContent = `✓ ${window.selectedTags.join(', ')}`;
+        display.style.color = '#34D399';
+      }
+    }
+    
+    function selectTag(tagName) {
+      // Initialize selectedTags array if it doesn't exist
+      if (!window.selectedTags) {
+        window.selectedTags = [];
+      }
+      
+      // Toggle tag selection
+      const index = window.selectedTags.indexOf(tagName);
+      if (index > -1) {
+        window.selectedTags.splice(index, 1);
+      } else {
+        window.selectedTags.push(tagName);
+      }
+      
+      // Update display
+      const display = document.getElementById('tag-display');
+      if (display) {
+        if (window.selectedTags.length > 0) {
+          display.textContent = window.selectedTags.join(', ');
+          // Show confirm button
+          const confirmBtn = document.getElementById('tag-confirm');
+          if (confirmBtn) {
+            confirmBtn.style.display = 'block';
+          }
+          } else {
+          display.textContent = 'Select tags...';
+          // Hide confirm button
+          const confirmBtn = document.getElementById('tag-confirm');
+          if (confirmBtn) {
+            confirmBtn.style.display = 'none';
+          }
+        }
+      }
+      
+      // Close the dropdown
+      const options = document.getElementById('tag-options');
+      if (options) {
+        options.classList.remove('show');
+      }
+    }
+
+    function confirmActionTag() {
+      // Hide confirm button after confirmation
+      const confirmBtn = document.getElementById('action-tag-confirm');
+      if (confirmBtn) {
+        confirmBtn.style.display = 'none';
+      }
+      
+      // Update display to show confirmed selection
+      const display = document.getElementById('action-tag-display');
+      if (display && window.selectedActionTag) {
+        display.textContent = `✓ ${window.selectedActionTag}`;
+        display.style.color = '#34D399';
+      }
+    }
+
+    function saveTrigger() {
+      const triggerType = document.getElementById('trigger-select').value;
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      
+      if (!triggerNode) return;
+      
+      let properties = {};
+      
+      if (triggerType === 'Meeting Scheduled') {
+        properties.eventTypes = window.selectedEventTypes || [];
+        console.log('Saving trigger with event types:', properties.eventTypes);
+      } else if (triggerType === 'Tag Added') {
+        properties.tags = window.selectedTags || [];
+        console.log('Saving trigger with tags:', properties.tags);
+      }
+      
+      // Update trigger node
+      updateTriggerNode({ type: triggerType, properties });
+      
+      // Remove guide text when trigger is configured
+      const helpText = container.querySelector('div[style*="Configure your trigger above"]');
+      if (helpText) {
+        helpText.remove();
+      } else {
+        // Try alternative selectors
+        const allDivs = container.querySelectorAll('div');
+        allDivs.forEach((div) => {
+          if (div.innerHTML && div.innerHTML.includes('Configure your trigger above')) {
+            div.remove();
+          }
+        });
+      }
+      
+      // Also remove the CSS pseudo-element guide text by updating the trigger node
+      const triggerNodeElement = container.querySelector('.flowchart-node.trigger');
+      if (triggerNodeElement) {
+        triggerNodeElement.classList.add('configured');
+      }
+      
+      closeTriggerModal();
+    }
+
+    function saveAction() {
+      const actionType = document.getElementById('action-select').value;
+      const parentNodeId = selectedNode;
+      
+      if (!parentNodeId) return;
+      
+      let properties = {};
+      
+      if (actionType === 'Add Tag') {
+        properties.tag = window.selectedActionTag || '';
+      }
+      
+      if (actionType === 'Add Tag' && !properties.tag) {
+        alert('Please select a tag');
         return;
       }
-      const clean = token.replace(/^"|"$/g, '');
+      
+      // Check if this is an insert operation
+      if (parentNodeId === 'insert' && window.insertConnection) {
+        insertActionBetween({ type: actionType, properties }, window.insertConnection);
+        window.insertConnection = null;
+        closeActionModal();
+        return;
+      }
+      
+      // Check if we're editing an existing action
+      const existingNode = nodes.find(n => n.id === parentNodeId);
+      if (existingNode && existingNode.type !== 'trigger') {
+        // Update existing action
+        existingNode.data = { type: actionType, properties };
+        existingNode.element.querySelector('.node-title').textContent = actionType;
+        existingNode.element.querySelector('.node-content').textContent = getActionContent({ type: actionType, properties });
+        updateWorkflowFromNodes();
+      } else {
+        // Add new action node
+        addActionNode({ type: actionType, properties }, nodes.length);
+      }
+      
+      closeActionModal();
+    }
+
+    function updateTriggerNode(triggerData) {
+      console.log('Updating trigger node with data:', triggerData);
+      
+      let triggerNode = nodes.find(n => n.type === 'trigger');
+      
+      if (!triggerNode) {
+        console.log('Creating new trigger node');
+        // Create new trigger node if it doesn't exist
+        const node = createNode('trigger', triggerData.type, 'play_circle', 'Click to configure trigger');
+        node.style.left = '50%';
+        node.style.top = '50px';
+        node.style.transform = 'translateX(-50%)';
+        
+        // Override the click handler for the trigger node specifically
+        node.removeEventListener('click', (e) => selectNode(node));
+        node.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openTriggerModal();
+        });
+        
+        container.appendChild(node);
+        
+        triggerNode = { 
+          id: node.id, 
+          type: 'trigger', 
+          element: node 
+        };
+        nodes.push(triggerNode);
+        
+      // Rebuild workflow structure to ensure proper connections
+      StructureManager.rebuild();
+      
+      // Add movement listeners
+      addNodeMovementListeners();
+      }
+      
+      const node = triggerNode.element;
+      const title = triggerData.type;
+      let content = '';
+      
+      if (triggerData.type === 'Meeting Scheduled' && triggerData.properties?.eventTypes) {
+        content = `Triggers when meetings are scheduled for: ${triggerData.properties.eventTypes.join(', ')}`;
+      } else if (triggerData.type === 'Tag Added' && triggerData.properties?.tags) {
+        content = `Triggers when tags are added: ${triggerData.properties.tags.join(', ')}`;
+      } else {
+        content = `Triggers on: ${triggerData.type}`;
+      }
+      
+      node.querySelector('.node-title').textContent = title;
+      node.querySelector('.node-content').textContent = content;
+      
+      // Store trigger data
+      triggerNode.data = triggerData;
+    }
+
+    function addActionNode(actionData, index) {
+      console.log('Adding action node:', actionData);
+      
+      // Find the trigger node (should be the first one)
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      if (!triggerNode) {
+        console.error('No trigger node found when adding action');
+        return;
+      }
+      
+      const actionNode = createNode(actionData.type, actionData.type, 'settings', getActionContent(actionData));
+      
+      // Position the action node below the trigger or last action
+      let parentNode = triggerNode;
+      const lastActionNode = nodes.filter(n => n.type !== 'trigger').pop();
+      if (lastActionNode) {
+        parentNode = lastActionNode;
+      }
+      
+      const parentRect = parentNode.element.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      
+      actionNode.style.left = `${parentRect.left - containerRect.left + parentRect.width / 2 - 100}px`;
+      actionNode.style.top = `${parentRect.bottom - containerRect.top + 120}px`;
+      
+      container.appendChild(actionNode);
+      
+      const nodeData = { 
+        id: actionNode.id, 
+        type: 'action', 
+        element: actionNode, 
+        data: actionData 
+      };
+      nodes.push(nodeData);
+      
+      // Rebuild the entire workflow structure to ensure consistency
+      StructureManager.rebuild();
+      
+      // Add movement listeners to the new node
+      addNodeMovementListeners();
+    }
+
+    function insertActionBetween(actionData, connection) {
+      console.log('Inserting action between nodes:', connection.from.id, 'and', connection.to.id);
+      
+      // Create the new action node
+      const actionNode = createNode(actionData.type, actionData.type, 'settings', getActionContent(actionData));
+      
+      // Position the action node in the middle of the connection
+      const fromRect = connection.from.getBoundingClientRect();
+      const toRect = connection.to.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      
+      const middleX = (fromRect.left + toRect.left) / 2 - containerRect.left;
+      const middleY = (fromRect.bottom + toRect.top) / 2 - containerRect.top;
+      
+      actionNode.style.left = `${middleX - 100}px`; // 100 is half of node width
+      actionNode.style.top = `${middleY - 25}px`; // 25 is half of node height
+      
+      container.appendChild(actionNode);
+      
+      const nodeData = { 
+        id: actionNode.id, 
+        type: 'action', 
+        element: actionNode, 
+        data: actionData 
+      };
+      
+      // Insert the node into the nodes array at the correct position
+      const fromNodeIndex = nodes.findIndex(n => n.element === connection.from);
+      const toNodeIndex = nodes.findIndex(n => n.element === connection.to);
+      
+      if (fromNodeIndex !== -1 && toNodeIndex !== -1) {
+        // Insert between the two nodes
+        const insertIndex = Math.min(fromNodeIndex, toNodeIndex) + 1;
+        nodes.splice(insertIndex, 0, nodeData);
+      } else {
+        // Fallback: add to end
+        nodes.push(nodeData);
+      }
+      
+      // Rebuild the entire workflow structure
+      StructureManager.rebuild();
+      
+      // Add movement listeners
+      addNodeMovementListeners();
+      
+      console.log('Action inserted successfully');
+    }
+
+    function getActionContent(actionData) {
+      if (actionData.type === 'Add Tag') {
+        return `Adds tag: ${actionData.properties.tag}`;
+      }
+      return `Action: ${actionData.type}`;
+    }
+    
+    function editAction(actionNode) {
+      const nodeData = nodes.find(n => n.element === actionNode);
+      if (!nodeData) return;
+      
+      // Open action modal with existing data
+      selectedNode = actionNode.id;
+      openActionModal(actionNode.id);
+      
+      // Pre-populate the form
+      const actionSelect = document.getElementById('action-select');
+      if (actionSelect) {
+        actionSelect.value = nodeData.data.type;
+        renderActionProperties();
+        
+        // Set the selected tag if it's an Add Tag action
+        if (nodeData.data.type === 'Add Tag' && nodeData.data.properties?.tag) {
+          window.selectedActionTag = nodeData.data.properties.tag;
+          const display = document.getElementById('action-tag-display');
+          if (display) {
+            display.textContent = `✓ ${nodeData.data.properties.tag}`;
+            display.style.color = '#34D399';
+          }
+        }
+      }
+    }
+    
+    function deleteAction(actionNode) {
+      if (!confirm('Are you sure you want to delete this action?')) return;
+      
+      const nodeData = nodes.find(n => n.element === actionNode);
+      if (!nodeData) return;
+      
+      console.log('Deleting action node:', nodeData);
+      
+      // Remove all connections involving this node
+      WorkflowManager.removeNodeConnections(actionNode);
+      
+      // Remove the node's orb
+      OrbManager.removeOrb(actionNode);
+      
+      // Remove the node from the DOM
+      if (actionNode.parentNode) {
+        actionNode.remove();
+      }
+      
+      // Remove from nodes array
+      const index = nodes.findIndex(n => n.element === actionNode);
+      if (index > -1) {
+        nodes.splice(index, 1);
+        console.log('Removed node from array, remaining nodes:', nodes.length);
+      }
+      
+      // Rebuild the entire workflow structure
+      StructureManager.rebuild();
+      
+      // Update the workflow data
+      updateWorkflowFromNodes();
+    }
+    
+    
+    function validateWorkflowStructure() {
+      try {
+        // Check if we have a valid trigger
+        const triggerNode = nodes.find(n => n.type === 'trigger');
+        if (!triggerNode || !triggerNode.data || !triggerNode.data.type) {
+          console.error('Invalid trigger node');
+          return false;
+        }
+        
+        // Check if trigger has required properties
+        if (triggerNode.data.type === 'Meeting Scheduled' && (!triggerNode.data.properties?.eventTypes || triggerNode.data.properties.eventTypes.length === 0)) {
+          console.error('Meeting Scheduled trigger requires event types');
+          return false;
+        }
+        
+        if (triggerNode.data.type === 'Tag Added' && (!triggerNode.data.properties?.tags || triggerNode.data.properties.tags.length === 0)) {
+          console.error('Tag Added trigger requires tags');
+          return false;
+        }
+        
+        // Check if all action nodes have valid data
+        const actionNodes = nodes.filter(n => n.type !== 'trigger');
+        for (const actionNode of actionNodes) {
+          if (!actionNode.data || !actionNode.data.type) {
+            console.error('Invalid action node:', actionNode);
+            return false;
+          }
+          
+          // Check if Add Tag action has required properties
+          if (actionNode.data.type === 'Add Tag' && (!actionNode.data.properties?.tag || actionNode.data.properties.tag === '')) {
+            console.error('Add Tag action requires a tag');
+            return false;
+          }
+        }
+        
+        console.log('Workflow structure validation passed');
+        return true;
+      } catch (error) {
+        console.error('Error validating workflow structure:', error);
+        return false;
+      }
+    }
+    
+    function updateWorkflowFromNodes() {
+      // Rebuild the workflow steps array from current nodes
+      const steps = [];
+      
+      nodes.forEach(node => {
+        if (node.type === 'trigger' && node.data) {
+          steps.push(node.data);
+        } else if (node.type !== 'trigger' && node.data) {
+          steps.push(node.data);
+        }
+      });
+      
+      console.log('Updated workflow steps:', steps);
+      
+      // Update the current workflow
+      if (currentWorkflow) {
+        currentWorkflow.data = {
+          ...currentWorkflow.data,
+          steps: steps
+        };
+        console.log('Updated currentWorkflow.data:', currentWorkflow.data);
+      }
+    }
+
+
+    async function saveWorkflow() {
+      console.log('=== SAVE WORKFLOW CALLED ===');
+      const workflowNameInput = document.getElementById('workflow-name');
+      const name = workflowNameInput.value.trim() || 'Untitled Workflow';
+      
+      if (nodes.length === 0) {
+        alert('Please configure at least a trigger for your workflow');
+        return;
+      }
+      
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      if (!triggerNode || !triggerNode.data) {
+        alert('Please configure the trigger for your workflow');
+        return;
+      }
+      
+      // Validate workflow structure before saving
+      if (!validateWorkflowStructure()) {
+        alert('Workflow structure is invalid. Please check your configuration.');
+        return;
+      }
+      
+      const steps = nodes.map(node => {
+        if (node.type === 'trigger') {
+          return {
+            type: 'trigger',
+            ...node.data
+          };
+        } else {
+          return {
+            ...node.data
+          };
+        }
+      });
+      
+      console.log('Current nodes:', nodes);
+      console.log('Mapped steps:', steps);
+      
+      // Prepare the workflow data structure - store in data field with proper structure
+      const workflowData = {
+        trigger: triggerNode.data.type,
+        triggerEventTypes: triggerNode.data.properties?.eventTypes || [],
+        triggerTags: triggerNode.data.properties?.tags || [],
+        steps: steps, // Include trigger in steps for consistency
+        status: true
+      };
+      
+      console.log('Prepared workflow data for saving:', workflowData);
+      
+      console.log('Saving workflow with data:', workflowData);
+      console.log('Trigger node data:', triggerNode.data);
       
       try {
+                const token = getAnyToken();
+      if (!token) {
+          console.error('No token found');
+          alert('Please log in to save workflows');
+        return;
+      }
+      
+        console.log('Token found, cleaning...');
+        const clean = token.replace(/^"|"$/g, '');
+        console.log('Token cleaned, length:', clean.length);
+        
         if (currentWorkflow) {
+          console.log('Updating existing workflow:', currentWorkflow.id);
           // Update existing workflow
           const updateData = {
             name,
             description: currentWorkflow.description || '',
-            data: {
-              trigger,
-              triggerEventTypes,
-              triggerTags,
-              steps,
-              status: true
-            }
+            data: workflowData
           };
-          
-          console.log('Updating workflow with data:', updateData);
+          console.log('Update data:', updateData);
           
           const res = await fetch(`${API_URL}/workflows/${currentWorkflow.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-            body: JSON.stringify(updateData),
+            body: JSON.stringify(updateData)
           });
-          if (!res.ok) {
-            throw new Error(`Failed to update workflow: ${res.statusText}`);
+          
+          console.log('Update response status:', res.status);
+          
+          if (res.ok) {
+            console.log('Workflow updated successfully');
+            localStorage.removeItem('calendarify-current-workflow');
+            localStorage.setItem('calendarify-redirect-to', 'workflows');
+            localStorage.setItem('calendarify-notification', 'Workflow updated successfully!');
+            window.location.href = '/dashboard';
+          } else {
+            const errorData = await res.json();
+            console.error('Failed to update workflow:', errorData);
+            showNotification('Failed to update workflow', 'error');
           }
-          
-          // Update local workflow object
-          currentWorkflow.name = name;
-          currentWorkflow.data = updateData.data;
-          
-          console.log('Workflow updated successfully');
         } else {
+          console.log('Creating new workflow...');
+          // Create new workflow
+          const createData = {
+            name,
+            description: '',
+            data: workflowData
+          };
+          console.log('Create data:', createData);
+          
           const res = await fetch(`${API_URL}/workflows`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
-            body: JSON.stringify({ 
-              name, 
-              description: '', 
-              data: { 
-                trigger, 
-                triggerEventTypes, 
-                triggerTags, 
-                steps, 
-                status: true 
-              } 
-            }),
+            body: JSON.stringify(createData)
           });
-          if (!res.ok) {
-            throw new Error(`Failed to create workflow: ${res.statusText}`);
+          
+          console.log('Create response status:', res.status);
+          
+          if (res.ok) {
+            const newWorkflow = await res.json();
+            console.log('Workflow created successfully:', newWorkflow);
+            localStorage.removeItem('calendarify-current-workflow');
+            localStorage.setItem('calendarify-redirect-to', 'workflows');
+            localStorage.setItem('calendarify-notification', 'Workflow created successfully!');
+            window.location.href = '/dashboard';
+          } else {
+            const errorData = await res.json();
+            console.error('Failed to create workflow:', errorData);
+            showNotification('Failed to create workflow', 'error');
           }
-          currentWorkflow = await res.json();
-          console.log('Workflow created successfully');
         }
-        
-        // Redirect to dashboard after successful save
-        localStorage.removeItem('calendarify-current-workflow');
-        localStorage.setItem('calendarify-redirect-to', 'workflows');
-        window.location.href = '/dashboard';
       } catch (error) {
         console.error('Error saving workflow:', error);
-        alert(`Failed to save workflow: ${error.message}`);
+        showNotification('Failed to save workflow', 'error');
+      }
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-backdrop')) {
+        e.target.classList.add('hidden');
       }
     });
 
-    document.querySelectorAll('#actions .draggable').forEach(el => {
-      el.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('text/plain', el.dataset.type);
-      });
-    });
-
-    canvas.addEventListener('dragover', e => {
-      e.preventDefault();
-      const dragging = document.querySelector('.step.dragging');
-      if (dragging) {
-        const afterElement = getDragAfterElement(canvas, e.clientY);
-        if (afterElement == null) {
-          canvas.appendChild(dragging);
+    // Handle trigger type change
+    document.getElementById('trigger-select').addEventListener('change', renderTriggerProperties);
+    
+    // Handle action type change
+    document.getElementById('action-select').addEventListener('change', renderActionProperties);
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete' && selectedNode) {
+        deleteSelectedNode();
+      } else if (e.key === 'Escape') {
+        if (triggerModal.classList.contains('hidden') && actionModal.classList.contains('hidden')) {
+          // Deselect node
+          if (selectedNode) {
+            selectedNode.classList.remove('selected');
+            selectedNode = null;
+          }
         } else {
-          canvas.insertBefore(dragging, afterElement);
+          // Close modals
+          closeTriggerModal();
+          closeActionModal();
         }
-      }
-    });
-
-    canvas.addEventListener('drop', e => {
-      e.preventDefault();
-      const type = e.dataTransfer.getData('text/plain');
-      if (type) {
-        const step = createStep(type);
-        canvas.appendChild(step);
       }
     });
-
-    function createStep(data) {
-      const { type, props = {} } = typeof data === 'string' ? { type: data, props: {} } : data;
-      const div = document.createElement('div');
-      div.className = 'step';
-      div.setAttribute('draggable', 'true');
-      div.dataset.type = type;
-      div.dataset.props = JSON.stringify(props);
-
-      const icon = document.createElement('span');
-      icon.className = 'material-icons-outlined text-[#34D399]';
-      switch(type) {
-        case 'Send Email': icon.textContent = 'email'; break;
-        case 'Delay': icon.textContent = 'hourglass_empty'; break;
-        case 'Create Meeting': icon.textContent = 'calendar_today'; break;
-        case 'Add Tag': icon.textContent = 'label'; break;
-        default: icon.textContent = 'drag_indicator';
-      }
-      const text = document.createElement('span');
-      if (type === 'Delay') {
-        if (props.duration) {
-          const unitText = props.unit === 'minutes' ? 'min' : props.unit === 'days' ? 'days' : 'hours';
-          const description = props.description ? ` - ${props.description}` : '';
-          text.textContent = `Delay: ${props.duration} ${unitText}${description}`;
-        } else {
-          text.textContent = 'Delay: Configure...';
-        }
-      } else if (type === 'Add Tag') {
-        if (props.tags && props.tags.length > 0) {
-          if (props.tags.length === 1) {
-            text.textContent = `Add Tag: ${props.tags[0]}`;
-          } else if (props.tags.length === 2) {
-            text.textContent = `Add Tags: ${props.tags.join(', ')}`;
-          } else {
-            text.textContent = `Add Tags: ${props.tags.length} tags`;
-          }
-        } else {
-          text.textContent = 'Add Tag: Configure...';
-        }
-      } else {
-        text.textContent = type;
-      }
-      const actions = document.createElement('div');
-      actions.className = 'step-actions';
-      const editBtn = document.createElement('button');
-      editBtn.innerHTML = '<span class="material-icons-outlined">settings</span>';
-      editBtn.addEventListener('click', () => {
-        if (type === 'Create Meeting') {
-          openCreateMeetingDropdown(div);
-        } else {
-          openStepModal(div);
-        }
-      });
-      const delBtn = document.createElement('button');
-      delBtn.innerHTML = '<span class="material-icons-outlined">delete</span>';
-      delBtn.addEventListener('click', () => confirmDeleteStep(div));
-      actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
-
-      div.appendChild(icon);
-      div.appendChild(text);
-      div.appendChild(actions);
-
-      div.addEventListener('dragstart', () => {
-        div.classList.add('dragging');
-      });
-      div.addEventListener('dragend', () => {
-        div.classList.remove('dragging');
-      });
-      div.addEventListener('dblclick', () => {
-        if (type === 'Create Meeting') {
-          openCreateMeetingDropdown(div);
-        } else {
-          openStepModal(div);
-        }
-      });
-      return div;
-    }
-
-    function getDragAfterElement(container, y) {
-      const elements = [...container.querySelectorAll('.step:not(.dragging)')];
-      return elements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    async function renderTriggerProperties() {
-      triggerProps.innerHTML = '';
-      const selectedTrigger = triggerSelect.value;
+    
+    function deleteSelectedNode() {
+      if (!selectedNode || selectedNode.type === 'trigger') return;
       
-      // Handle Meeting Scheduled trigger
-      if (selectedTrigger === 'Meeting Scheduled') {
-        let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-        if (eventTypes.length === 0) {
-          // Try to fetch from server if not in localStorage
-          try {
-            const token = getToken();
-            if (token) {
-              const clean = token.replace(/^"|"$/g, '');
-              const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
-              if (res.ok) {
-                const serverEventTypes = await res.json();
-                eventTypes = serverEventTypes.map(et => ({ name: et.title }));
-                localStorage.setItem('calendarify-event-types', JSON.stringify(serverEventTypes));
-              }
-            }
-          } catch (error) {
-            console.error('Failed to fetch event types:', error);
-          }
-        }
-        
-        triggerProps.innerHTML = `
-          <label class="block text-sm text-[#A3B3AF] mb-2">Event Types</label>
-          <div class="multi-select">
-            <button type="button" id="event-type-btn" class="multi-select-button">
-              <span>Select...</span>
-              <span class="material-icons-outlined">expand_more</span>
-            </button>
-            <div id="event-type-options" class="multi-select-options"></div>
-            <button type="button" id="select-all-event-types" class="mt-2 px-3 py-1 bg-[#34D399] text-[#1A2E29] rounded-lg text-sm font-medium hover:bg-[#2C4A43] transition-colors">
-              Select All
-            </button>
-          </div>`;
-
-        const optionsDiv = document.getElementById('event-type-options');
-        optionsDiv.innerHTML = eventTypes.map(et => `
-          <label class="flex items-center gap-3 p-2 hover:bg-[#19342e] rounded cursor-pointer transition-colors">
-            <div class="custom-checkbox" data-value="${et.name}"></div>
-            <input type="checkbox" value="${et.name}" style="display: none;">
-            <span class="text-[#E0E0E0]">${et.name}</span>
-          </label>
-        `).join('');
-        const btn = document.getElementById('event-type-btn');
-        const selectAllBtn = document.getElementById('select-all-event-types');
-        
-        const updateText = () => {
-          const selected = [...optionsDiv.querySelectorAll('input:checked')].map(c => c.value);
-          btn.firstElementChild.textContent = selected.length ? selected.join(', ') : 'Select...';
-        };
-        
-        btn.addEventListener('click', () => {
-          optionsDiv.style.display = optionsDiv.style.display === 'none' || !optionsDiv.style.display ? 'block' : 'none';
-        });
-        
-        selectAllBtn.addEventListener('click', () => {
-          const checkboxes = optionsDiv.querySelectorAll('input[type="checkbox"]');
-          const allChecked = [...checkboxes].every(cb => cb.checked);
+      if (confirm('Are you sure you want to delete this action?')) {
+        const nodeData = nodes.find(n => n.element === selectedNode);
+        if (nodeData) {
+          // Remove connections
+          WorkflowManager.removeNodeConnections(selectedNode);
           
-          checkboxes.forEach(cb => {
-            cb.checked = !allChecked;
-            const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
-            if (customCheckbox) {
-              customCheckbox.classList.toggle('checked', cb.checked);
-            }
-          });
+          // Remove action orb
+          OrbManager.removeOrb(selectedNode);
           
-          selectAllBtn.textContent = allChecked ? 'Select All' : 'Deselect All';
-          updateText();
-        });
-        
-        document.addEventListener('click', (e) => {
-          if (!btn.contains(e.target) && !optionsDiv.contains(e.target) && !selectAllBtn.contains(e.target)) {
-            optionsDiv.style.display = 'none';
-          }
-        });
-        // Handle custom checkbox interactions
-        optionsDiv.addEventListener('click', (e) => {
-          const label = e.target.closest('label');
-          if (label) {
-            const checkbox = label.querySelector('input[type="checkbox"]');
-            const customCheckbox = label.querySelector('.custom-checkbox');
-            
-            if (checkbox && customCheckbox) {
-              checkbox.checked = !checkbox.checked;
-              customCheckbox.classList.toggle('checked', checkbox.checked);
-              updateText();
-            }
-          }
-        });
-        
-        // Set initial state for existing workflow
-        const workflowData = currentWorkflow?.data || currentWorkflow;
-        if (workflowData && workflowData.triggerEventTypes) {
-          optionsDiv.querySelectorAll('input').forEach(cb => {
-            if (workflowData.triggerEventTypes.includes(cb.value)) {
-              cb.checked = true;
-              const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
-              if (customCheckbox) {
-                customCheckbox.classList.add('checked');
-              }
-            }
-          });
-        }
-        updateText();
-      }
-      
-      // Handle Tag Added trigger
-      else if (selectedTrigger === 'Tag Added') {
-        let tags = [];
-        
-        // Try to get tags from localStorage first
-        try {
-          const storedTags = localStorage.getItem('calendarify-tags');
-          if (storedTags) {
-            const parsedTags = JSON.parse(storedTags);
-            if (Array.isArray(parsedTags) && parsedTags.length > 0) {
-              tags = parsedTags;
-            }
-          }
-        } catch (error) {
-          console.error('Failed to parse stored tags:', error);
-        }
-        
-        // If no tags in localStorage, try to fetch from server
-        if (tags.length === 0) {
-          try {
-            const token = getToken();
-            if (token) {
-              const clean = token.replace(/^"|"$/g, '');
-              const res = await fetch(`${API_URL}/tags`, { headers: { Authorization: `Bearer ${clean}` } });
-              if (res.ok) {
-                const serverTags = await res.json();
-                if (Array.isArray(serverTags) && serverTags.length > 0) {
-                  tags = serverTags;
-                  localStorage.setItem('calendarify-tags', JSON.stringify(serverTags));
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Failed to fetch tags from server:', error);
-          }
-        }
-        
-        // Ensure we have some default tags if none are available
-        if (tags.length === 0) {
-          tags = ['Client', 'VIP', 'Lead', 'Follow-up', 'Qualified'];
-        }
-        
-        // Normalize tag structure to ensure consistent format
-        const normalizedTags = tags.map(tag => {
-          if (typeof tag === 'string') {
-            return { name: tag };
-          } else if (tag && typeof tag === 'object' && tag.name) {
-            return { name: tag.name };
-          } else {
-            return { name: String(tag) };
-          }
-        });
-        
-        console.log('Normalized tags for Tag Added trigger:', normalizedTags);
-        
-        triggerProps.innerHTML = `
-          <label class="block text-sm text-[#A3B3AF] mb-2">Tags</label>
-          <div class="multi-select">
-            <button type="button" id="tag-btn" class="multi-select-button">
-              <span>Select...</span>
-              <span class="material-icons-outlined">expand_more</span>
-            </button>
-            <div id="tag-options" class="multi-select-options"></div>
-            <button type="button" id="select-all-tags" class="mt-2 px-3 py-1 bg-[#34D399] text-[#1A2E29] rounded-lg text-sm font-medium hover:bg-[#2C4A43] transition-colors">
-              Select All
-            </button>
-          </div>`;
-
-        const optionsDiv = document.getElementById('tag-options');
-        optionsDiv.innerHTML = normalizedTags.map(tag => `
-          <label class="flex items-center gap-3 p-2 hover:bg-[#19342e] rounded cursor-pointer transition-colors">
-            <div class="custom-checkbox" data-value="${tag.name}"></div>
-            <input type="checkbox" value="${tag.name}" style="display: none;">
-            <span class="text-[#E0E0E0]">${tag.name}</span>
-          </label>
-        `).join('');
-        
-        const btn = document.getElementById('tag-btn');
-        const selectAllBtn = document.getElementById('select-all-tags');
-        
-        const updateText = () => {
-          const selected = [...optionsDiv.querySelectorAll('input:checked')].map(c => c.value);
-          btn.firstElementChild.textContent = selected.length ? selected.join(', ') : 'Select...';
-        };
-        
-        btn.addEventListener('click', () => {
-          optionsDiv.style.display = optionsDiv.style.display === 'none' || !optionsDiv.style.display ? 'block' : 'none';
-        });
-        
-        selectAllBtn.addEventListener('click', () => {
-          const checkboxes = optionsDiv.querySelectorAll('input[type="checkbox"]');
-          const allChecked = [...checkboxes].every(cb => cb.checked);
+          // Remove node
+          selectedNode.remove();
+          nodes = nodes.filter(n => n.id !== nodeData.id);
           
-          checkboxes.forEach(cb => {
-            cb.checked = !allChecked;
-            const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
-            if (customCheckbox) {
-              customCheckbox.classList.toggle('checked', cb.checked);
-            }
-          });
+          // Rebuild structure
+          StructureManager.rebuild();
           
-          selectAllBtn.textContent = allChecked ? 'Select All' : 'Deselect All';
-          updateText();
-        });
-        
-        document.addEventListener('click', (e) => {
-          if (!btn.contains(e.target) && !optionsDiv.contains(e.target) && !selectAllBtn.contains(e.target)) {
-            optionsDiv.style.display = 'none';
-          }
-        });
-        
-        // Handle custom checkbox interactions
-        optionsDiv.addEventListener('click', (e) => {
-          const label = e.target.closest('label');
-          if (label) {
-            const checkbox = label.querySelector('input[type="checkbox"]');
-            const customCheckbox = label.querySelector('.custom-checkbox');
-            
-            if (checkbox && customCheckbox) {
-              checkbox.checked = !checkbox.checked;
-              customCheckbox.classList.toggle('checked', checkbox.checked);
-              updateText();
-            }
-          }
-        });
-        
-        // Set initial state for existing workflow
-        const workflowData = currentWorkflow?.data || currentWorkflow;
-        if (workflowData && workflowData.triggerTags) {
-          optionsDiv.querySelectorAll('input').forEach(cb => {
-            if (workflowData.triggerTags.includes(cb.value)) {
-              cb.checked = true;
-              const customCheckbox = cb.closest('label').querySelector('.custom-checkbox');
-              if (customCheckbox) {
-                customCheckbox.classList.add('checked');
-              }
-            }
-          });
+          selectedNode = null;
         }
-        updateText();
-      }
-      
-      // Handle coming soon triggers
-      else if (['Attendee Rescheduled', 'Host Rescheduled', 'Attendee Canceled', 'Host Canceled', 'Meeting Ended'].includes(selectedTrigger)) {
-        triggerProps.innerHTML = `
-          <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-            <div class="flex items-center gap-3">
-              <span class="material-icons-outlined text-[#34D399]">info</span>
-              <span class="text-[#A3B3AF]">This trigger is coming soon!</span>
-            </div>
-          </div>`;
       }
     }
-
-    triggerSelect.addEventListener('change', () => renderTriggerProperties());
-
-    function openStepModal(step) {
-      editingStep = step;
-      const type = step.dataset.type;
-      const props = JSON.parse(step.dataset.props || '{}');
-      stepModalTitle.textContent = 'Edit ' + type;
-      stepModalContent.innerHTML = '';
-      if (type === 'Send Email') {
-        stepModalContent.innerHTML = `
-          <div class="space-y-4">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">email</span>
-              <h4 class="text-lg font-semibold text-white">Configure Email</h4>
-            </div>
-            
-            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Email Subject</label>
-              <div class="relative">
-                <input id="prop-subject" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.subject || ''}" placeholder="Enter email subject">
-                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span class="material-icons-outlined text-[#A3B3AF] text-sm">subject</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Email Body (HTML)</label>
-              <div id="prop-body" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors min-h-[120px] resize-none" contenteditable="true" placeholder="Enter email content...">${props.body || ''}</div>
-              <p class="text-xs text-[#A3B3AF] mt-2">You can use HTML formatting. Available variables: {{invitee_name}}, {{event_type}}, {{meeting_date}}</p>
-            </div>
-          </div>`;
-      } else if (type === 'Delay') {
-        stepModalContent.innerHTML = `
-          <div class="space-y-4">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">hourglass_empty</span>
-              <h4 class="text-lg font-semibold text-white">Configure Delay</h4>
-            </div>
-            
-            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Delay Duration</label>
-              <div class="flex items-center gap-3">
-                <div class="relative flex-1">
-                  <input id="prop-duration" type="number" min="1" max="168" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-12 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.duration || 1}">
-                  <div class="absolute inset-y-0 left-0 flex items-center">
-                    <button type="button" id="decrease-duration" class="w-8 h-full flex items-center justify-center text-[#A3B3AF] hover:text-[#34D399] hover:bg-[#2C4A43] transition-colors rounded-l-lg">
-                      <span class="material-icons-outlined text-sm">remove</span>
-                    </button>
-                  </div>
-                  <div class="absolute inset-y-0 right-0 flex items-center">
-                    <button type="button" id="increase-duration" class="w-8 h-full flex items-center justify-center text-[#A3B3AF] hover:text-[#34D399] hover:bg-[#2C4A43] transition-colors rounded-r-lg">
-                      <span class="material-icons-outlined text-sm">add</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="relative w-24">
-                  <select id="prop-duration-unit" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors appearance-none cursor-pointer">
-                    <option value="hours" ${(!props.unit || props.unit === 'hours') ? 'selected' : ''}>Hours</option>
-                    <option value="minutes" ${props.unit === 'minutes' ? 'selected' : ''}>Minutes</option>
-                    <option value="days" ${props.unit === 'days' ? 'selected' : ''}>Days</option>
-                  </select>
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span class="material-icons-outlined text-[#A3B3AF] text-sm">expand_more</span>
-                  </div>
-                </div>
-              </div>
-              <p class="text-xs text-[#A3B3AF] mt-2">This delay will pause the workflow execution for the specified duration before continuing to the next step.</p>
-            </div>
-            
-            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Delay Description (Optional)</label>
-              <input id="prop-description" type="text" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors placeholder-[#A3B3AF]" value="${props.description || ''}" placeholder="e.g., Wait for business hours, Allow time for response">
-              <p class="text-xs text-[#A3B3AF] mt-2">Add a description to help identify the purpose of this delay.</p>
-            </div>
-          </div>`;
-      } else if (type === 'Add Tag') {
-        // Get available tags from localStorage
-        let availableTags = JSON.parse(localStorage.getItem('calendarify-tags') || '[]');
-        if (availableTags.length === 0) {
-          availableTags = ['Client', 'VIP', 'Lead', 'Follow-up', 'Qualified'];
-        }
-        
-        // Get currently selected tags
-        const selectedTags = props.tags || [];
-        
-        stepModalContent.innerHTML = `
-          <div class="space-y-4">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="material-icons-outlined text-2xl text-[#34D399]">label</span>
-              <h4 class="text-lg font-semibold text-white">Configure Tags</h4>
-            </div>
-            
-            <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4">
-              <label class="block text-sm text-[#A3B3AF] mb-2 font-medium">Select Tags</label>
-              <div class="multi-select">
-                <button type="button" id="tag-select-button" class="multi-select-button">
-                  <span id="tag-select-text">${selectedTags.length > 0 ? selectedTags.join(', ') : 'Select tags...'}</span>
-                  <span class="material-icons-outlined text-sm">expand_more</span>
-                </button>
-                <div id="tag-select-options" class="multi-select-options" style="display:none;">
-                  ${availableTags.map(tag => `
-                    <label class="hover:bg-[#2C4A43] cursor-pointer">
-                      <span class="custom-checkbox ${selectedTags.includes(tag) ? 'checked' : ''}"></span>
-                      <span>${tag}</span>
-                    </label>
-                  `).join('')}
-                </div>
-              </div>
-              <p class="text-xs text-[#A3B3AF] mt-2">These tags will be added to the contact or meeting record for easy categorization and filtering.</p>
-            </div>
-          </div>`;
-        // Attach dropdown and checkbox event listeners
-        setTimeout(() => {
-          const tagSelectButton = document.getElementById('tag-select-button');
-          const tagSelectOptions = document.getElementById('tag-select-options');
-          const tagSelectText = document.getElementById('tag-select-text');
-          if (tagSelectButton && tagSelectOptions) {
-            tagSelectButton.addEventListener('click', function(e) {
-              e.stopPropagation();
-              tagSelectOptions.style.display = tagSelectOptions.style.display === 'block' ? 'none' : 'block';
-            });
-            // Close dropdown when clicking outside
-            document.addEventListener('mousedown', function handler(e) {
-              if (!tagSelectButton.contains(e.target) && !tagSelectOptions.contains(e.target)) {
-                tagSelectOptions.style.display = 'none';
-                document.removeEventListener('mousedown', handler);
-              }
-            });
-          }
-          // Attach checkbox toggles
-          tagSelectOptions.querySelectorAll('.custom-checkbox').forEach(cb => {
-            cb.addEventListener('click', function(e) {
-              e.stopPropagation();
-              cb.classList.toggle('checked');
-              // Update the button text
-              const selectedTags = [];
-              tagSelectOptions.querySelectorAll('.custom-checkbox.checked').forEach(checkbox => {
-                const tagName = checkbox.closest('label').querySelector('span:last-child').textContent;
-                selectedTags.push(tagName);
-              });
-              if (tagSelectText) {
-                tagSelectText.textContent = selectedTags.length > 0 ? selectedTags.join(', ') : 'Select tags...';
-              }
-            });
-          });
-        }, 0);
-      }
-      stepModal.classList.remove('hidden');
-      
-      // Setup custom number input if it's a delay step
-      if (type === 'Delay') {
-        setTimeout(setupDelayNumberInput, 10);
-      }
-    }
-
-    async function openCreateMeetingDropdown(step) {
-      editingStep = step;
-      const props = JSON.parse(step.dataset.props || '{}');
-      
-      // Get event types from localStorage
-      let eventTypes = JSON.parse(localStorage.getItem('calendarify-event-types') || '[]');
-      if (eventTypes.length === 0) {
-        // Try to fetch from server if not in localStorage
-        try {
-          const token = getToken();
-          if (token) {
-            const clean = token.replace(/^"|"$/g, '');
-            const res = await fetch(`${API_URL}/event-types`, { headers: { Authorization: `Bearer ${clean}` } });
-            if (res.ok) {
-              const serverEventTypes = await res.json();
-              eventTypes = serverEventTypes.map(et => ({ name: et.title }));
-              localStorage.setItem('calendarify-event-types', JSON.stringify(serverEventTypes));
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch event types:', error);
-        }
-      }
-      
-      // No default event types - let user create their own
-      
-      // Create dropdown container
-      const dropdownContainer = document.createElement('div');
-      dropdownContainer.className = 'fixed inset-0 z-50 flex items-center justify-center';
-      dropdownContainer.style.backgroundColor = 'rgba(0,0,0,0.6)';
-      
-      const dropdownContent = document.createElement('div');
-      dropdownContent.className = 'bg-[#1E3A34] p-6 rounded-lg w-80 max-w-sm mx-auto';
-      dropdownContent.innerHTML = `
-        <div class="flex items-center gap-3 mb-4">
-          <span class="material-icons-outlined text-2xl text-[#34D399]">calendar_today</span>
-          <h3 class="text-lg font-bold text-white">Select Event Type</h3>
-        </div>
-        <p class="text-[#A3B3AF] mb-4">Choose the event type for the meeting to be created with the invitee running this workflow:</p>
-        <div class="relative">
-          <select id="event-type-select" class="w-full bg-[#1E3A34] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors appearance-none cursor-pointer">
-            <option value="">Select an event type...</option>
-            ${eventTypes.map(et => `<option value="${et.name}" ${props.eventType === et.name ? 'selected' : ''}>${et.name}</option>`).join('')}
-          </select>
-          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span class="material-icons-outlined text-[#A3B3AF] text-sm">expand_more</span>
-          </div>
-        </div>
-        <div class="flex gap-3 mt-6">
-          <button id="cancel-event-type" class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors">Cancel</button>
-          <button id="save-event-type" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg font-bold hover:bg-[#2C4A43] transition-colors">Save</button>
-        </div>
-      `;
-      
-      dropdownContainer.appendChild(dropdownContent);
-      document.body.appendChild(dropdownContainer);
-      
-      // Add event listeners
-      document.getElementById('cancel-event-type').addEventListener('click', () => {
-        document.body.removeChild(dropdownContainer);
-        editingStep = null;
-      });
-      
-      document.getElementById('save-event-type').addEventListener('click', () => {
-        const selectedEventType = document.getElementById('event-type-select').value;
-        if (selectedEventType) {
-          const newProps = { ...props, eventType: selectedEventType };
-          step.dataset.props = JSON.stringify(newProps);
-          
-          // Update the step text to show the selected event type
-          const textElement = step.querySelector('span:not(.material-icons-outlined)');
-          if (textElement) {
-            textElement.textContent = `Create Meeting: ${selectedEventType}`;
-          }
-        }
-        document.body.removeChild(dropdownContainer);
-        editingStep = null;
-      });
-      
-      // Close on backdrop click
-      dropdownContainer.addEventListener('click', (e) => {
-        if (e.target === dropdownContainer) {
-          document.body.removeChild(dropdownContainer);
-          editingStep = null;
-        }
-      });
-    }
-
-    stepModalCancel.addEventListener('click', () => stepModal.classList.add('hidden'));
-    stepModalSave.addEventListener('click', () => {
-      if (!editingStep) return;
-      const type = editingStep.dataset.type;
-      const props = {};
-      if (type === 'Send Email') {
-        props.subject = document.getElementById('prop-subject').value;
-        props.body = document.getElementById('prop-body').innerHTML;
-      } else if (type === 'Delay') {
-        props.duration = document.getElementById('prop-duration').value;
-        props.unit = document.getElementById('prop-duration-unit').value;
-        props.description = document.getElementById('prop-description').value;
-        
-        // Update the step text to show the delay configuration
-        const textElement = editingStep.querySelector('span:not(.material-icons-outlined)');
-        if (textElement) {
-          const unitText = props.unit === 'minutes' ? 'min' : props.unit === 'days' ? 'days' : 'hours';
-          const description = props.description ? ` - ${props.description}` : '';
-          textElement.textContent = `Delay: ${props.duration} ${unitText}${description}`;
-        }
-      } else if (type === 'Add Tag') {
-        // Get selected tags from the multi-select
-        const selectedTags = [];
-        document.querySelectorAll('#tag-select-options .custom-checkbox.checked').forEach(checkbox => {
-          const tagName = checkbox.closest('label').querySelector('span:last-child').textContent;
-          selectedTags.push(tagName);
-        });
-        props.tags = selectedTags;
-        
-        // Update the step text to show selected tags
-        const textElement = editingStep.querySelector('span:not(.material-icons-outlined)');
-        if (textElement) {
-          if (selectedTags.length === 0) {
-            textElement.textContent = 'Add Tag';
-          } else if (selectedTags.length === 1) {
-            textElement.textContent = `Add Tag: ${selectedTags[0]}`;
-          } else if (selectedTags.length === 2) {
-            textElement.textContent = `Add Tags: ${selectedTags.join(', ')}`;
-          } else {
-            textElement.textContent = `Add Tags: ${selectedTags.length} tags`;
-          }
-        }
-      }
-      editingStep.dataset.props = JSON.stringify(props);
-      stepModal.classList.add('hidden');
-      editingStep = null;
-    });
-
-    // Custom number input functionality for delay duration
-    function setupDelayNumberInput() {
-      const durationInput = document.getElementById('prop-duration');
-      const decreaseBtn = document.getElementById('decrease-duration');
-      const increaseBtn = document.getElementById('increase-duration');
-      
-      if (durationInput && decreaseBtn && increaseBtn) {
-        decreaseBtn.addEventListener('click', () => {
-          const currentValue = parseInt(durationInput.value) || 1;
-          const newValue = Math.max(1, currentValue - 1);
-          durationInput.value = newValue;
-          durationInput.dispatchEvent(new Event('input'));
-        });
-        
-        increaseBtn.addEventListener('click', () => {
-          const currentValue = parseInt(durationInput.value) || 1;
-          const newValue = Math.min(168, currentValue + 1);
-          durationInput.value = newValue;
-          durationInput.dispatchEvent(new Event('input'));
-        });
-        
-        // Update button states based on current value
-        const updateButtonStates = () => {
-          const currentValue = parseInt(durationInput.value) || 1;
-          decreaseBtn.disabled = currentValue <= 1;
-          increaseBtn.disabled = currentValue >= 168;
-          
-          decreaseBtn.classList.toggle('opacity-50', currentValue <= 1);
-          increaseBtn.classList.toggle('opacity-50', currentValue >= 168);
-        };
-        
-        durationInput.addEventListener('input', updateButtonStates);
-        updateButtonStates(); // Initial state
-      }
-    }
-
-    function confirmDeleteStep(step) {
-      confirmMessage.textContent = 'Delete this step?';
-      confirmYes.onclick = () => {
-        step.remove();
-        confirmModal.classList.add('hidden');
+    
+    // Handle node movement and update connections
+    function handleNodeMovement() {
+      // Debounced function to update connections after node movement
+      let updateTimeout;
+      return function() {
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+          // Only update if nodes have actually moved (not just CSS transitions)
+          WorkflowManager.updateAllConnections();
+          OrbManager.updateAllOrbPositions();
+        }, 200); // Increased timeout to reduce frequency
       };
-      confirmModal.classList.remove('hidden');
     }
-
-    confirmCancel.addEventListener('click', () => confirmModal.classList.add('hidden'));
+    
+    const debouncedUpdate = handleNodeMovement();
+    
+    // Add movement listeners to all nodes
+    function addNodeMovementListeners() {
+      const nodes = container.querySelectorAll('.flowchart-node');
+      nodes.forEach(node => {
+        // Remove existing listeners to prevent duplicates
+        node.removeEventListener('transitionend', debouncedUpdate);
+        // Only listen for actual position changes, not CSS transitions
+        // We'll update connections manually when needed
+      });
+    }
+    
+    // Initialize the workflow editor when the page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        console.log('Initializing workflow editor...');
+        
+        // Initialize canvas
+        initializeCanvas();
+        
+        // Load existing workflow if editing
+        await loadWorkflow();
+        
+        // Create initial trigger node if no workflow loaded
+        if (nodes.length === 0) {
+          createInitialTriggerNode();
+        }
+        
+        // Add movement listeners
+        addNodeMovementListeners();
+        
+        console.log('Workflow editor initialized successfully');
+      } catch (error) {
+        console.error('Error initializing workflow editor:', error);
+      }
+    });
   </script>
-     <script>
-     // Authentication check for workflow editor
-     async function checkAuth() {
-       console.log('🔐 Checking authentication for workflow editor...');
-       
-       try {
-         // Check if auth functions are available
-         if (typeof getAnyToken !== 'function') {
-           console.log('⚠️ Auth functions not available, showing editor anyway');
-           document.body.classList.remove('hidden');
-           return;
-         }
-         
-         const token = getAnyToken();
-         if (!token) {
-           console.log('⚠️ No token found, redirecting to login');
-           window.location.replace('/log-in');
-           return;
-         }
-         
-         // Validate token with server
-         const cleanToken = token.replace(/^"|"$/g, '');
-         console.log('🔍 Validating token with server...');
-         const res = await fetch(`${API_URL}/users/me`, {
-           headers: { Authorization: `Bearer ${cleanToken}` },
-         });
-         
-         if (!res.ok) {
-           console.log('❌ Token validation failed, redirecting to login');
-           if (typeof clearToken === 'function') {
-             clearToken();
-           }
-           window.location.replace('/log-in');
-           return;
-         }
-         
-         // User is authenticated, show the editor
-         console.log('✅ Authentication successful, showing workflow editor');
-         document.body.classList.remove('hidden');
-       } catch (error) {
-         console.error('❌ Auth check error:', error);
-         // On error, redirect to login
-         window.location.replace('/log-in');
-       }
-     }
-     
-     // Check auth on page load
-     checkAuth();
-   </script>
 </body>
 </html>
+

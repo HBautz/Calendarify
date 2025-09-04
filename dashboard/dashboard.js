@@ -11,6 +11,42 @@
     let freshMeetings = {};
     let freshUserState = {};
     
+    // Notification function
+    function showNotification(message, type = 'success') {
+      // Remove existing notifications
+      const existingNotifications = document.querySelectorAll('.notification');
+      existingNotifications.forEach(n => n.remove());
+      
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span>${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Animate in
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 100);
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 300);
+      }, 5000);
+    }
+    
     // Authentication functions are already available from auth.js
     // getAnyToken(), clearToken(), logout() are globally available
     
@@ -1281,6 +1317,13 @@
             navToShow = savedNav;
           }
         }
+      }
+
+      // Check for workflow notification
+      const notification = localStorage.getItem('calendarify-notification');
+      if (notification) {
+        localStorage.removeItem('calendarify-notification');
+        showNotification(notification, 'success');
       }
 
       // Always use showSection, which now robustly restores availability UI
@@ -4440,9 +4483,9 @@
           headers: { Authorization: `Bearer ${clean}` }
         });
 
-        showNotification(`Tag "${tagName}" removed from ${contact.name}`);
-        await renderContacts();
-        await showContactTagsModal(contactEmail);
+          showNotification(`Tag "${tagName}" removed from ${contact.name}`);
+          await renderContacts();
+          await showContactTagsModal(contactEmail);
       } catch (error) {
         console.error('Error removing tag from contact:', error);
         showNotification('Failed to remove tag from contact');

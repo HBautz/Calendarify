@@ -107,6 +107,34 @@
     }
 
     input[type="checkbox"]:disabled ~ label .w-5.h-5 {
+
+    /* Notification styles */
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      min-width: 300px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: #34D399;
+      color: white;
+    }
+
+    .notification.error {
+      background: #EF4444;
+      color: white;
+    }
       opacity: 0.5;
       cursor: not-allowed;
     }

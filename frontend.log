@@ -1,10 +1,14 @@
 Server running at http://localhost:3000
 INCOMING: GET /
 OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
-INCOMING: GET /
-OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
+INCOMING: GET /dashboard/editor
+OUTGOING: 200 /dashboard/editor (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
+INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
+OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
 INCOMING: GET /dashboard
 OUTGOING: 200 /dashboard (/Users/heinebautz/portfolio-github/Calendarify/dashboard/index.html)
+INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
+OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
 INCOMING: GET /dashboard/dashboard.css
 INCOMING: GET /auth.js
 INCOMING: GET /config.js
@@ -12,3 +16,5 @@ OUTGOING: 200 /dashboard/dashboard.css (/Users/heinebautz/portfolio-github/Calen
 OUTGOING: 200 /auth.js (/Users/heinebautz/portfolio-github/Calendarify/auth.js)
 INCOMING: GET /dashboard/dashboard.js
 OUTGOING: 200 /dashboard/dashboard.js (/Users/heinebautz/portfolio-github/Calendarify/dashboard/dashboard.js)
+INCOMING: GET /
+OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
