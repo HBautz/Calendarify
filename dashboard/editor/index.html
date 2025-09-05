@@ -223,7 +223,6 @@
       position: absolute;
       background: #2C4A43;
       z-index: 5;
-      transition: all 0.2s;
       height: 2px;
       transform-origin: 0 0;
     }
@@ -243,7 +242,6 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
       z-index: 15;
       box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
     }
@@ -268,7 +266,6 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
       z-index: 25;
       box-shadow: 0 3px 8px rgba(52, 211, 153, 0.3);
       border: 2px solid rgba(255, 255, 255, 0.1);
@@ -295,6 +292,41 @@
       align-items: center;
       justify-content: center;
       z-index: 1000;
+    }
+
+    .workflow-loading-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #1a1a1a;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #374151;
+      border-top: 3px solid #34D399;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #A3B3AF;
+      font-size: 0.875rem;
+      font-weight: 500;
     }
 
     .modal {
@@ -586,6 +618,10 @@
 
     <!-- Flowchart Canvas -->
     <div class="flowchart-canvas" id="flowchart-canvas">
+      <div class="workflow-loading-screen" id="workflow-loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading workflow...</div>
+        </div>
       <div class="flowchart-container" id="flowchart-container">
         <!-- Trigger node will be added here -->
         </div>
@@ -711,6 +747,9 @@
         this.connections.set(connectionId, connection);
         this.updateConnectionPosition(connection);
         
+        // Make the line visible after positioning
+        connection.line.style.opacity = '1';
+        
         // Create insert orb in the middle of the connection (only if requested)
         if (createInsertOrb) {
           this.createInsertOrb(connection);
@@ -731,9 +770,8 @@
           height: 3px;
           border-radius: 2px;
           transform-origin: 0 0;
-          z-index: 10;
+          z-index: 5;
           opacity: 0;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
           pointer-events: none;
         `;
@@ -875,6 +913,13 @@
           const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
           const toY = Math.round(toRect.top - containerRect.top + 1);
           
+          // Ensure minimum distance to prevent visual artifacts
+          const minDistance = 20;
+          const actualDistance = Math.sqrt((toX - fromX) ** 2 + (toY - fromY) ** 2);
+          if (actualDistance < minDistance) {
+            return; // Skip positioning if nodes are too close
+          }
+          
           // Calculate distance and angle
           const deltaX = toX - fromX;
           const deltaY = toY - fromY;
@@ -888,14 +933,6 @@
           connection.line.style.transform = `rotate(${angle}rad)`;
           connection.line.style.display = 'block';
           
-          // Debug logging for connection line positioning
-          console.log(`Connection line ${connection.id} positioned:`, {
-            fromNode: connection.from.id,
-            toNode: connection.to.id,
-            fromX, fromY, toX, toY,
-            length, angle: `${(angle * 180 / Math.PI).toFixed(2)}°`,
-            linePosition: `left: ${fromX}px, top: ${fromY}px, width: ${length}px`
-          });
           
           // Update insert orb position
           this.updateInsertOrbPosition(connection);
@@ -1040,7 +1077,9 @@
         const orb = this.createOrbElement(node.id, position);
         this.orbs.set(node.id, orb);
         
-        this.positionOrb(orb, node, position);
+        // Pass the DOM element to positionOrb (handle both node objects and DOM elements)
+        const domElement = node.element || node;
+        this.positionOrb(orb, domElement, position);
         container.appendChild(orb);
         
         console.log('Added orb to node:', node.id);
@@ -1063,10 +1102,12 @@
         const orb = this.createOrbElement(orbId, 'midpoint');
         this.orbs.set(orbId, orb);
         
-        this.positionOrbAtMidpoint(orb, fromNode, toNode);
+        // Pass the DOM elements to positionOrbAtMidpoint (handle both node objects and DOM elements)
+        const fromDomElement = fromNode.element || fromNode;
+        const toDomElement = toNode.element || toNode;
+        this.positionOrbAtMidpoint(orb, fromDomElement, toDomElement);
         container.appendChild(orb);
         
-        console.log('Added orb at midpoint between:', fromNode.id, 'and', toNode.id);
         return orb;
       },
       
@@ -1226,7 +1267,6 @@
       // Position orb at the exact midpoint of the connection line
       positionOrbAtMidpoint(orb, fromNode, toNode) {
         if (!orb || !fromNode || !toNode) {
-          console.warn('OrbManager.positionOrbAtMidpoint: Missing orb or nodes');
           return;
         }
         
@@ -1237,7 +1277,6 @@
           const containerRect = container.getBoundingClientRect();
           
           if (!fromRect || !toRect || !containerRect) {
-            console.warn('OrbManager.positionOrbAtMidpoint: Could not get bounding rects');
             return;
           }
           
@@ -1267,28 +1306,6 @@
           orb.style.top = `${finalTop}px`;
           orb.style.transform = 'translate(-50%, -50%)';
           
-          // Debug elements removed for clean visual
-          
-          // Debug logging
-          console.log(`Orb positioned at connection line midpoint: (${finalLeft}, ${finalTop}) between ${fromNode.id} and ${toNode.id}`);
-          console.log(`Connection points: from(${fromX}, ${fromY}) to(${toX}, ${toY})`);
-          console.log(`Calculated midpoint: (${midpointX}, ${midpointY})`);
-          console.log(`Orb positioned at midpoint with transform: translate(-50%, -50%)`);
-          console.log(`Orb center should be exactly at: (${midpointX}, ${midpointY})`);
-          console.log(`Node details:`, {
-            fromNode: {
-              id: fromNode.id,
-              rect: fromRect,
-              centerX: fromRect.left - containerRect.left + fromRect.width / 2,
-              centerY: fromRect.top - containerRect.top + fromRect.height / 2
-            },
-            toNode: {
-              id: toNode.id,
-              rect: toRect,
-              centerX: toRect.left - containerRect.left + toRect.width / 2,
-              centerY: toRect.top - containerRect.top + toRect.height / 2
-            }
-          });
           
         } catch (error) {
           console.error('OrbManager.positionOrbAtMidpoint: Error positioning orb:', error);
@@ -1305,7 +1322,6 @@
         if (orb) {
           orb.remove();
           this.orbs.delete(orbId);
-          console.log('Removed orb:', orbId);
         }
       },
       
@@ -1353,12 +1369,13 @@
       // Handle orb click
       handleOrbClick(nodeId) {
         console.log('Orb clicked for node:', nodeId);
-        openActionModal(nodeId);
+        // Pass a special identifier to indicate "add new action after this node"
+        openActionModal(`add-after-${nodeId}`);
       },
       
       // Check if node is valid for orb
       isValidNode(node) {
-        return node && node.id && node.parentNode;
+        return node && node.id && (node.element || node.parentNode);
       },
       
       // Get orb for a node
@@ -1408,13 +1425,11 @@
       }
     });
 
-        console.log(`OrbManager: Updated ${this.orbs.size} orb positions`);
       },
       
       // Clean up all orbs
       cleanup() {
         this.removeAllOrbs();
-        console.log('OrbManager cleaned up');
       }
     };
     
@@ -1423,7 +1438,7 @@
       rebuildTimeout: null,
       
       // Rebuild the entire workflow structure with debouncing
-      rebuild() {
+      rebuild(callback = null) {
         // Clear any pending rebuild
         if (this.rebuildTimeout) {
           clearTimeout(this.rebuildTimeout);
@@ -1431,17 +1446,33 @@
         
         // Debounce rebuilds to prevent multiple rapid calls
         this.rebuildTimeout = setTimeout(() => {
-          this.performRebuild();
+          this.performRebuild(callback);
         }, 50);
       },
       
       // Perform the actual rebuild
-      performRebuild() {
+      performRebuild(callback = null) {
         console.log('Performing workflow structure rebuild...');
         
-        // Don't rebuild if there are no nodes or only one node
-        if (nodes.length <= 1) {
-          console.log('Skipping rebuild - insufficient nodes:', nodes.length);
+        // Don't rebuild if there are no nodes
+        if (nodes.length === 0) {
+          console.log('Skipping rebuild - no nodes');
+          if (callback) callback();
+          return;
+        }
+        
+        // If there's only a trigger, just add an orb below it
+        if (nodes.length === 1) {
+          console.log('Only trigger node found, adding orb below it');
+          
+          // Clean up existing orbs first to prevent duplicates
+          OrbManager.cleanup();
+          
+          const triggerNode = nodes[0];
+          if (triggerNode && triggerNode.element) {
+            OrbManager.addOrb(triggerNode, 'bottom');
+          }
+          if (callback) callback();
           return;
         }
         
@@ -1463,7 +1494,6 @@
           const currentNode = sortedNodes[i];
           const nextNode = sortedNodes[i + 1];
           
-          console.log(`Creating connection: ${currentNode.id} -> ${nextNode.id}`);
           // Create connection between current and next node (without insert orb)
           WorkflowManager.createConnection(currentNode.element, nextNode.element, false);
         }
@@ -1491,6 +1521,11 @@
         OrbManager.updateAllOrbPositions();
         
         console.log('Workflow structure rebuilt with', WorkflowManager.connections.size, 'connections and', OrbManager.orbs.size, 'orbs');
+        
+        // Call callback if provided
+        if (callback) {
+          callback();
+        }
       },
       
       // Initialize the structure
@@ -1514,72 +1549,7 @@
       }
     };
 
-    // Initialize the canvas for the workflow editor
-    function initializeCanvas() {
-      console.log('Initializing canvas...');
-      
-      // Set up canvas event listeners
-      container.addEventListener('mousedown', startDrag);
-      container.addEventListener('mousemove', drag);
-      container.addEventListener('mouseup', endDrag);
-      
-      console.log('Canvas initialized');
-    }
     
-    // Canvas drag functionality
-    function startDrag(e) {
-      if (e.target === container) {
-        isDragging = true;
-        dragStart = { x: e.clientX, y: e.clientY };
-        container.style.cursor = 'grabbing';
-      }
-    }
-    
-    function drag(e) {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-      
-      canvasOffset.x += deltaX;
-      canvasOffset.y += deltaY;
-      
-      container.style.transform = `translate(${canvasOffset.x}px, ${canvasOffset.y}px)`;
-      
-      dragStart = { x: e.clientX, y: e.clientY };
-    }
-    
-    function endDrag() {
-      isDragging = false;
-      container.style.cursor = 'grab';
-    }
-    
-    // Test function for debugging
-    function testWorkflow() {
-      console.log('=== WORKFLOW TEST ===');
-      console.log('Current workflow:', currentWorkflow);
-      console.log('Nodes:', nodes);
-      console.log('Connections:', connections);
-      console.log('Workflow name input:', document.getElementById('workflow-name').value);
-      
-      // Test trigger node
-      const triggerNode = nodes.find(n => n.type === 'trigger');
-      if (triggerNode) {
-        console.log('Trigger node:', triggerNode);
-        console.log('Trigger data:', triggerNode.data);
-        } else {
-        console.log('No trigger node found');
-      }
-      
-      // Test action nodes
-              const actionNodes = nodes.filter(n => n.type !== 'trigger');
-      console.log('Action nodes:', actionNodes);
-      
-      // Test API connection
-      const token = getAnyToken();
-      console.log('Token available:', !!token);
-      console.log('API URL:', API_URL);
-    }
     
     // Notification function
     function showNotification(message, type = 'success') {
@@ -1625,21 +1595,7 @@
     const triggerModal = document.getElementById('trigger-modal');
     const actionModal = document.getElementById('action-modal');
 
-    // Initialize the editor
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        // Initialize the new management systems
-        StructureManager.init();
-        
-        initializeCanvas();
-        await loadWorkflow();
-        createInitialTriggerNode();
-        console.log('Workflow editor initialized successfully');
-      } catch (error) {
-        console.error('Error initializing workflow editor:', error);
-        alert('Failed to initialize workflow editor. Please refresh the page.');
-      }
-    });
+    
 
     function initializeCanvas() {
       // Canvas dragging functionality
@@ -1708,7 +1664,7 @@
             if (workflowData.steps && Array.isArray(workflowData.steps)) {
               console.log('Loading steps:', workflowData.steps);
               
-              // Clear existing nodes first
+              // Clear existing nodes first - more thorough cleanup
               nodes.forEach(node => {
                 if (node.element) {
                   node.element.remove();
@@ -1716,6 +1672,14 @@
               });
               nodes = [];
               connections = [];
+              
+              // Clear all orbs
+              const existingOrbs = container.querySelectorAll('.action-orb');
+              existingOrbs.forEach(orb => orb.remove());
+              
+              // Clear all connection lines
+              const existingLines = container.querySelectorAll('.connection-line');
+              existingLines.forEach(line => line.remove());
               
               // Check if we have trigger data at the top level (for existing workflows)
               if (workflowData.trigger) {
@@ -1733,7 +1697,7 @@
                 const helpText = container.querySelector('div[style*="Configure your trigger above"]');
                 if (helpText) {
                   helpText.remove();
-                } else {
+        } else {
                   // Try alternative selectors
                   const allDivs = container.querySelectorAll('div');
                   allDivs.forEach((div) => {
@@ -1775,17 +1739,22 @@
                 }
               }
               
-              // Load actions
+              // Load actions (skip trigger since it's already loaded)
               workflowData.steps.forEach((step, index) => {
                 if (step.type !== 'trigger') {
                   console.log('Loading action step:', step);
                   addActionNode(step, index);
+                } else {
+                  console.log('Skipping trigger step in actions loop:', step);
                 }
               });
               
               // Rebuild the workflow structure after loading all nodes
               setTimeout(() => {
-                StructureManager.rebuild();
+                StructureManager.rebuild(() => {
+                  // Hide loading screen after orbs are loaded and positioned
+                  hideLoadingScreen();
+                });
               }, 100);
               }
             }
@@ -1811,7 +1780,10 @@
       container.appendChild(triggerNode);
       nodes.push({ id: triggerNode.id, type: 'trigger', element: triggerNode });
       
-      // No need to rebuild here - rebuild will be called when actions are added
+      // Rebuild to add the orb below the trigger and hide loading screen
+      StructureManager.rebuild(() => {
+        hideLoadingScreen();
+      });
       
       // Add movement listeners
       addNodeMovementListeners();
@@ -1952,6 +1924,19 @@
         const actionSaveBtn = document.getElementById('action-save-btn');
         if (actionSaveBtn) {
           actionSaveBtn.textContent = 'Insert Action';
+        }
+      }
+      
+      // Check if this is an "add after" operation
+      if (parentNodeId && parentNodeId.startsWith('add-after-')) {
+        const modalTitle = actionModal.querySelector('.modal-title');
+        if (modalTitle) {
+          modalTitle.textContent = 'Add Action';
+        }
+        
+        const actionSaveBtn = document.getElementById('action-save-btn');
+        if (actionSaveBtn) {
+          actionSaveBtn.textContent = 'Add Action';
         }
       }
       
@@ -2490,6 +2475,57 @@
         return;
       }
       
+      // Check if this is an "add after" operation
+      if (parentNodeId && parentNodeId.startsWith('add-after-')) {
+        const afterNodeId = parentNodeId.replace('add-after-', '');
+        
+        // Create the action node
+        const actionNode = createNode(actionType, actionType, 'settings', getActionContent({ type: actionType, properties }));
+        
+        // Find the node to add after
+        const afterNode = nodes.find(n => n.id === afterNodeId);
+        if (!afterNode) {
+          console.error('Could not find node to add after:', afterNodeId);
+          closeActionModal();
+          return;
+        }
+        
+        // Position the new action below the "after" node, centered horizontally
+        const afterRect = afterNode.element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        // Center the action horizontally relative to the container
+        const actionWidth = 200; // Approximate action node width
+        const centerX = containerRect.width / 2;
+        const leftPosition = centerX - (actionWidth / 2);
+        
+        // Position below the "after" node
+        const topPosition = afterRect.bottom - containerRect.top + 120;
+        
+        actionNode.style.left = `${leftPosition}px`;
+        actionNode.style.top = `${topPosition}px`;
+        
+        container.appendChild(actionNode);
+        
+        // Add to nodes array
+        const nodeData = { 
+          id: actionNode.id, 
+          type: 'action', 
+          element: actionNode, 
+          data: { type: actionType, properties } 
+        };
+        nodes.push(nodeData);
+        
+        // Rebuild the entire workflow structure to ensure all connections are created
+        StructureManager.rebuild();
+        
+        // Add movement listeners to the new node
+        addNodeMovementListeners();
+        
+        closeActionModal();
+        return;
+      }
+      
       // Check if we're editing an existing action
       const existingNode = nodes.find(n => n.id === parentNodeId);
       if (existingNode && existingNode.type !== 'trigger') {
@@ -2564,6 +2600,19 @@
     function addActionNode(actionData, index) {
       console.log('Adding action node:', actionData);
       
+      // Check if this action already exists to prevent duplicates
+      const existingAction = nodes.find(n => 
+        n.type !== 'trigger' && 
+        n.data && 
+        n.data.type === actionData.type &&
+        JSON.stringify(n.data.properties) === JSON.stringify(actionData.properties)
+      );
+      
+      if (existingAction) {
+        console.log('Action already exists, skipping:', actionData);
+        return;
+      }
+      
       // Find the trigger node (should be the first one)
       const triggerNode = nodes.find(n => n.type === 'trigger');
       if (!triggerNode) {
@@ -2583,8 +2632,16 @@
       const parentRect = parentNode.element.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       
-      actionNode.style.left = `${parentRect.left - containerRect.left + parentRect.width / 2 - 100}px`;
-      actionNode.style.top = `${parentRect.bottom - containerRect.top + 120}px`;
+      // Center the action horizontally relative to the container
+      const actionWidth = 200; // Approximate action node width
+      const centerX = containerRect.width / 2;
+      const leftPosition = centerX - (actionWidth / 2);
+      
+      // Position below the parent node
+      const topPosition = parentRect.bottom - containerRect.top + 120;
+      
+      actionNode.style.left = `${leftPosition}px`;
+      actionNode.style.top = `${topPosition}px`;
       
       container.appendChild(actionNode);
       
@@ -2715,6 +2772,9 @@
       
       // Update the workflow data
       updateWorkflowFromNodes();
+      
+      console.log('After delete - remaining nodes:', nodes.length);
+      console.log('After delete - currentWorkflow.data:', currentWorkflow?.data);
     }
     
     
@@ -2766,22 +2826,33 @@
       const steps = [];
       
       nodes.forEach(node => {
-        if (node.type === 'trigger' && node.data) {
-          steps.push(node.data);
-        } else if (node.type !== 'trigger' && node.data) {
+        // Only add non-trigger nodes to steps array
+        if (node.type !== 'trigger' && node.data) {
           steps.push(node.data);
         }
       });
       
       console.log('Updated workflow steps:', steps);
+      console.log('Current nodes count:', nodes.length);
+      console.log('Nodes:', nodes.map(n => ({ type: n.type, id: n.id })));
       
-      // Update the current workflow
+      // Update the current workflow data structure
       if (currentWorkflow) {
-        currentWorkflow.data = {
-          ...currentWorkflow.data,
-          steps: steps
-        };
-        console.log('Updated currentWorkflow.data:', currentWorkflow.data);
+        const triggerNode = nodes.find(n => n.type === 'trigger');
+        if (triggerNode && triggerNode.data) {
+          currentWorkflow.data = {
+            trigger: triggerNode.data.type,
+            triggerEventTypes: triggerNode.data.properties?.eventTypes || [],
+            triggerTags: triggerNode.data.properties?.tags || [],
+            steps: steps,
+            status: true
+          };
+          console.log('Updated currentWorkflow.data:', currentWorkflow.data);
+          } else {
+          console.log('No trigger node found or no trigger data');
+        }
+      } else {
+        console.log('No currentWorkflow to update');
       }
     }
 
@@ -2808,23 +2879,16 @@
         return;
       }
       
-      const steps = nodes.map(node => {
-        if (node.type === 'trigger') {
-          return {
-            type: 'trigger',
-            ...node.data
-          };
-        } else {
-          return {
-            ...node.data
-          };
-        }
-      });
+      // Always rebuild the workflow data from current nodes to ensure accuracy
+      // Only include non-trigger nodes in steps array
+      const steps = nodes
+        .filter(node => node.type !== 'trigger')
+        .map(node => node.data);
       
       console.log('Current nodes:', nodes);
       console.log('Mapped steps:', steps);
       
-      // Prepare the workflow data structure - store in data field with proper structure
+      // Prepare the workflow data structure - always use current node state
       const workflowData = {
         trigger: triggerNode.data.type,
         triggerEventTypes: triggerNode.data.properties?.eventTypes || [],
@@ -2832,6 +2896,12 @@
         steps: steps, // Include trigger in steps for consistency
         status: true
       };
+      
+      // Update currentWorkflow.data to match what we're saving
+      if (currentWorkflow) {
+        currentWorkflow.data = workflowData;
+        console.log('Updated currentWorkflow.data before saving:', currentWorkflow.data);
+      }
       
       console.log('Prepared workflow data for saving:', workflowData);
       
@@ -2972,37 +3042,278 @@
       }
     }
     
-    // Handle node movement and update connections
-    function handleNodeMovement() {
-      // Debounced function to update connections after node movement
-      let updateTimeout;
-      return function() {
-        clearTimeout(updateTimeout);
-        updateTimeout = setTimeout(() => {
-          // Only update if nodes have actually moved (not just CSS transitions)
-          WorkflowManager.updateAllConnections();
-          OrbManager.updateAllOrbPositions();
-        }, 200); // Increased timeout to reduce frequency
-      };
-    }
-    
-    const debouncedUpdate = handleNodeMovement();
-    
-    // Add movement listeners to all nodes
+    // Add movement listeners to all nodes (simplified - no automatic updates)
     function addNodeMovementListeners() {
       const nodes = container.querySelectorAll('.flowchart-node');
       nodes.forEach(node => {
-        // Remove existing listeners to prevent duplicates
-        node.removeEventListener('transitionend', debouncedUpdate);
-        // Only listen for actual position changes, not CSS transitions
-        // We'll update connections manually when needed
+        // Remove any existing transition listeners that might cause issues
+        node.removeEventListener('transitionend', () => {});
+        // No automatic position updates - PositionManager handles stability
       });
     }
     
+    // Loading screen functions
+    function showLoadingScreen() {
+      const loadingScreen = document.getElementById('workflow-loading-screen');
+      if (loadingScreen) {
+        loadingScreen.style.display = 'flex';
+      }
+    }
+
+    function hideLoadingScreen() {
+      const loadingScreen = document.getElementById('workflow-loading-screen');
+      if (loadingScreen) {
+        loadingScreen.style.display = 'none';
+      }
+    }
+
+    // Production-grade position management system
+    const PositionManager = {
+      isInitialized: false,
+      isUpdating: false,
+      
+      init() {
+        if (this.isInitialized) return;
+        this.isInitialized = true;
+        
+        // Disable all CSS transitions on connection lines and orbs
+        this.disableProblematicTransitions();
+        
+        // Set up stable positioning system
+        this.setupStablePositioning();
+        
+        console.log('PositionManager initialized');
+      },
+      
+      disableProblematicTransitions() {
+        // Remove all transitions from connection lines and orbs
+        const style = document.createElement('style');
+        style.textContent = `
+          .connection-line,
+          .add-action-orb,
+          .insert-action-orb {
+            transition: none !important;
+            animation: none !important;
+          }
+          
+          .flowchart-node {
+            transition: box-shadow 0.2s, transform 0.2s !important;
+          }
+          
+          .flowchart-node * {
+            transition: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+      },
+      
+      setupStablePositioning() {
+        // Override the connection positioning to be completely stable
+        this.originalUpdateConnectionPosition = WorkflowManager.updateConnectionPosition;
+        WorkflowManager.updateConnectionPosition = this.stableUpdateConnectionPosition.bind(this);
+        
+        // Override orb positioning to be completely stable
+        this.originalPositionOrbAtMidpoint = OrbManager.positionOrbAtMidpoint;
+        OrbManager.positionOrbAtMidpoint = this.stablePositionOrbAtMidpoint.bind(this);
+        
+        this.originalPositionOrb = OrbManager.positionOrb;
+        OrbManager.positionOrb = this.stablePositionOrb.bind(this);
+      },
+      
+      stableUpdateConnectionPosition(connection) {
+        if (!connection || !connection.line || !connection.from || !connection.to) {
+        return;
+      }
+        
+        try {
+          const fromRect = connection.from.getBoundingClientRect();
+          const toRect = connection.to.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!fromRect || !toRect || !containerRect) {
+          return;
+        }
+        
+          // Calculate connection points with pixel-perfect precision
+          const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
+          const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
+          const toY = Math.round(toRect.top - containerRect.top + 1);
+          
+          // Ensure minimum distance to prevent visual artifacts
+          const minDistance = 20;
+          const actualDistance = Math.sqrt((toX - fromX) ** 2 + (toY - fromY) ** 2);
+          if (actualDistance < minDistance) {
+            connection.line.style.display = 'none';
+            return;
+          }
+          
+          // Calculate distance and angle with high precision
+          const deltaX = toX - fromX;
+          const deltaY = toY - fromY;
+          const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const angle = Math.atan2(deltaY, deltaX);
+          
+          // Apply positioning with pixel-perfect precision
+          connection.line.style.left = `${fromX}px`;
+          connection.line.style.top = `${fromY}px`;
+          connection.line.style.width = `${length}px`;
+          connection.line.style.transform = `rotate(${angle}rad)`;
+          connection.line.style.display = 'block';
+          connection.line.style.opacity = '1';
+          
+          // Update insert orb position if it exists
+          this.updateInsertOrbPosition(connection);
+          
+      } catch (error) {
+          console.error('Error in stable connection positioning:', error);
+        }
+      },
+      
+      stablePositionOrbAtMidpoint(orb, fromNode, toNode) {
+        if (!orb || !fromNode || !toNode) {
+          return;
+        }
+        
+        try {
+          const fromRect = fromNode.getBoundingClientRect();
+          const toRect = toNode.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!fromRect || !toRect || !containerRect) {
+            return;
+          }
+          
+          // Calculate connection points (exactly like connection lines)
+          const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
+          const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
+          const toY = Math.round(toRect.top - containerRect.top + 1);
+          
+          // Calculate midpoint with pixel-perfect precision
+          const midpointX = (fromX + toX) / 2;
+          const midpointY = (fromY + toY) / 2;
+          
+          // Position orb at exact midpoint
+          const finalLeft = Math.round(midpointX - 1); // 1px offset for visual centering
+          const finalTop = Math.round(midpointY);
+          
+          orb.style.left = `${finalLeft}px`;
+          orb.style.top = `${finalTop}px`;
+          orb.style.transform = 'translate(-50%, -50%)';
+          orb.style.opacity = '1';
+          
+        } catch (error) {
+          // Fallback positioning
+          orb.style.left = '50%';
+          orb.style.top = '50%';
+          orb.style.transform = 'translate(-50%, -50%)';
+        }
+      },
+      
+      stablePositionOrb(orb, node, position) {
+        if (!orb || !node) {
+          return;
+        }
+        
+        try {
+          const nodeRect = node.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!nodeRect || !containerRect) {
+            return;
+          }
+          
+          // Calculate relative positions (same as original approach)
+          const nodeLeft = nodeRect.left - containerRect.left;
+          const nodeTop = nodeRect.top - containerRect.top;
+          const nodeWidth = nodeRect.width;
+          const nodeHeight = nodeRect.height;
+          
+          // Orb dimensions
+          const orbSize = 40;
+          const orbHalfSize = orbSize / 2;
+          
+          let finalLeft, finalTop;
+          
+          if (position === 'bottom') {
+            // Center horizontally by subtracting half orb size (original approach)
+            finalLeft = Math.round(nodeLeft + (nodeWidth / 2) - orbHalfSize);
+            finalTop = Math.round(nodeTop + nodeHeight + 20); // 20px below the node
+            orb.style.transform = 'scale(1)'; // No centering transform for bottom orbs
+          } else if (position === 'top') {
+            // Center horizontally by subtracting half orb size (original approach)
+            finalLeft = Math.round(nodeLeft + (nodeWidth / 2) - orbHalfSize);
+            finalTop = Math.round(nodeTop - orbSize - 20); // 20px above the node
+            orb.style.transform = 'scale(1)'; // No centering transform for top orbs
+          } else {
+            // Default to bottom positioning
+            finalLeft = Math.round(nodeLeft + (nodeWidth / 2) - orbHalfSize);
+            finalTop = Math.round(nodeTop + nodeHeight + 20);
+            orb.style.transform = 'scale(1)';
+          }
+          
+          orb.style.left = `${finalLeft}px`;
+          orb.style.top = `${finalTop}px`;
+          orb.style.opacity = '1';
+          
+        } catch (error) {
+          // Fallback positioning
+          orb.style.left = '50%';
+          orb.style.top = '50%';
+          orb.style.transform = 'translate(-50%, -50%)';
+        }
+      },
+      
+      updateInsertOrbPosition(connection) {
+        if (!connection.insertOrb) return;
+        
+        try {
+          const fromRect = connection.from.getBoundingClientRect();
+          const toRect = connection.to.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          if (!fromRect || !toRect || !containerRect) {
+            return;
+          }
+          
+          const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
+          const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
+          const toY = Math.round(toRect.top - containerRect.top + 1);
+          
+          const midpointX = (fromX + toX) / 2;
+          const midpointY = (fromY + toY) / 2;
+          
+          connection.insertOrb.style.left = `${Math.round(midpointX)}px`;
+          connection.insertOrb.style.top = `${Math.round(midpointY)}px`;
+          connection.insertOrb.style.transform = 'translate(-50%, -50%)';
+          
+        } catch (error) {
+          console.error('Error updating insert orb position:', error);
+        }
+      },
+      
+      // Clean up and restore original functions
+      cleanup() {
+        if (this.originalUpdateConnectionPosition) {
+          WorkflowManager.updateConnectionPosition = this.originalUpdateConnectionPosition;
+        }
+        if (this.originalPositionOrbAtMidpoint) {
+          OrbManager.positionOrbAtMidpoint = this.originalPositionOrbAtMidpoint;
+        }
+        if (this.originalPositionOrb) {
+          OrbManager.positionOrb = this.originalPositionOrb;
+        }
+        this.isInitialized = false;
+      }
+    };
+
     // Initialize the workflow editor when the page loads
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         console.log('Initializing workflow editor...');
+        showLoadingScreen();
         
         // Initialize canvas
         initializeCanvas();
@@ -3018,12 +3329,20 @@
         // Add movement listeners
         addNodeMovementListeners();
         
+        // Initialize production-grade position management system
+        PositionManager.init();
+        
         console.log('Workflow editor initialized successfully');
       } catch (error) {
         console.error('Error initializing workflow editor:', error);
+        hideLoadingScreen();
       }
+    });
+
+    // Cleanup position manager when page is unloaded
+    window.addEventListener('beforeunload', () => {
+      PositionManager.cleanup();
     });
   </script>
 </body>
 </html>
-
