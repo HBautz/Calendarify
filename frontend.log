@@ -7,27 +7,11 @@ INCOMING: GET /dashboard/editor
 OUTGOING: 200 /dashboard/editor (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
 INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
 OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
-INCOMING: GET /dashboard
-OUTGOING: 200 /dashboard (/Users/heinebautz/portfolio-github/Calendarify/dashboard/index.html)
+INCOMING: GET /dashboard/editor
+OUTGOING: 200 /dashboard/editor (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
 INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
 OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
-INCOMING: GET /dashboard/dashboard.css
-INCOMING: GET /auth.js
-INCOMING: GET /config.js
-OUTGOING: 200 /dashboard/dashboard.css (/Users/heinebautz/portfolio-github/Calendarify/dashboard/dashboard.css)
-OUTGOING: 200 /auth.js (/Users/heinebautz/portfolio-github/Calendarify/auth.js)
-INCOMING: GET /dashboard/dashboard.js
-OUTGOING: 200 /dashboard/dashboard.js (/Users/heinebautz/portfolio-github/Calendarify/dashboard/dashboard.js)
-INCOMING: GET /booking/admin/test
-OUTGOING: 200 /booking/admin/test (/Users/heinebautz/portfolio-github/Calendarify/booking/index.html)
-INCOMING: GET /dashboard
-OUTGOING: 200 /dashboard (/Users/heinebautz/portfolio-github/Calendarify/dashboard/index.html)
+INCOMING: GET /dashboard/editor
+OUTGOING: 200 /dashboard/editor (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
 INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
 OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
-INCOMING: GET /dashboard/dashboard.css
-INCOMING: GET /auth.js
-OUTGOING: 200 /dashboard/dashboard.css (/Users/heinebautz/portfolio-github/Calendarify/dashboard/dashboard.css)
-OUTGOING: 200 /auth.js (/Users/heinebautz/portfolio-github/Calendarify/auth.js)
-INCOMING: GET /config.js
-INCOMING: GET /dashboard/dashboard.js
-OUTGOING: 200 /dashboard/dashboard.js (/Users/heinebautz/portfolio-github/Calendarify/dashboard/dashboard.js)

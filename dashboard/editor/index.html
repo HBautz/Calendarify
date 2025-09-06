@@ -121,7 +121,8 @@
       border: 2px solid #2C4A43;
       border-radius: 0.75rem;
       padding: 1rem;
-      min-width: 200px;
+      width: 320px;
+      box-sizing: border-box;
       cursor: pointer;
       transition: all 0.2s;
       z-index: 10;
@@ -131,7 +132,8 @@
     .flowchart-node:hover {
       border-color: #34D399;
       box-shadow: 0 10px 15px -3px rgba(52, 211, 153, 0.3), 0 4px 6px -2px rgba(52, 211, 153, 0.2);
-      transform: translateY(-2px);
+      /* Preserve horizontal centering while adding subtle vertical lift */
+      transform: translate(-50%, -2px);
     }
 
     .flowchart-node.trigger {
@@ -693,6 +695,10 @@
   <script defer>
     // Constants and utilities
     const API_URL = 'http://localhost:3001/api';
+    const NODE_WIDTH = 320;          // px, matches .flowchart-node width
+    const VERTICAL_SPACING = 120;    // px vertical spacing between nodes
+    const ORB_SIZE = 40;             // px, action orb size
+    const INSERT_ORB_SIZE = 32;      // px, insert orb size
     
     function getAnyToken() {
       return sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
@@ -706,6 +712,7 @@
     let dragStart = { x: 0, y: 0 };
     let canvasOffset = { x: 0, y: 0 };
     let selectedNode = null;
+    let didFirstPanRefresh = false;
 
     // Production-grade Connection and Orb Management System
     const WorkflowManager = {
@@ -1356,15 +1363,7 @@
         console.log('Removed all orbs');
       },
       
-      // Update orb positions for all nodes
-      updateAllOrbPositions() {
-        for (const [nodeId, orb] of this.orbs) {
-          const node = document.getElementById(nodeId);
-          if (node) {
-            this.positionOrb(orb, node, orb.dataset.position);
-          }
-        }
-      },
+      // Update orb positions for all nodes (handled comprehensively below)
       
       // Handle orb click
       handleOrbClick(nodeId) {
@@ -1388,7 +1387,7 @@
         return node ? this.orbs.has(node.id) : false;
       },
       
-      // Update all orb positions (useful after node movements)
+      // Update all orb positions (handles both regular and midpoint orbs)
       updateAllOrbPositions() {
         console.log('OrbManager: Updating all orb positions...');
         
@@ -1410,7 +1409,7 @@
               
               if (fromNode && toNode) {
                 this.positionOrbAtMidpoint(orb, fromNode, toNode);
-        } else {
+            } else {
                 console.warn(`OrbManager: Could not update midpoint orb ${orbId} - missing nodes: ${fromNodeId}(${!!fromNode}), ${toNodeId}(${!!toNode})`);
               }
             }
@@ -1436,6 +1435,7 @@
     // Workflow Structure Manager - orchestrates connections and orbs
     const StructureManager = {
       rebuildTimeout: null,
+      layoutApplied: false,
       
       // Rebuild the entire workflow structure with debouncing
       rebuild(callback = null) {
@@ -1460,7 +1460,10 @@
           if (callback) callback();
           return;
         }
-        
+
+        // Apply deterministic layout before wiring connections/orbs
+        LayoutManager.apply();
+
         // If there's only a trigger, just add an orb below it
         if (nodes.length === 1) {
           console.log('Only trigger node found, adding orb below it');
@@ -1520,6 +1523,15 @@
         // Update all orb positions to ensure proper alignment
         OrbManager.updateAllOrbPositions();
         
+        // Final alignment pass to ensure no initial jitter
+        try {
+          LayoutManager.apply();
+          WorkflowManager.updateAllConnections();
+          OrbManager.updateAllOrbPositions();
+        } catch (e) {
+          console.warn('Post-rebuild alignment warning:', e);
+        }
+        
         console.log('Workflow structure rebuilt with', WorkflowManager.connections.size, 'connections and', OrbManager.orbs.size, 'orbs');
         
         // Call callback if provided
@@ -1546,6 +1558,47 @@
         WorkflowManager.cleanup();
         OrbManager.cleanup();
         console.log('StructureManager cleaned up');
+      }
+    };
+
+    // Deterministic layout manager for nodes (centers X and enforces vertical spacing)
+    const LayoutManager = {
+      apply() {
+        try {
+          if (!container) return;
+          const containerRect = container.getBoundingClientRect();
+          if (!containerRect) return;
+
+          // Place trigger node (keep its configured top, center X)
+          const trigger = nodes.find(n => n.type === 'trigger');
+          if (!trigger || !trigger.element) return;
+
+          const triggerEl = trigger.element;
+          triggerEl.style.left = '50%';
+          triggerEl.style.transform = 'translateX(-50%)';
+
+          // Read trigger rect after possible CSS/layout changes
+          const trigRect = triggerEl.getBoundingClientRect();
+
+          // Sequentially position action nodes below each other
+          const actions = nodes.filter(n => n.type !== 'trigger');
+          let currentTop = Math.round(trigRect.bottom - containerRect.top + VERTICAL_SPACING);
+
+          actions.forEach((n, idx) => {
+            const el = n.element;
+            if (!el) return;
+            el.style.left = '50%';
+            el.style.transform = 'translateX(-50%)';
+            el.style.top = `${currentTop}px`;
+
+            // compute next top based on this element's height
+            const r = el.getBoundingClientRect();
+            const height = Math.max(1, Math.round(r.height));
+            currentTop += height + VERTICAL_SPACING;
+          });
+        } catch (e) {
+          console.warn('LayoutManager.apply error:', e);
+        }
       }
     };
 
@@ -1601,6 +1654,11 @@
       // Canvas dragging functionality
       canvas.addEventListener('mousedown', (e) => {
         if (e.target === canvas || e.target === container) {
+          // Ensure structure is fully aligned before first pan to avoid any jump
+          if (!didFirstPanRefresh) {
+            refreshStructure();
+            didFirstPanRefresh = true;
+          }
           isDragging = true;
           dragStart = { x: e.clientX, y: e.clientY };
           canvas.style.cursor = 'grabbing';
@@ -1633,6 +1691,17 @@
 
       // Save button event
               // saveBtn.addEventListener('click', saveWorkflow); // Removed duplicate - onclick already handles this
+    }
+
+    // Force-align nodes, connections and orbs based on current DOM metrics
+    function refreshStructure() {
+      try {
+        LayoutManager.apply();
+        WorkflowManager.updateAllConnections();
+        OrbManager.updateAllOrbPositions();
+      } catch (e) {
+        console.warn('refreshStructure error:', e);
+      }
     }
 
     async function loadWorkflow() {
@@ -1671,10 +1740,9 @@
                 }
               });
               nodes = [];
-              connections = [];
               
               // Clear all orbs
-              const existingOrbs = container.querySelectorAll('.action-orb');
+              const existingOrbs = container.querySelectorAll('.add-action-orb, .insert-action-orb');
               existingOrbs.forEach(orb => orb.remove());
               
               // Clear all connection lines
@@ -1805,6 +1873,9 @@
       const node = document.createElement('div');
       node.className = `flowchart-node ${type}`;
       node.id = `node-${++currentNodeId}`;
+      // Consistent horizontal centering for all nodes
+      node.style.left = '50%';
+      node.style.transform = 'translateX(-50%)';
       
       if (type !== 'trigger') {
         node.innerHTML = `
@@ -2494,16 +2565,13 @@
         const afterRect = afterNode.element.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
         
-        // Center the action horizontally relative to the container
-        const actionWidth = 200; // Approximate action node width
-        const centerX = containerRect.width / 2;
-        const leftPosition = centerX - (actionWidth / 2);
-        
         // Position below the "after" node
         const topPosition = afterRect.bottom - containerRect.top + 120;
         
-        actionNode.style.left = `${leftPosition}px`;
+        // Horizontal centering is handled by translateX(-50%) on the node
+        actionNode.style.left = '50%';
         actionNode.style.top = `${topPosition}px`;
+        actionNode.style.transform = 'translateX(-50%)';
         
         container.appendChild(actionNode);
         
@@ -2632,16 +2700,13 @@
       const parentRect = parentNode.element.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       
-      // Center the action horizontally relative to the container
-      const actionWidth = 200; // Approximate action node width
-      const centerX = containerRect.width / 2;
-      const leftPosition = centerX - (actionWidth / 2);
-      
       // Position below the parent node
       const topPosition = parentRect.bottom - containerRect.top + 120;
       
-      actionNode.style.left = `${leftPosition}px`;
+      // Horizontal centering is handled by translateX(-50%) on the node
+      actionNode.style.left = '50%';
       actionNode.style.top = `${topPosition}px`;
+      actionNode.style.transform = 'translateX(-50%)';
       
       container.appendChild(actionNode);
       
@@ -3332,6 +3397,20 @@
         // Initialize production-grade position management system
         PositionManager.init();
         
+        // After fonts and layout settle, do a final alignment pass
+        const settle = () => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              refreshStructure();
+            });
+          });
+        };
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(settle).catch(settle);
+        } else {
+          settle();
+        }
+        
         console.log('Workflow editor initialized successfully');
       } catch (error) {
         console.error('Error initializing workflow editor:', error);
@@ -3342,6 +3421,11 @@
     // Cleanup position manager when page is unloaded
     window.addEventListener('beforeunload', () => {
       PositionManager.cleanup();
+    });
+
+    // Keep layout fresh on resize
+    window.addEventListener('resize', () => {
+      StructureManager.rebuild();
     });
   </script>
 </body>
