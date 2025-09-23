@@ -75,6 +75,22 @@
       box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
     }
 
+    .context-btn {
+      background: #111827;
+      color: #E0E0E0;
+      padding: 0.5rem 0.875rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      border: 1px solid #374151;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .context-btn:hover {
+      background: #1f2937;
+      border-color: #4b5563;
+    }
+
     .flowchart-canvas {
       flex: 1;
       background: #1a1a1a;
@@ -615,7 +631,16 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <input type="text" id="workflow-name" class="workflow-name-input" placeholder="Enter workflow name...">
-      <button id="save-workflow" class="save-btn" onclick="saveWorkflow()">Save Workflow</button>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <a href="/editor/guide" target="_blank" class="save-btn" style="background:#12221E;border:1px solid #2C4A43;color:#E0E0E0;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem">
+          <span class="material-icons-outlined" style="font-size:18px;color:#A3B3AF">menu_book</span>
+          Guide
+        </a>
+        <button id="save-workflow" class="save-btn" onclick="saveWorkflow()">Save Workflow</button>
+      </div>
+      <button id="open-context" class="context-btn" onclick="openContextModal()">Context</button>
+      <button id="open-errors" class="context-btn" onclick="toggleErrorsPanel()">Errors</button>
+      <button id="open-runs" class="context-btn" onclick="toggleRunsPanel()">Runs</button>
     </div>
 
     <!-- Flowchart Canvas -->
@@ -626,9 +651,37 @@
         </div>
       <div class="flowchart-container" id="flowchart-container">
         <!-- Trigger node will be added here -->
+      </div>
+      
+      <!-- Errors Drawer -->
+      <div id="errors-drawer" style="position:absolute; right:0; top:0; bottom:0; width:420px; background:#0b1715; border-left:1px solid #2C4A43; display:none; z-index:200; padding:1rem; overflow:auto;">
+        <div style="display:flex;align-items:center;gap:.5rem; margin-bottom:.75rem;">
+          <span class="material-icons-outlined" style="color:#F87171">error</span>
+          <div style="font-weight:600;color:#E0E0E0">Latest Workflow Errors</div>
+          <div style="margin-left:auto; display:flex; gap:.5rem;">
+            <button class="context-btn" onclick="refreshErrors()">Refresh</button>
+            <button class="context-btn" onclick="toggleErrorsPanel()">Close</button>
+          </div>
         </div>
+        <div id="errors-list" style="display:flex; flex-direction:column; gap:.75rem;"></div>
+      </div>
+      
+      <!-- Runs Drawer -->
+      <div id="runs-drawer" style="position:absolute; right:0; top:0; bottom:0; width:480px; background:#0b1715; border-left:1px solid #2C4A43; display:none; z-index:200; padding:1rem; overflow:auto;">
+        <div style="display:flex;align-items:center;gap:.5rem; margin-bottom:.75rem;">
+          <span class="material-icons-outlined" style="color:#60A5FA">timeline</span>
+          <div style="font-weight:600;color:#E0E0E0">Workflow Runs</div>
+          <div style="margin-left:auto; display:flex; gap:.5rem;">
+            <button class="context-btn" onclick="refreshRuns()">Refresh</button>
+            <button class="context-btn" onclick="toggleRunsPanel()">Close</button>
+          </div>
         </div>
-        </div>
+        <div id="runs-active" style="margin-bottom:1rem;"></div>
+        <div id="runs-history"></div>
+        <div id="run-details" style="margin-top:1rem; display:none;"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Trigger Modal -->
   <div id="trigger-modal" class="modal-backdrop hidden">
@@ -678,7 +731,8 @@
         <label class="form-label">Action Type</label>
         <select id="action-select" class="form-select">
           <option value="Add Tag">Add Tag</option>
-          <option value="Send Email" disabled class="coming-soon">Send Email <span class="coming-soon-badge">Coming Soon</span></option>
+          <option value="Send Email">Send Email</option>
+          <option value="If">If</option>
           <option value="Create Meeting" disabled class="coming-soon">Create Meeting <span class="coming-soon-badge">Coming Soon</span></option>
         </select>
       </div>
@@ -692,6 +746,49 @@
     </div>
   </div>
 
+  <!-- Context Modal -->
+  <div id="context-modal" class="modal-backdrop hidden">
+    <div class="modal" style="max-width: 760px; width: 95%">
+      <div class="modal-header">
+        <span class="material-icons-outlined node-icon">integration_instructions</span>
+        <h3 class="modal-title">Execution Context</h3>
+        <button class="modal-close" onclick="closeContextModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Attach full contact/booking context to workflow runs</label>
+        <label style="display:flex;align-items:center;gap:.5rem;color:#E0E0E0">
+          <input type="checkbox" id="context-attach-full" />
+          <span>Enable full context (contact + booking)</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Schema Preview</label>
+        <pre id="context-schema" style="background:#111827;border:1px solid #374151;border-radius:.5rem;padding:1rem;white-space:pre-wrap;max-height:240px;overflow:auto;color:#d1d5db"></pre>
+        <div style="margin-top:.5rem;display:flex;gap:.5rem">
+          <button class="context-btn" onclick="copyContextSchema()">Copy Schema</button>
+          <span id="context-schema-copy-status" style="color:#A3B3AF"></span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Optional Sample Payload (JSON)</label>
+        <textarea id="context-sample"
+          placeholder='{"contact": {"id":"..."}, "booking": {"id":"..."}}'
+          style="width:100%;min-height:140px;background:#111827;border:1px solid #374151;border-radius:.5rem;padding:.75rem;color:#E0E0E0;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"></textarea>
+        <div style="margin-top:.25rem;color:#9ca3af;font-size:.85rem">Saved with the workflow for testing and future evaluation. Optional.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeContextModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveContextSpec()">Save Context</button>
+      </div>
+    </div>
+  </div>
+
   <script defer>
     // Constants and utilities
     const API_URL = 'http://localhost:3001/api';
@@ -699,6 +796,65 @@
     const VERTICAL_SPACING = 120;    // px vertical spacing between nodes
     const ORB_SIZE = 40;             // px, action orb size
     const INSERT_ORB_SIZE = 32;      // px, insert orb size
+
+    // Context spec (versioned) persisted with workflows for future engine use
+    let contextSpec = null;
+
+    function getDefaultContextSchema() {
+      return {
+        contact: {
+          id: 'string',
+          firstName: 'string',
+          lastName: 'string',
+          fullName: 'string',
+          email: 'string',
+          phone: 'string',
+          timezone: 'string',
+          locale: 'string',
+          tags: ['string'],
+          company: 'string',
+          title: 'string',
+          notes: 'string',
+          createdAt: 'string',
+          updatedAt: 'string',
+          customFields: 'object'
+        },
+        booking: {
+          id: 'string',
+          title: 'string',
+          status: 'string',
+          eventType: 'string',
+          startTime: 'string',
+          endTime: 'string',
+          durationMinutes: 'number',
+          timezone: 'string',
+          location: 'string',
+          meetingLink: 'string',
+          attendees: [
+            {
+              name: 'string',
+              email: 'string',
+              role: 'string'
+            }
+          ],
+          rescheduleCount: 'number',
+          answers: 'object',
+          metadata: 'object',
+          createdAt: 'string',
+          updatedAt: 'string'
+        }
+      };
+    }
+
+    function getDefaultContextSpec() {
+      return {
+        version: 1,
+        attachFullContext: true,
+        scope: 'full', // future: 'subset'
+        schema: getDefaultContextSchema(),
+        sample: null
+      };
+    }
     
     function getAnyToken() {
       return sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token');
@@ -720,6 +876,23 @@
       orbs: new Map(), // nodeId -> orb element
       insertOrbs: new Map(), // connectionId -> insert orb element
       connectionCounter: 0,
+      svg: null,
+      // Helper: create midpoint insert orbs for all valid connections
+      addInsertOrbsForConnections() {
+        try {
+          for (const connection of this.connections.values()) {
+            const fromNode = connection.from;
+            const toNode = connection.to;
+            // Determine types
+            const fromType = (fromNode.__nodeData && fromNode.__nodeData.data?.type) || nodes.find(n=>n.element===fromNode)?.data?.type || '';
+            const toType = (toNode.__nodeData && toNode.__nodeData.data?.type) || nodes.find(n=>n.element===toNode)?.data?.type || '';
+            // Skip orbs between If and its True/False headers
+            if (fromType === 'If' && (toType === 'True' || toType === 'False')) continue;
+            // Otherwise add midpoint insert orb
+            this.createInsertOrb(connection);
+          }
+        } catch (e) { console.warn('addInsertOrbsForConnections failed:', e); }
+      },
       
       // Initialize the system
       init() {
@@ -727,6 +900,21 @@
         this.orbs.clear();
         this.insertOrbs.clear();
         this.connectionCounter = 0;
+        // Ensure an SVG overlay exists for pretty paths
+        let svg = container.querySelector('#connections-svg');
+        if (!svg) {
+          svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('id', 'connections-svg');
+          svg.setAttribute('width', '100%');
+          svg.setAttribute('height', '100%');
+          svg.style.position = 'absolute';
+          svg.style.left = '0';
+          svg.style.top = '0';
+          svg.style.pointerEvents = 'none';
+          svg.style.zIndex = '4';
+          container.appendChild(svg);
+        }
+        this.svg = svg;
         console.log('WorkflowManager initialized');
       },
       
@@ -768,29 +956,19 @@
       
       // Create the visual connection line element
       createConnectionLine(id) {
-        const line = document.createElement('div');
-        line.id = id;
-        line.className = 'connection-line';
-        line.style.cssText = `
-          position: absolute;
-          background: linear-gradient(90deg, #34D399 0%, #10B981 100%);
-          height: 3px;
-          border-radius: 2px;
-          transform-origin: 0 0;
-          z-index: 5;
-          opacity: 0;
-          box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
-          pointer-events: none;
-        `;
-        
-        container.appendChild(line);
-        
-        // Animate in
-        requestAnimationFrame(() => {
-          line.style.opacity = '1';
-        });
-        
-        return line;
+        // Use SVG path for smoother, orthogonal lines with rounded corners
+        if (!this.svg) this.init();
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('id', id);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#34D399');
+        path.setAttribute('stroke-width', '3');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.style.opacity = '0';
+        this.svg.appendChild(path);
+        requestAnimationFrame(() => { path.style.opacity = '1'; });
+        return path;
       },
       
       // Create insert orb in the middle of a connection
@@ -913,33 +1091,57 @@
             return;
           }
           
-          // Calculate connection points (center bottom of fromNode to center top of toNode)
-          // Use Math.round to prevent sub-pixel positioning that can cause shifting
+          // Calculate anchor points: center bottom of from, center top of to
           const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
           const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
           const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
           const toY = Math.round(toRect.top - containerRect.top + 1);
-          
-          // Ensure minimum distance to prevent visual artifacts
-          const minDistance = 20;
-          const actualDistance = Math.sqrt((toX - fromX) ** 2 + (toY - fromY) ** 2);
-          if (actualDistance < minDistance) {
-            return; // Skip positioning if nodes are too close
+
+          // Determine orthogonal path for branch headers; smooth curve for others
+          const fromType = (connection.from.__nodeData && connection.from.__nodeData.data?.type) || nodes.find(n=>n.element===connection.from)?.data?.type || '';
+          const toType = (connection.to.__nodeData && connection.to.__nodeData.data?.type) || nodes.find(n=>n.element===connection.to)?.data?.type || '';
+
+          // Attach node data refs to DOM once for quicker lookup
+          connection.from.__nodeData = nodes.find(n => n.element === connection.from) || connection.from.__nodeData || null;
+          connection.to.__nodeData = nodes.find(n => n.element === connection.to) || connection.to.__nodeData || null;
+
+          let d = '';
+          const vDrop = 30; // vertical drop from source
+          const r = 12; // corner radius
+          if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
+            const midY = fromY + vDrop;
+            // Horizontal toward destination x
+            const hx1 = fromX;
+            const hy1 = midY;
+            const hx2 = toX;
+            const hy2 = midY;
+            // Build path with rounded corners using quadratic curves
+            // Start
+            d += `M ${fromX} ${fromY}`;
+            // Vertical down to just before corner
+            d += ` L ${fromX} ${hy1 - r}`;
+            // Corner: down->right (or down->left)
+            const dir = (toX >= fromX) ? 1 : -1;
+            d += ` Q ${fromX} ${hy1} ${fromX + dir * r} ${hy1}`;
+            // Horizontal toward near the destination x
+            d += ` L ${hx2 - dir * r} ${hy2}`;
+            // Corner: right/left -> down
+            d += ` Q ${hx2} ${hy2} ${hx2} ${hy2 + r}`;
+            // Vertical down to target
+            d += ` L ${toX} ${toY}`;
+          } else if ((fromType === 'True' || fromType === 'False') && !(toType === 'True' || toType === 'False')) {
+            // From branch header to first branch node: straight with slight curve
+            const ctrlY = fromY + 20;
+            d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+          } else {
+            // Generic smooth curve from from to to
+            const mx = Math.round((fromX + toX) / 2);
+            d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
           }
-          
-          // Calculate distance and angle
-          const deltaX = toX - fromX;
-          const deltaY = toY - fromY;
-          const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-          const angle = Math.atan2(deltaY, deltaX);
-          
-          // Apply positioning
-          connection.line.style.left = `${fromX}px`;
-          connection.line.style.top = `${fromY}px`;
-          connection.line.style.width = `${length}px`;
-          connection.line.style.transform = `rotate(${angle}rad)`;
+
+          connection.line.setAttribute('d', d);
           connection.line.style.display = 'block';
-          
+
           
           // Update insert orb position
           this.updateInsertOrbPosition(connection);
@@ -1055,13 +1257,17 @@
         
         this.connections.clear();
         this.insertOrbs.clear();
+        // Clear SVG paths
+        if (this.svg) {
+          while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+        }
         console.log('WorkflowManager connections and insert orbs cleaned up');
       }
     };
     
     // Production-grade Action Orb Management System
     const OrbManager = {
-      orbs: new Map(), // nodeId -> orb element
+      orbs: new Map(), // key -> orb element; keys for regular: `${nodeId}:${position}`, for midpoints: `orb-${from}-${to}`
       
       // Initialize the orb system
       init() {
@@ -1077,12 +1283,22 @@
         }
         
         console.log(`OrbManager.addOrb called for node: ${node.id}, position: ${position}`);
+        // Never add a bottom orb under an If node
+        try {
+          const domElement = node.element || node;
+          const stepType = (nodes.find(n => n.element === domElement)?.data?.type) || domElement?.dataset?.stepType || '';
+          if (stepType === 'If' && position === 'bottom') {
+            console.log('Skipping bottom orb for If node:', node.id);
+            return null;
+          }
+        } catch {}
         
-        // Remove existing orb if it exists
-        this.removeOrb(node);
+        // Remove existing orb at same position if present
+        const key = `${node.id}:${position}`;
+        this.removeOrbById(key);
         
         const orb = this.createOrbElement(node.id, position);
-        this.orbs.set(node.id, orb);
+        this.orbs.set(key, orb);
         
         // Pass the DOM element to positionOrb (handle both node objects and DOM elements)
         const domElement = node.element || node;
@@ -1149,7 +1365,7 @@
         // Add click handler
         orb.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.handleOrbClick(nodeId);
+          this.handleOrbClick(nodeId, position);
         });
         
         // Add hover effects
@@ -1335,21 +1551,17 @@
       // Remove orb from a node
       removeOrb(node) {
         if (!node || !node.id) return;
-        
-        const orb = this.orbs.get(node.id);
-        if (orb) {
-          orb.style.opacity = '0';
-          orb.style.transform = 'scale(0.8)';
-          
-          setTimeout(() => {
-            if (orb.parentNode) {
-              orb.remove();
-            }
-          }, 300);
-          
-          this.orbs.delete(node.id);
-          console.log('Removed orb from node:', node.id);
-        }
+        const keys = Array.from(this.orbs.keys()).filter(k => String(k).startsWith(`${node.id}:`));
+        keys.forEach(k => {
+          const orb = this.orbs.get(k);
+          if (orb) {
+            orb.style.opacity = '0';
+            orb.style.transform = 'scale(0.8)';
+            setTimeout(() => { if (orb.parentNode) orb.remove(); }, 300);
+          }
+          this.orbs.delete(k);
+        });
+        if (keys.length) console.log('Removed orbs from node:', node.id, keys);
       },
       
       // Remove all orbs
@@ -1366,9 +1578,18 @@
       // Update orb positions for all nodes (handled comprehensively below)
       
       // Handle orb click
-      handleOrbClick(nodeId) {
-        console.log('Orb clicked for node:', nodeId);
-        // Pass a special identifier to indicate "add new action after this node"
+      handleOrbClick(nodeId, position) {
+        console.log('Orb clicked for node:', nodeId, 'pos:', position);
+        // For IF nodes, left orb = true path, right orb = false path
+        try {
+          const node = nodes.find(n => n.id === nodeId);
+          if (node && node.data && node.data.type === 'If' && (position === 'left' || position === 'right')) {
+            const prefix = position === 'left' ? 'branch-true-' : 'branch-false-';
+            openActionModal(`${prefix}${nodeId}`);
+            return;
+          }
+        } catch {}
+        // Default: add after
         openActionModal(`add-after-${nodeId}`);
       },
       
@@ -1379,12 +1600,15 @@
       
       // Get orb for a node
       getOrb(node) {
-        return node ? this.orbs.get(node.id) : null;
+        if (!node) return null;
+        const key = Array.from(this.orbs.keys()).find(k => String(k).startsWith(`${node.id}:`));
+        return key ? this.orbs.get(key) : null;
       },
       
       // Check if node has an orb
       hasOrb(node) {
-        return node ? this.orbs.has(node.id) : false;
+        if (!node) return false;
+        return Array.from(this.orbs.keys()).some(k => String(k).startsWith(`${node.id}:`));
       },
       
       // Update all orb positions (handles both regular and midpoint orbs)
@@ -1415,14 +1639,15 @@
             }
           } else {
             // Handle regular orbs
-            const node = document.getElementById(orbId);
+            const nodeId = String(orbId).includes(':') ? String(orbId).split(':')[0] : String(orbId);
+            const node = document.getElementById(nodeId);
             if (node && position) {
               this.positionOrb(orb, node, position);
             } else {
-              console.warn(`OrbManager: Could not update orb for node ${orbId}`);
-        }
-      }
-    });
+              console.warn(`OrbManager: Could not update orb for key ${orbId}`);
+            }
+          }
+        });
 
       },
       
@@ -1492,33 +1717,134 @@
         
         console.log('Sorted nodes:', sortedNodes.map(n => ({ id: n.id, type: n.type })));
         
-        // Rebuild connections and orbs in order
-        for (let i = 0; i < sortedNodes.length - 1; i++) {
-          const currentNode = sortedNodes[i];
-          const nextNode = sortedNodes[i + 1];
-          
-          // Create connection between current and next node (without insert orb)
-          WorkflowManager.createConnection(currentNode.element, nextNode.element, false);
+        // Rebuild connections honoring If branching with True/False headers
+        const isControl = (n) => !!(n && n.data && (n.data.type === 'True' || n.data.type === 'False'));
+        const findIfHeaders = (startIdx) => {
+          let trueIdx = -1, falseIdx = -1;
+          for (let j = startIdx + 1; j < sortedNodes.length; j++) {
+            const t = sortedNodes[j]?.data?.type;
+            if (t === 'If') break; // stop at next IF block
+            if (t === 'True' && trueIdx === -1) trueIdx = j;
+            if (t === 'False' && falseIdx === -1) falseIdx = j;
+            if (trueIdx !== -1 && falseIdx !== -1) break;
+          }
+          return { trueIdx, falseIdx };
+        };
+
+        const visited = new Set();
+        for (let i = 0; i < sortedNodes.length; i++) {
+          if (visited.has(i)) continue;
+          const node = sortedNodes[i];
+          const type = node?.data?.type || '';
+          // Handle If block with two branches
+          if (type === 'If') {
+            const { trueIdx, falseIdx } = findIfHeaders(i);
+            // Connect If -> True/False headers when present
+            if (trueIdx !== -1) WorkflowManager.createConnection(node.element, sortedNodes[trueIdx].element, false);
+            if (falseIdx !== -1) WorkflowManager.createConnection(node.element, sortedNodes[falseIdx].element, false);
+
+            // Chain within branches: find actions tagged with this IF
+            const ifId = node.data?.properties?.ifId;
+            if (ifId) {
+              const trueBranch = [];
+              const falseBranch = [];
+              for (let j = i + 1; j < sortedNodes.length; j++) {
+                const d = sortedNodes[j]?.data;
+                if (!d) continue;
+                if (d.type === 'If') break; // stop at next IF
+                if (d.type === 'True' || d.type === 'False') continue;
+                if (d.properties && d.properties.parentIfId === ifId) {
+                  if (d.properties.branch === 'true') trueBranch.push(j);
+                  if (d.properties.branch === 'false') falseBranch.push(j);
+                }
+              }
+              // Connect headers to first branch node
+              if (trueIdx !== -1 && trueBranch.length > 0) WorkflowManager.createConnection(sortedNodes[trueIdx].element, sortedNodes[trueBranch[0]].element, false);
+              if (falseIdx !== -1 && falseBranch.length > 0) WorkflowManager.createConnection(sortedNodes[falseIdx].element, sortedNodes[falseBranch[0]].element, false);
+              // Chain within
+              for (let k = 0; k < trueBranch.length - 1; k++) WorkflowManager.createConnection(sortedNodes[trueBranch[k]].element, sortedNodes[trueBranch[k + 1]].element, false);
+              for (let k = 0; k < falseBranch.length - 1; k++) WorkflowManager.createConnection(sortedNodes[falseBranch[k]].element, sortedNodes[falseBranch[k + 1]].element, false);
+            }
+            continue;
+          }
+
+          // Skip branch headers here (handled by If)
+          if (type === 'True' || type === 'False') continue;
+
+          // Default linear connection to the next non-control node
+          let nextIdx = i + 1;
+          while (nextIdx < sortedNodes.length && (sortedNodes[nextIdx].data?.type === 'True' || sortedNodes[nextIdx].data?.type === 'False')) {
+            nextIdx++;
+          }
+          if (nextIdx < sortedNodes.length) {
+            WorkflowManager.createConnection(node.element, sortedNodes[nextIdx].element, false);
+          }
         }
         
-        // Add orbs at connection midpoints and after the last node
+        // Add orbs at connection midpoints (excluding If -> True/False)
+        try { WorkflowManager.addInsertOrbsForConnections(); } catch {}
+
+        // Add orbs after the last node
         for (let i = 0; i < sortedNodes.length; i++) {
           const node = sortedNodes[i];
           const isLastNode = i === sortedNodes.length - 1;
           
           console.log(`Node ${i}: ${node.id} (${node.type}), isLast: ${isLastNode}`);
+
+          // Add branch orbs for IF and branch header nodes
+          if (node.data && node.data.type === 'If') {
+            // Ensure no stray bottom orb remains
+            try { OrbManager.removeOrbById(`${node.element.id}:bottom`); } catch {}
+            OrbManager.addOrb(node.element, 'left');
+            OrbManager.addOrb(node.element, 'right');
+          }
+          if (node.data && (node.data.type === 'True' || node.data.type === 'False')) {
+            OrbManager.addOrb(node.element, 'bottom');
+          }
           
           if (!isLastNode) {
-            // Add orb at the midpoint between this node and the next node
-            const nextNode = sortedNodes[i + 1];
-            console.log(`Adding orb between ${node.id} and ${nextNode.id}`);
-            OrbManager.addOrbAtMidpoint(node.element, nextNode.element);
+            // handled above using connections
         } else {
             // Add orb below the last node
             console.log(`Adding orb below last node: ${node.id}`);
-            OrbManager.addOrb(node.element, 'bottom');
+            // Never add a bottom orb under an If node
+            if (node && node.data && node.data.type === 'If') {
+              try { OrbManager.removeOrbById(`${node.element.id}:bottom`); } catch {}
+              continue;
+            }
+            const stepType = (node.data && node.data.type) || node.element?.dataset?.stepType || '';
+            if (!(stepType === 'If' || stepType === 'True' || stepType === 'False')) {
+              OrbManager.addOrb(node.element, 'bottom');
+            }
           }
         }
+
+        // Final safety: ensure no bottom orbs remain on any If nodes
+        try {
+          sortedNodes.forEach(n => {
+            if (n && n.data && n.data.type === 'If' && n.element && n.element.id) {
+              OrbManager.removeOrbById(`${n.element.id}:bottom`);
+            }
+          });
+        } catch {}
+        
+        // Extra cleanup: remove any stray DOM orbs that might still appear under If nodes
+        try {
+          const strayOrbs = container.querySelectorAll('.add-action-orb');
+          strayOrbs.forEach(orb => {
+            const pos = orb.dataset.position;
+            const nid = orb.dataset.nodeId;
+            if (pos === 'bottom' && nid) {
+              const el = document.getElementById(nid);
+              const isIf = !!(el && (el.dataset?.stepType === 'If' || (nodes.find(n => n.element === el)?.data?.type === 'If')));
+              if (isIf) {
+                // Remove from manager map if present, then remove DOM
+                try { OrbManager.removeOrbById(`${nid}:bottom`); } catch {}
+                if (orb.parentNode) orb.remove();
+              }
+            }
+          });
+        } catch {}
         
         // Update all orb positions to ensure proper alignment
         OrbManager.updateAllOrbPositions();
@@ -1580,22 +1906,105 @@
           // Read trigger rect after possible CSS/layout changes
           const trigRect = triggerEl.getBoundingClientRect();
 
-          // Sequentially position action nodes below each other
+          // Position action nodes with support for horizontal If branching
           const actions = nodes.filter(n => n.type !== 'trigger');
           let currentTop = Math.round(trigRect.bottom - containerRect.top + VERTICAL_SPACING);
 
-          actions.forEach((n, idx) => {
-            const el = n.element;
-            if (!el) return;
-            el.style.left = '50%';
-            el.style.transform = 'translateX(-50%)';
-            el.style.top = `${currentTop}px`;
-
-            // compute next top based on this element's height
+          const CONTROL_TYPES = new Set(['True', 'False']);
+          const idxOf = (el) => nodes.findIndex(n => n.element === el);
+          const getHeight = (el) => {
             const r = el.getBoundingClientRect();
-            const height = Math.max(1, Math.round(r.height));
-            currentTop += height + VERTICAL_SPACING;
-          });
+            return Math.max(1, Math.round(r.height));
+          };
+
+          // Helper: determine if a global index lies within any IF block
+          const inIfBlock = (gIndex) => {
+            const d = nodes[gIndex]?.data;
+            if (!d) return false;
+            if (d.type === 'True' || d.type === 'False') return true;
+            if (d.properties && d.properties.parentIfId) return true;
+            return false;
+          };
+
+          for (let i = 0; i < actions.length; i++) {
+            const n = actions[i];
+            const el = n.element;
+            if (!el) continue;
+            const t = n.data?.type || '';
+
+            if (t === 'If') {
+              // Place IF centered
+              el.style.left = '50%';
+              el.style.transform = 'translateX(-50%)';
+              el.style.top = `${currentTop}px`;
+              const ifHeight = getHeight(el);
+              const startY = currentTop + ifHeight + 80; // lower branch headers a bit
+
+              // Locate True/False headers for this IF
+              const globalIfIdx = idxOf(el);
+              let trueIdx = -1, falseIdx = -1;
+              for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+                const jt = nodes[j]?.data?.type;
+                if (jt === 'If') break;
+                if (jt === 'True' && trueIdx === -1) trueIdx = j;
+                if (jt === 'False' && falseIdx === -1) falseIdx = j;
+                if (trueIdx !== -1 && falseIdx !== -1) break;
+              }
+
+              // Layout branches: left column for TRUE, right column for FALSE
+              let yTrue = startY;
+              let yFalse = startY;
+              const COLUMN_OFFSET = 280; // px from center
+              const centerX = Math.round(containerRect.width / 2);
+              const place = (node, side, y) => {
+                const e = node.element;
+                const cx = side === 'left' ? (centerX - COLUMN_OFFSET) : (centerX + COLUMN_OFFSET);
+                e.style.left = `${cx}px`;
+                e.style.transform = 'translateX(-50%)';
+                e.style.top = `${y}px`;
+                return y + getHeight(e) + VERTICAL_SPACING;
+              };
+              // Place headers if present
+              if (trueIdx !== -1) yTrue = place(nodes[trueIdx], 'left', yTrue);
+              if (falseIdx !== -1) yFalse = place(nodes[falseIdx], 'right', yFalse);
+
+              // Place branch actions by matching parentIfId
+              const ifId = nodes[globalIfIdx]?.data?.properties?.ifId;
+              if (ifId) {
+                for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+                  const d = nodes[j]?.data;
+                  if (!d) continue;
+                  if (d.type === 'If') break; // next block
+                  if (d.type === 'True' || d.type === 'False') continue;
+                  if (d.properties && d.properties.parentIfId === ifId) {
+                    if (d.properties.branch === 'true') {
+                      yTrue = place(nodes[j], 'left', yTrue);
+                    } else if (d.properties.branch === 'false') {
+                      yFalse = place(nodes[j], 'right', yFalse);
+                    }
+                  }
+                }
+              }
+
+              // Advance currentTop to below the deeper branch end
+              currentTop = Math.max(yTrue, yFalse) + 20;
+              
+              continue;
+            }
+
+            // Non-IF nodes: if already inside an IF block, don't override branch placement
+            const gIdx = idxOf(el);
+            if (inIfBlock(gIdx)) {
+              // Move currentTop down to not overlap whatever was positioned by branches
+              currentTop = Math.max(currentTop, Math.round(el.getBoundingClientRect().bottom - containerRect.top) + VERTICAL_SPACING);
+            } else {
+              // Centered linear placement
+              el.style.left = '50%';
+              el.style.transform = 'translateX(-50%)';
+              el.style.top = `${currentTop}px`;
+              currentTop += getHeight(el) + VERTICAL_SPACING;
+            }
+          }
         } catch (e) {
           console.warn('LayoutManager.apply error:', e);
         }
@@ -1647,6 +2056,13 @@
     const saveBtn = document.getElementById('save-workflow');
     const triggerModal = document.getElementById('trigger-modal');
     const actionModal = document.getElementById('action-modal');
+    const contextModal = document.getElementById('context-modal');
+    const errorsDrawer = document.getElementById('errors-drawer');
+    const errorsList = document.getElementById('errors-list');
+    const runsDrawer = document.getElementById('runs-drawer');
+    const runsActive = document.getElementById('runs-active');
+    const runsHistory = document.getElementById('runs-history');
+    const runDetails = document.getElementById('run-details');
 
     
 
@@ -1785,8 +2201,9 @@
                 if (workflowData.trigger === 'Tag Added' && workflowData.triggerTags) {
                   window.selectedTags = [...workflowData.triggerTags];
                 }
-                if (workflowData.trigger === 'Meeting Scheduled' && workflowData.triggerEventTypes) {
-                  window.selectedEventTypes = [...workflowData.triggerEventTypes];
+                if (workflowData.trigger === 'Meeting Scheduled') {
+                  if (workflowData.triggerEventTypes) window.selectedEventTypes = [...workflowData.triggerEventTypes];
+                  if (workflowData.triggerEventTypeIds) window.selectedEventTypeIds = [...workflowData.triggerEventTypeIds];
                 }
         } else {
                 // Try to find trigger in steps (for new format)
@@ -1802,11 +2219,12 @@
                   }
                   if (triggerStep.type === 'Meeting Scheduled' && triggerStep.properties?.eventTypes) {
                     window.selectedEventTypes = [...triggerStep.properties.eventTypes];
+                    if (triggerStep.properties?.eventTypeIds) window.selectedEventTypeIds = [...triggerStep.properties.eventTypeIds];
                     console.log('Restored selected event types:', window.selectedEventTypes);
                   }
                 }
               }
-              
+
               // Load actions (skip trigger since it's already loaded)
               workflowData.steps.forEach((step, index) => {
                 if (step.type !== 'trigger') {
@@ -1817,6 +2235,13 @@
                 }
               });
               
+              // Load context spec if available, otherwise apply default
+              if (workflowData.contextSpec) {
+                contextSpec = workflowData.contextSpec;
+              } else {
+                contextSpec = getDefaultContextSpec();
+              }
+
               // Rebuild the workflow structure after loading all nodes
               setTimeout(() => {
                 StructureManager.rebuild(() => {
@@ -1873,6 +2298,7 @@
       const node = document.createElement('div');
       node.className = `flowchart-node ${type}`;
       node.id = `node-${++currentNodeId}`;
+      node.dataset.stepType = type;
       // Consistent horizontal centering for all nodes
       node.style.left = '50%';
       node.style.transform = 'translateX(-50%)';
@@ -1882,31 +2308,26 @@
           <div class="node-header">
             <span class="material-icons-outlined node-icon">${icon}</span>
             <div class="node-title">${title}</div>
+            ${(['True','False'].includes(type)) ? '' : `
             <div class="node-actions">
               <button class="node-action-btn edit-btn" title="Edit Action">
                 <span class="material-icons-outlined">edit</span>
-            </button>
+              </button>
               <button class="node-action-btn delete-btn" title="Delete Action">
                 <span class="material-icons-outlined">delete</span>
               </button>
-            </div>
+            </div>`}
           </div>
           <div class="node-content">${content}</div>
         `;
         
-        // Add edit and delete handlers
-        const editBtn = node.querySelector('.edit-btn');
-        const deleteBtn = node.querySelector('.delete-btn');
-        
-        editBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          editAction(node);
-        });
-        
-        deleteBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteAction(node);
-        });
+        // Add edit and delete handlers unless True/False header
+        if (!(['True','False'].includes(type))) {
+          const editBtn = node.querySelector('.edit-btn');
+          const deleteBtn = node.querySelector('.delete-btn');
+          if (editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); editAction(node); });
+          if (deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteAction(node); });
+        }
       } else {
         node.innerHTML = `
           <div class="node-header">
@@ -2070,6 +2491,64 @@
       }
     }
 
+    // Context modal handlers
+    function openContextModal() {
+      try {
+        if (!contextSpec) contextSpec = getDefaultContextSpec();
+        document.getElementById('context-attach-full').checked = !!contextSpec.attachFullContext;
+        const schemaEl = document.getElementById('context-schema');
+        schemaEl.textContent = JSON.stringify(contextSpec.schema || getDefaultContextSchema(), null, 2);
+        const sampleEl = document.getElementById('context-sample');
+        sampleEl.value = contextSpec.sample ? JSON.stringify(contextSpec.sample, null, 2) : '';
+      } catch (e) {
+        console.warn('Error opening context modal:', e);
+      }
+      contextModal.classList.remove('hidden');
+    }
+
+    function closeContextModal() {
+      contextModal.classList.add('hidden');
+    }
+
+    function saveContextSpec() {
+      const attachFull = document.getElementById('context-attach-full').checked;
+      const sampleText = document.getElementById('context-sample').value.trim();
+      let sample = null;
+      if (sampleText) {
+        try {
+          sample = JSON.parse(sampleText);
+        } catch (e) {
+          showNotification('Invalid JSON in sample payload', 'error');
+          return;
+        }
+      }
+      contextSpec = {
+        ...(contextSpec || {}),
+        version: 1,
+        attachFullContext: attachFull,
+        scope: attachFull ? 'full' : (contextSpec?.scope || 'full'),
+        schema: contextSpec?.schema || getDefaultContextSchema(),
+        sample: sample || null
+      };
+      closeContextModal();
+      showNotification('Context settings saved');
+    }
+
+    async function copyContextSchema() {
+      try {
+        const schema = (contextSpec && contextSpec.schema) ? contextSpec.schema : getDefaultContextSchema();
+        await navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
+        const s = document.getElementById('context-schema-copy-status');
+        if (s) {
+          s.textContent = 'Copied';
+          setTimeout(() => { s.textContent = ''; }, 1500);
+        }
+      } catch (e) {
+        console.warn('Copy schema failed:', e);
+        showNotification('Failed to copy schema', 'error');
+      }
+    }
+
     function renderTriggerProperties() {
       const container = document.getElementById('trigger-properties');
       const triggerType = document.getElementById('trigger-select').value;
@@ -2197,7 +2676,271 @@
         setTimeout(() => populateActionTags(), 100);
       }
       
+      if (actionType === 'Send Email') {
+        html = `
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:.5rem">
+              <input type="checkbox" id="email-manual-recipient" /> Specify recipient manually
+            </label>
+            <div id="email-to-wrapper" style="margin-top:.5rem;display:none">
+              <label class="form-label">To</label>
+              <input id="email-to" class="form-select" placeholder="email1@example.com, email2@example.com" />
+            </div>
+            <div style="margin-top:.25rem;color:#9ca3af;font-size:.85rem">When unchecked, the email is sent to the contact who triggered the workflow.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CC</label>
+            <input id="email-cc" class="form-select" placeholder="Optional: comma-separated" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">BCC</label>
+            <input id="email-bcc" class="form-select" placeholder="Optional: comma-separated" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input id="email-subject" class="form-select" placeholder="Subject line" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:.5rem">
+              <input type="checkbox" id="email-is-html" /> Use HTML body
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Body</label>
+            <textarea id="email-body" style="width:100%;min-height:160px;background:#1E3A34;border:1px solid #2C4A43;border-radius:.5rem;padding:.75rem;color:#E0E0E0"></textarea>
+            <div style="margin-top:.25rem;color:#9ca3af;font-size:.85rem">Tip: Future versions support tokens like {{contact.fullName}}.</div>
+          </div>
+        `;
+      }
+
+      if (actionType === 'If') {
+        const triggerNode = nodes.find(n => n.type === 'trigger');
+        const triggerType = triggerNode?.data?.type || 'Meeting Scheduled';
+        const contactFields = [
+          ['contact.id','ID'],
+          ['contact.firstName','First name'],
+          ['contact.lastName','Last name'],
+          ['contact.fullName','Full name'],
+          ['contact.email','Email'],
+          ['contact.phone','Phone'],
+          ['contact.timezone','Timezone'],
+          ['contact.locale','Locale'],
+          ['contact.company','Company'],
+          ['contact.title','Title'],
+          ['contact.tags','Tags'],
+          ['contact.notes','Notes'],
+          ['contact.createdAt','Created at'],
+          ['contact.updatedAt','Updated at']
+        ];
+        const bookingFields = [
+          ['booking.id','ID'],
+          ['booking.title','Title'],
+          ['booking.status','Status'],
+          ['booking.eventType','Event type'],
+          ['booking.startTime','Start time'],
+          ['booking.endTime','End time'],
+          ['booking.durationMinutes','Duration (minutes)'],
+          ['booking.timezone','Timezone'],
+          ['booking.location','Location'],
+          ['booking.meetingLink','Meeting link'],
+          ['booking.rescheduleCount','Reschedule count'],
+          ['booking.createdAt','Created at'],
+          ['booking.updatedAt','Updated at']
+        ];
+        const defaultField = 'contact.email';
+        // Build event-type-aware answer keys for the selected trigger configuration
+        let dynamicAnswersOptions = '';
+        try {
+          const cache = Array.isArray(window.eventTypesCache) ? window.eventTypesCache : [];
+          const slugifyKey = (s) => (s || '').toString().trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').substring(0,64);
+          let subset = [];
+          if (triggerType === 'Meeting Scheduled') {
+            const ids = (window.selectedEventTypeIds && window.selectedEventTypeIds.length)
+              ? window.selectedEventTypeIds
+              : (triggerNode?.data?.properties?.eventTypeIds || []);
+            if (Array.isArray(ids) && ids.length > 0) subset = cache.filter(et => ids.includes(et.id));
+          } else if (triggerType === 'Tag Added') {
+            subset = cache;
+          }
+          const seen = new Set();
+          const list = [];
+          subset.forEach(et => {
+            if (Array.isArray(et?.questions)) {
+              et.questions.forEach(q => {
+                const label = (q && (q.text || q.label)) ? (q.text || q.label) : null;
+                if (!label) return;
+                const key = slugifyKey(label);
+                if (key && !seen.has(key)) {
+                  seen.add(key);
+                  list.push({ key, label, etTitle: et.title });
+                }
+              });
+            }
+          });
+          if (list.length > 0) {
+            dynamicAnswersOptions += list.map(q => `
+              <label class="multi-select-option" data-category="answers" data-text="${('booking.answers.'+q.key).toLowerCase()} ${q.label.toLowerCase()} ${q.etTitle.toLowerCase()}" onclick="selectIfField('booking.answers.${q.key}')">
+                <span>${q.label} <span style=\"color:#6b7280\">(${q.etTitle})</span></span>
+              </label>
+            `).join('');
+          }
+        } catch (e) {
+          // Non-fatal: fall back to manual entry only
+        }
+        if (!window.eventTypesCache) {
+          // Lazy-load event types and re-render the If form once ready
+          try {
+            populateEventTypes().then(() => {
+              const sel = document.getElementById('action-select');
+              if (sel && sel.value === 'If') {
+                renderActionProperties();
+              }
+            });
+          } catch (_) {}
+        }
+
+        html = `
+          ${triggerType === 'Tag Added' ? `
+          <div style="background:#2c1f1f;border:1px solid #7f1d1d;color:#fca5a5;padding:.75rem;border-radius:.5rem;margin-bottom:.75rem">
+            Warning: For Tag Added triggers, this condition can reference any event type's data. If the contact lacks the required data, evaluation will error and default to the false path.
+          </div>` : ''}
+
+          <div class="form-group">
+            <label class="form-label">Field</label>
+            <div class="multi-select">
+              <button type="button" class="multi-select-button" onclick="toggleMultiSelect('if-field')">
+                <span id="if-field-display">${defaultField}</span>
+                <span class="material-icons-outlined">expand_more</span>
+              </button>
+              <div class="multi-select-options" id="if-field-options" style="max-height:340px;overflow:auto">
+                <div style="padding:.5rem .75rem;border-bottom:1px solid #2C4A43;position:sticky;top:0;background:#0b1916;z-index:1">
+                  <input id="if-field-search" class="form-select" placeholder="Search fields..." oninput="filterIfFieldOptions()" />
+                  <div id="if-field-categories" style="display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
+                    <button type="button" class="context-btn" data-cat="all" onclick="setIfFieldCategory('all')">All</button>
+                    <button type="button" class="context-btn" data-cat="contact" onclick="setIfFieldCategory('contact')">Contact</button>
+                    <button type="button" class="context-btn" data-cat="booking" onclick="setIfFieldCategory('booking')">Booking</button>
+                    <button type="button" class="context-btn" data-cat="answers" onclick="setIfFieldCategory('answers')">Answers</button>
+                    <button type="button" class="context-btn" data-cat="custom" onclick="setIfFieldCategory('custom')">Custom</button>
+                  </div>
+                </div>
+                <div id="if-field-list" style="padding-top:.5rem">
+                  <div class="if-cat-header" data-category="contact" style="padding:.5rem .75rem;color:#9ca3af;font-size:.8rem">Contact</div>
+                  ${contactFields.map(([f,label]) => `<label class=\"multi-select-option\" data-category=\"contact\" data-text=\"${(label+' '+f).toLowerCase()}\" onclick=\"selectIfField('${f}')\"><span>${label} <span style=\\"color:#6b7280\\">(${f})</span></span></label>`).join('')}
+                  <div class="if-cat-header" data-category="booking" style="padding:.5rem .75rem;color:#9ca3af;font-size:.8rem">Booking</div>
+                  ${bookingFields.map(([f,label]) => `<label class=\"multi-select-option\" data-category=\"booking\" data-text=\"${(label+' '+f).toLowerCase()}\" onclick=\"selectIfField('${f}')\"><span>${label} <span style=\\"color:#6b7280\\">(${f})</span></span></label>`).join('')}
+                  <div class="if-cat-header" data-category="answers" style="padding:.5rem .75rem;color:#9ca3af;font-size:.8rem">Available Answers</div>
+                  ${dynamicAnswersOptions}
+                  <div class="if-cat-header" data-category="custom" style="padding:.5rem .75rem;color:#9ca3af;font-size:.8rem">Custom Answers</div>
+                  <div id="if-custom-answers-container" data-category="custom" style="padding:.5rem .75rem">
+                    <input id="if-custom-answer-key" class="form-select" placeholder="answers.<questionKey> or booking.answers.<key>" />
+                    <div style="margin-top:.25rem;text-align:right">
+                      <button type="button" class="context-btn" onclick="applyIfCustomAnswer()">Use</button>
+                    </div>
+                    <div style="margin-top:.35rem;color:#9ca3af;font-size:.85rem">
+                      Not sure which key to use? See the <a href="/editor/guide#custom-keys" target="_blank" style="color:#34D399;text-decoration:none">Custom Keys guide</a>.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Operator</label>
+            <select id="if-operator" class="form-select">
+              <option value="equals">Equals</option>
+              <option value="not_equals">Does not equal</option>
+              <option value="contains">Contains</option>
+              <option value="not_contains">Does not contain</option>
+              <option value="gt">Greater than</option>
+              <option value="lt">Less than</option>
+              <option value="exists">Exists</option>
+              <option value="not_exists">Does not exist</option>
+              <option value="in">In list (comma separated)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="if-value-group">
+            <label class="form-label">Value</label>
+            <input id="if-value" class="form-select" placeholder="Value or CSV for 'in'" />
+            <div style="margin-top:.25rem;color:#9ca3af;font-size:.85rem">Numbers compare numerically; others compare as strings. Use ISO dates for lexicographic comparisons.</div>
+          </div>
+
+          <input type="hidden" id="if-field" value="${defaultField}" />
+        `;
+      }
+      
       container.innerHTML = html;
+
+      // If editing, prefill Send Email fields
+      if (actionType === 'Send Email' && selectedNode) {
+        const existingNode = nodes.find(n => n.id === selectedNode);
+        if (existingNode && existingNode.data && existingNode.data.type === 'Send Email') {
+          const p = existingNode.data.properties || {};
+          const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+          const manualEl = document.getElementById('email-manual-recipient');
+          const toWrap = document.getElementById('email-to-wrapper');
+          const manual = !(p.useTriggerRecipient === true || (!p.to || (Array.isArray(p.to) && p.to.length === 0)));
+          if (manualEl) manualEl.checked = manual;
+          if (toWrap) toWrap.style.display = manual ? 'block' : 'none';
+          set('email-to', Array.isArray(p.to) ? p.to.join(', ') : (p.to || ''));
+          set('email-cc', Array.isArray(p.cc) ? p.cc.join(', ') : (p.cc || ''));
+          set('email-bcc', Array.isArray(p.bcc) ? p.bcc.join(', ') : (p.bcc || ''));
+          set('email-subject', p.subject || '');
+          const bodyEl = document.getElementById('email-body');
+          if (bodyEl) bodyEl.value = p.body || '';
+          const htmlEl = document.getElementById('email-is-html');
+          if (htmlEl) htmlEl.checked = !!p.isHtml;
+        }
+      }
+
+      // Wire up manual recipient toggle (for create/edit)
+      if (actionType === 'Send Email') {
+        const manualEl = document.getElementById('email-manual-recipient');
+        const toWrap = document.getElementById('email-to-wrapper');
+        if (manualEl && toWrap) {
+          const sync = () => { toWrap.style.display = manualEl.checked ? 'block' : 'none'; };
+          manualEl.addEventListener('change', sync);
+          sync();
+        }
+      }
+
+      if (actionType === 'If') {
+        // Toggle visibility of value field for exists/not_exists
+        const opEl = document.getElementById('if-operator');
+        const valueGroup = document.getElementById('if-value-group');
+        if (opEl && valueGroup) {
+          const sync = () => {
+            const op = opEl.value;
+            valueGroup.style.display = ['exists','not_exists'].includes(op) ? 'none' : 'block';
+          };
+          opEl.addEventListener('change', sync);
+          sync();
+        }
+
+        // Prefill If when editing
+        if (selectedNode) {
+          const nodeData = nodes.find(n => n.id === selectedNode);
+          if (nodeData && nodeData.data && nodeData.data.type === 'If') {
+            const p = nodeData.data.properties || {};
+            const field = p.field || 'contact.email';
+            const operator = p.operator || 'equals';
+            const value = p.value ?? '';
+            const fieldDisplay = document.getElementById('if-field-display');
+            const fieldHidden = document.getElementById('if-field');
+            const opSelect = document.getElementById('if-operator');
+            const valueEl = document.getElementById('if-value');
+            if (fieldDisplay) fieldDisplay.textContent = field;
+            if (fieldHidden) fieldHidden.value = field;
+            if (opSelect) opSelect.value = operator;
+            if (valueEl && value !== undefined) valueEl.value = Array.isArray(value) ? value.join(', ') : value;
+          }
+        }
+
+        // Initialize category and search state
+        setIfFieldCategory('all');
+        filterIfFieldOptions();
+      }
     }
 
     async function populateEventTypes() {
@@ -2212,10 +2955,12 @@
         
         if (res.ok) {
           const eventTypes = await res.json();
+          // Cache event types for conditional builder (If action)
+          window.eventTypesCache = Array.isArray(eventTypes) ? eventTypes : [];
           const container = document.getElementById('event-type-options');
           
           container.innerHTML = eventTypes.map(et => `
-            <label class="multi-select-option" onclick="selectEventType('${et.title}')">
+            <label class="multi-select-option" onclick="selectEventType('${et.id}', '${et.title.replace(/'/g, "&#39;")}')">
               <span>${et.title}</span>
             </label>
           `).join('');
@@ -2321,18 +3066,19 @@
       }
     });
 
-    function selectEventType(eventTypeName) {
-      // Initialize selectedEventTypes array if it doesn't exist
-      if (!window.selectedEventTypes) {
-        window.selectedEventTypes = [];
-      }
+    function selectEventType(eventTypeId, eventTypeName) {
+      if (!window.selectedEventTypes) window.selectedEventTypes = [];
+      if (!window.selectedEventTypeIds) window.selectedEventTypeIds = [];
       
-      // Toggle event type selection
-      const index = window.selectedEventTypes.indexOf(eventTypeName);
-      if (index > -1) {
-        window.selectedEventTypes.splice(index, 1);
+      const idxName = window.selectedEventTypes.indexOf(eventTypeName);
+      const idxId = window.selectedEventTypeIds.indexOf(eventTypeId);
+      const isSelected = idxName > -1 || idxId > -1;
+      if (isSelected) {
+        if (idxName > -1) window.selectedEventTypes.splice(idxName, 1);
+        if (idxId > -1) window.selectedEventTypeIds.splice(idxId, 1);
       } else {
         window.selectedEventTypes.push(eventTypeName);
+        window.selectedEventTypeIds.push(eventTypeId);
       }
       
       // Update display
@@ -2479,6 +3225,94 @@
       }
     }
 
+    // IF action helpers
+    function selectIfField(fieldPath) {
+      const display = document.getElementById('if-field-display');
+      const hidden = document.getElementById('if-field');
+      if (display) display.textContent = fieldPath;
+      if (hidden) hidden.value = fieldPath;
+      const options = document.getElementById('if-field-options');
+      if (options) options.classList.remove('show');
+    }
+
+    function applyIfCustomAnswer() {
+      const input = document.getElementById('if-custom-answer-key');
+      if (!input) return;
+      let key = input.value.trim();
+      if (!key) return;
+      // Normalize to booking.answers.<key> if user typed shorthand answers.<key>
+      if (key.startsWith('answers.')) key = `booking.${key}`;
+      if (!key.startsWith('booking.answers.')) key = `booking.answers.${key}`;
+      selectIfField(key);
+    }
+
+    // Category + search for IF field dropdown
+    window.currentIfFieldCategory = 'all';
+    function setIfFieldCategory(cat) {
+      window.currentIfFieldCategory = cat;
+      // Update button active styles
+      const btns = document.querySelectorAll('#if-field-categories .context-btn');
+      btns.forEach(b => {
+        if (b.getAttribute('data-cat') === cat) {
+          b.style.background = '#34D399';
+          b.style.color = '#1A2E29';
+        } else {
+          b.style.background = '';
+          b.style.color = '';
+        }
+      });
+      filterIfFieldOptions();
+    }
+
+    function filterIfFieldOptions() {
+      const searchEl = document.getElementById('if-field-search');
+      const q = (searchEl ? searchEl.value : '').toLowerCase().trim();
+      const cat = window.currentIfFieldCategory || 'all';
+      const list = document.getElementById('if-field-options');
+      if (!list) return;
+      const items = list.querySelectorAll('label.multi-select-option, .if-cat-header, #if-custom-answers-container');
+
+      // First pass: show/hide by category
+      items.forEach(el => {
+        const elCat = el.getAttribute('data-category');
+        let showByCat = cat === 'all' || (elCat ? elCat === cat : true);
+        // Always keep sticky header (search/categories wrapper) visible
+        if (el.id === 'if-field-categories' || el.id === 'if-field-search') showByCat = true;
+        el.style.display = showByCat ? '' : 'none';
+      });
+
+      // Second pass: apply search filter within visible category
+      if (q) {
+        items.forEach(el => {
+          if (el.tagName.toLowerCase() === 'label') {
+            if (el.style.display === 'none') return; // already hidden by category
+            const text = (el.getAttribute('data-text') || el.textContent || '').toLowerCase();
+            el.style.display = text.includes(q) ? '' : 'none';
+          }
+        });
+        // Hide headers with no following visible items of same category
+        const headers = list.querySelectorAll('.if-cat-header');
+        headers.forEach(h => {
+          if (h.style.display === 'none') return;
+          const hCat = h.getAttribute('data-category');
+          let hasVisible = false;
+          let next = h.nextElementSibling;
+          while (next && !next.classList.contains('if-cat-header')) {
+            if (next.style.display !== 'none') { hasVisible = true; break; }
+            next = next.nextElementSibling;
+          }
+          h.style.display = hasVisible ? '' : 'none';
+        });
+      } else {
+        // No search: show headers relevant to selected category
+        const headers = list.querySelectorAll('.if-cat-header');
+        headers.forEach(h => {
+          const hCat = h.getAttribute('data-category');
+          h.style.display = (cat === 'all' || hCat === cat) ? '' : 'none';
+        });
+      }
+    }
+
     function saveTrigger() {
       const triggerType = document.getElementById('trigger-select').value;
       const triggerNode = nodes.find(n => n.type === 'trigger');
@@ -2489,7 +3323,8 @@
       
       if (triggerType === 'Meeting Scheduled') {
         properties.eventTypes = window.selectedEventTypes || [];
-        console.log('Saving trigger with event types:', properties.eventTypes);
+        properties.eventTypeIds = window.selectedEventTypeIds || [];
+        console.log('Saving trigger with event types:', properties.eventTypes, properties.eventTypeIds);
       } else if (triggerType === 'Tag Added') {
         properties.tags = window.selectedTags || [];
         console.log('Saving trigger with tags:', properties.tags);
@@ -2532,6 +3367,65 @@
       if (actionType === 'Add Tag') {
         properties.tag = window.selectedActionTag || '';
       }
+      if (actionType === 'Send Email') {
+        const val = id => {
+          const el = document.getElementById(id);
+          return el ? el.value.trim() : '';
+        };
+        const csv = s => s ? s.split(',').map(x => x.trim()).filter(Boolean) : [];
+        const manual = !!(document.getElementById('email-manual-recipient')?.checked);
+        const toList = csv(val('email-to'));
+        properties = {
+          useTriggerRecipient: !manual,
+          to: manual ? toList : [],
+          cc: csv(val('email-cc')),
+          bcc: csv(val('email-bcc')),
+          subject: val('email-subject'),
+          body: val('email-body'),
+          isHtml: !!(document.getElementById('email-is-html')?.checked)
+        };
+        if (manual && !toList.length) {
+          alert('Please provide at least one recipient in To');
+          return;
+        }
+        if (!properties.subject) {
+          alert('Please provide an email subject');
+          return;
+        }
+        if (!properties.body) {
+          alert('Please provide an email body');
+          return;
+        }
+      }
+      if (actionType === 'If') {
+        const field = document.getElementById('if-field')?.value?.trim();
+        const operator = document.getElementById('if-operator')?.value;
+        const rawValue = document.getElementById('if-value')?.value ?? '';
+        if (!field || !operator) {
+          alert('Please select a field and operator for the If condition');
+          return;
+        }
+        let value = rawValue;
+        if (['gt','lt'].includes(operator)) {
+          const n = Number(rawValue);
+          if (!Number.isFinite(n)) {
+            alert('Please enter a valid number for the comparison');
+            return;
+          }
+          value = n;
+        } else if (operator === 'in') {
+          value = (rawValue || '').split(',').map(s => s.trim()).filter(Boolean);
+          if (value.length === 0) {
+            alert('Please provide at least one list item for the "in" operator');
+            return;
+          }
+        }
+        const triggerType = nodes.find(n => n.type === 'trigger')?.data?.type || 'Meeting Scheduled';
+        properties = { field, operator };
+        if (!['exists','not_exists'].includes(operator)) properties.value = value;
+        properties.triggerType = triggerType;
+        if (triggerType === 'Tag Added') properties.missingDataBehavior = 'default_false_path_on_error';
+      }
       
       if (actionType === 'Add Tag' && !properties.tag) {
         alert('Please select a tag');
@@ -2540,8 +3434,70 @@
       
       // Check if this is an insert operation
       if (parentNodeId === 'insert' && window.insertConnection) {
-        insertActionBetween({ type: actionType, properties }, window.insertConnection);
+        const inserted = insertActionBetween({ type: actionType, properties }, window.insertConnection);
+        // If IF, auto-create True/False headers
+        if (actionType === 'If' && inserted && inserted.element) {
+          if (!inserted.data.properties) inserted.data.properties = {};
+          if (!inserted.data.properties.ifId) inserted.data.properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          const trueNode = addControlNodeAfterElement(inserted.element, 'True');
+          const falseNode = addControlNodeAfterElement(inserted.element, 'False');
+          if (trueNode && trueNode.element) trueNode.data = { type: 'True', properties: { parentIfId: inserted.data.properties.ifId, ifDomId: inserted.element.id, branch: 'true' } };
+          if (falseNode && falseNode.element) falseNode.data = { type: 'False', properties: { parentIfId: inserted.data.properties.ifId, ifDomId: inserted.element.id, branch: 'false' } };
+        }
         window.insertConnection = null;
+        closeActionModal();
+        return;
+      }
+      // Branch insertions from IF node (True / False columns)
+      if (parentNodeId && parentNodeId.startsWith('branch-true-')) {
+        const ifId = parentNodeId.replace('branch-true-', '');
+        const { ifIndex, trueIndex } = findIfHeaders(ifId);
+        if (ifIndex === -1 || trueIndex === -1) { closeActionModal(); return; }
+        const actionNode = createNode(actionType, actionType, 'settings', getActionContent({ type: actionType, properties }));
+        actionNode.style.left = 'calc(50% - 280px)';
+        actionNode.style.transform = 'translateX(-50%)';
+        const trueEl = nodes[trueIndex].element;
+        const containerRect = container.getBoundingClientRect();
+        let y = trueEl.getBoundingClientRect().bottom - containerRect.top + 60;
+        const ifStepId = nodes[ifIndex]?.data?.properties?.ifId;
+        for (let i = 0; i < nodes.length; i++) {
+          const d = nodes[i]?.data;
+          if (d && d.properties && d.properties.parentIfId === ifStepId && d.properties.branch === 'true') {
+            const r = nodes[i].element.getBoundingClientRect();
+            y = Math.max(y, r.bottom - containerRect.top + 60);
+          }
+        }
+        actionNode.style.top = `${y}px`;
+        container.appendChild(actionNode);
+        const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'true' } } };
+        nodes.push(nodeData);
+        StructureManager.rebuild();
+        closeActionModal();
+        return;
+      }
+      if (parentNodeId && parentNodeId.startsWith('branch-false-')) {
+        const ifId = parentNodeId.replace('branch-false-', '');
+        const { ifIndex, falseIndex } = findIfHeaders(ifId);
+        if (ifIndex === -1 || falseIndex === -1) { closeActionModal(); return; }
+        const actionNode = createNode(actionType, actionType, 'settings', getActionContent({ type: actionType, properties }));
+        actionNode.style.left = 'calc(50% + 280px)';
+        actionNode.style.transform = 'translateX(-50%)';
+        const falseEl = nodes[falseIndex].element;
+        const containerRect = container.getBoundingClientRect();
+        let y = falseEl.getBoundingClientRect().bottom - containerRect.top + 60;
+        const ifStepId = nodes[ifIndex]?.data?.properties?.ifId;
+        for (let i = 0; i < nodes.length; i++) {
+          const d = nodes[i]?.data;
+          if (d && d.properties && d.properties.parentIfId === ifStepId && d.properties.branch === 'false') {
+            const r = nodes[i].element.getBoundingClientRect();
+            y = Math.max(y, r.bottom - containerRect.top + 60);
+          }
+        }
+        actionNode.style.top = `${y}px`;
+        container.appendChild(actionNode);
+        const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'false' } } };
+        nodes.push(nodeData);
+        StructureManager.rebuild();
         closeActionModal();
         return;
       }
@@ -2586,6 +3542,18 @@
         
         // Rebuild the entire workflow structure to ensure all connections are created
         StructureManager.rebuild();
+
+        // If IF, auto-create True/False headers
+        if (actionType === 'If') {
+          if (!properties) properties = {};
+          if (!properties.ifId) properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          // Update node data to include ifId
+          nodeData.data = { type: actionType, properties };
+          const trueNode = addControlNodeAfterElement(actionNode, 'True');
+          const falseNode = addControlNodeAfterElement(actionNode, 'False');
+          if (trueNode && trueNode.element) trueNode.data = { type: 'True', properties: { parentIfId: properties.ifId, ifDomId: actionNode.id, branch: 'true' } };
+          if (falseNode && falseNode.element) falseNode.data = { type: 'False', properties: { parentIfId: properties.ifId, ifDomId: actionNode.id, branch: 'false' } };
+        }
         
         // Add movement listeners to the new node
         addNodeMovementListeners();
@@ -2720,6 +3688,17 @@
       
       // Rebuild the entire workflow structure to ensure consistency
       StructureManager.rebuild();
+
+      // If we just added an IF, auto-create True/False headers
+      if (actionData.type === 'If') {
+        if (!actionData.properties) actionData.properties = {};
+        if (!actionData.properties.ifId) actionData.properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        nodeData.data = actionData;
+        const trueNode = addControlNodeAfterElement(actionNode, 'True');
+        const falseNode = addControlNodeAfterElement(actionNode, 'False');
+        if (trueNode && trueNode.element) trueNode.data = { type: 'True', properties: { parentIfId: actionData.properties.ifId, ifDomId: actionNode.id, branch: 'true' } };
+        if (falseNode && falseNode.element) falseNode.data = { type: 'False', properties: { parentIfId: actionData.properties.ifId, ifDomId: actionNode.id, branch: 'false' } };
+      }
       
       // Add movement listeners to the new node
       addNodeMovementListeners();
@@ -2771,12 +3750,54 @@
       addNodeMovementListeners();
       
       console.log('Action inserted successfully');
+      return nodeData;
+    }
+
+    // Helper: add a lightweight branch header node (True/False) immediately after a given node element
+    function addControlNodeAfterElement(afterNodeElement, type) {
+      const content = type;
+      const actionNode = createNode(type, type, 'settings', content);
+      const afterRect = afterNodeElement.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const topPosition = afterRect.bottom - containerRect.top + 80;
+      actionNode.style.left = '50%';
+      actionNode.style.top = `${topPosition}px`;
+      actionNode.style.transform = 'translateX(-50%)';
+      container.appendChild(actionNode);
+      const afterIndex = nodes.findIndex(n => n.element === afterNodeElement);
+      const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type, properties: {} } };
+      if (afterIndex >= 0) {
+        nodes.splice(afterIndex + 1, 0, nodeData);
+      } else {
+        nodes.push(nodeData);
+      }
+      StructureManager.rebuild();
+      addNodeMovementListeners();
+      return nodeData;
     }
 
     function getActionContent(actionData) {
       if (actionData.type === 'Add Tag') {
         return `Adds tag: ${actionData.properties.tag}`;
       }
+      if (actionData.type === 'Send Email') {
+        const p = actionData.properties || {};
+        const auto = p.useTriggerRecipient === true || (!p.to || (Array.isArray(p.to) && p.to.length === 0));
+        const to = auto ? 'Contact' : (Array.isArray(p.to) ? p.to.join(', ') : (p.to || ''));
+        const subj = p.subject || '';
+        const mode = p.isHtml ? 'HTML' : 'Text';
+        return `Email (${mode}) to ${to} — Subject: ${subj}`;
+      }
+      if (actionData.type === 'If') {
+        const p = actionData.properties || {};
+        const needsValue = !['exists','not_exists'].includes(p.operator);
+        const val = Array.isArray(p.value) ? p.value.join(', ') : (p.value ?? '');
+        const core = `If ${p.field} ${p.operator}${needsValue ? ' ' : ''}${needsValue ? val : ''}`;
+        const warn = p.triggerType === 'Tag Added' ? ' — missing data -> false path' : '';
+        return core + warn + '  •  Use buttons to add to True/False paths';
+      }
+      if (actionData.type === 'True') return 'True — actions in this branch run when the If condition evaluates to TRUE.';
+      if (actionData.type === 'False') return 'False — actions in this branch run when the If condition evaluates to FALSE.';
       return `Action: ${actionData.type}`;
     }
     
@@ -2784,6 +3805,13 @@
       const nodeData = nodes.find(n => n.element === actionNode);
       if (!nodeData) return;
       
+      // If IF node: present branch controls instead of opening modal
+      if (nodeData.data && nodeData.data.type === 'If') {
+        try { decorateIfNodeForBranches(actionNode); } catch {}
+        // Do not open modal for IF itself on click; let user choose branch buttons
+        return;
+      }
+
       // Open action modal with existing data
       selectedNode = actionNode.id;
       openActionModal(actionNode.id);
@@ -2802,6 +3830,25 @@
             display.textContent = `✓ ${nodeData.data.properties.tag}`;
             display.style.color = '#34D399';
           }
+        }
+
+        // Prefill Send Email fields when editing
+        if (nodeData.data.type === 'Send Email' && nodeData.data.properties) {
+          const p = nodeData.data.properties;
+          const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+          const manualEl = document.getElementById('email-manual-recipient');
+          const toWrap = document.getElementById('email-to-wrapper');
+          const manual = !(p.useTriggerRecipient === true || (!p.to || (Array.isArray(p.to) && p.to.length === 0)));
+          if (manualEl) manualEl.checked = manual;
+          if (toWrap) toWrap.style.display = manual ? 'block' : 'none';
+          set('email-to', Array.isArray(p.to) ? p.to.join(', ') : (p.to || ''));
+          set('email-cc', Array.isArray(p.cc) ? p.cc.join(', ') : (p.cc || ''));
+          set('email-bcc', Array.isArray(p.bcc) ? p.bcc.join(', ') : (p.bcc || ''));
+          set('email-subject', p.subject || '');
+          const bodyEl = document.getElementById('email-body');
+          if (bodyEl) bodyEl.value = p.body || '';
+          const htmlEl = document.getElementById('email-is-html');
+          if (htmlEl) htmlEl.checked = !!p.isHtml;
         }
       }
     }
@@ -2877,7 +3924,8 @@
             return false;
           }
         }
-        
+        // No End If/Else validation needed in True/False branching model
+
         console.log('Workflow structure validation passed');
         return true;
       } catch (error) {
@@ -2908,6 +3956,7 @@
           currentWorkflow.data = {
             trigger: triggerNode.data.type,
             triggerEventTypes: triggerNode.data.properties?.eventTypes || [],
+            triggerEventTypeIds: triggerNode.data.properties?.eventTypeIds || [],
             triggerTags: triggerNode.data.properties?.tags || [],
             steps: steps,
             status: true
@@ -2957,9 +4006,11 @@
       const workflowData = {
         trigger: triggerNode.data.type,
         triggerEventTypes: triggerNode.data.properties?.eventTypes || [],
+        triggerEventTypeIds: triggerNode.data.properties?.eventTypeIds || [],
         triggerTags: triggerNode.data.properties?.tags || [],
         steps: steps, // Include trigger in steps for consistency
-        status: true
+        status: true,
+        contextSpec: contextSpec || getDefaultContextSpec()
       };
       
       // Update currentWorkflow.data to match what we're saving
@@ -3199,32 +4250,53 @@
           return;
         }
         
-          // Calculate connection points with pixel-perfect precision
+          // Calculate connection points (center bottom of from, center top of to)
           const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
           const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
           const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
           const toY = Math.round(toRect.top - containerRect.top + 1);
-          
-          // Ensure minimum distance to prevent visual artifacts
-          const minDistance = 20;
-          const actualDistance = Math.sqrt((toX - fromX) ** 2 + (toY - fromY) ** 2);
-          if (actualDistance < minDistance) {
-            connection.line.style.display = 'none';
-            return;
+
+          // If using SVG path, draw an orthogonal rounded path; otherwise keep legacy div behavior
+          const el = connection.line;
+          if (el && el.tagName && el.tagName.toLowerCase() === 'path') {
+            const fromType = (connection.from.__nodeData && connection.from.__nodeData.data?.type) || nodes.find(n=>n.element===connection.from)?.data?.type || '';
+            const toType = (connection.to.__nodeData && connection.to.__nodeData.data?.type) || nodes.find(n=>n.element===connection.to)?.data?.type || '';
+            connection.from.__nodeData = nodes.find(n => n.element === connection.from) || connection.from.__nodeData || null;
+            connection.to.__nodeData = nodes.find(n => n.element === connection.to) || connection.to.__nodeData || null;
+
+            let d = '';
+            const vDrop = 30;
+            const r = 12;
+            if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
+              const midY = fromY + vDrop;
+              d += `M ${fromX} ${fromY}`;
+              d += ` L ${fromX} ${midY - r}`;
+              const dir = (toX >= fromX) ? 1 : -1;
+              d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
+              d += ` L ${toX - dir * r} ${midY}`;
+              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
+              d += ` L ${toX} ${toY}`;
+            } else if ((fromType === 'True' || fromType === 'False') && !(toType === 'True' || toType === 'False')) {
+              const ctrlY = fromY + 20;
+              d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+            } else {
+              const mx = Math.round((fromX + toX) / 2);
+              d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
+            }
+            el.setAttribute('d', d);
+            el.style.display = 'block';
+          } else {
+            // Legacy fallback (div line rotated)
+            const deltaX = toX - fromX;
+            const deltaY = toY - fromY;
+            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            const angle = Math.atan2(deltaY, deltaX);
+            el.style.left = `${fromX}px`;
+            el.style.top = `${fromY}px`;
+            el.style.width = `${length}px`;
+            el.style.transform = `rotate(${angle}rad)`;
+            el.style.display = 'block';
           }
-          
-          // Calculate distance and angle with high precision
-          const deltaX = toX - fromX;
-          const deltaY = toY - fromY;
-          const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-          const angle = Math.atan2(deltaY, deltaX);
-          
-          // Apply positioning with pixel-perfect precision
-          connection.line.style.left = `${fromX}px`;
-          connection.line.style.top = `${fromY}px`;
-          connection.line.style.width = `${length}px`;
-          connection.line.style.transform = `rotate(${angle}rad)`;
-          connection.line.style.display = 'block';
           connection.line.style.opacity = '1';
           
           // Update insert orb position if it exists
@@ -3397,6 +4469,10 @@
         // Initialize production-grade position management system
         PositionManager.init();
         
+        // Preload errors if an id is present
+        try { await refreshErrors(); } catch {}
+        try { await refreshRuns(); } catch {}
+
         // After fonts and layout settle, do a final alignment pass
         const settle = () => {
           requestAnimationFrame(() => {
@@ -3427,6 +4503,301 @@
     window.addEventListener('resize', () => {
       StructureManager.rebuild();
     });
+
+  // Errors panel logic
+    async function refreshErrors(limit = 25) {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      if (!id) return [];
+      try {
+        const token = getAnyToken();
+        if (!token) return [];
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/workflows/${id}/errors?limit=${limit}`, {
+          headers: { Authorization: `Bearer ${clean}` }
+        });
+        if (!res.ok) return [];
+        const items = await res.json();
+        renderErrors(items || []);
+        return items;
+      } catch (e) {
+        console.warn('Failed to load workflow errors', e);
+        return [];
+  }
+
+  // Branch helpers (defined after DOM and utils)
+    function findIfHeaders(ifNodeId) {
+      const idx = nodes.findIndex(n => n.id === ifNodeId || n.element?.id === ifNodeId);
+      let trueIndex = -1, falseIndex = -1;
+      if (idx >= 0) {
+        for (let i = idx + 1; i < nodes.length; i++) {
+          const t = nodes[i]?.data?.type;
+          if (t === 'True' && trueIndex === -1) trueIndex = i;
+          if (t === 'False') { falseIndex = i; break; }
+        }
+      }
+      return { ifIndex: idx, trueIndex, falseIndex };
+    }
+
+  function decorateIfNodeForBranches(actionNodeEl) {
+    const content = actionNodeEl.querySelector('.node-content');
+    if (!content) return;
+    const existing = content.querySelector('.branch-controls');
+    if (existing) existing.remove();
+    const controls = document.createElement('div');
+    controls.className = 'branch-controls';
+    controls.style.marginTop = '.5rem';
+    controls.style.display = 'flex';
+    controls.style.gap = '.5rem';
+    controls.innerHTML = `
+      <button class="context-btn" title="Add to TRUE path">+ True path</button>
+      <button class="context-btn" title="Add to FALSE path">+ False path</button>
+    `;
+    const [btnTrue, btnFalse] = controls.querySelectorAll('button');
+    btnTrue.addEventListener('click', (e) => { e.stopPropagation(); openActionModal(`branch-true-${actionNodeEl.id}`); });
+    btnFalse.addEventListener('click', (e) => { e.stopPropagation(); openActionModal(`branch-false-${actionNodeEl.id}`); });
+    content.appendChild(controls);
+  }
+    }
+
+    // Runs panel logic
+    const contactCache = new Map();
+    const bookingCache = new Map();
+
+    async function fetchContact(contactId) {
+      if (!contactId) return null;
+      if (contactCache.has(contactId)) return contactCache.get(contactId);
+      try {
+        const token = getAnyToken();
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/contacts/${contactId}`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (!res.ok) return null;
+        const data = await res.json();
+        contactCache.set(contactId, data);
+        return data;
+      } catch { return null; }
+    }
+
+    async function fetchBooking(bookingId) {
+      if (!bookingId) return null;
+      if (bookingCache.has(bookingId)) return bookingCache.get(bookingId);
+      try {
+        const token = getAnyToken();
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/bookings/${bookingId}`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (!res.ok) return null;
+        const data = await res.json();
+        bookingCache.set(bookingId, data);
+        return data;
+      } catch { return null; }
+    }
+
+    async function refreshRuns(limit = 50) {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      if (!id) return [];
+      try {
+        const token = getAnyToken();
+        if (!token) return [];
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/workflows/${id}/runs?limit=${limit}`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (!res.ok) return [];
+        const items = await res.json();
+        await renderRuns(items || []);
+        return items;
+      } catch { return []; }
+    }
+
+    function toggleRunsPanel() {
+      if (!runsDrawer) return;
+      const isOpen = runsDrawer.style.display !== 'none';
+      runsDrawer.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) refreshRuns();
+    }
+
+    async function renderRuns(items) {
+      if (!runsActive || !runsHistory) return;
+      runsActive.innerHTML = '';
+      runsHistory.innerHTML = '';
+      const active = items.filter(r => r.status === 'running');
+      const past = items.filter(r => r.status !== 'running');
+
+      const section = async (list, container, title) => {
+        const header = document.createElement('div');
+        header.style.color = '#9ca3af';
+        header.style.fontWeight = '600';
+        header.style.margin = '0.25rem 0 0.5rem';
+        header.textContent = title;
+        container.appendChild(header);
+        if (list.length === 0) {
+          const empty = document.createElement('div');
+          empty.style.color = '#9ca3af';
+          empty.textContent = 'None';
+          container.appendChild(empty);
+          return;
+        }
+        for (const run of list) {
+          const row = document.createElement('div');
+          row.style.border = '1px solid #263a35';
+          row.style.borderRadius = '.5rem';
+          row.style.padding = '.75rem';
+          row.style.background = '#10231f';
+          row.style.cursor = 'pointer';
+
+          const whoEl = document.createElement('div');
+          whoEl.style.color = '#E0E0E0';
+          whoEl.style.fontWeight = '600';
+          whoEl.textContent = 'Resolving participant…';
+
+          // Resolve participant
+          const ctx = run.context || {};
+          let who = 'Unknown participant';
+          try {
+            if (ctx.contactId) {
+              const c = await fetchContact(ctx.contactId);
+              if (c) who = `${c.name || c.email} (${c.email})`;
+            } else if (ctx.bookingId) {
+              const b = await fetchBooking(ctx.bookingId);
+              if (b) who = `${b.name || b.email} (${b.email})`;
+            }
+          } catch {}
+          whoEl.textContent = who;
+
+          const meta = document.createElement('div');
+          meta.style.color = '#9ca3af';
+          meta.style.fontSize = '.85rem';
+          const start = new Date(run.started_at || run.startedAt || run.startedAtUtc || Date.now());
+          const end = run.finished_at ? new Date(run.finished_at) : null;
+          const dur = end ? ` • ${Math.max(0, Math.round((+end - +start)/1000))}s` : '';
+          meta.textContent = `${run.status.toUpperCase()} • ${formatTime(start)}${dur}`;
+
+          row.appendChild(whoEl);
+          row.appendChild(meta);
+
+          row.addEventListener('click', async () => {
+            await showRunDetails(run.id);
+          });
+
+          container.appendChild(row);
+        }
+      };
+
+      await section(active, runsActive, 'Currently Active');
+      await section(past, runsHistory, 'History');
+    }
+
+    async function showRunDetails(runId) {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      if (!id) return;
+      try {
+        const token = getAnyToken();
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/workflows/${id}/runs/${runId}`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        renderRunDetails(data);
+      } catch {}
+    }
+
+    function renderRunDetails(run) {
+      if (!runDetails) return;
+      runDetails.style.display = 'block';
+      runDetails.innerHTML = '';
+
+      const title = document.createElement('div');
+      title.style.color = '#E0E0E0';
+      title.style.fontWeight = '700';
+      title.style.margin = '0.5rem 0';
+      title.textContent = `Run ${run.id} • ${String(run.status).toUpperCase()}`;
+      runDetails.appendChild(title);
+
+      const list = document.createElement('div');
+      list.style.display = 'flex';
+      list.style.flexDirection = 'column';
+      list.style.gap = '.5rem';
+
+      (run.steps || []).forEach((step) => {
+        const row = document.createElement('div');
+        row.style.border = '1px solid #263a35';
+        row.style.borderRadius = '.5rem';
+        row.style.padding = '.5rem .75rem';
+        row.style.background = '#0e201c';
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <div style="color:#E0E0E0;font-weight:600;">Step ${Number(step.index)+1}: ${escapeHtml(step.type)}</div>
+            <div style="margin-left:auto;color:#9ca3af; font-size:.85rem;">${(step.status || '').toUpperCase()}</div>
+          </div>
+          ${step.message ? `<div style=\"margin-top:.25rem;color:#d1d5db;white-space:pre-wrap;\">${escapeHtml(step.message)}</div>` : ''}
+        `;
+        row.addEventListener('click', () => highlightStep(Number(step.index)));
+        list.appendChild(row);
+      });
+      runDetails.appendChild(list);
+    }
+
+    function toggleErrorsPanel() {
+      if (!errorsDrawer) return;
+      const isOpen = errorsDrawer.style.display !== 'none';
+      errorsDrawer.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) refreshErrors();
+    }
+
+    function renderErrors(items) {
+      if (!errorsList) return;
+      errorsList.innerHTML = '';
+      if (!items || items.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.color = '#9ca3af';
+        empty.textContent = 'No recent errors.';
+        errorsList.appendChild(empty);
+        return;
+      }
+      const sorted = items.sort((a,b)=>b.ts-a.ts);
+      sorted.forEach(err => {
+        const row = document.createElement('div');
+        row.style.border = '1px solid #263a35';
+        row.style.borderRadius = '.5rem';
+        row.style.padding = '.75rem';
+        row.style.background = '#10231f';
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span class="material-icons-outlined" style="color:#F87171;font-size:18px">error</span>
+            <div style="color:#E0E0E0;font-weight:600;">Step ${Number(err.stepIndex)+1}: ${escapeHtml(err.stepType || 'Unknown')}</div>
+            <div style="margin-left:auto;color:#9ca3af;font-size:.85rem;">${formatTime(err.ts)}</div>
+          </div>
+          <div style="margin-top:.5rem;color:#d1d5db; white-space:pre-wrap;">${escapeHtml(err.message || '')}</div>
+        `;
+        row.addEventListener('click', () => {
+          try { highlightStep(Number(err.stepIndex)); } catch {}
+        });
+        errorsList.appendChild(row);
+      });
+    }
+
+    function highlightStep(stepIndex) {
+      if (isNaN(stepIndex)) return;
+      // Steps do not include the trigger; find action nodes in order
+      const actionNodes = nodes.filter(n => n.type !== 'trigger');
+      if (stepIndex < 0 || stepIndex >= actionNodes.length) return;
+      const node = actionNodes[stepIndex]?.element;
+      if (!node) return;
+      // Select and scroll into view
+      container.querySelectorAll('.flowchart-node').forEach(n => n.classList.remove('selected'));
+      node.classList.add('selected');
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function formatTime(ts) {
+      try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
   </script>
 </body>
 </html>

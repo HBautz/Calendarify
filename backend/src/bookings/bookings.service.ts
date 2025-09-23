@@ -38,6 +38,14 @@ export class BookingsService {
     private workflowExecutionService: WorkflowExecutionService
   ) {}
 
+  async findOneForUser(userId: string, id: string) {
+    const booking = await this.prisma.booking.findFirst({
+      where: { id, user_id: userId },
+      include: { event_type: true, notes: true },
+    });
+    return booking;
+  }
+
   async create(data: CreateBookingDto) {
     const booking = await this.prisma.booking.create({ 
       data,
@@ -121,7 +129,8 @@ export class BookingsService {
       await this.workflowExecutionService.onMeetingScheduled(
         eventType.userId,
         eventType.title,
-        booking.id
+        booking.id,
+        eventType.id
       );
     } catch (error) {
       console.warn('[BOOKINGS] Failed to trigger workflows:', error);

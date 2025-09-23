@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow Editor Guide • Calendarify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Icons+Outlined" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B1916;
+      --panel: #12221E;
+      --muted: #A3B3AF;
+      --text: #E0E0E0;
+      --brand: #34D399;
+      --brand-700: #10B981;
+      --border: #2C4A43;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px;
+    }
+    .title { font-size: 24px; font-weight: 700; }
+    .actions { display: flex; gap: 8px; }
+    a.btn, button.btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--brand); color: #1A2E29; border: none; padding: 8px 12px;
+      border-radius: 8px; text-decoration: none; font-weight: 700; cursor: pointer;
+    }
+    a.btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .muted { color: var(--muted); }
+    h2 { margin: 24px 0 8px; font-size: 18px; }
+    h3 { margin: 18px 0 8px; font-size: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .callout { border-left: 4px solid var(--brand); padding: 12px 12px; background: #0f201c; border-radius: 6px; }
+    .callout.warn { border-color: var(--warning); background: #231f14; }
+    .callout.danger { border-color: var(--danger); background: #241616; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    pre { background: #111827; border: 1px solid #374151; border-radius: .5rem; padding: 12px; overflow: auto; color: #d1d5db }
+    ul { margin: 8px 0 8px 20px; }
+    li { margin: 4px 0; }
+    .kbd { padding: 2px 6px; border: 1px solid var(--border); border-bottom-width: 3px; border-radius: 6px; font-weight: 700; }
+  </style>
+  <script>
+    function goToEditor() { window.location.href = '/dashboard/editor'; }
+  </script>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/resources/favicon.svg" />
+  <link rel="mask-icon" href="/resources/favicon.svg" color="#34D399" />
+  <link rel="apple-touch-icon" href="/resources/favicon.svg" />
+  <meta name="theme-color" content="#0B1916" />
+  <meta name="description" content="Guide to the Calendarify Workflow Editor: triggers, actions, conditions, best practices." />
+  <meta property="og:title" content="Workflow Editor Guide • Calendarify" />
+  <meta property="og:description" content="Build reliable automations with triggers, actions, and If conditions." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/resources/social-card.png" />
+  <meta property="og:url" content="/editor/guide" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Workflow Editor Guide • Calendarify" />
+  <meta name="twitter:description" content="Build reliable automations with triggers, actions, and If conditions." />
+  <meta name="twitter:image" content="/resources/social-card.png" />
+  <meta name="twitter:site" content="@calendarify" />
+  <meta name="twitter:creator" content="@calendarify" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/" />
+  <link rel="canonical" href="/editor/guide" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="referrer" content="no-referrer-when-downgrade" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="MobileOptimized" content="320" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="application-name" content="Calendarify" />
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">Workflow Editor Guide</div>
+      <div class="actions">
+        <a href="/dashboard/editor" class="btn"><span class="material-icons-outlined">edit</span>Open Editor</a>
+        <a href="/dashboard" class="btn secondary"><span class="material-icons-outlined">dashboard</span>Dashboard</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <p class="muted">This guide covers how to build, configure, and maintain production-grade workflows in Calendarify. It explains triggers, actions, conditions, execution context, and best practices for reliability.</p>
+    </div>
+
+    <h2>Core Concepts</h2>
+    <div class="grid">
+      <div class="panel">
+        <h3>Workflows</h3>
+        <ul>
+          <li><b>Trigger-first:</b> Every workflow starts with a single trigger.</li>
+          <li><b>Linear steps:</b> Actions run top to bottom. Inserting between steps preserves order.</li>
+          <li><b>Context-aware:</b> Steps can reference contact and booking data from the trigger.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Triggers</h3>
+        <ul>
+          <li><b>Meeting Scheduled:</b> Fires when a booking is created for selected event type(s).</li>
+          <li><b>Tag Added:</b> Fires when one of the selected tags is applied to a contact.</li>
+        </ul>
+        <div class="callout warn"><b>Note:</b> With Tag Added, the workflow may run without an associated booking. Conditions that require booking data will default to the false path when data is missing.</div>
+      </div>
+      <div class="panel">
+        <h3>Actions</h3>
+        <ul>
+          <li><b>Add Tag:</b> Adds a tag to the triggering contact.</li>
+          <li><b>Send Email:</b> Sends a text/HTML email to the contact or manual recipients.</li>
+          <li><b>If:</b> Evaluates a condition against context fields and controls flow by outcome.</li>
+          <li><b>Coming Soon:</b> Create Meeting and additional integrations.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Building Workflows</h2>
+    <div class="panel">
+      <h3>Canvas and Steps</h3>
+      <ul>
+        <li><b>Configure Trigger:</b> Click the trigger node to pick type and scope (event types or tags).</li>
+        <li><b>Add Actions:</b> Click the green orb below a node to append a new step.</li>
+        <li><b>Insert Between:</b> Click the small orb that appears on connections to insert between steps.</li>
+        <li><b>Edit/Delete:</b> Use the pencil and trash icons on an action node.</li>
+        <li><b>Save:</b> Enter a name then click <span class="kbd">Save Workflow</span>.</li>
+        <li><b>Keys in Editor:</b> In Event Types ➜ Booking Questions, each question shows its computed key (booking.answers.&lt;key&gt;) with a one‑click copy button.</li>
+      </ul>
+    </div>
+
+    <h2>Execution Context</h2>
+    <div class="panel">
+      <p>The editor ships with a default context schema used by the workflow engine. You can inspect and persist it via the Context panel in the editor.</p>
+      <ul>
+        <li><b>Contact:</b> id, name, email, phone, timezone, locale, tags, company, title, notes, timestamps, customFields.</li>
+        <li><b>Booking:</b> id, title, status, eventType, start/end, duration, timezone, location, meetingLink, attendees, rescheduleCount, answers, metadata, timestamps.</li>
+      </ul>
+      <div class="callout"><b>Tip:</b> Attach a sample payload for testing and clearer evaluation during development.</div>
+    </div>
+
+    <h2>If Conditions</h2>
+    <div class="panel">
+      <h3>Choosing a Field</h3>
+      <ul>
+        <li><b>Categories:</b> Use Contact, Booking, Answers, or Custom to narrow options.</li>
+        <li><b>Search:</b> Filter fields by name or path (e.g., "email" or "booking.answers.industry").</li>
+        <li><b>Answers:</b> The list shows available custom question keys based on the trigger scope:
+          <ul>
+            <li><b>Meeting Scheduled:</b> Union of questions from the selected event type(s).</li>
+            <li><b>Tag Added:</b> Union of questions across all your event types.</li>
+          </ul>
+        </li>
+        <li><b>Custom Keys:</b> Enter <code>answers.&lt;key&gt;</code> or <code>booking.answers.&lt;key&gt;</code> to target a specific answer.</li>
+      </ul>
+
+      <h3 id="custom-keys">Custom Keys: How To Find The Right Key</h3>
+      <p class="muted">Custom question answers are exposed under <code>booking.answers.&lt;key&gt;</code>. There are several reliable ways to discover the correct <code>&lt;key&gt;</code> for a specific data point.</p>
+      <ol>
+        <li>
+          <b>Use the Answers list in the Field picker</b>
+          <ul>
+            <li>Open the If action ➜ Field ➜ Answers category.</li>
+            <li>It shows questions scoped to your trigger (selected event type(s) for Meeting Scheduled, or all event types for Tag Added).</li>
+            <li>Click an item to insert the full key (e.g., <code>booking.answers.industry</code>).</li>
+          </ul>
+        </li>
+        <li>
+          <b>See keys directly in Event Types</b>
+          <ul>
+            <li>Open Dashboard ➜ Event Types. In Booking Questions, every question displays “Key: booking.answers.&lt;key&gt;”.</li>
+            <li>Click the copy icon to place the key on your clipboard.</li>
+          </ul>
+        </li>
+        <li>
+          <b>Derive the key from the question text</b>
+          <ul>
+            <li>Keys are a slugified version of the question label/text.</li>
+            <li>Rule: lowercase ➜ replace non-alphanumerics with <code>_</code> ➜ collapse repeats ➜ trim underscores ➜ max 64 chars.</li>
+            <li>Examples:
+              <ul>
+                <li>“What is your industry?” ➜ <code>what_is_your_industry</code> ➜ <code>booking.answers.what_is_your_industry</code></li>
+                <li>“Team size (approx)” ➜ <code>team_size_approx</code> ➜ <code>booking.answers.team_size_approx</code></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <b>Inspect event type configuration</b>
+          <ul>
+            <li>Open Dashboard ➜ Event Types ➜ edit an event type ➜ Booking Questions.</li>
+            <li>Use the exact label to apply the slug rule above. The Field picker’s Answers list cross-references this automatically.</li>
+          </ul>
+        </li>
+        <li>
+          <b>Check via API (advanced)</b>
+          <ul>
+            <li>Authenticated endpoint: <code>GET /api/event-types</code> returns your event types with <code>questions</code>.</li>
+            <li>Look at <code>questions[].text</code> (or <code>label</code>) and apply the slug rule.</li>
+            <li>Example (with a valid Bearer token):</li>
+          </ul>
+          <pre>curl -H "Authorization: Bearer &lt;token&gt;" http://localhost:3001/api/event-types | jq '.[].questions'</pre>
+        </li>
+        <li>
+          <b>Use a sample/run payload</b>
+          <ul>
+            <li>In the editor’s Context modal, save a sample JSON payload and reference its structure.</li>
+            <li>Or open a recent workflow run and inspect payload fields directly.</li>
+          </ul>
+        </li>
+      </ol>
+      <div class="callout">
+        <b>Tip:</b> You can also type <code>answers.&lt;key&gt;</code> in the Field picker’s Custom input; it auto-normalizes to <code>booking.answers.&lt;key&gt;</code>.
+      </div>
+
+      <h3>Contact Field Keys</h3>
+      <p class="muted">From the Contacts page, open a contact and scroll to the Field Keys panel. Common keys like <code>contact.email</code>, <code>contact.company</code>, <code>contact.tags</code>, and timestamps are listed with one‑click copy buttons for quick use in If conditions.</p>
+
+      <h3>Operators</h3>
+      <ul>
+        <li>exists, not_exists</li>
+        <li>equals, not_equals</li>
+        <li>contains, not_contains, starts_with, ends_with</li>
+        <li>gt, lt (numeric compare)</li>
+        <li>in (comma-separated list)</li>
+      </ul>
+
+      <h3>Missing Data Behavior</h3>
+      <div class="callout warn"><b>Tag Added:</b> When a condition references booking data but the contact has no booking context, evaluation errors default to the false path. This is surfaced in the node summary as “missing data -> false path”.</div>
+    </div>
+
+    <h2>Email Action</h2>
+    <div class="panel">
+      <ul>
+        <li><b>Recipient:</b> Send to the triggering contact or specify recipients manually.</li>
+        <li><b>Format:</b> Text or HTML body is supported.</li>
+        <li><b>Validation:</b> Subject and body are required; manual mode requires at least one recipient.</li>
+      </ul>
+      <div class="callout"><b>Tip:</b> Future versions support tokens like <code>{{contact.fullName}}</code> in subject and body.</div>
+    </div>
+
+    <h2>Runs, Errors, and Testing</h2>
+    <div class="panel">
+      <ul>
+        <li><b>Runs:</b> The editor can display recent runs per workflow for quick inspection.</li>
+        <li><b>Errors:</b> The editor can load recent errors to help you diagnose failures.</li>
+        <li><b>Sample Payload:</b> In Context, save a sample payload to aid development.</li>
+      </ul>
+      <div class="callout"><b>Tip:</b> Keep workflows focused: add clear guards (If conditions) early to reduce noisy runs and errors.</div>
+    </div>
+
+    <h2>Best Practices</h2>
+    <div class="panel">
+      <ul>
+        <li><b>Scope triggers tightly:</b> Select only the event types or tags you actually need.</li>
+        <li><b>Prefer explicit conditions:</b> Use <b>If</b> to branch on known fields (email domain, location, answers, etc.).</li>
+        <li><b>Handle missing data:</b> In Tag Added scenarios, treat booking-dependent conditions as optional and design a safe false path.</li>
+        <li><b>Keep node titles descriptive:</b> Node summaries help future reviewers understand flow logic at a glance.</li>
+        <li><b>Iterate safely:</b> Test with a copied workflow before rolling out broad changes.</li>
+      </ul>
+    </div>
+
+    <h2>FAQ</h2>
+    <div class="panel">
+      <h3>Why don’t I see some answer fields?</h3>
+      <p class="muted">The Answers list is scoped by your trigger. Meeting Scheduled shows questions from the selected event type(s); Tag Added shows questions across all event types.</p>
+      <h3>How do I reference a custom question by key?</h3>
+      <p class="muted">Use <code>booking.answers.&lt;key&gt;</code>. If unsure, select from the Answers list or type <code>answers.&lt;key&gt;</code> and click Use — it auto-normalizes.</p>
+      <h3>Can I email multiple recipients?</h3>
+      <p class="muted">Yes — enable manual recipients in Send Email and use commas to separate addresses.</p>
+      <h3>What happens when data is missing?</h3>
+      <p class="muted">If the data required by an If condition is missing, the evaluation may error. For Tag Added, these errors default to the false path.</p>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <a href="/dashboard/editor" class="btn"><span class="material-icons-outlined">edit</span>Back to Editor</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

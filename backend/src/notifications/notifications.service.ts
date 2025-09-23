@@ -13,7 +13,9 @@ export class NotificationsService {
   });
 
   async sendMail(options: {
-    to: string;
+    to: string | string[];
+    cc?: string | string[];
+    bcc?: string | string[];
     subject: string;
     text?: string;
     html?: string;
@@ -32,7 +34,9 @@ export class NotificationsService {
     }
     await this.transporter.sendMail({
       from: process.env.NOTIF_GMAIL,
-      to: options.to,
+      to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+      cc: options.cc ? (Array.isArray(options.cc) ? options.cc.join(', ') : options.cc) : undefined,
+      bcc: options.bcc ? (Array.isArray(options.bcc) ? options.bcc.join(', ') : options.bcc) : undefined,
       subject: options.subject,
       text: options.text,
       html: options.html,

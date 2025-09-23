@@ -12,6 +12,12 @@ export class BookingsController {
     return this.bookings.findForUser(req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  findOne(@Request() req, @Param('id') id: string) {
+    return this.bookings.findOneForUser(req.user.userId, id);
+  }
+
   @Post()
   create(@Body() body: any) {
     return this.bookings.createPublic(body);

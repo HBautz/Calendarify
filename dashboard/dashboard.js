@@ -3853,7 +3853,39 @@
             </div>
           </div>
         `;
-        
+
+        // Field Keys Section
+        const keyRows = [];
+        keyRows.push({ key: 'contact.id', value: contact.id || '-' });
+        keyRows.push({ key: 'contact.fullName', value: contact.name || '-' });
+        keyRows.push({ key: 'contact.email', value: contact.email || '-' });
+        keyRows.push({ key: 'contact.phone', value: contact.phone || '-' });
+        keyRows.push({ key: 'contact.company', value: contact.company || '-' });
+        keyRows.push({ key: 'contact.tags', value: (contact.tags && contact.tags.length ? contact.tags.join(', ') : '-') });
+        keyRows.push({ key: 'contact.notes', value: contact.notes || '-' });
+        keyRows.push({ key: 'contact.createdAt', value: contact.createdAt ? new Date(contact.createdAt).toISOString() : '-' });
+        keyRows.push({ key: 'contact.updatedAt', value: contact.updatedAt ? new Date(contact.updatedAt).toISOString() : '-' });
+
+        contentHtml += `
+          <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
+            <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <span class="material-icons-outlined text-[#34D399]">key</span>
+              Field Keys
+            </h4>
+            <div class="text-[#A3B3AF] text-sm mb-2">Click to copy a key to the clipboard.</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              ${keyRows.map(r => `
+                <div class=\"flex items-center justify-between gap-2 bg-[#10231f] border border-[#2C4A43] rounded px-2 py-1\">
+                  <code class=\"text-[#E0E0E0] text-xs\">${r.key}</code>
+                  <button type=\"button\" class=\"text-[#34D399] hover:text-[#A3B3AF]\" onclick=\"navigator.clipboard.writeText('${r.key}').then(() => showNotification('Key copied')).catch(() => showNotification('Failed to copy key','error'))\" title=\"Copy key\">
+                    <span class=\"material-icons-outlined\" style=\"font-size:16px\">content_copy</span>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
         // Notes Section
         contentHtml += `
           <div class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43]">
@@ -6181,6 +6213,16 @@
       document.getElementById('question-required').checked = false;
     }
 
+    function slugifyKeyForQuestion(label) {
+      return (label || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .substring(0, 64);
+    }
+
     function addQuestion(containerId = 'questions-container', questionData = null) {
       const container = document.getElementById(containerId);
       const questionId = `question_${questionCounter++}`;
@@ -6189,14 +6231,23 @@
       questionDiv.className = 'bg-[#19342e] border border-[#2C4A43] rounded-lg p-4';
       questionDiv.id = `question_div_${questionId}`;
       
+      const initialText = questionData ? questionData.text : 'Question';
+      const initialKey = slugifyKeyForQuestion(initialText);
       questionDiv.innerHTML = `
         <div class="flex items-center justify-between mb-3">
           <div class="flex-1 mr-3">
             <input type="text" 
                    id="question_text_${questionId}" 
                    class="w-full bg-[#1A2E29] border border-[#2C4A43] rounded px-3 py-2 text-[#E0E0E0] placeholder-[#A3B3AF] focus:border-[#34D399] focus:outline-none" 
-                   value="${questionData ? questionData.text : 'Question'}" 
+                   value="${initialText}" 
                    placeholder="Enter your question">
+            <div class="mt-2 text-xs text-[#A3B3AF] flex items-center gap-2">
+              <span>Key:</span>
+              <code id="question_key_${questionId}" class="px-2 py-0.5 rounded bg-[#10231f] border border-[#2C4A43] text-[#E0E0E0]">booking.answers.${initialKey}</code>
+              <button type="button" class="text-[#34D399] hover:text-[#A3B3AF]" onclick="copyQuestionKey('${questionId}')" title="Copy key">
+                <span class="material-icons-outlined" style="font-size:16px">content_copy</span>
+              </button>
+            </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <button type="button" onclick="moveQuestionUp('${questionId}')" class="text-[#A3B3AF] hover:text-[#34D399] transition-colors" title="Move up">
@@ -6221,6 +6272,30 @@
       `;
       
       container.appendChild(questionDiv);
+
+      // Live-update the computed key on text change
+      const textInput = document.getElementById(`question_text_${questionId}`);
+      textInput.addEventListener('input', () => updateQuestionKeyDisplay(questionId));
+    }
+
+    function updateQuestionKeyDisplay(questionId) {
+      const textInput = document.getElementById(`question_text_${questionId}`);
+      const keyEl = document.getElementById(`question_key_${questionId}`);
+      if (!textInput || !keyEl) return;
+      const key = slugifyKeyForQuestion(textInput.value || '');
+      keyEl.textContent = `booking.answers.${key}`;
+    }
+
+    async function copyQuestionKey(questionId) {
+      try {
+        const keyEl = document.getElementById(`question_key_${questionId}`);
+        if (!keyEl) return;
+        await navigator.clipboard.writeText(keyEl.textContent);
+        showNotification('Key copied');
+      } catch (e) {
+        console.warn('Copy failed', e);
+        showNotification('Failed to copy key', 'error');
+      }
     }
 
     function moveQuestionUp(questionId) {

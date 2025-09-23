@@ -163,3 +163,49 @@ model Workflow {
 
   @@index([user_id])
 }
+
+// Execution history (persistent)
+
+enum WorkflowRunStatus {
+  running
+  success
+  failed
+  partial
+}
+
+enum WorkflowStepStatus {
+  running
+  success
+  failed
+}
+
+model WorkflowRun {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User              @relation(fields: [user_id], references: [id])
+  user_id      String            @db.Uuid
+  workflow     Workflow          @relation(fields: [workflow_id], references: [id])
+  workflow_id  String            @db.Uuid
+  status       WorkflowRunStatus @default(running)
+  trigger      String?
+  context      Json?
+  started_at   DateTime          @default(now())
+  finished_at  DateTime?
+  steps        WorkflowStepRun[]
+
+  @@index([user_id, workflow_id, started_at])
+}
+
+model WorkflowStepRun {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  run              WorkflowRun        @relation(fields: [workflow_run_id], references: [id], onDelete: Cascade)
+  workflow_run_id  String             @db.Uuid
+  index            Int
+  type             String
+  status           WorkflowStepStatus @default(running)
+  message          String?
+  error_stack      String?
+  started_at       DateTime           @default(now())
+  finished_at      DateTime?
+
+  @@index([workflow_run_id, index])
+}
