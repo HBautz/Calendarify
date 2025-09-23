@@ -528,6 +528,25 @@ export class WorkflowExecutionService {
     (context as any).__skipNextStep = !result;
   }
 
+  /**
+   * Test helper: evaluate an If step without persisting runs or mutating DB.
+   * Pass full values in context.contact/context.booking to avoid DB lookups.
+   */
+  public async evaluateIfForTest(props: any, context: WorkflowExecutionContext): Promise<{ result: boolean; detail: string; actual: any; }>{
+    // Ensure we do not accidentally fetch/write: if ids are present, ignore them here
+    const sandboxContext: any = {
+      userId: context.userId,
+      // Only use provided payloads; do not use IDs to fetch
+      contact: (context as any).contact || undefined,
+      booking: (context as any).booking || undefined,
+    };
+    await this.executeIf(props, sandboxContext as WorkflowExecutionContext);
+    const result = !((sandboxContext as any).__skipNextStep === true);
+    const detail = String((sandboxContext as any).__lastStepMessage || '');
+    const actual = await this.resolveFieldValue(String(props.field || ''), sandboxContext as WorkflowExecutionContext);
+    return { result, detail, actual };
+  }
+
   // Utility: attempt to attach contact/booking payload to context
   private async attachContextPayload(workflowData: any, context: WorkflowExecutionContext) {
     const wantFull = !!(workflowData?.contextSpec?.attachFullContext);
@@ -605,7 +624,12 @@ export class WorkflowExecutionService {
           if (contact) (context as any).contact = contact;
         } catch {}
       }
-      return getByPath((context as any).contact, tail);
+      const val = getByPath((context as any).contact, tail);
+      // Fallback: if requesting contact.email but contact is not yet attached, use booking.email when available
+      if ((val == null || val === undefined) && tail === 'email' && (context as any).booking && (context as any).booking.email) {
+        return (context as any).booking.email;
+      }
+      return val;
     }
     if (root === 'booking') {
       if (!(context as any).booking && context.bookingId) {
