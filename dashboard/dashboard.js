@@ -3759,9 +3759,16 @@
     function toggleContactMenu(btn) {
       // Close all other menus
       document.querySelectorAll('.contact-menu').forEach(menu => menu.classList.remove('open'));
-      // Toggle this one
-      const menu = btn.nextElementSibling;
-      if (menu) menu.classList.toggle('open');
+    // Toggle this one with fixed positioning near the button
+    const menu = btn.nextElementSibling;
+    if (!menu) return;
+    const rect = btn.getBoundingClientRect();
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    menu.style.position = 'fixed';
+    menu.style.top = `${rect.bottom + scrollY + 8}px`;
+    menu.style.left = `${rect.right + scrollX - 160}px`;
+    menu.classList.toggle('open');
     }
     
     // Contact actions
@@ -3983,21 +3990,43 @@
       document.getElementById('delete-contact-confirm-modal').classList.remove('hidden');
     }
 
-    function confirmDeleteContact() {
+    async function confirmDeleteContact() {
       const email = window.contactToDelete;
-      if (email) {
-        let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
-        const contact = contacts.find(c => c.email === email);
-        if (contact) {
-          const token = getAnyToken();
-          const clean = token ? token.replace(/^"|"$/g, '') : '';
-          fetch(`${API_URL}/contacts/${contact.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
-          contacts = contacts.filter(c => c.email !== email);
+      if (!email) return;
+      try {
+        // Prefer ID from the rendered row if available
+        const row = document.getElementById(`contact-${email}`);
+        let contactId = row && row.dataset ? row.dataset.contactId : null;
+        // Fallback: search local cache
+        if (!contactId) {
+          const contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+          const contact = contacts.find(c => c.email === email);
+          if (contact && contact.id) contactId = contact.id;
+        }
+        if (!contactId) {
+          showNotification('Failed to remove contact: missing ID');
+          closeDeleteContactConfirmModal();
+          return;
+        }
+        const token = getAnyToken();
+        const clean = token ? token.replace(/^"|"$/g, '') : '';
+        const res = await fetch(`${API_URL}/contacts/${contactId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+        if (!res.ok) {
+          showNotification('Failed to remove contact');
+        } else {
+          // Remove from local storage cache
+          let contacts = JSON.parse(localStorage.getItem('calendarify-contacts') || '[]');
+          contacts = contacts.filter(c => c.email !== email && c.id !== contactId);
           localStorage.setItem('calendarify-contacts', JSON.stringify(contacts));
-          const row = document.getElementById(`contact-${email}`);
+          // Remove from DOM and refresh list
           if (row) row.remove();
+          await renderContacts();
           showNotification(`Contact removed: ${email}`);
         }
+      } catch (e) {
+        console.error('Error deleting contact:', e);
+        showNotification('Failed to remove contact');
+      } finally {
         closeDeleteContactConfirmModal();
       }
     }
@@ -4590,6 +4619,7 @@
       const row = document.createElement('tr');
       row.className = 'table-row';
       row.id = `contact-${contact.email}`;
+      if (contact.id) row.dataset.contactId = contact.id;
       row.innerHTML = `
         <td class="py-2 text-center">
           <button class="favorite-btn ${contact.favorite ? 'text-[#34D399]' : 'text-[#A3B3AF]'} hover:text-[#34D399] transition-colors" onclick="toggleFavorite('${contact.email}', this)">
@@ -4607,7 +4637,7 @@
               <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
                 <span class="material-icons-outlined">more_vert</span>
               </button>
-              <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+              <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-[9999]">
                 <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('${contact.email}')">
                   <span class="material-icons-outlined text-xs">event</span>Book
                 </button>

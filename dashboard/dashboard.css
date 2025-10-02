@@ -977,12 +977,14 @@
     .btn-join:hover {
       background: #2C4A43;
     }
-    .contact-menu {
-      display: none;
-    }
-    .contact-menu.open {
-      display: block;
-    }
+.contact-menu {
+  display: none;
+  position: fixed; /* detach from table flow */
+  z-index: 9999; /* highest */
+}
+.contact-menu.open {
+  display: block;
+}
 
     /* Limit event types section width when only one is shown */
     #event-types-grid.limited-width {

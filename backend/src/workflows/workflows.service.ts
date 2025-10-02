@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { Prisma } from '@prisma/client';
 
 export interface Workflow {
   id: string;
@@ -88,5 +89,73 @@ export class WorkflowsService {
     if (updated.count === 0) return null;
     const wf = await this.prisma.workflow.findUnique({ where: { id: workflowId } });
     return wf ? this.format(wf) : null;
+  }
+
+  // ----- Drafts API -----
+  async listDraftBranches(userId: string, workflowId: string) {
+    const drafts = await this.prisma.workflowDraft.findMany({
+      where: { user_id: userId, workflow_id: workflowId },
+      orderBy: { updated_at: 'desc' },
+      select: { id: true, branch: true, version: true, name: true, updated_at: true },
+    });
+    const latestByBranch = new Map<string, any>();
+    for (const d of drafts) {
+      if (!latestByBranch.has(d.branch)) latestByBranch.set(d.branch, d);
+    }
+    return Array.from(latestByBranch.values());
+  }
+
+  async listDrafts(userId: string, workflowId: string, branch?: string) {
+    return this.prisma.workflowDraft.findMany({
+      where: { user_id: userId, workflow_id: workflowId, ...(branch ? { branch } : {}) },
+      orderBy: [{ branch: 'asc' }, { updated_at: 'desc' }],
+      select: { id: true, branch: true, version: true, name: true, data: true, created_at: true, updated_at: true },
+    });
+  }
+
+  async createDraft(userId: string, workflowId: string, body: { branch?: string; name?: string; data: any }) {
+    const branch = body.branch && body.branch.trim() ? body.branch.trim() : 'draft';
+    const created = await this.prisma.workflowDraft.create({
+      data: {
+        user_id: userId,
+        workflow_id: workflowId,
+        branch,
+        name: body.name || null,
+        data: body.data,
+      },
+    });
+    return created;
+  }
+
+  async applyDraft(userId: string, workflowId: string, draftId: string) {
+    const draft = await this.prisma.workflowDraft.findFirst({
+      where: { id: draftId, user_id: userId, workflow_id: workflowId },
+    });
+    if (!draft) return null;
+    await this.prisma.workflow.updateMany({
+      where: { id: workflowId, user_id: userId },
+      data: { data: draft.data as unknown as Prisma.InputJsonValue },
+    });
+    const wf = await this.prisma.workflow.findUnique({ where: { id: workflowId } });
+    return wf ? this.format(wf) : null;
+  }
+
+  async deleteDraftBranch(userId: string, workflowId: string, branch: string) {
+    if (!branch || branch === 'main') return { deleted: 0 };
+    const res = await this.prisma.workflowDraft.deleteMany({
+      where: { user_id: userId, workflow_id: workflowId, branch },
+    });
+    return { deleted: res.count };
+  }
+
+  async renameDraft(userId: string, workflowId: string, draftId: string, name: string) {
+    // Debug log before
+    try { console.log('[DRAFT][SVC] rename', { userId, workflowId, draftId, name }); } catch {}
+    const updated = await this.prisma.workflowDraft.updateMany({
+      where: { id: draftId, user_id: userId, workflow_id: workflowId },
+      data: { name },
+    });
+    try { console.log('[DRAFT][SVC] rename result', { count: updated.count }); } catch {}
+    return { updated: updated.count };
   }
 }

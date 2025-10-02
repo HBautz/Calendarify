@@ -24,6 +24,8 @@ model User {
   tags        Tag[]
   contacts    Contact[]
   workflows   Workflow[]
+  workflowRuns WorkflowRun[]
+  workflowDrafts WorkflowDraft[]
 }
 
 model EventType {
@@ -160,8 +162,28 @@ model Workflow {
   data        Json?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+  runs        WorkflowRun[]
+  drafts      WorkflowDraft[]
 
   @@index([user_id])
+}
+
+// Draft snapshots for workflows (branch-able, versioned)
+model WorkflowDraft {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  workflow     Workflow @relation(fields: [workflow_id], references: [id], onDelete: Cascade)
+  workflow_id  String   @db.Uuid
+  branch       String   @default("draft")
+  version      Int      @default(autoincrement())
+  name         String?  // optional human label for the snapshot
+  data         Json
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id, workflow_id, branch, updated_at])
+  @@unique([workflow_id, branch, version])
 }
 
 // Execution history (persistent)

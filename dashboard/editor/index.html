@@ -31,19 +31,23 @@
       z-index: 100;
       background: #1E3A34;
       border-bottom: 1px solid #2C4A43;
-      padding: 1rem;
+      padding: 0.75rem 1rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: flex-start;
     }
 
     .workflow-name-input {
       background: #1E3A34 !important;
       border: 1px solid #2C4A43 !important;
       border-radius: 0.5rem;
-      padding: 0.75rem 1rem;
+      padding: 0.6rem 0.9rem;
       color: #E0E0E0 !important;
-      width: 300px;
+      width: 280px;
+      max-width: 360px;
+      flex: 0 0 auto;
       font-size: 0.875rem;
       transition: all 0.2s;
     }
@@ -91,13 +95,54 @@
       border-color: #4b5563;
     }
 
+    /* Compact branch switcher controls */
+    #draft-branch-switcher { gap: 6px; }
+    #draft-branch-switcher .context-btn {
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      line-height: 1;
+      height: 28px;
+      white-space: nowrap;
+    }
+    #draft-branch-switcher select {
+      height: 28px;
+      padding: 0 6px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      flex: 0 1 auto;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .workflow-name-input { flex-basis: 100%; width: 100%; max-width: 100%; }
+      .toolbar { gap: .5rem; }
+      .save-btn, .context-btn { padding: 0.45rem 0.75rem; }
+      #draft-branch-switcher .context-btn { padding: 2px 6px; font-size: 0.75rem; }
+      #draft-branch-switcher select { max-width: 240px; }
+    }
+
+    @media (max-width: 600px) {
+      .workflow-name-input { min-width: 140px; }
+      .toolbar { padding: 0.5rem 0.75rem; }
+      .save-btn, .context-btn { font-size: 0.85rem; }
+      #draft-branch-switcher .context-btn { padding: 1px 6px; font-size: 0.7rem; }
+      #draft-branch-switcher select { max-width: 150px; }
+    }
+
     .flowchart-canvas {
       flex: 1;
       background: #1a1a1a;
       position: relative;
       overflow: auto;
       cursor: grab;
-      margin-top: 80px;
+      margin-top: 96px;
       scrollbar-width: thin;
       scrollbar-color: #374151 #1a1a1a;
     }
@@ -631,7 +676,25 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <input type="text" id="workflow-name" class="workflow-name-input" placeholder="Enter workflow name...">
-      <div style="display:flex;gap:.5rem;align-items:center">
+      <div class="toolbar-group">
+        <div id="draft-branch-switcher" style="display:flex;align-items:center;gap:.6rem;background:#0b1715;border:1px solid #2C4A43;border-radius:8px;padding:6px 10px;">
+          <span class="material-icons-outlined" style="font-size:18px;color:#A3B3AF">call_split</span>
+          <div id="branch-dropdown" style="position:relative;display:flex;align-items:center;gap:8px;">
+            <button id="branch-trigger" class="context-btn" style="height:32px;padding:4px 10px;white-space:nowrap;display:flex;align-items:center;gap:6px;max-width:480px;overflow:hidden;text-overflow:ellipsis">
+              <span class="material-icons-outlined" style="font-size:16px;">arrow_drop_down</span>
+              <span id="branch-current-label">Main</span>
+            </button>
+            <div id="branch-menu" style="position:absolute;top:38px;left:0;background:#0b1715;border:1px solid #2C4A43;border-radius:10px;display:none;z-index:1000;min-width:420px;box-shadow:0 12px 28px rgba(0,0,0,0.45);padding:8px;max-width:80vw">
+              <div class="branch-item" data-branch="main" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;">
+                <span>Main</span>
+              </div>
+              <div style="height:1px;background:#223A35;margin:6px 0;"></div>
+              <div id="branch-items" style="display:flex;flex-direction:column;gap:6px"></div>
+            </div>
+          </div>
+          <button class="context-btn" id="create-branch-btn">New Draft</button>
+          <button class="context-btn" id="apply-branch-to-main-btn" title="Apply current draft to Main">Apply to Main</button>
+        </div>
         <a href="/editor/guide" target="_blank" class="save-btn" style="background:#12221E;border:1px solid #2C4A43;color:#E0E0E0;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem">
           <span class="material-icons-outlined" style="font-size:18px;color:#A3B3AF">menu_book</span>
           Guide
@@ -679,6 +742,47 @@
         <div id="runs-active" style="margin-bottom:1rem;"></div>
         <div id="runs-history"></div>
         <div id="run-details" style="margin-top:1rem; display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal (themed) -->
+  <div id="confirm-modal" class="modal-backdrop hidden">
+    <div class="modal" style="background:#0b1715;border:1px solid #2C4A43;color:#E0E0E0">
+      <div class="modal-header">
+        <span class="material-icons-outlined node-icon">help_outline</span>
+        <h3 class="modal-title" id="confirm-title">Confirm</h3>
+        <button class="modal-close" onclick="(function(){document.getElementById('confirm-modal').classList.add('hidden')})()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      <div class="form-group" style="padding: 0 .5rem 0 .5rem">
+        <div id="confirm-message" style="white-space:pre-wrap; color:#CFE7E1"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="confirm-cancel">Cancel</button>
+        <button class="btn-primary" id="confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Modal (themed) -->
+  <div id="prompt-modal" class="modal-backdrop hidden">
+    <div class="modal" style="background:#0b1715;border:1px solid #2C4A43;color:#E0E0E0">
+      <div class="modal-header">
+        <span class="material-icons-outlined node-icon">edit</span>
+        <h3 class="modal-title" id="prompt-title">Rename</h3>
+        <button class="modal-close" onclick="(function(){document.getElementById('prompt-modal').classList.add('hidden')})()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="prompt-label">New name</label>
+        <input type="text" id="prompt-input" class="form-input" style="background:#0b1715;border:1px solid #2C4A43;color:#E0E0E0" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="prompt-cancel">Cancel</button>
+        <button class="btn-primary" id="prompt-ok">Save</button>
       </div>
     </div>
   </div>
@@ -796,6 +900,7 @@
     const VERTICAL_SPACING = 120;    // px vertical spacing between nodes
     const ORB_SIZE = 40;             // px, action orb size
     const INSERT_ORB_SIZE = 32;      // px, insert orb size
+    const DEBUG_LINE_PATHS = false;   // reduce noise; enable on demand
 
     // Context spec (versioned) persisted with workflows for future engine use
     let contextSpec = null;
@@ -869,6 +974,8 @@
     let canvasOffset = { x: 0, y: 0 };
     let selectedNode = null;
     let didFirstPanRefresh = false;
+    let isLoadingWorkflow = false;
+    let currentLoadSteps = null;
 
     // Production-grade Connection and Orb Management System
     const WorkflowManager = {
@@ -886,12 +993,87 @@
             // Determine types
             const fromType = (fromNode.__nodeData && fromNode.__nodeData.data?.type) || nodes.find(n=>n.element===fromNode)?.data?.type || '';
             const toType = (toNode.__nodeData && toNode.__nodeData.data?.type) || nodes.find(n=>n.element===toNode)?.data?.type || '';
-            // Skip orbs between If and its True/False headers
+            // Never show an insert orb on the connections from IF to its True/False headers
             if (fromType === 'If' && (toType === 'True' || toType === 'False')) continue;
+            // Skip orbs on If->True/False when a join node already exists for this IF
+            try {
+              const fromData = nodes.find(n => n.element === fromNode)?.data || {};
+              const toData = nodes.find(n => n.element === toNode)?.data || {};
+              const ifId = (fromType === 'If' && (toType === 'True' || toType === 'False'))
+                ? (fromData.properties?.ifId)
+                : ((toType === 'If' && (fromType === 'True' || fromType === 'False')) ? (toData.properties?.ifId) : null);
+              if (ifId) {
+                const hasJoin = nodes.some(n => n.data && n.data.properties && n.data.properties.joinForIfId === ifId);
+                if (hasJoin) continue;
+              }
+              // Also never put midpoint orbs on connections leading into a join node
+              if (toData && toData.properties && toData.properties.joinForIfId) continue;
+            } catch {}
             // Otherwise add midpoint insert orb
             this.createInsertOrb(connection);
           }
         } catch (e) { console.warn('addInsertOrbsForConnections failed:', e); }
+      },
+
+      // Add a synthetic insert orb between last TRUE and FALSE branch nodes for each IF (if no join exists yet)
+      addBranchJoinOrbs() {
+        try {
+          // Remove any prior synthetic join orbs
+          for (const [id, orb] of Array.from(this.insertOrbs.entries())) {
+            if (String(id).startsWith('join-')) {
+              try { if (orb && orb.parentNode) orb.remove(); } catch {}
+              this.insertOrbs.delete(id);
+            }
+          }
+          // For each IF, compute last branch nodes and create a synthetic orb at their midpoint
+          const ifNodes = nodes.filter(n => n.data && n.data.type === 'If');
+          for (const ifNode of ifNodes) {
+            const ifId = ifNode.data?.properties?.ifId;
+            if (!ifId) continue;
+            // Skip if a join node already exists
+            const hasJoin = nodes.some(n => n.data && n.data.properties && n.data.properties.joinForIfId === ifId);
+            if (hasJoin) continue;
+            let lastTrue = null;
+            let lastFalse = null;
+            for (const n of nodes) {
+              const d = n.data;
+              if (!d || d.type === 'If' || d.type === 'True' || d.type === 'False') continue;
+              if (d.properties && d.properties.parentIfId === ifId) {
+                if (d.properties.branch === 'true') lastTrue = n;
+                if (d.properties.branch === 'false') lastFalse = n;
+              }
+            }
+            if (lastTrue && lastFalse) {
+              const pseudo = { id: `join-${ifId}`, from: lastTrue.element, to: lastFalse.element };
+              // Create and position orb
+              try {
+                // Remove existing synthetic orb if any
+                const existing = this.insertOrbs.get(pseudo.id);
+                if (existing && existing.parentNode) existing.remove();
+                this.insertOrbs.delete(pseudo.id);
+              } catch {}
+              // Reuse createInsertOrb logic
+              const insertOrb = document.createElement('div');
+              insertOrb.className = 'insert-action-orb';
+              insertOrb.dataset.connectionId = pseudo.id;
+              insertOrb.style.cssText = `position: absolute; width: 32px; height: 32px; background: linear-gradient(135deg, #34D399 0%, #10B981 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 25; opacity: 0; transform: scale(0.8); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 3px 8px rgba(52, 211, 153, 0.3); border: 2px solid rgba(255, 255, 255, 0.1);`;
+              insertOrb.innerHTML = `<span class="material-icons-outlined" style="color: #1A2E29; font-size: 1rem;">add</span>`;
+              insertOrb.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Use pseudo connection to drive insertion
+                window.insertConnection = pseudo;
+                openActionModal('insert');
+              });
+              insertOrb.addEventListener('mouseenter', () => { insertOrb.style.transform = 'scale(1.1)'; insertOrb.style.boxShadow = '0 4px 12px rgba(52, 211, 153, 0.5)'; });
+              insertOrb.addEventListener('mouseleave', () => { insertOrb.style.transform = 'scale(1)'; insertOrb.style.boxShadow = '0 3px 8px rgba(52, 211, 153, 0.3)'; });
+              container.appendChild(insertOrb);
+              this.insertOrbs.set(pseudo.id, insertOrb);
+              // Position it
+              try { this.updateInsertOrbPosition(pseudo); } catch {}
+              requestAnimationFrame(() => { insertOrb.style.opacity = '1'; insertOrb.style.transform = 'scale(1)'; });
+            }
+          }
+        } catch (e) { console.warn('addBranchJoinOrbs failed:', e); }
       },
       
       // Initialize the system
@@ -915,7 +1097,7 @@
           container.appendChild(svg);
         }
         this.svg = svg;
-        console.log('WorkflowManager initialized');
+        console.log('[WFLOW] Manager init');
       },
       
       // Create a connection between two nodes
@@ -947,7 +1129,12 @@
         
         // Create insert orb in the middle of the connection (only if requested)
         if (createInsertOrb) {
-          this.createInsertOrb(connection);
+          // Skip adding insert orbs on any connection that involves an If node
+          const fromType = (fromNode.__nodeData && fromNode.__nodeData.data?.type) || nodes.find(n=>n.element===fromNode)?.data?.type || '';
+          const toType = (toNode.__nodeData && toNode.__nodeData.data?.type) || nodes.find(n=>n.element===toNode)?.data?.type || '';
+          if (!(fromType === 'If' || toType === 'If')) {
+            this.createInsertOrb(connection);
+          }
         }
         
         console.log('Created connection:', connectionId);
@@ -1042,6 +1229,9 @@
         }
         
         try {
+          // Midpoint orbs are allowed on If-related connections until a join node exists.
+          // addInsertOrbsForConnections() already suppresses orbs when a join is present.
+
           const fromRect = connection.from.getBoundingClientRect();
           const toRect = connection.to.getBoundingClientRect();
           const containerRect = container.getBoundingClientRect();
@@ -1106,9 +1296,25 @@
           connection.to.__nodeData = nodes.find(n => n.element === connection.to) || connection.to.__nodeData || null;
 
           let d = '';
-          const vDrop = 30; // vertical drop from source
+          const vDrop = 30; // vertical drop from source (default)
           const r = 12; // corner radius
-          if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
+          // Always render join-node targets with orthogonal rounded corners (mirror of IF->headers)
+          if (this.toNodeHasJoin(toType, connection)) {
+            // For join targets, drop further and shorten approach more to center visually
+            const vDropJoin = 56;
+            const approachShorten = 14;
+            const midY = fromY + vDropJoin;
+            const dir = (toX >= fromX) ? 1 : -1;
+            d += `M ${fromX} ${fromY}`;
+            d += ` L ${fromX} ${midY - r}`;
+            d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
+            d += ` L ${toX - dir * (r + approachShorten)} ${midY}`;
+            d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
+            d += ` L ${toX} ${toY}`;
+            // Ensure DOM path reflects rounded corners
+            connection.line.setAttribute('stroke-linecap', 'round');
+            connection.line.setAttribute('stroke-linejoin', 'round');
+          } else if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
             const midY = fromY + vDrop;
             // Horizontal toward destination x
             const hx1 = fromX;
@@ -1129,10 +1335,16 @@
             d += ` Q ${hx2} ${hy2} ${hx2} ${hy2 + r}`;
             // Vertical down to target
             d += ` L ${toX} ${toY}`;
-          } else if ((fromType === 'True' || fromType === 'False') && !(toType === 'True' || toType === 'False')) {
-            // From branch header to first branch node: straight with slight curve
-            const ctrlY = fromY + 20;
-            d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+          } else if ((fromType === 'True' || fromType === 'False')) {
+              if (!(toType === 'True' || toType === 'False')) {
+              // From branch header to first branch node: longer vertical drop for balance
+              const ctrlY = fromY + 36;
+              d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+            } else {
+              // Fallback generic curve
+              const mx = Math.round((fromX + toX) / 2);
+              d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
+            }
           } else {
             // Generic smooth curve from from to to
             const mx = Math.round((fromX + toX) / 2);
@@ -1141,6 +1353,16 @@
 
           connection.line.setAttribute('d', d);
           connection.line.style.display = 'block';
+          if (DEBUG_LINE_PATHS) {
+            const fromId = connection.from.id;
+            const toId = connection.to.id;
+            const hasJoin = this.toNodeHasJoin(toType, connection);
+            console.log('[LINES]', {
+              fromId, toId, fromType, toType, hasJoin,
+              fromX, fromY, toX, toY, vDrop: 30, r: 12,
+              path: d
+            });
+          }
 
           
           // Update insert orb position
@@ -1149,6 +1371,22 @@
         } catch (error) {
           console.error('Error updating connection position:', error);
         }
+      },
+
+      // helper: detect join target
+      toNodeHasJoin(toType, connection) {
+        try {
+          if (!connection || !connection.to) return false;
+          const toData = (connection.to.__nodeData && connection.to.__nodeData.data) || (nodes.find(n => n.element === connection.to)?.data) || null;
+          return !!(toData && toData.properties && toData.properties.joinForIfId);
+        } catch { return false; }
+      },
+
+      isJoinNode(toEl) {
+        try {
+          const toData = (toEl && toEl.__nodeData && toEl.__nodeData.data) || (nodes.find(n => n.element === toEl)?.data) || null;
+          return !!(toData && toData.properties && toData.properties.joinForIfId);
+        } catch { return false; }
       },
       
       // Remove a specific connection
@@ -1272,7 +1510,7 @@
       // Initialize the orb system
       init() {
         this.orbs.clear();
-        console.log('OrbManager initialized');
+        console.log('[ORB] Manager init');
       },
       
       // Add an orb to a node
@@ -1677,11 +1915,11 @@
       
       // Perform the actual rebuild
       performRebuild(callback = null) {
-        console.log('Performing workflow structure rebuild...');
+      console.log('[STRUCT] Rebuild start');
         
         // Don't rebuild if there are no nodes
         if (nodes.length === 0) {
-          console.log('Skipping rebuild - no nodes');
+        console.log('[STRUCT] Skip: no nodes');
           if (callback) callback();
           return;
         }
@@ -1691,7 +1929,7 @@
 
         // If there's only a trigger, just add an orb below it
         if (nodes.length === 1) {
-          console.log('Only trigger node found, adding orb below it');
+        console.log('[STRUCT] Only trigger node; adding bottom orb');
           
           // Clean up existing orbs first to prevent duplicates
           OrbManager.cleanup();
@@ -1715,7 +1953,7 @@
           return aRect.top - bRect.top;
         });
         
-        console.log('Sorted nodes:', sortedNodes.map(n => ({ id: n.id, type: n.type })));
+      console.log('[STRUCT] Sorted nodes:', sortedNodes.map(n => ({ id: n.id, type: n.type })));
         
         // Rebuild connections honoring If branching with True/False headers
         const isControl = (n) => !!(n && n.data && (n.data.type === 'True' || n.data.type === 'False'));
@@ -1764,6 +2002,23 @@
               // Chain within
               for (let k = 0; k < trueBranch.length - 1; k++) WorkflowManager.createConnection(sortedNodes[trueBranch[k]].element, sortedNodes[trueBranch[k + 1]].element, false);
               for (let k = 0; k < falseBranch.length - 1; k++) WorkflowManager.createConnection(sortedNodes[falseBranch[k]].element, sortedNodes[falseBranch[k + 1]].element, false);
+
+              // If a join node exists for this IF, connect last branch nodes to the join node
+              try {
+                const joinNodes = sortedNodes.filter(n => n && n.data && n.data.properties && n.data.properties.joinForIfId === ifId);
+                if (joinNodes.length > 0) {
+                  const lastTrueEl = (trueBranch.length > 0)
+                    ? sortedNodes[trueBranch[trueBranch.length - 1]].element
+                    : (trueIdx !== -1 ? sortedNodes[trueIdx].element : null);
+                  const lastFalseEl = (falseBranch.length > 0)
+                    ? sortedNodes[falseBranch[falseBranch.length - 1]].element
+                    : (falseIdx !== -1 ? sortedNodes[falseIdx].element : null);
+                  joinNodes.forEach(jn => {
+                    if (lastTrueEl) WorkflowManager.createConnection(lastTrueEl, jn.element, false);
+                    if (lastFalseEl) WorkflowManager.createConnection(lastFalseEl, jn.element, false);
+                  });
+                }
+              } catch {}
             }
             continue;
           }
@@ -1771,45 +2026,103 @@
           // Skip branch headers here (handled by If)
           if (type === 'True' || type === 'False') continue;
 
-          // Default linear connection to the next non-control node
+          // Do not add default linear connections for nodes inside an IF branch;
+          // branch chaining is handled when processing the IF block above
+          try {
+            const meta = node.data?.properties;
+            if (meta && meta.parentIfId) continue;
+          } catch {}
+
+          // Default linear connection to the next non-control node, with IF-join handling
           let nextIdx = i + 1;
           while (nextIdx < sortedNodes.length && (sortedNodes[nextIdx].data?.type === 'True' || sortedNodes[nextIdx].data?.type === 'False')) {
             nextIdx++;
           }
           if (nextIdx < sortedNodes.length) {
-            WorkflowManager.createConnection(node.element, sortedNodes[nextIdx].element, false);
+            // If next node is a join for a previous IF, connect the last of each branch to it
+            const nextNode = sortedNodes[nextIdx];
+            const joinForIfId = nextNode?.data?.properties?.joinForIfId;
+            if (joinForIfId) {
+              // Find last true/false nodes for that IF
+              let lastTrueEl = null;
+              let lastFalseEl = null;
+              for (let j = 0; j < sortedNodes.length; j++) {
+                const d = sortedNodes[j]?.data;
+                if (!d || d.type === 'If' || d.type === 'True' || d.type === 'False') continue;
+                if (d.properties && d.properties.parentIfId === joinForIfId) {
+                  if (d.properties.branch === 'true') lastTrueEl = sortedNodes[j].element;
+                  if (d.properties.branch === 'false') lastFalseEl = sortedNodes[j].element;
+                }
+              }
+              if (lastTrueEl) WorkflowManager.createConnection(lastTrueEl, nextNode.element, false);
+              if (lastFalseEl) WorkflowManager.createConnection(lastFalseEl, nextNode.element, false);
+            } else {
+              WorkflowManager.createConnection(node.element, nextNode.element, false);
+            }
           }
         }
         
-        // Add orbs at connection midpoints (excluding If -> True/False)
+        // Add orbs at connection midpoints and synthetic branch-join orbs
         try { WorkflowManager.addInsertOrbsForConnections(); } catch {}
+        try { WorkflowManager.addBranchJoinOrbs(); } catch {}
 
         // Add orbs after the last node
         for (let i = 0; i < sortedNodes.length; i++) {
           const node = sortedNodes[i];
           const isLastNode = i === sortedNodes.length - 1;
           
-          console.log(`Node ${i}: ${node.id} (${node.type}), isLast: ${isLastNode}`);
+          console.log('[STRUCT] Node:', { index: i, id: node.id, type: node.type, isLast: isLastNode });
 
-          // Add branch orbs for IF and branch header nodes
+          // Add orbs per-branch: IF nodes have no orbs; for True/False, place at last action in branch if present, otherwise on the header
           if (node.data && node.data.type === 'If') {
-            // Ensure no stray bottom orb remains
-            try { OrbManager.removeOrbById(`${node.element.id}:bottom`); } catch {}
-            OrbManager.addOrb(node.element, 'left');
-            OrbManager.addOrb(node.element, 'right');
+            // No orbs on the IF node itself
           }
           if (node.data && (node.data.type === 'True' || node.data.type === 'False')) {
-            OrbManager.addOrb(node.element, 'bottom');
+            try {
+              const header = node;
+              const branch = node.data.type === 'True' ? 'true' : 'false';
+              const parentIfId = node.data?.properties?.parentIfId;
+              if (parentIfId) {
+                // If a join node exists for this IF, do not add any bottom orbs for branch headers or last branch nodes
+                const hasJoin = sortedNodes.some(n => n.data && n.data.properties && n.data.properties.joinForIfId === parentIfId);
+                if (hasJoin) {
+                  try { OrbManager.removeOrbById(`${header.element.id}:bottom`); } catch {}
+                  // Skip adding orbs for this branch entirely
+                } else {
+                // Find all actions in this branch
+                const branchNodes = sortedNodes.filter(n => {
+                  const dt = n.data?.type;
+                  const props = n.data?.properties;
+                  return dt && dt !== 'If' && dt !== 'True' && dt !== 'False' && props && props.parentIfId === parentIfId && props.branch === branch;
+                });
+                if (branchNodes.length > 0) {
+                  // Ensure header has no bottom orb
+                  try { OrbManager.removeOrbById(`${header.element.id}:bottom`); } catch {}
+                  // Add orb under the last node in this branch
+                  const lastBranchNode = branchNodes[branchNodes.length - 1];
+                  OrbManager.addOrb(lastBranchNode.element, 'bottom');
+                } else {
+                  // No actions yet: add orb under the header
+                  OrbManager.addOrb(header.element, 'bottom');
+                }
+              }
+              } else {
+                // Fallback: if header lacks context, show orb under header
+                OrbManager.addOrb(node.element, 'bottom');
+              }
+            } catch {
+              // Fallback on error
+              OrbManager.addOrb(node.element, 'bottom');
+            }
           }
           
           if (!isLastNode) {
             // handled above using connections
         } else {
             // Add orb below the last node
-            console.log(`Adding orb below last node: ${node.id}`);
+            console.log('[STRUCT] Add bottom orb under:', node.id);
             // Never add a bottom orb under an If node
             if (node && node.data && node.data.type === 'If') {
-              try { OrbManager.removeOrbById(`${node.element.id}:bottom`); } catch {}
               continue;
             }
             const stepType = (node.data && node.data.type) || node.element?.dataset?.stepType || '';
@@ -1819,32 +2132,7 @@
           }
         }
 
-        // Final safety: ensure no bottom orbs remain on any If nodes
-        try {
-          sortedNodes.forEach(n => {
-            if (n && n.data && n.data.type === 'If' && n.element && n.element.id) {
-              OrbManager.removeOrbById(`${n.element.id}:bottom`);
-            }
-          });
-        } catch {}
-        
-        // Extra cleanup: remove any stray DOM orbs that might still appear under If nodes
-        try {
-          const strayOrbs = container.querySelectorAll('.add-action-orb');
-          strayOrbs.forEach(orb => {
-            const pos = orb.dataset.position;
-            const nid = orb.dataset.nodeId;
-            if (pos === 'bottom' && nid) {
-              const el = document.getElementById(nid);
-              const isIf = !!(el && (el.dataset?.stepType === 'If' || (nodes.find(n => n.element === el)?.data?.type === 'If')));
-              if (isIf) {
-                // Remove from manager map if present, then remove DOM
-                try { OrbManager.removeOrbById(`${nid}:bottom`); } catch {}
-                if (orb.parentNode) orb.remove();
-              }
-            }
-          });
-        } catch {}
+        // No cleanup: orbs are created deterministically and exclusively by the rules above
         
         // Update all orb positions to ensure proper alignment
         OrbManager.updateAllOrbPositions();
@@ -1858,7 +2146,7 @@
           console.warn('Post-rebuild alignment warning:', e);
         }
         
-        console.log('Workflow structure rebuilt with', WorkflowManager.connections.size, 'connections and', OrbManager.orbs.size, 'orbs');
+      console.log('[STRUCT] Rebuilt -> connections:', WorkflowManager.connections.size, 'orbs:', OrbManager.orbs.size);
         
         // Call callback if provided
         if (callback) {
@@ -1933,8 +2221,25 @@
             const t = n.data?.type || '';
 
             if (t === 'If') {
-              // Place IF centered
-              el.style.left = '50%';
+              // Nest-aware IF placement: center under enclosing branch path if any
+              const props = n.data?.properties || {};
+              const baseCenter = Math.round(containerRect.width / 2);
+              const NEST_STEP = 220; // widening per nest level
+              // Compute nesting depth by walking parentIfId chain
+              let depth = 0;
+              let pid = props.parentIfId || null;
+              while (pid) {
+                const anc = nodes.find(x => x?.data?.type === 'If' && x?.data?.properties?.ifId === pid);
+                if (!anc) break;
+                depth += 1;
+                pid = anc?.data?.properties?.parentIfId || null;
+              }
+              let center = baseCenter;
+              if (props.parentIfId && props.branch) {
+                const dir = props.branch === 'true' ? -1 : +1; // left for true, right for false
+                center = baseCenter + (dir * (NEST_STEP * depth));
+              }
+              el.style.left = `${center}px`;
               el.style.transform = 'translateX(-50%)';
               el.style.top = `${currentTop}px`;
               const ifHeight = getHeight(el);
@@ -1955,7 +2260,8 @@
               let yTrue = startY;
               let yFalse = startY;
               const COLUMN_OFFSET = 280; // px from center
-              const centerX = Math.round(containerRect.width / 2);
+              // Branch columns relative to this IF's center
+              const centerX = center;
               const place = (node, side, y) => {
                 const e = node.element;
                 const cx = side === 'left' ? (centerX - COLUMN_OFFSET) : (centerX + COLUMN_OFFSET);
@@ -2014,39 +2320,37 @@
     
     
     // Notification function
-    function showNotification(message, type = 'success') {
-      // Create notification element
+    function showNotification(message, type = 'success', durationMs = 5000) {
       const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+      notification.className = `fixed right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
       notification.style.background = type === 'success' ? '#34D399' : '#EF4444';
       notification.style.color = '#ffffff';
       notification.style.minWidth = '300px';
-      
+      // Position below toolbar to avoid overlap
+      try {
+        const bar = document.querySelector('.toolbar');
+        const topOffset = bar ? (bar.getBoundingClientRect().bottom + 12) : 16;
+        notification.style.top = `${Math.max(0, Math.round(topOffset))}px`;
+      } catch { notification.style.top = '16px'; }
+
       notification.innerHTML = `
         <div class="flex items-center justify-between">
           <span>${message}</span>
-          <button onclick="this.parentElement.parentElement.remove()" class="button ml-4 text-white hover:text-gray-200">
-            <span class="material-icons-outlined">close</span>
-          </button>
+          <button class="button ml-4 text-white hover:text-gray-200"><span class="material-icons-outlined">close</span></button>
         </div>
       `;
-      
+      notification.querySelector('button')?.addEventListener('click', () => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
+      });
       document.body.appendChild(notification);
-      
-      // Animate in
-      setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-      }, 100);
-      
-      // Auto remove after 5 seconds
-      setTimeout(() => {
-        notification.style.transform = 'translateX(full)';
+      requestAnimationFrame(() => { notification.style.transform = 'translateX(0)'; });
+      if (durationMs && durationMs > 0) {
         setTimeout(() => {
-          if (notification.parentElement) {
-            notification.remove();
-          }
-        }, 300);
-      }, 5000);
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
+        }, durationMs);
+      }
     }
 
     // DOM elements
@@ -2109,6 +2413,38 @@
               // saveBtn.addEventListener('click', saveWorkflow); // Removed duplicate - onclick already handles this
     }
 
+    // Themed confirm / prompt helpers
+    function themedConfirm(message, title = 'Confirm') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-message').textContent = message;
+        const ok = document.getElementById('confirm-ok');
+        const cancel = document.getElementById('confirm-cancel');
+        const close = () => { modal.classList.add('hidden'); ok.onclick = cancel.onclick = null; };
+        ok.onclick = () => { resolve(true); close(); };
+        cancel.onclick = () => { resolve(false); close(); };
+        modal.classList.remove('hidden');
+      });
+    }
+
+    function themedPrompt(initial = '', title = 'Rename', label = 'New name') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('prompt-modal');
+        document.getElementById('prompt-title').textContent = title;
+        document.getElementById('prompt-label').textContent = label;
+        const input = document.getElementById('prompt-input');
+        input.value = initial || '';
+        const ok = document.getElementById('prompt-ok');
+        const cancel = document.getElementById('prompt-cancel');
+        const close = () => { modal.classList.add('hidden'); ok.onclick = cancel.onclick = null; };
+        ok.onclick = () => { resolve(input.value.trim()); close(); };
+        cancel.onclick = () => { resolve(null); close(); };
+        modal.classList.remove('hidden');
+        setTimeout(() => { try { input.focus(); input.select(); } catch {} }, 50);
+      });
+    }
+
     // Force-align nodes, connections and orbs based on current DOM metrics
     function refreshStructure() {
       try {
@@ -2134,20 +2470,20 @@
           
           if (res.ok) {
             currentWorkflow = await res.json();
-            console.log('Loaded workflow:', currentWorkflow);
+        console.log('[WF] Loaded workflow meta:', { id: currentWorkflow?.id, name: currentWorkflow?.name });
             
             const workflowData = currentWorkflow.data || currentWorkflow;
-            console.log('Workflow data to load:', workflowData);
+            console.log('[WF] Data payload keys:', Object.keys(workflowData || {}));
             
             if (workflowData.name || currentWorkflow.name) {
               const name = workflowData.name || currentWorkflow.name;
               workflowNameInput.value = name;
-              console.log('Set workflow name input to:', name);
+              console.log('[WF] Set name:', name);
             }
             
             // Load existing nodes and connections
             if (workflowData.steps && Array.isArray(workflowData.steps)) {
-              console.log('Loading steps:', workflowData.steps);
+              console.log('[WF] Steps count:', Array.isArray(workflowData.steps) ? workflowData.steps.length : 0);
               
               // Clear existing nodes first - more thorough cleanup
               nodes.forEach(node => {
@@ -2165,9 +2501,13 @@
               const existingLines = container.querySelectorAll('.connection-line');
               existingLines.forEach(line => line.remove());
               
+              // Set loading guard to avoid auto-generating branch headers during load pass
+              isLoadingWorkflow = true;
+              currentLoadSteps = workflowData.steps;
+
               // Check if we have trigger data at the top level (for existing workflows)
               if (workflowData.trigger) {
-                console.log('Found trigger at top level:', workflowData.trigger);
+                console.log('[WF] Trigger (top-level):', workflowData.trigger);
                 const triggerData = {
                   type: workflowData.trigger,
                   properties: {
@@ -2220,7 +2560,7 @@
                   if (triggerStep.type === 'Meeting Scheduled' && triggerStep.properties?.eventTypes) {
                     window.selectedEventTypes = [...triggerStep.properties.eventTypes];
                     if (triggerStep.properties?.eventTypeIds) window.selectedEventTypeIds = [...triggerStep.properties.eventTypeIds];
-                    console.log('Restored selected event types:', window.selectedEventTypes);
+                  console.log('[WF] Restored event types length:', (window.selectedEventTypes||[]).length);
                   }
                 }
               }
@@ -2228,8 +2568,15 @@
               // Load actions (skip trigger since it's already loaded)
               workflowData.steps.forEach((step, index) => {
                 if (step.type !== 'trigger') {
-                  console.log('Loading action step:', step);
-                  addActionNode(step, index);
+                  const clean = { ...step };
+                  // Ensure join nodes don't trigger IF auto-branching or unwanted UI
+                  if (clean.properties && clean.properties.joinForIfId) {
+                    // Explicitly clear branch markers on load; wiring will use joinForIfId only
+                    delete clean.properties.branch;
+                    delete clean.properties.parentIfId;
+                  }
+                  console.log('[WF] Load step:', clean?.type);
+                  addActionNode(clean, index);
                 } else {
                   console.log('Skipping trigger step in actions loop:', step);
                 }
@@ -2244,6 +2591,9 @@
 
               // Rebuild the workflow structure after loading all nodes
               setTimeout(() => {
+                // End loading guard before rebuild so layout and orbs apply deterministically
+                isLoadingWorkflow = false;
+                currentLoadSteps = null;
                 StructureManager.rebuild(() => {
                   // Hide loading screen after orbs are loaded and positioned
                   hideLoadingScreen();
@@ -2252,7 +2602,7 @@
               }
             }
           } catch (error) {
-          console.error('Error loading workflow:', error);
+          console.error('[WF] Error loading workflow:', error);
         }
       }
     }
@@ -2434,7 +2784,7 @@
       
       // Check if we're editing an existing action
       const existingNode = nodes.find(n => n.id === parentNodeId);
-      if (existingNode && existingNode.type !== 'trigger') {
+    if (existingNode && existingNode.type !== 'trigger') {
         // Set the modal title to indicate editing
         const modalTitle = actionModal.querySelector('.modal-title');
         if (modalTitle) {
@@ -2657,6 +3007,14 @@
               <button type="button" class="btn-primary w-full" onclick="confirmActionTag()">
                 Confirm Tag Selection
               </button>
+            </div>
+            <div class="form-group" style="margin-top:.75rem">
+              <label class="form-label">Create New Tag</label>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <input id="action-new-tag-name" class="form-select" placeholder="New tag name" />
+                <button type="button" class="context-btn" onclick="createActionTag()">Create</button>
+              </div>
+              <div id="action-create-tag-status" style="margin-top:.25rem;color:#9ca3af;font-size:.85rem"></div>
             </div>
           </div>
         `;
@@ -3225,6 +3583,39 @@
       }
     }
 
+    async function createActionTag() {
+      const input = document.getElementById('action-new-tag-name');
+      const status = document.getElementById('action-create-tag-status');
+      if (!input) return;
+      const name = (input.value || '').trim();
+      if (!name) {
+        if (status) status.textContent = 'Please enter a tag name.';
+        return;
+      }
+      try {
+        const token = getAnyToken();
+        if (!token) throw new Error('No token');
+        const clean = token.replace(/^"|"$/g, '');
+        const res = await fetch(`${API_URL}/tags`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ name })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        // Clear input and update status
+        input.value = '';
+        if (status) status.textContent = `Created tag "${name}"`;
+        // Refresh tag options so the new tag appears
+        await populateActionTags();
+        // Auto-select the newly created tag
+        selectActionTag(name);
+        confirmActionTag();
+      } catch (e) {
+        if (status) status.textContent = 'Failed to create tag';
+        console.error('createActionTag error:', e);
+      }
+    }
+
     // IF action helpers
     function selectIfField(fieldPath) {
       const display = document.getElementById('if-field-display');
@@ -3472,6 +3863,7 @@
         const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'true' } } };
         nodes.push(nodeData);
         StructureManager.rebuild();
+        try { HistoryManager.recordSnapshot('branch-true-insert'); } catch {}
         closeActionModal();
         return;
       }
@@ -3498,6 +3890,7 @@
         const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'false' } } };
         nodes.push(nodeData);
         StructureManager.rebuild();
+        try { HistoryManager.recordSnapshot('branch-false-insert'); } catch {}
         closeActionModal();
         return;
       }
@@ -3517,17 +3910,52 @@
           return;
         }
         
-        // Position the new action below the "after" node, centered horizontally
-        const afterRect = afterNode.element.getBoundingClientRect();
+        // Determine if we are in a branch (True/False) and position accordingly
         const containerRect = container.getBoundingClientRect();
+        const afterType = afterNode.data?.type;
+        const afterProps = afterNode.data?.properties || {};
+        let branchCtx = null;
+        if (afterType === 'True' || afterType === 'False') {
+          branchCtx = { parentIfId: afterProps.parentIfId, ifDomId: afterProps.ifDomId, branch: (afterType === 'True' ? 'true' : 'false') };
+        } else if (afterProps && afterProps.parentIfId) {
+          branchCtx = { parentIfId: afterProps.parentIfId, ifDomId: afterProps.ifDomId, branch: afterProps.branch };
+        }
         
-        // Position below the "after" node
-        const topPosition = afterRect.bottom - containerRect.top + 120;
-        
-        // Horizontal centering is handled by translateX(-50%) on the node
-        actionNode.style.left = '50%';
-        actionNode.style.top = `${topPosition}px`;
-        actionNode.style.transform = 'translateX(-50%)';
+        if (branchCtx && branchCtx.parentIfId) {
+          const columnLeft = branchCtx.branch === 'true' ? 'calc(50% - 280px)' : 'calc(50% + 280px)';
+          actionNode.style.left = columnLeft;
+          actionNode.style.transform = 'translateX(-50%)';
+          // Place below the last item in this branch
+          let y;
+          // Try to anchor from header if present
+          const headerType = branchCtx.branch === 'true' ? 'True' : 'False';
+          const header = nodes.find(n => n.data?.type === headerType && n.data?.properties?.parentIfId === branchCtx.parentIfId);
+          if (header && header.element) {
+            const headerRect = header.element.getBoundingClientRect();
+            y = headerRect.bottom - containerRect.top + 60;
+          } else {
+            const afterRect = afterNode.element.getBoundingClientRect();
+            y = afterRect.bottom - containerRect.top + 60;
+          }
+          for (const n of nodes) {
+            const d = n.data;
+            if (!d || d.type === 'If') continue;
+            if (d.properties && d.properties.parentIfId === branchCtx.parentIfId && d.properties.branch === branchCtx.branch) {
+              const r = n.element.getBoundingClientRect();
+              y = Math.max(y, r.bottom - containerRect.top + 60);
+            }
+          }
+          actionNode.style.top = `${y}px`;
+          // Merge branch context into properties so connections build correctly
+          properties = { ...properties, ...branchCtx };
+        } else {
+          // Not in a branch: position below the after node, centered
+          const afterRect = afterNode.element.getBoundingClientRect();
+          const topPosition = afterRect.bottom - containerRect.top + 120;
+          actionNode.style.left = '50%';
+          actionNode.style.top = `${topPosition}px`;
+          actionNode.style.transform = 'translateX(-50%)';
+        }
         
         container.appendChild(actionNode);
         
@@ -3542,6 +3970,7 @@
         
         // Rebuild the entire workflow structure to ensure all connections are created
         StructureManager.rebuild();
+        try { HistoryManager.recordSnapshot('add-after'); } catch {}
 
         // If IF, auto-create True/False headers
         if (actionType === 'If') {
@@ -3575,6 +4004,7 @@
         addActionNode({ type: actionType, properties }, nodes.length);
       }
       
+      try { HistoryManager.recordSnapshot(existingNode ? 'editAction' : 'newAction'); } catch {}
       closeActionModal();
     }
 
@@ -3631,22 +4061,23 @@
       
       // Store trigger data
       triggerNode.data = triggerData;
+    try { HistoryManager.recordSnapshot('updateTriggerNode'); } catch {}
     }
 
     function addActionNode(actionData, index) {
       console.log('Adding action node:', actionData);
       
-      // Check if this action already exists to prevent duplicates
-      const existingAction = nodes.find(n => 
-        n.type !== 'trigger' && 
-        n.data && 
-        n.data.type === actionData.type &&
-        JSON.stringify(n.data.properties) === JSON.stringify(actionData.properties)
-      );
-      
-      if (existingAction) {
-        console.log('Action already exists, skipping:', actionData);
-        return;
+      // Avoid duplicating True/False branch headers on load or rebuild
+      if (actionData.type === 'True' || actionData.type === 'False') {
+        const parentIfId = actionData.properties?.parentIfId;
+        const branch = actionData.properties?.branch;
+        if (parentIfId && branch) {
+          const exists = nodes.some(n => n.data?.type === actionData.type && n.data?.properties?.parentIfId === parentIfId && n.data?.properties?.branch === branch);
+          if (exists) {
+            console.log('Branch header already exists, skipping:', actionData.type, parentIfId, branch);
+            return;
+          }
+        }
       }
       
       // Find the trigger node (should be the first one)
@@ -3656,25 +4087,55 @@
         return;
       }
       
-      const actionNode = createNode(actionData.type, actionData.type, 'settings', getActionContent(actionData));
+        const actionNode = createNode(actionData.type, actionData.type, 'settings', getActionContent(actionData));
+        // Mark join nodes on the DOM for reliable detection in path rendering
+        try {
+          if (actionData && actionData.properties && actionData.properties.joinForIfId) {
+            actionNode.dataset.joinForIfId = actionData.properties.joinForIfId;
+          }
+        } catch {}
       
-      // Position the action node below the trigger or last action
-      let parentNode = triggerNode;
-      const lastActionNode = nodes.filter(n => n.type !== 'trigger').pop();
-      if (lastActionNode) {
-        parentNode = lastActionNode;
-      }
-      
-      const parentRect = parentNode.element.getBoundingClientRect();
+      // Decide placement: if the action is in a branch, place in that column; otherwise center
       const containerRect = container.getBoundingClientRect();
-      
-      // Position below the parent node
-      const topPosition = parentRect.bottom - containerRect.top + 120;
-      
-      // Horizontal centering is handled by translateX(-50%) on the node
-      actionNode.style.left = '50%';
-      actionNode.style.top = `${topPosition}px`;
-      actionNode.style.transform = 'translateX(-50%)';
+      const branch = actionData.properties?.branch;
+      const parentIfId = actionData.properties?.parentIfId;
+      let topPosition;
+      if (branch && parentIfId) {
+        // Find the header for this branch to anchor below
+        const headerType = branch === 'true' ? 'True' : 'False';
+        const header = nodes.find(n => n.data?.type === headerType && n.data?.properties?.parentIfId === parentIfId);
+        const columnLeft = branch === 'true' ? 'calc(50% - 280px)' : 'calc(50% + 280px)';
+        actionNode.style.left = columnLeft;
+        actionNode.style.transform = 'translateX(-50%)';
+        if (header && header.element) {
+          // Place below the header or last item in this branch
+          const headerRect = header.element.getBoundingClientRect();
+          topPosition = headerRect.bottom - containerRect.top + 60;
+          for (const n of nodes) {
+            const d = n.data;
+            if (!d || d.type === 'If') continue;
+            if (d.properties && d.properties.parentIfId === parentIfId && d.properties.branch === branch) {
+              const r = n.element.getBoundingClientRect();
+              topPosition = Math.max(topPosition, r.bottom - containerRect.top + 60);
+            }
+          }
+        } else {
+          // Fallback: position relative to trigger
+          const parentRect = triggerNode.element.getBoundingClientRect();
+          topPosition = parentRect.bottom - containerRect.top + 120;
+        }
+        actionNode.style.top = `${topPosition}px`;
+      } else {
+        // Centered linear placement (not in a branch)
+        let parentNode = triggerNode;
+        const lastActionNode = nodes.filter(n => n.type !== 'trigger').pop();
+        if (lastActionNode) parentNode = lastActionNode;
+        const parentRect = parentNode.element.getBoundingClientRect();
+        topPosition = parentRect.bottom - containerRect.top + 120;
+        actionNode.style.left = '50%';
+        actionNode.style.top = `${topPosition}px`;
+        actionNode.style.transform = 'translateX(-50%)';
+      }
       
       container.appendChild(actionNode);
       
@@ -3691,6 +4152,11 @@
 
       // If we just added an IF, auto-create True/False headers
       if (actionData.type === 'If') {
+        // If loading from persisted data that already includes True/False, do not auto-create
+        if (isLoadingWorkflow) {
+          addNodeMovementListeners();
+          return;
+        }
         if (!actionData.properties) actionData.properties = {};
         if (!actionData.properties.ifId) actionData.properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         nodeData.data = actionData;
@@ -3702,24 +4168,80 @@
       
       // Add movement listeners to the new node
       addNodeMovementListeners();
+
+    try { HistoryManager.recordSnapshot('addActionNode'); } catch {}
     }
 
     function insertActionBetween(actionData, connection) {
       console.log('Inserting action between nodes:', connection.from.id, 'and', connection.to.id);
       
       // Create the new action node
+      // Determine if this insertion is intended to join True/False branches of the same IF
+      let joinForIfId = null;
+      try {
+        const fromNodeData = nodes.find(n => n.element === connection.from);
+        const toNodeData = nodes.find(n => n.element === connection.to);
+        const fromProps = fromNodeData?.data?.properties;
+        const toProps = toNodeData?.data?.properties;
+        const fromIf = fromProps?.parentIfId || (fromNodeData?.data?.type === 'If' ? (fromNodeData.data.properties?.ifId) : null);
+        const toIf = toProps?.parentIfId || (toNodeData?.data?.type === 'If' ? (toNodeData.data.properties?.ifId) : null);
+        if (fromIf && toIf && fromIf === toIf) joinForIfId = fromIf;
+        else if (fromIf) joinForIfId = fromIf;
+        else if (toIf) joinForIfId = toIf;
+      } catch {}
       const actionNode = createNode(actionData.type, actionData.type, 'settings', getActionContent(actionData));
+      try {
+        if (actionData && actionData.properties && actionData.properties.joinForIfId) {
+          actionNode.dataset.joinForIfId = actionData.properties.joinForIfId;
+        }
+      } catch {}
       
-      // Position the action node in the middle of the connection
-      const fromRect = connection.from.getBoundingClientRect();
-      const toRect = connection.to.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
-      
-      const middleX = (fromRect.left + toRect.left) / 2 - containerRect.left;
-      const middleY = (fromRect.bottom + toRect.top) / 2 - containerRect.top;
-      
-      actionNode.style.left = `${middleX - 100}px`; // 100 is half of node width
-      actionNode.style.top = `${middleY - 25}px`; // 25 is half of node height
+      if (joinForIfId) {
+        // Place centered horizontally and below the deeper of the two branches
+        const centerX = containerRect.width / 2;
+        // Find deepest Y among true/false branch nodes for this IF
+        let maxBottom = 0;
+        for (const n of nodes) {
+          const d = n.data;
+          if (!d || d.type === 'If' || d.type === 'True' || d.type === 'False') continue;
+          if (d.properties && d.properties.parentIfId === joinForIfId) {
+            const r = n.element.getBoundingClientRect();
+            maxBottom = Math.max(maxBottom, r.bottom - containerRect.top);
+          }
+        }
+        // If no branch actions, anchor under headers
+        if (maxBottom === 0) {
+          const headers = nodes.filter(n => (n.data?.type === 'True' || n.data?.type === 'False') && n.data?.properties?.parentIfId === joinForIfId);
+          headers.forEach(h => { const r = h.element.getBoundingClientRect(); maxBottom = Math.max(maxBottom, r.bottom - containerRect.top); });
+        }
+        actionNode.style.left = `${centerX}px`;
+        actionNode.style.transform = 'translateX(-50%)';
+        actionNode.style.top = `${Math.round(maxBottom + 60)}px`;
+        // Mark as join node (do not set branch) so rebuild can wire both branches to it;
+        // also remove any existing midpoint orbs for this IF block
+        actionData.properties = { ...(actionData.properties || {}), joinForIfId: joinForIfId };
+        try {
+          // Remove insert orbs on If->True/False for this IF
+          const conns = Array.from(WorkflowManager.connections.values());
+          conns.forEach(c => {
+            const fData = nodes.find(n => n.element === c.from)?.data || {};
+            const tData = nodes.find(n => n.element === c.to)?.data || {};
+            if ((fData?.type === 'If' && fData?.properties?.ifId === joinForIfId) || (tData?.type === 'If' && tData?.properties?.ifId === joinForIfId)) {
+              const orb = WorkflowManager.insertOrbs.get(c.id);
+              if (orb) { orb.remove(); WorkflowManager.insertOrbs.delete(c.id); }
+            }
+          });
+        } catch {}
+      } else {
+        // Default: position the action node in the middle of the connection
+        const fromRect = connection.from.getBoundingClientRect();
+        const toRect = connection.to.getBoundingClientRect();
+        const middleX = (fromRect.left + toRect.left) / 2 - containerRect.left;
+        const middleY = (fromRect.bottom + toRect.top) / 2 - containerRect.top;
+        actionNode.style.left = `${middleX - 100}px`; // 100 is half of node width
+        actionNode.style.top = `${middleY - 25}px`; // 25 is half of node height
+      }
       
       container.appendChild(actionNode);
       
@@ -3743,13 +4265,14 @@
         nodes.push(nodeData);
       }
       
-      // Rebuild the entire workflow structure
-      StructureManager.rebuild();
+        // Rebuild the entire workflow structure
+        StructureManager.rebuild();
       
       // Add movement listeners
       addNodeMovementListeners();
       
       console.log('Action inserted successfully');
+    try { HistoryManager.recordSnapshot('insertActionBetween'); } catch {}
       return nodeData;
     }
 
@@ -3765,7 +4288,10 @@
       actionNode.style.transform = 'translateX(-50%)';
       container.appendChild(actionNode);
       const afterIndex = nodes.findIndex(n => n.element === afterNodeElement);
-      const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type, properties: {} } };
+      const ifNode = nodes.find(n => n.element === afterNodeElement);
+      const ifId = ifNode?.data?.properties?.ifId || null;
+      const branch = type === 'True' ? 'true' : (type === 'False' ? 'false' : undefined);
+      const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type, properties: { parentIfId: ifId, ifDomId: afterNodeElement.id, branch } } };
       if (afterIndex >= 0) {
         nodes.splice(afterIndex + 1, 0, nodeData);
       } else {
@@ -3861,6 +4387,31 @@
       
       console.log('Deleting action node:', nodeData);
       
+      // If deleting an IF node, cascade delete its True/False headers and branch actions
+      try {
+        if (nodeData.data && nodeData.data.type === 'If') {
+          const ifId = nodeData.data.properties?.ifId;
+          if (ifId) {
+            const toRemove = nodes.filter(n => n.element !== actionNode && n.data && (
+              ((n.data.type === 'True' || n.data.type === 'False') && n.data.properties?.parentIfId === ifId) ||
+              (n.data.properties && n.data.properties.parentIfId === ifId)
+            ));
+            toRemove.forEach(n => {
+              try { WorkflowManager.removeNodeConnections(n.element); } catch {}
+              try { OrbManager.removeOrb(n.element); } catch {}
+              if (n.element && n.element.parentNode) {
+                n.element.remove();
+              }
+              const idx = nodes.findIndex(x => x.id === n.id);
+              if (idx > -1) nodes.splice(idx, 1);
+            });
+            if (toRemove.length) console.log(`Cascaded delete of ${toRemove.length} IF-branch nodes for`, ifId);
+          }
+        }
+      } catch (e) {
+        console.warn('IF cascade delete warning:', e);
+      }
+      
       // Remove all connections involving this node
       WorkflowManager.removeNodeConnections(actionNode);
       
@@ -3887,6 +4438,7 @@
       
       console.log('After delete - remaining nodes:', nodes.length);
       console.log('After delete - currentWorkflow.data:', currentWorkflow?.data);
+    try { HistoryManager.recordSnapshot('deleteAction'); } catch {}
     }
     
     
@@ -4136,26 +4688,8 @@
     
     function deleteSelectedNode() {
       if (!selectedNode || selectedNode.type === 'trigger') return;
-      
-      if (confirm('Are you sure you want to delete this action?')) {
-        const nodeData = nodes.find(n => n.element === selectedNode);
-        if (nodeData) {
-          // Remove connections
-          WorkflowManager.removeNodeConnections(selectedNode);
-          
-          // Remove action orb
-          OrbManager.removeOrb(selectedNode);
-          
-          // Remove node
-          selectedNode.remove();
-          nodes = nodes.filter(n => n.id !== nodeData.id);
-          
-          // Rebuild structure
-          StructureManager.rebuild();
-          
-          selectedNode = null;
-        }
-      }
+      // Delegate to main deletion flow to ensure cascading IF cleanup
+      deleteAction(selectedNode);
     }
     
     // Add movement listeners to all nodes (simplified - no automatic updates)
@@ -4198,7 +4732,7 @@
         // Set up stable positioning system
         this.setupStablePositioning();
         
-        console.log('PositionManager initialized');
+      console.log('[POS] PositionManager initialized');
       },
       
       disableProblematicTransitions() {
@@ -4267,7 +4801,21 @@
             let d = '';
             const vDrop = 30;
             const r = 12;
-            if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
+            // Always render lines targeting a join node with orthogonal rounded corners
+            if (WorkflowManager.toNodeHasJoin && WorkflowManager.toNodeHasJoin(toType, connection)) {
+              const vDropJoin = 56;
+              const approachShorten = 14;
+              const midY = fromY + vDropJoin;
+              const dir = (toX >= fromX) ? 1 : -1;
+              d += `M ${fromX} ${fromY}`;
+              d += ` L ${fromX} ${midY - r}`;
+              d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
+              d += ` L ${toX - dir * (r + approachShorten)} ${midY}`;
+              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
+              d += ` L ${toX} ${toY}`;
+              el.setAttribute('stroke-linecap', 'round');
+              el.setAttribute('stroke-linejoin', 'round');
+            } else if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
               const midY = fromY + vDrop;
               d += `M ${fromX} ${fromY}`;
               d += ` L ${fromX} ${midY - r}`;
@@ -4276,15 +4824,33 @@
               d += ` L ${toX - dir * r} ${midY}`;
               d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
               d += ` L ${toX} ${toY}`;
-            } else if ((fromType === 'True' || fromType === 'False') && !(toType === 'True' || toType === 'False')) {
-              const ctrlY = fromY + 20;
-              d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+            } else if ((fromType === 'True' || fromType === 'False')) {
+              if (WorkflowManager.isJoinNode && WorkflowManager.isJoinNode(connection.to)) {
+                const midY = fromY + vDrop;
+                const dir = (toX >= fromX) ? 1 : -1;
+                d += `M ${fromX} ${fromY}`;
+                d += ` L ${fromX} ${midY - r}`;
+                d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
+                d += ` L ${toX - dir * r} ${midY}`;
+                d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
+                d += ` L ${toX} ${toY}`;
+              } else if (!(toType === 'True' || toType === 'False')) {
+                const ctrlY = fromY + 20;
+                d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+              } else {
+                const mx = Math.round((fromX + toX) / 2);
+                d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
+              }
             } else {
               const mx = Math.round((fromX + toX) / 2);
               d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
             }
             el.setAttribute('d', d);
             el.style.display = 'block';
+            if (DEBUG_LINE_PATHS) {
+              const toIsJoin = (WorkflowManager.isJoinNode && WorkflowManager.isJoinNode(connection.to)) || false;
+              console.log('[LINES/stable]', { fromId: connection.from.id, toId: connection.to.id, fromType, toType, fromX, fromY, toX, toY, toIsJoin, d });
+            }
           } else {
             // Legacy fallback (div line rotated)
             const deltaX = toX - fromX;
@@ -4446,10 +5012,530 @@
       }
     };
 
+  // --- Persistent History (Undo/Redo up to 50) and Draft Autosave ---
+  const HistoryManager = {
+    maxSize: 50,
+    stack: [],
+    index: -1,
+    workflowKey: null,
+    lastSnapshotHash: null,
+    isApplying: false,
+
+    initForCurrentWorkflow() {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      this.workflowKey = id ? String(id) : 'new-workflow';
+      this.loadPersistent();
+      // Seed initial snapshot from current UI state
+      this.recordSnapshot('initial');
+    },
+
+    buildSnapshot() {
+      // Serialize minimal UI state: name + trigger + steps
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      const triggerData = triggerNode?.data || null;
+      const steps = nodes.filter(n => n.type !== 'trigger').map(n => n.data);
+      let name = '';
+      try { name = (document.getElementById('workflow-name')?.value || '').trim(); } catch {}
+      return { meta: { name }, trigger: triggerData, steps };
+    },
+
+    applySnapshot(snapshot) {
+      if (!snapshot) return;
+      this.isApplying = true;
+      try {
+        // Clear current UI
+        try {
+          nodes.forEach(n => { try { if (n.element && n.element.parentNode) n.element.remove(); } catch {} });
+          nodes = [];
+          const existingOrbs = container.querySelectorAll('.add-action-orb, .insert-action-orb');
+          existingOrbs.forEach(orb => orb.remove());
+          const existingPaths = container.querySelectorAll('#connections-svg');
+          existingPaths.forEach(p => p.remove());
+          // Ensure WorkflowManager will recreate the SVG overlay on next draw
+          try { WorkflowManager.svg = null; } catch {}
+        } catch {}
+
+        // Recreate trigger
+        if (snapshot.trigger) {
+          updateTriggerNode(snapshot.trigger);
+        } else {
+          createInitialTriggerNode();
+        }
+
+        // Recreate actions
+        if (Array.isArray(snapshot.steps)) {
+          snapshot.steps.forEach((step, idx) => {
+            if (step && step.type !== 'trigger') {
+              addActionNode(step, idx);
+            }
+          });
+        }
+
+        // Final rebuild (force re-init of WorkflowManager to recreate overlay if needed)
+        try { WorkflowManager.init(); } catch {}
+        StructureManager.rebuild();
+      } finally {
+        this.isApplying = false;
+      }
+    },
+
+    hashSnapshot(snapshot) {
+      try { return JSON.stringify(snapshot); } catch { return String(Date.now()); }
+    },
+
+    async recordSnapshot(reason = 'change') {
+      if (this.isApplying) return;
+      try { if (typeof isLoadingWorkflow !== 'undefined' && isLoadingWorkflow) return; } catch {}
+      const snap = this.buildSnapshot();
+      const hash = this.hashSnapshot(snap);
+      if (hash === this.lastSnapshotHash) return; // ignore duplicates
+      this.lastSnapshotHash = hash;
+
+      // If we undid some, truncate forward history
+      if (this.index < this.stack.length - 1) {
+        this.stack = this.stack.slice(0, this.index + 1);
+      }
+
+      this.stack.push(snap);
+      if (this.stack.length > this.maxSize) {
+        this.stack.shift();
+      } else {
+        this.index++;
+      }
+      this.persist();
+      if (reason !== 'initial') {
+        await DraftManager.autosaveDraft(snap);
+      }
+    },
+
+    undo() {
+      if (this.index <= 0) return;
+      this.index--;
+      const snap = this.stack[this.index];
+      this.persist();
+      this.applySnapshot(snap);
+    },
+
+    redo() {
+      if (this.index >= this.stack.length - 1) return;
+      this.index++;
+      const snap = this.stack[this.index];
+      this.persist();
+      this.applySnapshot(snap);
+    },
+
+    persist() {
+      if (!this.workflowKey) return;
+      const key = `calendarify-history-${this.workflowKey}`;
+      const data = { stack: this.stack, index: this.index, last: this.lastSnapshotHash };
+      try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
+    },
+
+    loadPersistent() {
+      if (!this.workflowKey) return;
+      const key = `calendarify-history-${this.workflowKey}`;
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && Array.isArray(data.stack)) {
+            this.stack = data.stack;
+            this.index = typeof data.index === 'number' ? data.index : data.stack.length - 1;
+            this.lastSnapshotHash = data.last || null;
+          }
+        }
+      } catch {}
+    }
+  };
+
+  const DraftManager = {
+    debounceTimer: null,
+    debounceMs: 0,
+    getDraftKey() {
+      const id = localStorage.getItem('calendarify-current-workflow');
+      const key = id ? `calendarify-draft-${id}` : 'calendarify-draft-new-workflow';
+      return key;
+    },
+    // Display name mapping helpers
+    setDisplayName(branchId, name) {
+      try { localStorage.setItem(`calendarify-branch-name-${branchId}`, name || ''); } catch {}
+    },
+    getDisplayName(branchId) {
+      try { return localStorage.getItem(`calendarify-branch-name-${branchId}`) || ''; } catch { return ''; }
+    },
+    getActiveDisplayName() {
+      try { const lbl = document.getElementById('branch-current-label'); return (lbl && lbl.textContent) ? lbl.textContent.trim() : ''; } catch { return ''; }
+    },
+    async ensureDraftBranch(initialSnapshot) {
+      const current = this.currentBranch();
+      if (current && current !== 'main') return current;
+      // Create stable branch id + human readable display name
+      const branchId = `draft-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      const name = `Draft ${new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`;
+      try {
+        const id = localStorage.getItem('calendarify-current-workflow');
+        const token = getAnyToken();
+        if (!id || !token) return 'main';
+        const clean = token.replace(/^"|"$/g, '');
+        const seed = initialSnapshot || (typeof HistoryManager?.buildSnapshot === 'function' ? HistoryManager.buildSnapshot() : null);
+        await fetch(`${API_URL}/workflows/${id}/drafts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ branch: branchId, name, data: seed || {} }),
+        });
+        localStorage.setItem('calendarify-current-branch', branchId);
+        try { const lbl = document.getElementById('branch-current-label'); if (lbl) lbl.textContent = name; } catch {}
+        this.setDisplayName(branchId, name);
+        return branchId;
+      } catch {
+        return 'main';
+      }
+    },
+    async autosaveDraft(snapshot) {
+      let branch = this.currentBranch();
+      if (!branch || branch === 'main') {
+        branch = await this.ensureDraftBranch(snapshot);
+        if (!branch || branch === 'main') return;
+      }
+      try { localStorage.setItem(this.getDraftKey(), JSON.stringify({ snapshot, ts: Date.now() })); } catch {}
+      try {
+        const id = localStorage.getItem('calendarify-current-workflow');
+        if (!id) return;
+        const token = getAnyToken();
+        if (!token) return;
+        const clean = token.replace(/^"|"$/g, '');
+        const displayName = this.getDisplayName(branch) || this.getActiveDisplayName();
+        await fetch(`${API_URL}/workflows/${id}/drafts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ branch, name: displayName || undefined, data: snapshot }),
+        });
+      } catch {}
+    },
+    currentBranch() {
+      try { return localStorage.getItem('calendarify-current-branch') || 'main'; } catch { return 'main'; }
+    },
+    getDraft() {
+      try {
+        const raw = localStorage.getItem(this.getDraftKey());
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch { return null; }
+    },
+    clearDraft() {
+      try { localStorage.removeItem(this.getDraftKey()); } catch {}
+    },
+    async checkAndOfferDraft() {
+      const currentBranch = this.currentBranch();
+      const draft = this.getDraft();
+      let showBanner = false;
+      try {
+        const id = localStorage.getItem('calendarify-current-workflow');
+        const token = getAnyToken();
+        if (id && token) {
+          const clean = token.replace(/^"|"$/g, '');
+          const res = await fetch(`${API_URL}/workflows/${id}/draft-branches`, { headers: { Authorization: `Bearer ${clean}` } });
+          const branches = res.ok ? await res.json() : [];
+          try { refreshBranchMenu(branches); } catch {}
+          if (currentBranch && currentBranch !== 'main') {
+            // Compare latest server draft for current branch with current UI state
+            try {
+              const res2 = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(currentBranch)}`, { headers: { Authorization: `Bearer ${clean}` } });
+              if (res2.ok) {
+                const list = await res2.json();
+                const serverSnap = (Array.isArray(list) && list.length > 0) ? list[0]?.data : null;
+                const currentSnap = (typeof HistoryManager?.buildSnapshot === 'function') ? HistoryManager.buildSnapshot() : null;
+                const eq = (a,b) => { try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; } };
+                if (serverSnap && currentSnap && !eq(serverSnap, currentSnap)) showBanner = true;
+              }
+            } catch {}
+          }
+        }
+      } catch {}
+      // Also consider local draft only if different from current UI and on a draft branch
+      if (!showBanner && currentBranch && currentBranch !== 'main' && draft && draft.snapshot) {
+        const currentSnap = (typeof HistoryManager?.buildSnapshot === 'function') ? HistoryManager.buildSnapshot() : null;
+        const eq = (a,b) => { try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; } };
+        if (currentSnap && !eq(draft.snapshot, currentSnap)) showBanner = true;
+      }
+      if (!showBanner) return;
+      let banner = document.getElementById('draft-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'draft-banner';
+        banner.style.cssText = 'position:fixed;left:50%;top:12px;transform:translateX(-50%);background:#0f172a;color:#e2e8f0;padding:10px 14px;border-radius:8px;z-index:1000;display:flex;gap:10px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,0.25)';
+        banner.innerHTML = '<span>Draft changes detected from a previous session.</span>'+
+          '<button id="apply-draft" style="background:#34D399;color:#0b1320;border:none;padding:6px 10px;border-radius:6px;cursor:pointer">Apply Draft</button>'+
+          '<button id="discard-draft" style="background:#334155;color:#e2e8f0;border:none;padding:6px 10px;border-radius:6px;cursor:pointer">Discard</button>';
+        document.body.appendChild(banner);
+        const apply = document.getElementById('apply-draft');
+        const discard = document.getElementById('discard-draft');
+        apply?.addEventListener('click', async () => {
+          try {
+            const id = localStorage.getItem('calendarify-current-workflow');
+            const token = getAnyToken();
+            if (id && token) {
+              const clean = token.replace(/^"|"$/g, '');
+              const branch = this.currentBranch() || 'main';
+              const res = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`, { headers: { Authorization: `Bearer ${clean}` } });
+              let serverSnap = null;
+              if (res.ok) {
+                const drafts = await res.json();
+                if (Array.isArray(drafts) && drafts.length > 0) serverSnap = drafts[0].data;
+              }
+              const snap = serverSnap || (draft && draft.snapshot);
+              if (snap) HistoryManager.applySnapshot(snap);
+            }
+          } catch {}
+          this.clearDraft();
+          banner.remove();
+        });
+        discard?.addEventListener('click', () => { this.clearDraft(); banner.remove(); });
+      }
+    }
+  };
+
+  // Branch switcher wiring
+  (function initBranchSwitcher(){
+    const sel = null; // removed native select
+    const btn = document.getElementById('create-branch-btn');
+    const applyBtn = document.getElementById('apply-branch-to-main-btn');
+    const triggerBtn = document.getElementById('branch-trigger');
+    const menu = document.getElementById('branch-menu');
+    const itemsRoot = document.getElementById('branch-items');
+    const currentLabel = document.getElementById('branch-current-label');
+    function refreshBranchMenu(branches = []) {
+      if (!itemsRoot) return;
+      itemsRoot.innerHTML = '';
+      const seen = new Set();
+      branches.forEach(b => {
+        const branchId = b && b.branch;
+        const displayName = (b && (b.name || b.branch)) || '';
+        if (!branchId || branchId === 'main' || seen.has(branchId)) return;
+        seen.add(branchId);
+        const row = document.createElement('div');
+        row.className = 'branch-item';
+        row.dataset.branch = branchId;
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;max-width:100%;';
+        const span = document.createElement('span');
+        span.textContent = displayName;
+        span.style.cssText = 'flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        const actionsWrap = document.createElement('div');
+        actionsWrap.style.cssText = 'display:flex;gap:4px;align-items:center';
+        const rename = document.createElement('button');
+        rename.className = 'context-btn';
+        rename.style.cssText = 'padding:2px 6px;height:24px;';
+        rename.textContent = 'Rename';
+        const del = document.createElement('button');
+        del.className = 'context-btn';
+        del.style.cssText = 'padding:2px 6px;height:24px;';
+        del.textContent = 'Delete';
+        actionsWrap.appendChild(rename);
+        actionsWrap.appendChild(del);
+        rename.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const newName = await themedPrompt(displayName, 'Rename Draft', 'Draft name');
+          if (!newName || newName.trim() === displayName) return;
+          try {
+            const id = localStorage.getItem('calendarify-current-workflow');
+            const token = getAnyToken();
+            if (!id || !token) return;
+            const clean = token.replace(/^"|"$/g, '');
+            console.log('[DRAFT][UI] rename start', { branchId: row.dataset.branch, newName: newName.trim() });
+            // Find newest draft (server returns newest first)
+            const resFind = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(row.dataset.branch)}`, { headers: { Authorization: `Bearer ${clean}` } });
+            const list = resFind.ok ? await resFind.json() : [];
+            const latest = Array.isArray(list) && list.length ? list[0] : null;
+            if (!latest) return;
+            console.log('[DRAFT][UI] rename PATCH target', { draftId: latest.id });
+            const res = await fetch(`${API_URL}/workflows/${id}/drafts/${latest.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` }, body: JSON.stringify({ name: newName.trim() }) });
+            console.log('[DRAFT][UI] rename PATCH status', res.status);
+            if (res.ok) {
+              // Refresh branches to pull back saved names
+              try {
+                const resB = await fetch(`${API_URL}/workflows/${id}/draft-branches`, { headers: { Authorization: `Bearer ${clean}` } });
+                const branches = resB.ok ? await resB.json() : [];
+                console.log('[DRAFT][UI] refreshed branches', branches);
+                refreshBranchMenu(branches);
+                // Update the trigger label with the server display name
+                const active = branches.find(b => b.branch === row.dataset.branch);
+                if (active) {
+                  const lbl = document.getElementById('branch-current-label');
+                  if (lbl) lbl.textContent = (active.name || active.branch);
+                  // Persist display name locally so autosaves keep it
+                  try { DraftManager.setDisplayName(row.dataset.branch, (active.name || active.branch)); } catch {}
+                }
+              } catch {}
+              // Update current label if active
+            if (DraftManager.currentBranch() === row.dataset.branch) {
+              const lbl = document.getElementById('branch-current-label'); if (lbl) lbl.textContent = newName.trim();
+              }
+              showNotification('Draft renamed');
+            } else {
+              showNotification('Failed to rename draft', 'error');
+            }
+          } catch { showNotification('Failed to rename draft', 'error'); }
+        });
+        del.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const branch = name;
+          const ok = await themedConfirm(`Delete draft branch "${branch}"? This cannot be undone.`, 'Delete Draft');
+          if (!ok) return;
+          const originalAutosave = DraftManager.autosaveDraft; DraftManager.autosaveDraft = async () => {};
+          try {
+            const id = localStorage.getItem('calendarify-current-workflow');
+            const token = getAnyToken();
+            if (!id || !token) return;
+            const clean = token.replace(/^"|"$/g, '');
+            const res = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+            if (res.ok) {
+              showNotification('Draft branch deleted');
+              row.remove();
+              if (DraftManager.currentBranch() === branch) {
+                localStorage.setItem('calendarify-current-branch', 'main');
+                if (currentLabel) currentLabel.textContent = 'Main';
+                await loadWorkflow();
+              }
+            } else {
+              showNotification('Failed to delete draft branch', 'error');
+            }
+          } finally { DraftManager.autosaveDraft = originalAutosave; }
+        });
+        row.addEventListener('click', async () => {
+          localStorage.setItem('calendarify-current-branch', branchId);
+          if (currentLabel) currentLabel.textContent = displayName;
+          if (menu) menu.style.display = 'none';
+          setTimeout(async () => {
+            try {
+              const id = localStorage.getItem('calendarify-current-workflow');
+              const token = getAnyToken();
+              if (id && token) {
+                const clean = token.replace(/^"|"$/g, '');
+                const res = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branchId)}`, { headers: { Authorization: `Bearer ${clean}` } });
+                if (res.ok) {
+                  const drafts = await res.json();
+                  if (Array.isArray(drafts) && drafts.length > 0) {
+                    HistoryManager.applySnapshot(drafts[0].data);
+                    requestAnimationFrame(() => { try { LayoutManager.apply(); WorkflowManager.updateAllConnections(); OrbManager.updateAllOrbPositions(); } catch {} });
+                  }
+                }
+              }
+            } catch {}
+          }, 0);
+        });
+        row.appendChild(span);
+        row.appendChild(actionsWrap);
+        itemsRoot.appendChild(row);
+        // spacer
+        const spacer = document.createElement('div');
+        spacer.style.cssText = 'height:1px;background:#223A35;margin:4px 0;';
+        itemsRoot.appendChild(spacer);
+      });
+    }
+
+    if (triggerBtn) triggerBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (menu) menu.style.display = menu.style.display === 'none' || !menu.style.display ? 'block' : 'none';
+      // Load branches when opening
+      try {
+        const id = localStorage.getItem('calendarify-current-workflow');
+        const token = getAnyToken();
+        if (id && token) {
+          const clean = token.replace(/^"|"$/g, '');
+          const res = await fetch(`${API_URL}/workflows/${id}/draft-branches`, { headers: { Authorization: `Bearer ${clean}` } });
+          const branches = res.ok ? await res.json() : [];
+          refreshBranchMenu(branches);
+        }
+      } catch {}
+    });
+    document.addEventListener('click', () => { if (menu) menu.style.display = 'none'; });
+    // Handle selecting Main
+    try {
+      const mainItem = document.querySelector('#branch-menu .branch-item[data-branch="main"]');
+      if (mainItem) mainItem.addEventListener('click', async () => {
+        localStorage.setItem('calendarify-current-branch', 'main');
+        if (currentLabel) currentLabel.textContent = 'Main';
+        if (menu) menu.style.display = 'none';
+        await loadWorkflow();
+      });
+    } catch {}
+    if (btn) btn.addEventListener('click', async () => {
+      const name = prompt('Enter new draft branch name');
+      if (!name) return;
+      try {
+        const id = localStorage.getItem('calendarify-current-workflow');
+        const token = getAnyToken();
+        if (!id || !token) return;
+        const clean = token.replace(/^"|"$/g, '');
+        // Create an initial draft snapshot for the new branch from current UI state
+        const snap = HistoryManager.buildSnapshot();
+        await fetch(`${API_URL}/workflows/${id}/drafts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          body: JSON.stringify({ branch: name, data: snap }),
+        });
+        localStorage.setItem('calendarify-current-branch', name);
+        // Refresh branch list
+        await DraftManager.checkAndOfferDraft();
+        // Switch to it
+        if (currentLabel) currentLabel.textContent = name;
+      } catch {}
+    });
+    if (applyBtn) applyBtn.addEventListener('click', async () => {
+      const branch = DraftManager.currentBranch();
+      if (!branch || branch === 'main') { showNotification('Select a draft branch first'); return; }
+      try {
+        const id = localStorage.getItem('calendarify-current-workflow');
+        const token = getAnyToken();
+        if (!id || !token) return;
+        const clean = token.replace(/^"|"$/g, '');
+        // Get latest draft in branch
+        const res = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`, { headers: { Authorization: `Bearer ${clean}` } });
+        if (!res.ok) { showNotification('Failed to fetch drafts', 'error'); return; }
+        const drafts = await res.json();
+        if (!Array.isArray(drafts) || drafts.length === 0) { showNotification('No drafts to apply', 'error'); return; }
+        const latest = drafts[0];
+        const apply = await fetch(`${API_URL}/workflows/${id}/drafts/${latest.id}/apply`, { method: 'POST', headers: { Authorization: `Bearer ${clean}` } });
+        if (apply.ok) {
+          showNotification('Applied draft to Main');
+          // After successful apply, delete the entire draft branch on server
+          try {
+            const del = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${clean}` } });
+            if (del.ok) {
+              // Remove local display name mapping
+              try { localStorage.removeItem(`calendarify-branch-name-${branch}`); } catch {}
+              // If branch menu is open, refresh it
+              try {
+                const resB = await fetch(`${API_URL}/workflows/${id}/draft-branches`, { headers: { Authorization: `Bearer ${clean}` } });
+                const branches = resB.ok ? await resB.json() : [];
+                if (Array.isArray(branches)) refreshBranchMenu(branches);
+              } catch {}
+            }
+          } catch {}
+          localStorage.setItem('calendarify-current-branch', 'main');
+          if (currentLabel) currentLabel.textContent = 'Main';
+          await loadWorkflow();
+        } else {
+          showNotification('Failed to apply draft', 'error');
+        }
+      } catch { showNotification('Failed to apply draft', 'error'); }
+    });
+    // legacy actions menu handlers removed after custom dropdown migration
+  })();
+
+  // Keyboard shortcuts for undo/redo
+  document.addEventListener('keydown', (e) => {
+    const isMac = navigator.platform.toUpperCase().includes('MAC');
+    const mod = isMac ? e.metaKey : e.ctrlKey;
+    if (!mod) return;
+    if (e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); HistoryManager.undo(); }
+    if ((e.key.toLowerCase() === 'z' && e.shiftKey) || e.key.toLowerCase() === 'y') { e.preventDefault(); HistoryManager.redo(); }
+  });
+
     // Initialize the workflow editor when the page loads
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        console.log('Initializing workflow editor...');
+        console.log('[BOOT] Editor init');
         showLoadingScreen();
         
         // Initialize canvas
@@ -4457,6 +5543,50 @@
         
         // Load existing workflow if editing
         await loadWorkflow();
+
+        // After workflow load, auto-select the newest edited draft if present
+        try {
+          const id = localStorage.getItem('calendarify-current-workflow');
+          const token = getAnyToken();
+          if (id && token) {
+            const clean = token.replace(/^"|"$/g, '');
+            const res = await fetch(`${API_URL}/workflows/${id}/draft-branches`, { headers: { Authorization: `Bearer ${clean}` } });
+            if (res.ok) {
+              const branches = await res.json();
+              if (Array.isArray(branches) && branches.length > 0) {
+                // Sort by updated_at desc if not already
+                branches.sort((a,b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+                const newest = branches.find(b => b.branch && b.branch !== 'main');
+                if (newest && newest.branch) {
+                  localStorage.setItem('calendarify-current-branch', newest.branch);
+                  const lbl = document.getElementById('branch-current-label');
+                  if (lbl) lbl.textContent = (newest.name || newest.branch);
+                  // Load newest draft snapshot
+                  try {
+                    const res2 = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(newest.branch)}`, { headers: { Authorization: `Bearer ${clean}` } });
+                    if (res2.ok) {
+                      const list = await res2.json();
+                      if (Array.isArray(list) && list.length > 0) {
+                        HistoryManager.applySnapshot(list[0].data);
+                        // Notify with auto-hide
+                        showNotification(`Auto-selected latest draft: ${newest.branch}`);
+                        setTimeout(() => {
+                          const notif = document.querySelector('.notification.show, .fixed.top-4.right-4.z-50');
+                          if (notif && notif.parentElement) try { notif.parentElement.removeChild(notif); } catch {}
+                        }, 5000);
+                      }
+                    }
+                  } catch {}
+                }
+              }
+            }
+          }
+        } catch {}
+
+        // Initialize history and drafts after initial load
+        try { HistoryManager.initForCurrentWorkflow(); } catch {}
+        // Since we auto-select the newest draft, suppress the old mismatch banner
+        try { /* DraftManager.checkAndOfferDraft(); */ } catch {}
         
         // Create initial trigger node if no workflow loaded
         if (nodes.length === 0) {
@@ -4487,9 +5617,9 @@
           settle();
         }
         
-        console.log('Workflow editor initialized successfully');
+        console.log('[BOOT] Editor ready');
       } catch (error) {
-        console.error('Error initializing workflow editor:', error);
+        console.error('[BOOT] Init error:', error);
         hideLoadingScreen();
       }
     });
@@ -4798,6 +5928,19 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
+
+    // Autosave on name changes (debounced)
+    (function initNameAutosave(){
+      try {
+        const el = document.getElementById('workflow-name');
+        if (!el) return;
+        let t = null;
+        el.addEventListener('input', () => {
+          clearTimeout(t);
+          t = setTimeout(() => { try { HistoryManager.recordSnapshot('name-change'); } catch {} }, 300);
+        });
+      } catch {}
+    })();
   </script>
 </body>
 </html>
