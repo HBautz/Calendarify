@@ -145,6 +145,8 @@
       margin-top: 96px;
       scrollbar-width: thin;
       scrollbar-color: #374151 #1a1a1a;
+      /* add room for zoom controls */
+      padding-bottom: 48px;
     }
     
     .flowchart-canvas::-webkit-scrollbar {
@@ -704,6 +706,7 @@
       <button id="open-context" class="context-btn" onclick="openContextModal()">Context</button>
       <button id="open-errors" class="context-btn" onclick="toggleErrorsPanel()">Errors</button>
       <button id="open-runs" class="context-btn" onclick="toggleRunsPanel()">Runs</button>
+      <button id="debug-layout" class="context-btn" title="Log layout debug">Debug</button>
     </div>
 
     <!-- Flowchart Canvas -->
@@ -714,6 +717,13 @@
         </div>
       <div class="flowchart-container" id="flowchart-container">
         <!-- Trigger node will be added here -->
+      </div>
+      <!-- Zoom controls -->
+      <div id="zoom-controls" style="position:absolute; left:12px; bottom:12px; display:flex; gap:8px; z-index:200;">
+        <button id="zoom-out" class="context-btn" title="Zoom out" style="padding:6px 10px">-</button>
+        <div id="zoom-level" style="color:#E0E0E0; align-self:center; min-width:54px; text-align:center;">100%</div>
+        <button id="zoom-in" class="context-btn" title="Zoom in" style="padding:6px 10px">+</button>
+        <button id="zoom-reset" class="context-btn" title="Reset" style="padding:6px 10px">Reset</button>
       </div>
       
       <!-- Errors Drawer -->
@@ -1087,8 +1097,8 @@
         if (!svg) {
           svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           svg.setAttribute('id', 'connections-svg');
-          svg.setAttribute('width', '100%');
-          svg.setAttribute('height', '100%');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
           svg.style.position = 'absolute';
           svg.style.left = '0';
           svg.style.top = '0';
@@ -1346,9 +1356,8 @@
               d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
             }
           } else {
-            // Generic smooth curve from from to to
-            const mx = Math.round((fromX + toX) / 2);
-            d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
+            // Generic vertical line for non-IF connections to keep visuals stable
+            d = `M ${fromX} ${fromY} L ${fromX} ${toY}`;
           }
 
           connection.line.setAttribute('d', d);
@@ -1989,7 +1998,9 @@
               for (let j = i + 1; j < sortedNodes.length; j++) {
                 const d = sortedNodes[j]?.data;
                 if (!d) continue;
-                if (d.type === 'If') break; // stop at next IF
+                // If we hit a new top-level IF (no parent linkage), stop scanning this block
+                if (d.type === 'If' && (!d.properties || !d.properties.parentIfId)) break;
+                // Skip headers
                 if (d.type === 'True' || d.type === 'False') continue;
                 if (d.properties && d.properties.parentIfId === ifId) {
                   if (d.properties.branch === 'true') trueBranch.push(j);
@@ -2182,13 +2193,25 @@
           if (!container) return;
           const containerRect = container.getBoundingClientRect();
           if (!containerRect) return;
+          // Establish container-local coordinate helpers (account for current zoom/pan)
+          let _scale = 1;
+          try {
+            const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/);
+            if (m) _scale = parseFloat(m[1]) || 1;
+          } catch {}
+          const toLocalX = (vx) => (vx - containerRect.left) / _scale;
+          const toLocalY = (vy) => (vy - containerRect.top) / _scale;
+          // Reset anchors each layout pass
+          try { ifCenters.clear(); ifHeaderCenters.clear(); } catch {}
 
           // Place trigger node (keep its configured top, center X)
           const trigger = nodes.find(n => n.type === 'trigger');
           if (!trigger || !trigger.element) return;
 
           const triggerEl = trigger.element;
-          triggerEl.style.left = '50%';
+          // Lock trigger to pixel-based container center to match other nodes
+          const containerCenterLocalX = Math.round((containerRect.width / _scale) / 2);
+          triggerEl.style.left = `${containerCenterLocalX}px`;
           triggerEl.style.transform = 'translateX(-50%)';
 
           // Read trigger rect after possible CSS/layout changes
@@ -2196,13 +2219,14 @@
 
           // Position action nodes with support for horizontal If branching
           const actions = nodes.filter(n => n.type !== 'trigger');
-          let currentTop = Math.round(trigRect.bottom - containerRect.top + VERTICAL_SPACING);
+          let currentTop = Math.round(toLocalY(trigRect.bottom) + VERTICAL_SPACING);
+          const rootCenterX = Math.round(toLocalX(trigRect.left + (trigRect.width / 2)));
 
           const CONTROL_TYPES = new Set(['True', 'False']);
           const idxOf = (el) => nodes.findIndex(n => n.element === el);
           const getHeight = (el) => {
             const r = el.getBoundingClientRect();
-            return Math.max(1, Math.round(r.height));
+            return Math.max(1, Math.round(r.height / _scale));
           };
 
           // Helper: determine if a global index lies within any IF block
@@ -2215,7 +2239,7 @@
           };
 
           for (let i = 0; i < actions.length; i++) {
-            const n = actions[i];
+      const n = actions[i];
             const el = n.element;
             if (!el) continue;
             const t = n.data?.type || '';
@@ -2223,7 +2247,8 @@
             if (t === 'If') {
               // Nest-aware IF placement: center under enclosing branch path if any
               const props = n.data?.properties || {};
-              const baseCenter = Math.round(containerRect.width / 2);
+              // Root centering based on trigger's center in container-local coordinates
+              const baseCenter = rootCenterX;
               const NEST_STEP = 220; // widening per nest level
               // Compute nesting depth by walking parentIfId chain
               let depth = 0;
@@ -2236,8 +2261,14 @@
               }
               let center = baseCenter;
               if (props.parentIfId && props.branch) {
-                const dir = props.branch === 'true' ? -1 : +1; // left for true, right for false
-                center = baseCenter + (dir * (NEST_STEP * depth));
+                // Prefer locking to recorded parent branch header X if available
+                const parentAnchors = ifHeaderCenters.get(props.parentIfId);
+                if (parentAnchors) {
+                  center = (props.branch === 'true') ? parentAnchors.trueX : parentAnchors.falseX;
+                } else {
+                  const dir = props.branch === 'true' ? -1 : +1; // left for true, right for false
+                  center = baseCenter + (dir * (NEST_STEP * depth));
+                }
               }
               el.style.left = `${center}px`;
               el.style.transform = 'translateX(-50%)';
@@ -2260,11 +2291,70 @@
               let yTrue = startY;
               let yFalse = startY;
               const COLUMN_OFFSET = 280; // px from center
-              // Branch columns relative to this IF's center
+              // Branch columns relative to this IF's center with widening logic
               const centerX = center;
+              const baseOffset = 380; // px from center (base gap)
+              // Compute nested depths for this IF's branches to widen spacing
+              const thisIfId = nodes[globalIfIdx]?.data?.properties?.ifId;
+              const nestedDepthFor = (branchVal) => {
+                let maxD = 0;
+                for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+                  const d = nodes[j]?.data;
+                  if (!d) continue;
+                  if (d.type === 'True' || d.type === 'False') continue;
+                  // Only consider nodes that belong to this IF's branches
+                  if (!d.properties || d.properties.parentIfId == null) continue;
+                  let p = d.properties.parentIfId;
+                  let depth = 0;
+                  let firstBranch = d.properties?.branch || null;
+                  while (p) {
+                    const anc = nodes.find(x => x?.data?.type === 'If' && x?.data?.properties?.ifId === p);
+                    if (!anc) break;
+                    if (p === thisIfId) {
+                      // Count immediate nested IF as 1 layer
+                      const depthVal = depth + 1;
+                      if (firstBranch === branchVal) maxD = Math.max(maxD, depthVal);
+                      break;
+                    }
+                    depth += 1;
+                    firstBranch = anc?.data?.properties?.branch || firstBranch;
+                    p = anc?.data?.properties?.parentIfId || null;
+                  }
+                }
+                return maxD;
+              };
+              const widenTrue = nestedDepthFor('true');
+              const widenFalse = nestedDepthFor('false');
+              // Symmetric widening: keep workflow centered by using the max depth across both branches
+              // Only widen for true nested IFs under this IF (nodes with type==='If' and parentIfId===thisIfId)
+              const widenIfDepth = (() => {
+                const countDepth = (branchVal) => {
+                  let maxD = 0;
+                  for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+                    const d = nodes[j]?.data;
+                    if (!d) continue;
+                    if (d.type !== 'If') continue;
+                    if (!d.properties || d.properties.parentIfId !== thisIfId) continue;
+                    // depth 1 for immediate nested IF under this IF
+                    if (d.properties.branch === branchVal) maxD = Math.max(maxD, 1);
+                  }
+                  return maxD;
+                };
+                return Math.max(countDepth('true'), countDepth('false'));
+              })();
+              const offset = baseOffset * (1 + widenIfDepth);
+              const trueX = centerX - offset;
+              const falseX = centerX + offset;
+
+              // Save centers so deeper IFs can attach under the branch path
+              if (thisIfId) {
+                ifCenters.set(thisIfId, centerX);
+                ifHeaderCenters.set(thisIfId, { trueX, falseX });
+              }
+
               const place = (node, side, y) => {
                 const e = node.element;
-                const cx = side === 'left' ? (centerX - COLUMN_OFFSET) : (centerX + COLUMN_OFFSET);
+                const cx = side === 'left' ? trueX : falseX;
                 e.style.left = `${cx}px`;
                 e.style.transform = 'translateX(-50%)';
                 e.style.top = `${y}px`;
@@ -2283,11 +2373,8 @@
                   if (d.type === 'If') break; // next block
                   if (d.type === 'True' || d.type === 'False') continue;
                   if (d.properties && d.properties.parentIfId === ifId) {
-                    if (d.properties.branch === 'true') {
-                      yTrue = place(nodes[j], 'left', yTrue);
-                    } else if (d.properties.branch === 'false') {
-                      yFalse = place(nodes[j], 'right', yFalse);
-                    }
+                    if (d.properties.branch === 'true') yTrue = place(nodes[j], 'left', yTrue);
+                    else if (d.properties.branch === 'false') yFalse = place(nodes[j], 'right', yFalse);
                   }
                 }
               }
@@ -2302,15 +2389,32 @@
             const gIdx = idxOf(el);
             if (inIfBlock(gIdx)) {
               // Move currentTop down to not overlap whatever was positioned by branches
-              currentTop = Math.max(currentTop, Math.round(el.getBoundingClientRect().bottom - containerRect.top) + VERTICAL_SPACING);
+              const r = el.getBoundingClientRect();
+              currentTop = Math.max(currentTop, Math.round(toLocalY(r.bottom)) + VERTICAL_SPACING);
             } else {
-              // Centered linear placement
-              el.style.left = '50%';
+              // Centered linear placement under root center
+              el.style.left = `${rootCenterX}px`;
               el.style.transform = 'translateX(-50%)';
               el.style.top = `${currentTop}px`;
               currentTop += getHeight(el) + VERTICAL_SPACING;
             }
           }
+
+          // Ensure container is tall/wide enough so SVG overlay can draw offscreen lines
+          let maxBottom = Math.round(toLocalY(trigRect.bottom));
+          let maxRight = Math.round(toLocalX(trigRect.right));
+          for (const n of nodes) {
+            if (!n?.element) continue;
+            const r = n.element.getBoundingClientRect();
+            maxBottom = Math.max(maxBottom, Math.round(toLocalY(r.bottom)));
+            maxRight = Math.max(maxRight, Math.round(toLocalX(r.right)));
+          }
+          // Add safe margin
+          const extra = 200;
+          container.style.height = `${maxBottom + extra}px`;
+          // If very wide nested branches, grow container width minimally (convert viewport width to local units)
+          const minWidth = Math.max(Math.round(containerRect.width / _scale), maxRight + 200);
+          container.style.minWidth = `${minWidth}px`;
         } catch (e) {
           console.warn('LayoutManager.apply error:', e);
         }
@@ -2370,6 +2474,37 @@
 
     
 
+    // Anchors for IF layout: centers and branch header X positions
+    let ifCenters = new Map();           // ifId -> centerX
+    let ifHeaderCenters = new Map();     // ifId -> { trueX, falseX }
+
+    // Throttled refresh for connections/orbs to keep offscreen lines in sync on pan/scroll
+    let _refreshRafPending = false;
+    function scheduleConnectionRefresh() {
+      if (_refreshRafPending) return;
+      _refreshRafPending = true;
+      requestAnimationFrame(() => {
+        try {
+          WorkflowManager.updateAllConnections();
+          OrbManager.updateAllOrbPositions();
+        } catch {}
+        _refreshRafPending = false;
+      });
+    }
+
+    // Zoom controls (user friendly)
+    let zoomLevel = 1;
+    const MIN_ZOOM = 0.5;
+    const MAX_ZOOM = 1.5;
+    const ZOOM_STEP = 0.1;
+    function applyZoom() {
+      try {
+        container.style.transformOrigin = '0 0';
+        container.style.transform = `scale(${zoomLevel})`;
+        scheduleConnectionRefresh();
+      } catch {}
+    }
+
     function initializeCanvas() {
       // Canvas dragging functionality
       canvas.addEventListener('mousedown', (e) => {
@@ -2393,24 +2528,129 @@
           canvasOffset.x += deltaX;
           canvasOffset.y += deltaY;
           
-          container.style.transform = `translate(${canvasOffset.x}px, ${canvasOffset.y}px)`;
+          container.style.transform = `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoomLevel})`;
           
           dragStart = { x: e.clientX, y: e.clientY };
+          scheduleConnectionRefresh();
         }
       });
 
       canvas.addEventListener('mouseup', () => {
         isDragging = false;
         canvas.style.cursor = 'grab';
+        scheduleConnectionRefresh();
       });
 
       canvas.addEventListener('mouseleave', () => {
         isDragging = false;
         canvas.style.cursor = 'grab';
+        scheduleConnectionRefresh();
       });
 
       // Save button event
               // saveBtn.addEventListener('click', saveWorkflow); // Removed duplicate - onclick already handles this
+
+      // Zoom buttons
+      try {
+        const zOut = document.getElementById('zoom-out');
+        const zIn = document.getElementById('zoom-in');
+        const zReset = document.getElementById('zoom-reset');
+        const zLabel = document.getElementById('zoom-level');
+        const updateLabel = () => { if (zLabel) zLabel.textContent = `${Math.round(zoomLevel*100)}%`; };
+        if (zOut) zOut.addEventListener('click', () => { zoomLevel = Math.max(MIN_ZOOM, +(zoomLevel - ZOOM_STEP).toFixed(2)); applyZoom(); updateLabel(); });
+        if (zIn) zIn.addEventListener('click', () => { zoomLevel = Math.min(MAX_ZOOM, +(zoomLevel + ZOOM_STEP).toFixed(2)); applyZoom(); updateLabel(); });
+        if (zReset) zReset.addEventListener('click', () => { zoomLevel = 1; applyZoom(); updateLabel(); });
+        updateLabel();
+      } catch {}
+
+      // Debug layout button
+      try {
+        const btn = document.getElementById('debug-layout');
+        if (btn) btn.addEventListener('click', () => {
+          try {
+            const out = { meta: {}, nodes: [], connections: [], anchors: {} };
+            const containerRect = container.getBoundingClientRect();
+            // Meta
+            out.meta = {
+              zoomLevel,
+              container: {
+                left: Math.round(containerRect.left),
+                top: Math.round(containerRect.top),
+                width: Math.round(containerRect.width),
+                height: Math.round(containerRect.height),
+                transform: container.style.transform || null,
+              },
+              scroll: { x: canvas.scrollLeft || 0, y: canvas.scrollTop || 0 },
+            };
+            for (const n of nodes) {
+              if (!n?.element) continue;
+              const r = n.element.getBoundingClientRect();
+              const x = r.left - containerRect.left;
+              const y = r.top - containerRect.top;
+              const w = r.width;
+              const h = r.height;
+              // Also capture raw style positions (as set by layout), and viewport coords
+              const styleLeft = (()=>{ try { return parseFloat(n.element.style.left.replace('px','')) || null; } catch { return null; } })();
+              const styleTop = (()=>{ try { return parseFloat(n.element.style.top.replace('px','')) || null; } catch { return null; } })();
+              out.nodes.push({
+                id: n.id,
+                type: n.type || n.data?.type,
+                x: Math.round(x),
+                y: Math.round(y),
+                width: Math.round(w),
+                height: Math.round(h),
+                viewport: { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom) },
+                center: { x: Math.round(x + w / 2), y: Math.round(y + h / 2) },
+                anchors: {
+                  topCenter: { x: Math.round(x + w / 2), y: Math.round(y + 1) },
+                  bottomCenter: { x: Math.round(x + w / 2), y: Math.round(y + h - 1) },
+                },
+                stylePos: { left: styleLeft, top: styleTop },
+                world: { x: zoomLevel ? Math.round(x / zoomLevel) : Math.round(x), y: zoomLevel ? Math.round(y / zoomLevel) : Math.round(y) },
+                data: n.data || null,
+              });
+            }
+            // Connections
+            for (const c of WorkflowManager.connections.values()) {
+              try {
+                const fr = c.from.getBoundingClientRect();
+                const tr = c.to.getBoundingClientRect();
+                const fromX = fr.left - containerRect.left + fr.width / 2;
+                const fromY = fr.bottom - containerRect.top - 1;
+                const toX = tr.left - containerRect.left + tr.width / 2;
+                const toY = tr.top - containerRect.top + 1;
+                out.connections.push({
+                  id: c.id,
+                  from: c.from.id,
+                  to: c.to.id,
+                  fromX: Math.round(fromX),
+                  fromY: Math.round(fromY),
+                  toX: Math.round(toX),
+                  toY: Math.round(toY),
+                  world: {
+                    fromX: zoomLevel ? Math.round(fromX / zoomLevel) : Math.round(fromX),
+                    fromY: zoomLevel ? Math.round(fromY / zoomLevel) : Math.round(fromY),
+                    toX: zoomLevel ? Math.round(toX / zoomLevel) : Math.round(toX),
+                    toY: zoomLevel ? Math.round(toY / zoomLevel) : Math.round(toY),
+                  },
+                  lineTag: (c.line && c.line.tagName) || null,
+                });
+              } catch {}
+            }
+            // Anchors: record IF centers and header centers if computed
+            try {
+              const ifc = {}; ifCenters.forEach((v, k) => { ifc[k] = v; });
+              const hdr = {}; ifHeaderCenters.forEach((v, k) => { hdr[k] = v; });
+              out.anchors = { ifCenters: ifc, ifHeaderCenters: hdr };
+            } catch {}
+            console.log('[DEBUG][LAYOUT]', out);
+            showNotification('Layout debug printed to console');
+          } catch (e) {
+            console.error('[DEBUG][LAYOUT] failed', e);
+            showNotification('Failed to print debug', 'error');
+          }
+        });
+      } catch {}
     }
 
     // Themed confirm / prompt helpers
@@ -3845,7 +4085,15 @@
         const { ifIndex, trueIndex } = findIfHeaders(ifId);
         if (ifIndex === -1 || trueIndex === -1) { closeActionModal(); return; }
         const actionNode = createNode(actionType, actionType, 'settings', getActionContent({ type: actionType, properties }));
-        actionNode.style.left = 'calc(50% - 280px)';
+        // Try to lock X to the parent IF's true header
+        try {
+          const anchors = ifHeaderCenters.get(nodes[ifIndex]?.data?.properties?.ifId);
+          if (anchors && typeof anchors.trueX === 'number') {
+            actionNode.style.left = `${anchors.trueX}px`;
+          } else {
+            actionNode.style.left = 'calc(50% - 280px)';
+          }
+        } catch { actionNode.style.left = 'calc(50% - 280px)'; }
         actionNode.style.transform = 'translateX(-50%)';
         const trueEl = nodes[trueIndex].element;
         const containerRect = container.getBoundingClientRect();
@@ -3860,6 +4108,8 @@
         }
         actionNode.style.top = `${y}px`;
         container.appendChild(actionNode);
+        // Ensure a visible path from header to a newly added IF immediately
+        try { if (actionType === 'If') WorkflowManager.createConnection(trueEl, actionNode, false); } catch {}
         const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'true' } } };
         nodes.push(nodeData);
         StructureManager.rebuild();
@@ -3872,7 +4122,15 @@
         const { ifIndex, falseIndex } = findIfHeaders(ifId);
         if (ifIndex === -1 || falseIndex === -1) { closeActionModal(); return; }
         const actionNode = createNode(actionType, actionType, 'settings', getActionContent({ type: actionType, properties }));
-        actionNode.style.left = 'calc(50% + 280px)';
+        // Try to lock X to the parent IF's false header
+        try {
+          const anchors = ifHeaderCenters.get(nodes[ifIndex]?.data?.properties?.ifId);
+          if (anchors && typeof anchors.falseX === 'number') {
+            actionNode.style.left = `${anchors.falseX}px`;
+          } else {
+            actionNode.style.left = 'calc(50% + 280px)';
+          }
+        } catch { actionNode.style.left = 'calc(50% + 280px)'; }
         actionNode.style.transform = 'translateX(-50%)';
         const falseEl = nodes[falseIndex].element;
         const containerRect = container.getBoundingClientRect();
@@ -3887,6 +4145,8 @@
         }
         actionNode.style.top = `${y}px`;
         container.appendChild(actionNode);
+        // Ensure a visible path from header to a newly added IF immediately
+        try { if (actionType === 'If') WorkflowManager.createConnection(falseEl, actionNode, false); } catch {}
         const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'false' } } };
         nodes.push(nodeData);
         StructureManager.rebuild();
@@ -3922,8 +4182,20 @@
         }
         
         if (branchCtx && branchCtx.parentIfId) {
-          const columnLeft = branchCtx.branch === 'true' ? 'calc(50% - 280px)' : 'calc(50% + 280px)';
-          actionNode.style.left = columnLeft;
+          // Anchor horizontally to parent IF's branch header X if available
+          let anchorX = null;
+          try {
+            const anchors = ifHeaderCenters.get(branchCtx.parentIfId);
+            if (anchors) {
+              anchorX = branchCtx.branch === 'true' ? anchors.trueX : anchors.falseX;
+            }
+          } catch {}
+          if (typeof anchorX === 'number') {
+            actionNode.style.left = `${anchorX}px`;
+          } else {
+            const columnLeft = branchCtx.branch === 'true' ? 'calc(50% - 280px)' : 'calc(50% + 280px)';
+            actionNode.style.left = columnLeft;
+          }
           actionNode.style.transform = 'translateX(-50%)';
           // Place below the last item in this branch
           let y;
@@ -4842,8 +5114,8 @@
                 d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
               }
             } else {
-              const mx = Math.round((fromX + toX) / 2);
-              d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
+              // Generic vertical line for non-IF connections to keep visuals stable
+              d = `M ${fromX} ${fromY} L ${fromX} ${toY}`;
             }
             el.setAttribute('d', d);
             el.style.display = 'block';
@@ -5603,11 +5875,13 @@
         try { await refreshErrors(); } catch {}
         try { await refreshRuns(); } catch {}
 
-        // After fonts and layout settle, do a final alignment pass
+    // After fonts and layout settle, do a final alignment pass
         const settle = () => {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               refreshStructure();
+          // Additional offscreen line sync
+          scheduleConnectionRefresh();
             });
           });
         };
@@ -5632,6 +5906,7 @@
     // Keep layout fresh on resize
     window.addEventListener('resize', () => {
       StructureManager.rebuild();
+      scheduleConnectionRefresh();
     });
 
   // Errors panel logic
