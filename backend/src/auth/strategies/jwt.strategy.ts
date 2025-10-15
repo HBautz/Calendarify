@@ -6,7 +6,18 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // Prefer HttpOnly cookie named "access_token"
+        (req) => {
+          try {
+            return req?.cookies?.['access_token'] || null;
+          } catch {
+            return null;
+          }
+        },
+        // Fallback to Authorization header for backward compatibility
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       secretOrKey: process.env.JWT_SECRET || 'changeme',
     });
   }

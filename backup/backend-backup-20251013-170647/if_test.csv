@@ -1,0 +1,365 @@
+name,field,operator,value,actual,result,expected,pass
+booking.email contains heine #1,booking.email,contains,"""heine""","""heine0@example.com""",true,true,true
+contact.email contains heine via fallback #1,contact.email,contains,"""heine""","""heine0@example.com""",true,true,true
+contact.email not_contains heine #1,contact.email,not_contains,"""heine""","""heine0@example.com""",false,false,true
+booking.email contains heine #2,booking.email,contains,"""heine""","""contact1@company.dev""",false,false,true
+contact.email contains heine via fallback #2,contact.email,contains,"""heine""","""contact1@company.dev""",false,false,true
+contact.email not_contains heine #2,contact.email,not_contains,"""heine""","""contact1@company.dev""",true,true,true
+booking.email contains heine #3,booking.email,contains,"""heine""","""heine2@example.com""",true,true,true
+contact.email contains heine via fallback #3,contact.email,contains,"""heine""","""heine2@example.com""",true,true,true
+contact.email not_contains heine #3,contact.email,not_contains,"""heine""","""heine2@example.com""",false,false,true
+booking.email contains heine #4,booking.email,contains,"""heine""","""user.3@sample.org""",false,false,true
+contact.email contains heine via fallback #4,contact.email,contains,"""heine""","""user.3@sample.org""",false,false,true
+contact.email not_contains heine #4,contact.email,not_contains,"""heine""","""user.3@sample.org""",true,true,true
+booking.email contains heine #5,booking.email,contains,"""heine""","""heine4@example.com""",true,true,true
+contact.email contains heine via fallback #5,contact.email,contains,"""heine""","""heine4@example.com""",true,true,true
+contact.email not_contains heine #5,contact.email,not_contains,"""heine""","""heine4@example.com""",false,false,true
+booking.email contains heine #6,booking.email,contains,"""heine""","""USER5@HEINE.org""",false,false,true
+contact.email contains heine via fallback #6,contact.email,contains,"""heine""","""USER5@HEINE.org""",false,false,true
+contact.email not_contains heine #6,contact.email,not_contains,"""heine""","""USER5@HEINE.org""",true,true,true
+booking.email contains heine #7,booking.email,contains,"""heine""","""heine6@example.com""",true,true,true
+contact.email contains heine via fallback #7,contact.email,contains,"""heine""","""heine6@example.com""",true,true,true
+contact.email not_contains heine #7,contact.email,not_contains,"""heine""","""heine6@example.com""",false,false,true
+booking.email contains heine #8,booking.email,contains,"""heine""","""contact7@company.dev""",false,false,true
+contact.email contains heine via fallback #8,contact.email,contains,"""heine""","""contact7@company.dev""",false,false,true
+contact.email not_contains heine #8,contact.email,not_contains,"""heine""","""contact7@company.dev""",true,true,true
+booking.email contains heine #9,booking.email,contains,"""heine""","""heine8@example.com""",true,true,true
+contact.email contains heine via fallback #9,contact.email,contains,"""heine""","""heine8@example.com""",true,true,true
+contact.email not_contains heine #9,contact.email,not_contains,"""heine""","""heine8@example.com""",false,false,true
+booking.email contains heine #10,booking.email,contains,"""heine""","""user.9@sample.org""",false,false,true
+contact.email contains heine via fallback #10,contact.email,contains,"""heine""","""user.9@sample.org""",false,false,true
+contact.email not_contains heine #10,contact.email,not_contains,"""heine""","""user.9@sample.org""",true,true,true
+booking.email contains heine #11,booking.email,contains,"""heine""","""heine10@example.com""",true,true,true
+contact.email contains heine via fallback #11,contact.email,contains,"""heine""","""heine10@example.com""",true,true,true
+contact.email not_contains heine #11,contact.email,not_contains,"""heine""","""heine10@example.com""",false,false,true
+booking.email contains heine #12,booking.email,contains,"""heine""","""contact11@company.dev""",false,false,true
+contact.email contains heine via fallback #12,contact.email,contains,"""heine""","""contact11@company.dev""",false,false,true
+contact.email not_contains heine #12,contact.email,not_contains,"""heine""","""contact11@company.dev""",true,true,true
+booking.email contains heine #13,booking.email,contains,"""heine""","""heine12@example.com""",true,true,true
+contact.email contains heine via fallback #13,contact.email,contains,"""heine""","""heine12@example.com""",true,true,true
+contact.email not_contains heine #13,contact.email,not_contains,"""heine""","""heine12@example.com""",false,false,true
+booking.email contains heine #14,booking.email,contains,"""heine""","""contact13@company.dev""",false,false,true
+contact.email contains heine via fallback #14,contact.email,contains,"""heine""","""contact13@company.dev""",false,false,true
+contact.email not_contains heine #14,contact.email,not_contains,"""heine""","""contact13@company.dev""",true,true,true
+booking.email contains heine #15,booking.email,contains,"""heine""","""heine14@example.com""",true,true,true
+contact.email contains heine via fallback #15,contact.email,contains,"""heine""","""heine14@example.com""",true,true,true
+contact.email not_contains heine #15,contact.email,not_contains,"""heine""","""heine14@example.com""",false,false,true
+booking.email contains heine #16,booking.email,contains,"""heine""","""USER15@HEINE.org""",false,false,true
+contact.email contains heine via fallback #16,contact.email,contains,"""heine""","""USER15@HEINE.org""",false,false,true
+contact.email not_contains heine #16,contact.email,not_contains,"""heine""","""USER15@HEINE.org""",true,true,true
+booking.email contains heine #17,booking.email,contains,"""heine""","""heine16@example.com""",true,true,true
+contact.email contains heine via fallback #17,contact.email,contains,"""heine""","""heine16@example.com""",true,true,true
+contact.email not_contains heine #17,contact.email,not_contains,"""heine""","""heine16@example.com""",false,false,true
+booking.email contains heine #18,booking.email,contains,"""heine""","""contact17@company.dev""",false,false,true
+contact.email contains heine via fallback #18,contact.email,contains,"""heine""","""contact17@company.dev""",false,false,true
+contact.email not_contains heine #18,contact.email,not_contains,"""heine""","""contact17@company.dev""",true,true,true
+booking.email contains heine #19,booking.email,contains,"""heine""","""heine18@example.com""",true,true,true
+contact.email contains heine via fallback #19,contact.email,contains,"""heine""","""heine18@example.com""",true,true,true
+contact.email not_contains heine #19,contact.email,not_contains,"""heine""","""heine18@example.com""",false,false,true
+booking.email contains heine #20,booking.email,contains,"""heine""","""contact19@company.dev""",false,false,true
+contact.email contains heine via fallback #20,contact.email,contains,"""heine""","""contact19@company.dev""",false,false,true
+contact.email not_contains heine #20,contact.email,not_contains,"""heine""","""contact19@company.dev""",true,true,true
+booking.email contains heine #21,booking.email,contains,"""heine""","""heine20@example.com""",true,true,true
+contact.email contains heine via fallback #21,contact.email,contains,"""heine""","""heine20@example.com""",true,true,true
+contact.email not_contains heine #21,contact.email,not_contains,"""heine""","""heine20@example.com""",false,false,true
+booking.email contains heine #22,booking.email,contains,"""heine""","""user.21@sample.org""",false,false,true
+contact.email contains heine via fallback #22,contact.email,contains,"""heine""","""user.21@sample.org""",false,false,true
+contact.email not_contains heine #22,contact.email,not_contains,"""heine""","""user.21@sample.org""",true,true,true
+booking.email contains heine #23,booking.email,contains,"""heine""","""heine22@example.com""",true,true,true
+contact.email contains heine via fallback #23,contact.email,contains,"""heine""","""heine22@example.com""",true,true,true
+contact.email not_contains heine #23,contact.email,not_contains,"""heine""","""heine22@example.com""",false,false,true
+booking.email contains heine #24,booking.email,contains,"""heine""","""contact23@company.dev""",false,false,true
+contact.email contains heine via fallback #24,contact.email,contains,"""heine""","""contact23@company.dev""",false,false,true
+contact.email not_contains heine #24,contact.email,not_contains,"""heine""","""contact23@company.dev""",true,true,true
+booking.email contains heine #25,booking.email,contains,"""heine""","""heine24@example.com""",true,true,true
+contact.email contains heine via fallback #25,contact.email,contains,"""heine""","""heine24@example.com""",true,true,true
+contact.email not_contains heine #25,contact.email,not_contains,"""heine""","""heine24@example.com""",false,false,true
+booking.email contains heine #26,booking.email,contains,"""heine""","""USER25@HEINE.org""",false,false,true
+contact.email contains heine via fallback #26,contact.email,contains,"""heine""","""USER25@HEINE.org""",false,false,true
+contact.email not_contains heine #26,contact.email,not_contains,"""heine""","""USER25@HEINE.org""",true,true,true
+booking.email contains heine #27,booking.email,contains,"""heine""","""heine26@example.com""",true,true,true
+contact.email contains heine via fallback #27,contact.email,contains,"""heine""","""heine26@example.com""",true,true,true
+contact.email not_contains heine #27,contact.email,not_contains,"""heine""","""heine26@example.com""",false,false,true
+booking.email contains heine #28,booking.email,contains,"""heine""","""user.27@sample.org""",false,false,true
+contact.email contains heine via fallback #28,contact.email,contains,"""heine""","""user.27@sample.org""",false,false,true
+contact.email not_contains heine #28,contact.email,not_contains,"""heine""","""user.27@sample.org""",true,true,true
+booking.email contains heine #29,booking.email,contains,"""heine""","""heine28@example.com""",true,true,true
+contact.email contains heine via fallback #29,contact.email,contains,"""heine""","""heine28@example.com""",true,true,true
+contact.email not_contains heine #29,contact.email,not_contains,"""heine""","""heine28@example.com""",false,false,true
+booking.email contains heine #30,booking.email,contains,"""heine""","""contact29@company.dev""",false,false,true
+contact.email contains heine via fallback #30,contact.email,contains,"""heine""","""contact29@company.dev""",false,false,true
+contact.email not_contains heine #30,contact.email,not_contains,"""heine""","""contact29@company.dev""",true,true,true
+booking.email contains heine #31,booking.email,contains,"""heine""","""heine30@example.com""",true,true,true
+contact.email contains heine via fallback #31,contact.email,contains,"""heine""","""heine30@example.com""",true,true,true
+contact.email not_contains heine #31,contact.email,not_contains,"""heine""","""heine30@example.com""",false,false,true
+booking.email contains heine #32,booking.email,contains,"""heine""","""contact31@company.dev""",false,false,true
+contact.email contains heine via fallback #32,contact.email,contains,"""heine""","""contact31@company.dev""",false,false,true
+contact.email not_contains heine #32,contact.email,not_contains,"""heine""","""contact31@company.dev""",true,true,true
+booking.email contains heine #33,booking.email,contains,"""heine""","""heine32@example.com""",true,true,true
+contact.email contains heine via fallback #33,contact.email,contains,"""heine""","""heine32@example.com""",true,true,true
+contact.email not_contains heine #33,contact.email,not_contains,"""heine""","""heine32@example.com""",false,false,true
+booking.email contains heine #34,booking.email,contains,"""heine""","""user.33@sample.org""",false,false,true
+contact.email contains heine via fallback #34,contact.email,contains,"""heine""","""user.33@sample.org""",false,false,true
+contact.email not_contains heine #34,contact.email,not_contains,"""heine""","""user.33@sample.org""",true,true,true
+booking.email contains heine #35,booking.email,contains,"""heine""","""heine34@example.com""",true,true,true
+contact.email contains heine via fallback #35,contact.email,contains,"""heine""","""heine34@example.com""",true,true,true
+contact.email not_contains heine #35,contact.email,not_contains,"""heine""","""heine34@example.com""",false,false,true
+booking.email contains heine #36,booking.email,contains,"""heine""","""USER35@HEINE.org""",false,false,true
+contact.email contains heine via fallback #36,contact.email,contains,"""heine""","""USER35@HEINE.org""",false,false,true
+contact.email not_contains heine #36,contact.email,not_contains,"""heine""","""USER35@HEINE.org""",true,true,true
+booking.email contains heine #37,booking.email,contains,"""heine""","""heine36@example.com""",true,true,true
+contact.email contains heine via fallback #37,contact.email,contains,"""heine""","""heine36@example.com""",true,true,true
+contact.email not_contains heine #37,contact.email,not_contains,"""heine""","""heine36@example.com""",false,false,true
+booking.email contains heine #38,booking.email,contains,"""heine""","""contact37@company.dev""",false,false,true
+contact.email contains heine via fallback #38,contact.email,contains,"""heine""","""contact37@company.dev""",false,false,true
+contact.email not_contains heine #38,contact.email,not_contains,"""heine""","""contact37@company.dev""",true,true,true
+booking.email contains heine #39,booking.email,contains,"""heine""","""heine38@example.com""",true,true,true
+contact.email contains heine via fallback #39,contact.email,contains,"""heine""","""heine38@example.com""",true,true,true
+contact.email not_contains heine #39,contact.email,not_contains,"""heine""","""heine38@example.com""",false,false,true
+booking.email contains heine #40,booking.email,contains,"""heine""","""user.39@sample.org""",false,false,true
+contact.email contains heine via fallback #40,contact.email,contains,"""heine""","""user.39@sample.org""",false,false,true
+contact.email not_contains heine #40,contact.email,not_contains,"""heine""","""user.39@sample.org""",true,true,true
+exists booking.email,booking.email,exists,,"""heine@example.com""",true,true,true
+not_exists booking.undefinedField,booking.undefinedField,not_exists,,,true,true,true
+exists contact.phone (empty string counts missing),contact.phone,exists,,"""""",false,false,true
+not_exists contact.phone (empty string counts missing),contact.phone,not_exists,,"""""",true,true,true
+equals numeric number==string #1,booking.duration,equals,"""0""",0,true,true,true
+not_equals numeric number!=string #1,booking.duration,not_equals,"""1""",0,true,true,true
+equals numeric number==string #2,booking.duration,equals,"""10""",10,true,true,true
+not_equals numeric number!=string #2,booking.duration,not_equals,"""11""",10,true,true,true
+equals numeric number==string #3,booking.duration,equals,"""20""",20,true,true,true
+not_equals numeric number!=string #3,booking.duration,not_equals,"""21""",20,true,true,true
+equals numeric number==string #4,booking.duration,equals,"""30""",30,true,true,true
+not_equals numeric number!=string #4,booking.duration,not_equals,"""31""",30,true,true,true
+equals numeric number==string #5,booking.duration,equals,"""40""",40,true,true,true
+not_equals numeric number!=string #5,booking.duration,not_equals,"""41""",40,true,true,true
+equals numeric number==string #6,booking.duration,equals,"""50""",50,true,true,true
+not_equals numeric number!=string #6,booking.duration,not_equals,"""51""",50,true,true,true
+equals numeric number==string #7,booking.duration,equals,"""60""",60,true,true,true
+not_equals numeric number!=string #7,booking.duration,not_equals,"""61""",60,true,true,true
+equals numeric number==string #8,booking.duration,equals,"""70""",70,true,true,true
+not_equals numeric number!=string #8,booking.duration,not_equals,"""71""",70,true,true,true
+equals numeric number==string #9,booking.duration,equals,"""80""",80,true,true,true
+not_equals numeric number!=string #9,booking.duration,not_equals,"""81""",80,true,true,true
+equals numeric number==string #10,booking.duration,equals,"""90""",90,true,true,true
+not_equals numeric number!=string #10,booking.duration,not_equals,"""91""",90,true,true,true
+equals numeric number==string #11,booking.duration,equals,"""100""",100,true,true,true
+not_equals numeric number!=string #11,booking.duration,not_equals,"""101""",100,true,true,true
+equals numeric number==string #12,booking.duration,equals,"""110""",110,true,true,true
+not_equals numeric number!=string #12,booking.duration,not_equals,"""111""",110,true,true,true
+equals numeric number==string #13,booking.duration,equals,"""120""",120,true,true,true
+not_equals numeric number!=string #13,booking.duration,not_equals,"""121""",120,true,true,true
+equals numeric number==string #14,booking.duration,equals,"""130""",130,true,true,true
+not_equals numeric number!=string #14,booking.duration,not_equals,"""131""",130,true,true,true
+equals numeric number==string #15,booking.duration,equals,"""140""",140,true,true,true
+not_equals numeric number!=string #15,booking.duration,not_equals,"""141""",140,true,true,true
+equals numeric number==string #16,booking.duration,equals,"""150""",150,true,true,true
+not_equals numeric number!=string #16,booking.duration,not_equals,"""151""",150,true,true,true
+equals numeric number==string #17,booking.duration,equals,"""160""",160,true,true,true
+not_equals numeric number!=string #17,booking.duration,not_equals,"""161""",160,true,true,true
+equals numeric number==string #18,booking.duration,equals,"""170""",170,true,true,true
+not_equals numeric number!=string #18,booking.duration,not_equals,"""171""",170,true,true,true
+equals numeric number==string #19,booking.duration,equals,"""180""",180,true,true,true
+not_equals numeric number!=string #19,booking.duration,not_equals,"""181""",180,true,true,true
+equals numeric number==string #20,booking.duration,equals,"""190""",190,true,true,true
+not_equals numeric number!=string #20,booking.duration,not_equals,"""191""",190,true,true,true
+gt true #1,booking.duration,gt,-1,0,true,true,true
+gt false #1,booking.duration,gt,1,0,false,false,true
+lt true #1,booking.duration,lt,1,0,true,true,true
+lt false #1,booking.duration,lt,-1,0,false,false,true
+gt true #2,booking.duration,gt,9,10,true,true,true
+gt false #2,booking.duration,gt,11,10,false,false,true
+lt true #2,booking.duration,lt,11,10,true,true,true
+lt false #2,booking.duration,lt,9,10,false,false,true
+gt true #3,booking.duration,gt,19,20,true,true,true
+gt false #3,booking.duration,gt,21,20,false,false,true
+lt true #3,booking.duration,lt,21,20,true,true,true
+lt false #3,booking.duration,lt,19,20,false,false,true
+gt true #4,booking.duration,gt,29,30,true,true,true
+gt false #4,booking.duration,gt,31,30,false,false,true
+lt true #4,booking.duration,lt,31,30,true,true,true
+lt false #4,booking.duration,lt,29,30,false,false,true
+gt true #5,booking.duration,gt,39,40,true,true,true
+gt false #5,booking.duration,gt,41,40,false,false,true
+lt true #5,booking.duration,lt,41,40,true,true,true
+lt false #5,booking.duration,lt,39,40,false,false,true
+gt true #6,booking.duration,gt,49,50,true,true,true
+gt false #6,booking.duration,gt,51,50,false,false,true
+lt true #6,booking.duration,lt,51,50,true,true,true
+lt false #6,booking.duration,lt,49,50,false,false,true
+gt true #7,booking.duration,gt,59,60,true,true,true
+gt false #7,booking.duration,gt,61,60,false,false,true
+lt true #7,booking.duration,lt,61,60,true,true,true
+lt false #7,booking.duration,lt,59,60,false,false,true
+gt true #8,booking.duration,gt,69,70,true,true,true
+gt false #8,booking.duration,gt,71,70,false,false,true
+lt true #8,booking.duration,lt,71,70,true,true,true
+lt false #8,booking.duration,lt,69,70,false,false,true
+gt true #9,booking.duration,gt,79,80,true,true,true
+gt false #9,booking.duration,gt,81,80,false,false,true
+lt true #9,booking.duration,lt,81,80,true,true,true
+lt false #9,booking.duration,lt,79,80,false,false,true
+gt true #10,booking.duration,gt,89,90,true,true,true
+gt false #10,booking.duration,gt,91,90,false,false,true
+lt true #10,booking.duration,lt,91,90,true,true,true
+lt false #10,booking.duration,lt,89,90,false,false,true
+gt true #11,booking.duration,gt,99,100,true,true,true
+gt false #11,booking.duration,gt,101,100,false,false,true
+lt true #11,booking.duration,lt,101,100,true,true,true
+lt false #11,booking.duration,lt,99,100,false,false,true
+gt true #12,booking.duration,gt,109,110,true,true,true
+gt false #12,booking.duration,gt,111,110,false,false,true
+lt true #12,booking.duration,lt,111,110,true,true,true
+lt false #12,booking.duration,lt,109,110,false,false,true
+gt true #13,booking.duration,gt,119,120,true,true,true
+gt false #13,booking.duration,gt,121,120,false,false,true
+lt true #13,booking.duration,lt,121,120,true,true,true
+lt false #13,booking.duration,lt,119,120,false,false,true
+gt true #14,booking.duration,gt,129,130,true,true,true
+gt false #14,booking.duration,gt,131,130,false,false,true
+lt true #14,booking.duration,lt,131,130,true,true,true
+lt false #14,booking.duration,lt,129,130,false,false,true
+gt true #15,booking.duration,gt,139,140,true,true,true
+gt false #15,booking.duration,gt,141,140,false,false,true
+lt true #15,booking.duration,lt,141,140,true,true,true
+lt false #15,booking.duration,lt,139,140,false,false,true
+gt true #16,booking.duration,gt,149,150,true,true,true
+gt false #16,booking.duration,gt,151,150,false,false,true
+lt true #16,booking.duration,lt,151,150,true,true,true
+lt false #16,booking.duration,lt,149,150,false,false,true
+gt true #17,booking.duration,gt,159,160,true,true,true
+gt false #17,booking.duration,gt,161,160,false,false,true
+lt true #17,booking.duration,lt,161,160,true,true,true
+lt false #17,booking.duration,lt,159,160,false,false,true
+gt true #18,booking.duration,gt,169,170,true,true,true
+gt false #18,booking.duration,gt,171,170,false,false,true
+lt true #18,booking.duration,lt,171,170,true,true,true
+lt false #18,booking.duration,lt,169,170,false,false,true
+gt true #19,booking.duration,gt,179,180,true,true,true
+gt false #19,booking.duration,gt,181,180,false,false,true
+lt true #19,booking.duration,lt,181,180,true,true,true
+lt false #19,booking.duration,lt,179,180,false,false,true
+gt true #20,booking.duration,gt,189,190,true,true,true
+gt false #20,booking.duration,gt,191,190,false,false,true
+lt true #20,booking.duration,lt,191,190,true,true,true
+lt false #20,booking.duration,lt,189,190,false,false,true
+in array includes #1,booking.location,in,"[""Zoom"",""Meet"",""Phone"",""Custom""]","""Zoom""",true,true,true
+in array excludes #1,booking.location,in,"[""Email"",""Onsite""]","""Zoom""",false,false,true
+in scalar equal #1,booking.location,in,"""Zoom""","""Zoom""",true,true,true
+in array includes #2,booking.location,in,"[""Zoom"",""Meet"",""Phone"",""Custom""]","""Meet""",true,true,true
+in array excludes #2,booking.location,in,"[""Email"",""Onsite""]","""Meet""",false,false,true
+in scalar equal #2,booking.location,in,"""Meet""","""Meet""",true,true,true
+in array includes #3,booking.location,in,"[""Zoom"",""Meet"",""Phone"",""Custom""]","""Phone""",true,true,true
+in array excludes #3,booking.location,in,"[""Email"",""Onsite""]","""Phone""",false,false,true
+in scalar equal #3,booking.location,in,"""Phone""","""Phone""",true,true,true
+in array includes #4,booking.location,in,"[""Zoom"",""Meet"",""Phone"",""Custom""]","""Custom""",true,true,true
+in array excludes #4,booking.location,in,"[""Email"",""Onsite""]","""Custom""",false,false,true
+in scalar equal #4,booking.location,in,"""Custom""","""Custom""",true,true,true
+equals array membership present #1,contact.tags,equals,"""VIP""","[""VIP"",""Newsletter""]",true,true,true
+not_equals array membership absent #1,contact.tags,not_equals,"""VIP""","[""VIP"",""Newsletter""]",false,false,true
+equals array membership present #2,contact.tags,equals,"""Newsletter""","[""VIP"",""Newsletter""]",true,true,true
+not_equals array membership absent #2,contact.tags,not_equals,"""Newsletter""","[""VIP"",""Newsletter""]",false,false,true
+equals array membership present #3,contact.tags,equals,"""Prospect""","[""VIP"",""Newsletter""]",false,false,true
+not_equals array membership absent #3,contact.tags,not_equals,"""Prospect""","[""VIP"",""Newsletter""]",true,true,true
+equals array membership present #4,contact.tags,equals,"""Candidate""","[""VIP"",""Newsletter""]",false,false,true
+not_equals array membership absent #4,contact.tags,not_equals,"""Candidate""","[""VIP"",""Newsletter""]",true,true,true
+error gt non-numeric default false #1,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #2,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #3,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #4,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #5,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #6,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #7,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #8,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #9,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #10,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #11,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #12,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #13,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #14,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #15,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #16,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #17,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #18,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #19,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #20,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #21,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #22,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #23,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #24,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #25,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #26,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #27,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #28,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #29,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #30,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #31,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #32,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #33,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #34,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #35,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #36,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #37,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #38,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #39,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #40,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #41,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #42,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #43,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #44,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #45,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #46,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #47,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #48,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #49,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #50,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #51,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #52,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #53,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #54,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #55,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #56,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #57,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #58,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #59,booking.duration,gt,10,"""NaN""",false,false,true
+error gt non-numeric default false #60,booking.duration,gt,10,"""NaN""",false,false,true
+error unsupported operator default false #1,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #2,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #3,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #4,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #5,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #6,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #7,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #8,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #9,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #10,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #11,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #12,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #13,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #14,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #15,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #16,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #17,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #18,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #19,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #20,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #21,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #22,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #23,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #24,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #25,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #26,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #27,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #28,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #29,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #30,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #31,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #32,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #33,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #34,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #35,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #36,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #37,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #38,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #39,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true
+error unsupported operator default false #40,booking.email,unsupported_op,"""x""","""heine@example.com""",false,false,true

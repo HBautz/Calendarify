@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendarify Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="/dashboard/dashboard.css">
+  <style>
+    /* Custom number input styling - remove default arrows */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    
+    /* Custom dropdown styling - remove default arrow */
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2334D399' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.5em 1.5em;
+      padding-right: 2.5rem;
+    }
+    
+    /* Remove arrow from minutes/hours dropdown */
+    .no-arrow-select {
+      background-image: none !important;
+      padding-right: 0.75rem !important;
+    }
+    
+    /* Custom number input with actual buttons */
+    .custom-number-input {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .custom-number-input input[type="number"] {
+      padding-right: 3rem;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: none;
+    }
+    
+    .number-buttons {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #2C4A43;
+    }
+    
+    .number-btn {
+      width: 2rem;
+      height: 1.5rem;
+      background: #19342e;
+      border: 1px solid #2C4A43;
+      color: #34D399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    
+    .number-btn:hover {
+      background: #34D399;
+      color: #1A2E29;
+    }
+    
+    .number-btn:active {
+      background: #2BB98A;
+    }
+    
+    .number-btn.up {
+      border-top-right-radius: 0.5rem;
+      border-bottom: 0.5px solid #2C4A43;
+    }
+    
+    .number-btn.down {
+      border-bottom-right-radius: 0.5rem;
+      border-top: 0.5px solid #2C4A43;
+    }
+
+    /* Custom checkbox disabled state */
+    input[type="checkbox"]:disabled ~ label {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    input[type="checkbox"]:disabled ~ label:hover {
+      border-color: #2C4A43 !important;
+      background-color: #1E3A34 !important;
+    }
+
+    input[type="checkbox"]:disabled ~ label .w-5.h-5 {
+
+    /* Notification styles */
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      min-width: 300px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: #34D399;
+      color: white;
+    }
+
+    .notification.error {
+      background: #EF4444;
+      color: white;
+    }
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    input[type="checkbox"]:disabled ~ label .w-5.h-5:hover {
+      border-color: #2C4A43 !important;
+      background-color: #2C4A43 !important;
+    }
+
+    input[type="checkbox"]:disabled ~ label .material-icons-outlined {
+      opacity: 0.5;
+    }
+  </style>
+  <script src="/auth.js"></script>
+  <script src="/config.js"></script>
+  <script src="/dashboard/dashboard.js" defer></script>
+</head>
+<body id="dashboard-body" class="flex min-h-screen hidden">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="px-6 pb-8">
+      <a href="/" class="flex items-center gap-2">
+      <span class="material-icons-outlined text-3xl text-[#34D399]">calendar_month</span>
+        <h1 class="text-2xl font-bold text-[#34D399] tracking-tight">Calendarify</h1>
+      </a>
+    </div>
+    <nav class="flex-1">
+      <div class="nav-list">
+        <div class="nav-item active" data-section="event-types" onclick="showSection('event-types', this)">
+          <span class="nav-icon"> <!-- link icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6.75h3.75A2.25 2.25 0 0120 9v6a2.25 2.25 0 01-2.25 2.25h-3.75m-3-12H6.75A2.25 2.25 0 004.5 9v6a2.25 2.25 0 002.25 2.25h3.75" /></svg>
+          </span>
+          Event types
+        </div>
+        <div class="nav-item" data-section="meetings" onclick="showSection('meetings', this)">
+          <span class="nav-icon"> <!-- calendar icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 3v4M8 3v4M3 9h18"/></svg>
+          </span>
+          Meetings
+        </div>
+        <div class="nav-item" data-section="availability" onclick="showSection('availability', this)">
+          <span class="nav-icon"> <!-- clock icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/></svg>
+          </span>
+          Availability
+        </div>
+      </div>
+      <hr class="nav-divider">
+      <div class="nav-list">
+        <div class="nav-item" data-section="contacts" onclick="showSection('contacts', this)">
+          <span class="nav-icon"> <!-- users icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-7a4 4 0 11-8 0 4 4 0 018 0zm6 4v6m-6-6v6"/></svg>
+          </span>
+          Contacts
+        </div>
+        <div class="nav-item" data-section="workflows" onclick="showSection('workflows', this)">
+          <span class="nav-icon"> <!-- workflow icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h8M6 8v8m12-8v8M8 18h8"/></svg>
+          </span>
+          Workflows
+        </div>
+        <div class="nav-item" data-section="integrations" onclick="showSection('integrations', this)">
+          <span class="nav-icon"> <!-- apps icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+          </span>
+          Integrations
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-[#111f1c] border-b border-[#1E3A34] p-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-4">
+          <h2 class="text-xl font-bold text-white" id="section-title">Event Types</h2>
+          <div class="relative" id="global-search-container">
+            <input type="text" placeholder="Search..." class="search-field w-64" id="global-search-input" autocomplete="off" oninput="handleGlobalSearch(event)">
+            <span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#A3B3AF]">search</span>
+            <div id="global-search-results" class="absolute left-0 mt-2 w-96 bg-[#1E3A34] border border-[#2C4A43] rounded-xl shadow-lg z-50 hidden max-h-80 overflow-y-auto custom-scrollbar"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <button class="relative p-2 text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined">notifications</span>
+            <span class="notification-dot"></span>
+          </button>
+          <button class="relative p-2 text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined">help_outline</span>
+          </button>
+          <div class="relative">
+            <img id="profile-avatar" src="https://ui-avatars.com/api/?name=User&amp;background=34D399&amp;color=1A2E29" alt="Profile" class="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 transition-opacity">
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+      <!-- Event Types Section -->
+      <section id="event-types-section">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Event Types</h2>
+          <div class="relative">
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openCreateEventTypeModal()">
+              <span class="material-icons-outlined">add</span>
+              Create
+            </button>
+          </div>
+        </div>
+        <div class="dashboard-grid" id="event-types-grid"></div>
+      </section>
+
+      <!-- Meetings Section -->
+      <section id="meetings-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Meetings</h2>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <label for="meetings-clock-format-toggle" class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-[#A3B3AF] text-sm">12h format</span>
+                <button id="meetings-clock-format-toggle" type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleClockFormat()">
+                  <div id="meetings-toggle-circle" class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s;"></div>
+                </button>
+              </label>
+            </div>
+            <input type="text" class="search-field w-64" placeholder="Search meetings..." oninput="handleMeetingsSearch(event)">
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold" onclick="exportCSV()">Export CSV</button>
+          </div>
+        </div>
+        <div class="bg-[#1E3A34] rounded-xl">
+          <div class="flex border-b border-[#1A2E29]">
+            <button data-tab="upcoming" class="px-6 py-3 bg-[#34D399] text-[#1A2E29] font-medium" onclick="showMeetingsTab('upcoming', this)">Upcoming</button>
+            <button data-tab="past" class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('past', this)">Past</button>
+            <button data-tab="pending" class="px-6 py-3 text-[#A3B3AF] hover:text-white" onclick="showMeetingsTab('pending', this)">Pending</button>
+          </div>
+          <div class="p-4">
+            <table class="w-full">
+              <thead class="table-header">
+                <tr>
+                  <th class="text-center py-2 w-1/5">Invitee</th>
+                  <th class="text-center py-2 w-1/6">Event Type</th>
+                  <th class="text-center py-2 w-1/6">Date/Time</th>
+                  <th class="text-center py-2 w-1/8">Status</th>
+                  <th class="text-center py-2 w-1/5">Meeting Link</th>
+                  <th class="text-center py-2 w-1/8">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Table content will be dynamically populated by JavaScript -->
+              </tbody>
+            </table>
+                </div>
+              </div>
+      </section>
+
+      <!-- Meeting Details Modal -->
+      <div id="meeting-details-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+        <div class="bg-[#1E3A34] border border-[#2C4A43] rounded-xl w-full max-w-lg p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white">Meeting details</h3>
+            <button class="text-[#A3B3AF] hover:text-white" onclick="closeMeetingDetails()">
+              <span class="material-icons-outlined">close</span>
+            </button>
+          </div>
+          <div id="meeting-details-content" class="space-y-3 text-[#E0E0E0]"></div>
+          <div class="mt-6 flex justify-end">
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold" onclick="closeMeetingDetails()">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Availability Section -->
+      <section id="availability-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Availability</h2>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <label for="clock-format-toggle" class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-[#A3B3AF] text-sm">12h format</span>
+                <button id="clock-format-toggle" type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleClockFormat()">
+                  <div id="toggle-circle" class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s;"></div>
+                </button>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card">
+            <h3 class="text-lg font-bold text-white mb-4">Weekly Hours</h3>
+            <div class="space-y-3">
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Monday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="monday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                </div>
+              </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                </div>
+              </div>
+                    </span>
+            </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('monday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+          </div>
+        </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Tuesday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="tuesday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+          </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+              </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+            </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+              </div>
+                    </span>
+            </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('tuesday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+          </div>
+        </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Wednesday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="wednesday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('wednesday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Thursday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="thursday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('thursday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Friday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2" id="friday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+            </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+          </div>
+        </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="true" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('friday', this)">
+                    <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Saturday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2 opacity-50" id="saturday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('saturday', this)">
+                    <div class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(0);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
+                <span class="text-[#A3B3AF] w-24 flex-shrink-0">Sunday</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <div class="flex items-center gap-2 opacity-50" id="sunday-times">
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+                    <span class="custom-time-picker relative inline-flex items-center w-28">
+                      <input type="text" readonly disabled class="time-input w-full flex-shrink-0 cursor-not-allowed bg-[#111f1c] border border-[#2C4A43] text-[#6B7C78] rounded px-3 py-2" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+                      <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+                        <div class="flex gap-2 items-center justify-center">
+                          <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <span class="text-[#A3B3AF]">:</span>
+                          <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                          <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+                        </div>
+                        <div class="flex justify-end mt-2 gap-2 w-full">
+                          <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                          <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                  <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#19342e] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleDayAvailability('sunday', this)">
+                    <div class="w-6 h-6 bg-[#34D399] rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(0);"></div>
+                  </button>
+                </div>
+              </div>
+          </div>
+            </div>
+          <div class="card">
+            <h3 class="text-lg font-bold text-white mb-4">Calendar Overrides</h3>
+            <div class="bg-[#1A2E29] p-4 rounded-lg">
+              <div class="flex justify-between items-center mb-4">
+                <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="previousMonth()">
+                  <span class="material-icons-outlined">chevron_left</span>
+                </button>
+                <h4 class="font-medium text-white" id="calendar-month-year">June 2024</h4>
+                <button class="text-[#A3B3AF] hover:text-white transition-colors" onclick="nextMonth()">
+                  <span class="material-icons-outlined">chevron_right</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-7 gap-1 text-center text-sm mb-4">
+                <div class="text-[#A3B3AF] py-2">Su</div>
+                <div class="text-[#A3B3AF] py-2">Mo</div>
+                <div class="text-[#A3B3AF] py-2">Tu</div>
+                <div class="text-[#A3B3AF] py-2">We</div>
+                <div class="text-[#A3B3AF] py-2">Th</div>
+                <div class="text-[#A3B3AF] py-2">Fr</div>
+                <div class="text-[#A3B3AF] py-2">Sa</div>
+              </div>
+              <div class="grid grid-cols-7 gap-1 text-center text-sm" id="calendar-days">
+                <!-- Calendar days will be generated by JavaScript -->
+              </div>
+            </div>
+            
+            <!-- Override List -->
+            <div class="mt-6">
+              <h4 class="text-white font-medium mb-3">Active Overrides</h4>
+              <div id="override-list" class="space-y-2">
+                <!-- Override items will be generated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+      <!-- Contacts Section -->
+      <section id="contacts-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Contacts</h2>
+          <div class="flex gap-3">
+            <button class="bg-[#19342e] text-[#34D399] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="openManageTagsModal()">
+              <span class="material-icons-outlined">local_offer</span>
+              Tags
+            </button>
+            <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="addContact()">
+              <span class="material-icons-outlined">person_add</span>
+              Add Contact
+            </button>
+          </div>
+        </div>
+        <div class="mb-4 flex items-center gap-4">
+          <input type="text" class="search-field w-64" placeholder="Search contacts..." oninput="handleSearch(event)">
+          <button id="favorites-filter-btn" class="bg-[#19342e] text-[#34D399] px-3 py-1 rounded-lg flex items-center gap-1 text-sm hover:bg-[#2C4A43] transition-colors" onclick="toggleFavorites()"><span class="material-icons-outlined text-base">star</span>Favorites</button>
+          </div>
+        <div class="bg-[#1E3A34] rounded-xl p-6 overflow-x-auto">
+          <table class="w-full min-w-full">
+            <thead class="table-header">
+              <tr>
+                <th class="text-center py-3 px-4 w-16">Favorite</th>
+                <th class="text-center py-3 px-4 w-1/5">Name</th>
+                <th class="text-center py-3 px-4 w-1/4">Email</th>
+                <th class="text-center py-3 px-4 w-1/5">Last Updated</th>
+                <th class="text-center py-3 px-4 w-1/6">Tags</th>
+                <th class="text-center py-3 px-4 w-32">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row border-b border-[#2C4A43]" id="contact-jane@example.com">
+                <td class="py-3 px-4 text-center">
+                  <button class="favorite-btn text-[#A3B3AF] hover:text-[#34D399] transition-colors" onclick="toggleFavorite('jane@example.com', this)">
+                    <span class="material-icons-outlined text-xl">star_border</span>
+                  </button>
+                </td>
+                <td class="py-3 px-4 text-center text-white font-medium">Jane Doe</td>
+                <td class="py-3 px-4 text-center text-[#E0E0E0]">jane@example.com</td>
+                <td class="py-3 px-4 text-center text-[#A3B3AF]">2 hours ago</td>
+                <td class="py-3 px-4 text-center">
+                  <div class="flex flex-wrap gap-1 justify-center">
+                    <span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('jane@example.com')">Client</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button class="btn-secondary" onclick="viewContact('jane@example.com')">View</button>
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('jane@example.com')">
+                          <span class="material-icons-outlined text-xs">event</span>Book
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('jane@example.com')">
+                          <span class="material-icons-outlined text-xs">delete</span>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="table-row border-b border-[#2C4A43]" id="contact-john@company.com">
+                <td class="py-3 px-4 text-center">
+                  <button class="favorite-btn text-[#34D399] hover:text-[#A3B3AF] transition-colors" onclick="toggleFavorite('john@company.com', this)">
+                    <span class="material-icons-outlined text-xl">star</span>
+                  </button>
+                </td>
+                <td class="py-3 px-4 text-center text-white font-medium">John Smith</td>
+                <td class="py-3 px-4 text-center text-[#E0E0E0]">john@company.com</td>
+                <td class="text-center text-[#A3B3AF]">1 day ago</td>
+                <td class="py-3 px-4 text-center">
+                  <div class="flex flex-wrap gap-1 justify-center">
+                    <span class="bg-[#19342e] text-[#A3B3AF] px-2 py-1 rounded text-xs cursor-pointer hover:bg-[#2C4A43] hover:text-[#34D399] transition-colors" onclick="showContactTagsModal('john@company.com')">VIP</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button class="btn-secondary" onclick="viewContact('john@company.com')">View</button>
+                    <div class="relative inline-block text-left">
+                      <button class="kebab-btn flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#223c36] transition-colors" type="button" onclick="toggleContactMenu(this)">
+                        <span class="material-icons-outlined">more_vert</span>
+                      </button>
+                      <div class="contact-menu absolute bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50">
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#34D399] hover:bg-[#223c36] text-sm font-semibold" onclick="bookContact('john@company.com')">
+                          <span class="material-icons-outlined text-xs">event</span>Book
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-4 py-2 text-[#EF4444] hover:bg-[#223c36] text-sm font-semibold" onclick="removeContact('john@company.com')">
+                          <span class="material-icons-outlined text-xs">delete</span>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Workflows Section -->
+      <section id="workflows-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Workflows</h2>
+          <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors text-sm font-bold flex items-center gap-2" onclick="createWorkflow()">
+            <span class="material-icons-outlined">add</span>
+            Create Workflow
+                    </button>
+                  </div>
+        <div class="bg-[#1E3A34] rounded-xl p-4">
+          <table class="w-full">
+            <thead class="table-header">
+              <tr>
+                <th class="text-center py-2 w-1/4">Name</th>
+                <th class="text-center py-2 w-1/6">Status</th>
+                <th class="text-center py-2 w-1/4">Event Types</th>
+                <th class="text-center py-2 w-1/6">Last Edited</th>
+                <th class="text-center py-2 w-1/4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="workflows-tbody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Integrations & Apps Section -->
+      <section id="integrations-section" style="display:none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-white">Integrations</h2>
+        </div>
+        <div class="dashboard-grid">
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-label="Zoom" role="img" viewBox="0 0 512 512" width="48" height="48"><path fill="#fff" d="M428 357c8 2 15-2 19-8 2-3 2-8 2-19V179c0-11 0-15-2-19-3-8-11-11-19-8-21 14-67 55-68 72-.8 3-.8 8-.8 15v38c0 8 0 11 .8 15 1 8 4 15 8 19 12 9 52 45 61 45zM64 187c0-15 0-23 3-27 2-4 8-8 11-11 4-3 11-3 27-3h129c38 0 57 0 72 8 11 8 23 15 30 30 8 15 8 34 8 72v68c0 15 0 23-3 27-2 4-8 8-11 11-4 3-11 3-27 3H174c-38 0-57 0-72-8-11-8-23-15-30-30-8-15-8-34-8-72z"/></svg>
+              <div>
+                <div class="text-white font-bold">Zoom</div>
+                <div class="text-[#A3B3AF] text-sm">Video</div>
+              </div>
+            </div>
+            <button id="zoom-connect-btn" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-label="Google Calendar" role="img" viewBox="0 0 512 512" width="48" height="48"><path d="M100 135q0-35 37-35H340v74H174V340H100" fill="#4285f4"/><path d="m338 100v76h74v-41q0-35-35-35" fill="#1967d2"/><path d="m100 338v39q0 35 35 35h41v-74" fill="#188038"/><path d="M348 338H174v74H338" fill="#34a853"/><path d="m338 339V174h74V338" fill="#fbbc04"/><path d="M338 412v-74h74" fill="#ea4335"/><path d="m204 229a25 22 1 1125 27h-9 9a25 22 1 11-25 27m66-52 27-19h4v96" stroke="#4285f4" stroke-width="15" fill="none"/></svg>
+              <div>
+                <div class="text-white font-bold">Google Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync your calendar</div>
+              </div>
+            </div>
+            <button id="google-calendar-connect-btn" onclick="connectGoogleCalendar()" class="bg-red-500 text-white px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px;">Connect</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-label="Outlook" role="img" viewBox="0 0 512 512" width="48" height="48"><rect width="231" height="270" x="168" y="107" fill="#05a" rx="3%"/><path fill="#136" d="M398 247v23l15-8s0-7-5-9l-10-6zm-230 43v70h77v-70h-77z"/><path fill="#17d" d="M168 150v70h77v-70h-77zm77 70v70h77v-70h-77zm77 70v70h77v-70h-77z"/><path fill="#3ae" d="M245 150v70h77v-70h-77zm77 70v70h77v-70h-77z"/><path fill="#5cf" d="M322 150h77v70h-77z"/><path fill="#19e" d="M413 261 282 336s121 73 124 71c5-3 7-11 7-18V261Z"/><path fill="#2ae" d="M160 266c-4 3-6 7-6 12v117c0 8 6 14 14 14h230c4 0 5 0 8-2"/><rect width="172" height="172" x="70" y="172" fill="#18e" rx="3%"/><path fill="#fff" d="M155 230c14 0 22 11 22 29s-9 28-23 28c-11 0-22-10-22-28 0-15 7-29 23-29Zm-1 75c26 0 44-18 44-47 0-25-16-46-43-46-28 0-44 20-44 48 0 27 20 45 43 45Z"/></svg>
+              <div>
+                <div class="text-white font-bold">Outlook Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync with Outlook</div>
+              </div>
+            </div>
+            <button id="outlook-calendar-connect-btn" onclick="connectOutlookCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
+          </div>
+          <div class="card flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-label="Apple" role="img" viewBox="0 0 512 512" width="48" height="48"><path d="m406 335s-9 30-26 54-31 47-60 47c-23 0-35-15-61-15s-42 15-64 15-33-15-50-35c-44-55-62-146-38-194s59-58 84-58 48 16 63 16 38-17 68-17 59 13 74 38c-49 27-64 115 10 149M327 56c5 36-27 89-76 88-5-42 32-85 76-88" fill="#fff"/></svg>
+              <div>
+                <div class="text-white font-bold">Apple Calendar</div>
+                <div class="text-[#A3B3AF] text-sm">Sync with iCloud</div>
+              </div>
+            </div>
+            <button id="apple-calendar-connect-btn" onclick="connectAppleCalendar()" class="px-3 py-1 rounded-lg font-bold mt-2" style="font-size: 1rem; font-weight: 600; min-width: 120px; background-color:#ef4444; color:#fff;">Not Connected</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden"></div>
+  <div id="share-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <h3 class="text-lg font-bold text-white mb-4">Share "<span id="share-modal-title"></span>"</h3>
+    <div class="flex gap-2 mb-4">
+      <input id="share-modal-link" type="text" class="input-field flex-1" readonly>
+      <button id="share-modal-copy-btn" class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded-lg font-bold">Copy</button>
+    </div>
+    <button class="btn-secondary" onclick="closeShareModal()">Close</button>
+  </div>
+
+  <!-- Calendar Override Modal -->
+  <div id="override-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <h3 class="text-lg font-bold text-white mb-4">Set Custom Availability</h3>
+    <div class="mb-4">
+      <p class="text-[#A3B3AF] mb-2">Date: <span id="override-date" class="text-white font-medium"></span></p>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="flex items-center gap-2">
+        <button type="button" aria-pressed="false" class="w-12 h-7 bg-[#34D399] rounded-full relative cursor-pointer border border-[#34D399] transition-colors duration-300" onclick="toggleOverrideAvailability(this)">
+          <div class="w-6 h-6 bg-white rounded-full absolute" style="top:1px; left:1px; transition:transform 0.3s, background-color 0.3s; transform:translateX(20px);"></div>
+        </button>
+        <span class="text-[#A3B3AF] text-sm">Available on this date</span>
+      </div>
+      
+      <div id="override-times" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="custom-time-picker relative inline-flex items-center w-28">
+            <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="09:00 AM" onclick="showTimeDropdown(this)">
+            <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+              <div class="flex gap-2 items-center justify-center">
+                <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <span class="text-[#A3B3AF]">:</span>
+                <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+              <div class="flex justify-end mt-2 gap-2 w-full">
+                <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+          </span>
+          <span class="text-[#A3B3AF] flex-shrink-0">to</span>
+          <span class="custom-time-picker relative inline-flex items-center w-28">
+            <input type="text" readonly class="time-input w-full flex-shrink-0 cursor-pointer bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded px-3 py-2 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" placeholder="17:00 PM" onclick="showTimeDropdown(this)">
+            <div class="time-dropdown absolute left-0 top-full mt-1 min-w-full bg-[#1E3A34] border border-[#2C4A43] rounded-lg shadow-lg z-50 hidden p-2">
+              <div class="flex gap-2 items-center justify-center">
+                <select class="hour-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <span class="text-[#A3B3AF]">:</span>
+                <select class="minute-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]"></select>
+                <select class="ampm-select bg-[#19342e] text-[#E0E0E0] rounded p-1 focus:ring-2 focus:ring-[#34D399]" style="display:none;"><option>AM</option><option>PM</option></select>
+              </div>
+              <div class="flex justify-end mt-2 gap-2 w-full">
+                <button class="bg-[#34D399] text-[#1A2E29] px-3 py-1 rounded font-bold hover:bg-[#2C4A43] transition-colors" onclick="setTimeFromDropdown(this, true)">Set</button>
+                <button class="text-[#A3B3AF] px-3 py-1 rounded hover:text-[#34D399]" onclick="closeTimeDropdown(this)">Cancel</button>
+              </div>
+            </div>
+          </span>
+          <button class="text-[#A3B3AF] hover:text-[#34D399] transition-colors duration-200 p-1 rounded hover:bg-[#19342e] flex-shrink-0" onclick="addOverrideTimeSlot()">
+            <span class="material-icons-outlined text-lg">add</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex gap-3 pt-4">
+        <button class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg font-bold hover:bg-[#2C4A43] transition-colors" onclick="saveOverride()">Save Override</button>
+        <button id="delete-override-btn" class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors hidden" onclick="console.log('[OVERRIDE DEBUG] Delete button clicked'); showDeleteOverrideConfirm();">Delete Override</button>
+        <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeOverrideModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Delete Override</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this override? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteOverride()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Cancel Meeting Confirmation Modal -->
+  <div id="cancel-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Cancel Meeting</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to cancel this meeting? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmCancelMeeting()">Cancel</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeCancelMeetingConfirmModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Reschedule Meeting Modal -->
+  <div id="reschedule-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Reschedule Meeting</h2>
+          <button onclick="closeRescheduleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <input type="date" id="reschedule-date" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]">
+          <select id="reschedule-time" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]"></select>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeRescheduleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmReschedule()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Contact Modal -->
+  <div id="add-contact-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-md">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Add New Contact</h2>
+          <button onclick="closeAddContactModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-4">
+          <div>
+            <label for="contact-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Full Name *</label>
+            <input type="text" id="contact-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter full name">
+          </div>
+          
+          <div>
+            <label for="contact-email" class="block text-[#A3B3AF] text-sm font-medium mb-2">Email Address *</label>
+            <input type="email" id="contact-email" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter email address">
+          </div>
+          
+          <div>
+            <label for="contact-phone" class="block text-[#A3B3AF] text-sm font-medium mb-2">Phone Number</label>
+            <input type="tel" id="contact-phone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter phone number">
+          </div>
+          
+          <div>
+            <label for="contact-company" class="block text-[#A3B3AF] text-sm font-medium mb-2">Company</label>
+            <input type="text" id="contact-company" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter company name">
+          </div>
+          
+          <div>
+            <label for="contact-notes" class="block text-[#A3B3AF] text-sm font-medium mb-2">Notes</label>
+            <textarea id="contact-notes" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Add any notes about this contact"></textarea>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <input type="checkbox" id="contact-favorite" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <label for="contact-favorite" class="text-[#E0E0E0] text-sm">Add to favorites</label>
+          </div>
+
+          <div>
+            <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+            <div id="contact-tag-options" class="flex flex-wrap gap-2"></div>
+            <button type="button" onclick="openCreateTagModal()" class="mt-2 text-sm text-[#34D399] hover:underline">Create Tag</button>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeAddContactModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+            Cancel
+          </button>
+          <button onclick="saveContact()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+            Add Contact
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl shadow-2xl p-8 z-50 hidden" style="min-width:320px; max-width:400px;">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-white">Your Profile</h3>
+      <button onclick="closeProfileModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div class="space-y-2">
+      <p><span class="text-[#A3B3AF]">Name:</span> <span id="profile-name" class="text-white"></span></p>
+      <p><span class="text-[#A3B3AF]">Email:</span> <span id="profile-email" class="text-white"></span></p>
+      <p><span class="text-[#A3B3AF]">Display Name:</span> <span id="profile-displayname" class="text-white"></span> <button class="btn-secondary text-xs ml-2" onclick="openChangeDisplayNameModal()">Change</button></p>
+      <p><span class="text-[#A3B3AF]">Timezone:</span> <span id="profile-timezone" class="text-white"></span></p>
+    </div>
+    <div class="mt-6 text-right">
+      <button class="btn-secondary mr-2" onclick="logout()">Log out</button>
+      <button class="btn-secondary" onclick="closeProfileModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Change Display Name Modal -->
+  <div id="change-displayname-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:300px;">
+    <h3 class="text-lg font-bold text-white mb-4">Change Display Name</h3>
+    <p class="text-red-500 font-semibold text-sm mb-4">Changing your display name will break all existing booking links. Are you sure?</p>
+    <input id="change-displayname-input" type="text" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] mb-4" />
+    <div class="text-right space-x-2">
+      <button class="btn-secondary" onclick="closeChangeDisplayNameModal()">Cancel</button>
+      <button class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg font-bold" onclick="saveDisplayName()">Save</button>
+    </div>
+  </div>
+
+  <!-- Disconnect Google Calendar Modal -->
+  <div id="disconnect-google-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Google Calendar</h2>
+          <button onclick="closeDisconnectGoogleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect your Google Calendar? This will remove the integration.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectGoogleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectGoogle()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disconnect Zoom Modal -->
+  <div id="disconnect-zoom-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Zoom</h2>
+          <button onclick="closeDisconnectZoomModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect Zoom? This will remove the integration.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectZoomModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectZoom()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disconnect Outlook Calendar Modal -->
+  <div id="disconnect-outlook-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Outlook Calendar</h2>
+          <button onclick="closeDisconnectOutlookModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect Outlook Calendar? This will remove the integration.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectOutlookModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectOutlook()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Question Modal -->
+  <div id="add-question-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl shadow-2xl p-8 z-[60] hidden" style="min-width:400px; max-width:500px;">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-lg font-bold text-white">Add Question</h3>
+      <button onclick="closeAddQuestionModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="space-y-4">
+      <!-- Pre-made Questions -->
+      <div>
+        <h4 class="text-[#E0E0E0] font-medium mb-3">Pre-made Questions</h4>
+        <div class="space-y-2">
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="name" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Name</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's full name</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="email" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Email</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's email address</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="phone" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Phone Number</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's phone number</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+            <input type="radio" name="question-type" value="company" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+            <div>
+              <span class="text-[#E0E0E0] font-medium">Company</span>
+              <p class="text-[#A3B3AF] text-sm">Collect the attendee's company name</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Custom Question -->
+      <div>
+        <h4 class="text-[#E0E0E0] font-medium mb-3">Custom Question</h4>
+        <label class="flex items-center gap-3 cursor-pointer p-3 bg-[#19342e] rounded-lg hover:bg-[#2C4A43] transition-colors">
+          <input type="radio" name="question-type" value="custom" class="w-4 h-4 text-[#34D399] bg-[#1A2E29] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+          <div>
+            <span class="text-[#E0E0E0] font-medium">Custom Question</span>
+            <p class="text-[#A3B3AF] text-sm">Ask your own question</p>
+          </div>
+        </label>
+      </div>
+
+      <!-- Custom Question Input (hidden by default) -->
+      <div id="custom-question-input" class="hidden">
+        <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Question Text</label>
+        <input type="text" id="custom-question-text" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter your question">
+      </div>
+
+      <!-- Required Toggle -->
+      <div class="flex items-center gap-3 pt-4 border-t border-[#2C4A43]">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="question-required" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+          <span class="text-[#E0E0E0] text-sm">Required</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-6 border-t border-[#2C4A43]">
+      <button onclick="closeAddQuestionModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+        Cancel
+      </button>
+      <button onclick="confirmAddQuestion()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Add Question
+      </button>
+    </div>
+  </div>
+
+  <!-- Connect Apple Calendar Modal -->
+  <div id="connect-apple-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Connect Apple Calendar</h2>
+          <button onclick="closeConnectAppleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <form onsubmit="submitAppleConnect(); return false;" class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">To create an app-specific password:</p>
+          <ol class="list-decimal list-inside text-[#A3B3AF] text-sm space-y-1">
+            <li>Visit <a href="https://appleid.apple.com" target="_blank" class="text-[#34D399] underline">appleid.apple.com</a> and sign in.</li>
+            <li>Under <span class="text-white">Security</span> choose <span class="text-white">App-Specific Passwords</span> &gt; <span class="text-white">Generate Password…</span></li>
+            <li>Copy the generated password and paste it below.</li>
+          </ol>
+          <p class="text-[#A3B3AF] text-sm">We store this password in our database so Calendarify can sync your events. Do not reuse it elsewhere.</p>
+          <input type="email" id="apple-email" autocomplete="username" placeholder="Apple ID email" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" />
+          <input type="password" id="apple-password" autocomplete="current-password" placeholder="App-specific password" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399]" />
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#2C4A43]">
+            <button type="button" onclick="closeConnectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+            <button type="submit" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Connect</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apple Calendar Selection Modal -->
+  <div id="apple-calendar-selection-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-lg">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Select Apple Calendars</h2>
+          <button onclick="closeAppleCalendarSelectionModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Choose which calendars to sync with Calendarify. Events will be created in the selected calendars.</p>
+          
+          <div id="apple-calendars-list" class="space-y-3 max-h-64 overflow-y-auto">
+            <!-- Calendar checkboxes will be populated here -->
+          </div>
+          
+          <div class="flex items-center gap-2 pt-2">
+            <button type="button" onclick="selectAllAppleCalendars()" class="text-[#34D399] hover:text-[#2fb67c] text-sm font-medium">Select All</button>
+            <span class="text-[#A3B3AF]">|</span>
+            <button type="button" onclick="deselectAllAppleCalendars()" class="text-[#34D399] hover:text-[#2fb67c] text-sm font-medium">Deselect All</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeAppleCalendarSelectionModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmAppleCalendarSelection()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2fb67c] transition-colors font-bold">Save Selection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disconnect Apple Calendar Modal -->
+  <div id="disconnect-apple-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Disconnect Apple Calendar</h2>
+          <button onclick="closeDisconnectAppleModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-[#A3B3AF] text-sm">Are you sure you want to disconnect Apple Calendar? This will remove the saved password.</p>
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeDisconnectAppleModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="confirmDisconnectApple()" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-bold">Disconnect</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+  <!-- Create Event Type Modal -->
+  <div id="create-event-type-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-2xl font-bold text-white">Create New Event Type</h2>
+          <button onclick="closeCreateEventTypeModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-6">
+          <!-- Basic Information -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Name *</label>
+                <input type="text" id="event-type-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., 30-min Intro Call">
+              </div>
+              
+              <div>
+                <label for="event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration *</label>
+                <select id="event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="event-type-slot-interval" class="block text-[#A3B3AF] text-sm font-medium mb-2">Slot Interval *</label>
+                <select id="event-type-slot-interval" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Event type selection removed -->
+            </div>
+
+            <div>
+              <label for="event-type-description" class="block text-[#A3B3AF] text-sm font-medium mb-2">Description</label>
+              <textarea id="event-type-description" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Brief description of what this meeting is about"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Locations *</label>
+                <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4 space-y-3" id="event-type-locations">
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="loc-zoom" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">videocam</span>
+                      <span class="text-[#E0E0E0] font-medium">Zoom</span>
+                    </div>
+                    <span id="loc-zoom-status" class="text-xs text-[#A3B3AF]"></span>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="loc-google-meet" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">video_call</span>
+                      <span class="text-[#E0E0E0] font-medium">Google Meet</span>
+                    </div>
+                    <span id="loc-meet-status" class="text-xs text-[#A3B3AF]"></span>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="loc-phone" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">phone</span>
+                      <span class="text-[#E0E0E0] font-medium">Phone</span>
+                    </div>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="loc-office" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">location_on</span>
+                      <span class="text-[#E0E0E0] font-medium">In-person (Office)</span>
+                    </div>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="loc-custom" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">place</span>
+                      <span class="text-[#E0E0E0] font-medium">Custom</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              <div id="custom-location-container" style="display: none;">
+                <label for="event-type-custom-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Location</label>
+                <input type="text" id="event-type-custom-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter location details">
+              </div>
+            </div>
+
+            <div id="meeting-link-container" style="display:none;">
+              <label for="event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Meeting Link</label>
+              <input type="url" id="event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://example.com/my-room">
+            </div>
+
+            <div>
+                <label for="event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color *</label>
+              <div class="flex items-center gap-3">
+                <input type="color" id="event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
+                <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduling -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Scheduling</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-buffer-before-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-buffer-before-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-buffer-before-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-buffer-before-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label for="event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-buffer-after-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-buffer-after-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-buffer-after-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-buffer-after-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-advance-notice-value" min="0" max="10080" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-advance-notice-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-advance-notice-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-advance-notice-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No minimum</option>
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label for="event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="event-type-booking-limit-value" min="0" max="100" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('event-type-booking-limit-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('event-type-booking-limit-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="event-type-booking-limit-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No limit</option>
+                    <option value="per_day">Per day</option>
+                    <option value="per_week">Per week</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Form -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Booking Form</h3>
+            
+            <div>
+              <label for="event-type-confirmation-message" class="block text-[#A3B3AF] text-sm font-medium mb-2">Confirmation Message</label>
+              <textarea id="event-type-confirmation-message" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Message to show after booking confirmation"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Questions</label>
+              <div id="questions-container" class="space-y-3">
+                <!-- Questions will be added here dynamically -->
+              </div>
+              <button type="button" onclick="openAddQuestionModal()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
+                <span class="material-icons-outlined text-lg">add</span>
+                Add Question
+              </button>
+            </div>
+
+
+          </div>
+
+          <!-- Advanced Settings -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Advanced Settings</h3>
+            
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="event-type-add-to-contacts" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Add attendee to contacts</span>
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+              <div class="space-y-3">
+                <div id="event-type-selected-tags" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-[#19342e] border border-[#2C4A43] rounded-lg">
+                  <!-- Selected tags will appear here -->
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" onclick="openEventTypeTagSelector()" class="flex-1 bg-[#2C4A43] text-[#E0E0E0] px-4 py-2 rounded-lg hover:bg-[#34D399] hover:text-[#1A2E29] transition-colors font-medium flex items-center justify-center gap-2">
+                    <span class="material-icons-outlined text-sm">add</span>
+                    Add Tags
+                  </button>
+                  <button type="button" onclick="openCreateTagModal()" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2">
+                    <span class="material-icons-outlined text-sm">add</span>
+                    Create Tag
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeCreateEventTypeModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+            Cancel
+          </button>
+          <button onclick="saveEventType()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+            Create Event Type
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Event Type Modal -->
+  <div id="edit-event-type-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-2xl font-bold text-white">Edit Event Type</h2>
+          <button onclick="closeEditEventTypeModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-6">
+          <!-- Basic Information -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-name" class="block text-[#A3B3AF] text-sm font-medium mb-2">Event Name *</label>
+                <input type="text" id="edit-event-type-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., 30-min Intro Call">
+              </div>
+              
+              <div>
+                <label for="edit-event-type-duration" class="block text-[#A3B3AF] text-sm font-medium mb-2">Duration *</label>
+                <select id="edit-event-type-duration" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-slot-interval" class="block text-[#A3B3AF] text-sm font-medium mb-2">Slot Interval *</label>
+                <select id="edit-event-type-slot-interval" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                  <option value="15">15 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                  <option value="180">3 hours</option>
+                  <option value="240">4 hours</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Event type editing removed -->
+            </div>
+
+            <div>
+              <label for="edit-event-type-description" class="block text-[#A3B3AF] text-sm font-medium mb-2">Description</label>
+              <textarea id="edit-event-type-description" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Brief description of what this meeting is about"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Locations *</label>
+                <div class="bg-[#19342e] border border-[#2C4A43] rounded-lg p-4 space-y-3" id="edit-event-type-locations">
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="edit-loc-zoom" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">videocam</span>
+                      <span class="text-[#E0E0E0] font-medium">Zoom</span>
+                    </div>
+                    <span id="edit-loc-zoom-status" class="text-xs text-[#A3B3AF]"></span>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="edit-loc-google-meet" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">video_call</span>
+                      <span class="text-[#E0E0E0] font-medium">Google Meet</span>
+                    </div>
+                    <span id="edit-loc-meet-status" class="text-xs text-[#A3B3AF]"></span>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="edit-loc-phone" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">phone</span>
+                      <span class="text-[#E0E0E0] font-medium">Phone</span>
+                    </div>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="edit-loc-office" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">location_on</span>
+                      <span class="text-[#E0E0E0] font-medium">In-person (Office)</span>
+                    </div>
+                  </label>
+                  
+                  <label class="flex items-center gap-3 p-3 bg-[#1E3A34] rounded-lg border border-[#2C4A43] hover:border-[#34D399] transition-colors cursor-pointer group">
+                    <div class="relative">
+                      <input type="checkbox" id="edit-loc-custom" class="sr-only">
+                      <div class="w-5 h-5 border-2 border-[#2C4A43] rounded flex items-center justify-center group-hover:border-[#34D399] transition-colors">
+                        <svg class="w-3 h-3 text-[#34D399] opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="material-icons-outlined text-[#A3B3AF] text-lg">place</span>
+                      <span class="text-[#E0E0E0] font-medium">Custom</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              <div id="edit-custom-location-container" style="display: none;">
+                <label for="edit-event-type-custom-location" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Location</label>
+                <input type="text" id="edit-event-type-custom-location" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter location details">
+              </div>
+            </div>
+
+            <div id="edit-meeting-link-container" style="display:none;">
+              <label for="edit-event-type-link" class="block text-[#A3B3AF] text-sm font-medium mb-2">Custom Meeting Link</label>
+              <input type="url" id="edit-event-type-link" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="https://example.com/my-room">
+            </div>
+
+            <div>
+                <label for="edit-event-type-color" class="block text-[#A3B3AF] text-sm font-medium mb-2">Color *</label>
+              <div class="flex items-center gap-3">
+                <input type="color" id="edit-event-type-color" value="#34D399" class="w-12 h-12 rounded-lg border-2 border-[#2C4A43] cursor-pointer">
+                <span class="text-[#E0E0E0] text-sm">Choose a color to represent this event type</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scheduling -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Scheduling</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-buffer-before" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time Before</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-buffer-before-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-buffer-before-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-buffer-before-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-buffer-before-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-buffer-after" class="block text-[#A3B3AF] text-sm font-medium mb-2">Buffer Time After</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-buffer-after-value" min="0" max="1440" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-buffer-after-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-buffer-after-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-buffer-after-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="edit-event-type-advance-notice" class="block text-[#A3B3AF] text-sm font-medium mb-2">Advance Notice</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-advance-notice-value" min="0" max="10080" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-advance-notice-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-advance-notice-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-advance-notice-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No minimum</option>
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label for="edit-event-type-booking-limit" class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Limit</label>
+                <div class="flex gap-2">
+                  <div class="custom-number-input flex-1">
+                    <input type="number" id="edit-event-type-booking-limit-value" min="0" max="100" value="0" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <div class="number-buttons">
+                      <button type="button" class="number-btn up" onclick="incrementNumber('edit-event-type-booking-limit-value')">▲</button>
+                      <button type="button" class="number-btn down" onclick="decrementNumber('edit-event-type-booking-limit-value')">▼</button>
+                    </div>
+                  </div>
+                  <select id="edit-event-type-booking-limit-unit" class="no-arrow-select bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors">
+                    <option value="0">No limit</option>
+                    <option value="per_day">Per day</option>
+                    <option value="per_week">Per week</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Form -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Booking Form</h3>
+            
+            <div>
+              <label for="edit-event-type-confirmation-message" class="block text-[#A3B3AF] text-sm font-medium mb-2">Confirmation Message</label>
+              <textarea id="edit-event-type-confirmation-message" rows="3" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Message to show after booking confirmation"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Booking Questions</label>
+              <div id="edit-questions-container" class="space-y-3">
+                <!-- Questions will be added here dynamically -->
+              </div>
+              <button type="button" onclick="openAddEditQuestionModal()" class="mt-3 flex items-center gap-2 text-[#34D399] hover:text-[#2C4A43] transition-colors text-sm font-medium">
+                <span class="material-icons-outlined text-lg">add</span>
+                Add Question
+              </button>
+            </div>
+
+
+          </div>
+
+          <!-- Advanced Settings -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Advanced Settings</h3>
+            
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="edit-event-type-add-to-contacts" class="w-5 h-5 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+                <span class="text-[#E0E0E0]">Add attendee to contacts</span>
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+              <div class="space-y-3">
+                <div id="edit-event-type-selected-tags" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-[#19342e] border border-[#2C4A43] rounded-lg">
+                  <!-- Selected tags will appear here -->
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" onclick="openEditEventTypeTagSelector()" class="flex-1 bg-[#2C4A43] text-[#E0E0E0] px-4 py-2 rounded-lg hover:bg-[#34D399] hover:text-[#1A2E29] transition-colors font-medium flex items-center justify-center gap-2">
+                    <span class="material-icons-outlined text-sm">add</span>
+                    Add Tags
+                  </button>
+                  <button type="button" onclick="openCreateTagModal()" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2">
+                    <span class="material-icons-outlined text-sm">add</span>
+                    Create Tag
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeEditEventTypeModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">
+            Cancel
+          </button>
+          <button onclick="updateEventType()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+            Update Event Type
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Event Type Confirmation Modal -->
+  <div id="delete-event-type-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Delete Event Type</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this event type? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteEventType()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteEventTypeConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Cancel Meeting Confirmation Modal -->
+  <div id="cancel-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Cancel Meeting</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to cancel this meeting? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmCancelMeeting()">Cancel Meeting</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeCancelMeetingConfirmModal()">Keep Meeting</button>
+    </div>
+  </div>
+
+  <!-- Delete Meeting Confirmation Modal -->
+  <div id="delete-meeting-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">delete_forever</span>
+      <h3 class="text-lg font-bold text-white">Delete Meeting</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this meeting from your history? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteMeeting()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteMeetingConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Delete Workflow Confirmation Modal -->
+  <div id="delete-workflow-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Delete Workflow</h3>
+    </div>
+    <p class="text-[#A3B3AF] mb-6">Are you sure you want to delete this workflow? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteWorkflow()">Delete</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteWorkflowConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Delete Contact Confirmation Modal -->
+  <div id="delete-contact-confirm-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px;">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="material-icons-outlined text-2xl text-red-400">warning</span>
+      <h3 class="text-lg font-bold text-white">Remove Contact</h3>
+    </div>
+    <p id="delete-contact-message" class="text-[#A3B3AF] mb-6">Are you sure you want to remove this contact?</p>
+    <div class="flex gap-3">
+      <button class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-600 transition-colors" onclick="confirmDeleteContact()">Remove</button>
+      <button class="text-[#A3B3AF] px-6 py-2 rounded-lg hover:text-white transition-colors" onclick="closeDeleteContactConfirmModal()">Cancel</button>
+    </div>
+  </div>
+
+
+  <!-- Create Tag Modal -->
+  <div id="create-tag-modal" class="fixed inset-0 z-[60] hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-sm">
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <h2 class="text-xl font-bold text-white">Create Tag</h2>
+          <button onclick="closeCreateTagModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <input type="text" id="new-tag-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="e.g., VIP, Lead">
+        </div>
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-[#2C4A43]">
+          <button onclick="closeCreateTagModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+          <button onclick="saveTag()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Event Types Modal -->
+  <div id="event-types-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">event</span>
+        <h3 class="text-lg font-bold text-white">Event Types</h3>
+      </div>
+      <button onclick="closeEventTypesModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div id="event-types-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
+      <!-- Event types will be populated here -->
+    </div>
+    <div class="flex justify-end">
+      <button onclick="closeEventTypesModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Tags Modal -->
+  <div id="tags-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
+        <h3 id="tags-modal-title" class="text-lg font-bold text-white">Tags</h3>
+      </div>
+      <button onclick="closeTagsModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div id="tags-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
+      <!-- Tags will be populated here -->
+    </div>
+    <div class="flex justify-end">
+      <button onclick="closeTagsModal()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Event Type Tag Selector Modal -->
+  <div id="event-type-tag-selector-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
+        <h3 class="text-lg font-bold text-white">Select Tags</h3>
+      </div>
+      <button onclick="closeEventTypeTagSelector()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div id="event-type-tag-selector-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
+      <!-- Available tags will be populated here -->
+    </div>
+    <div class="flex justify-between items-center mb-6">
+      <button onclick="openCreateTagModal()" class="text-sm text-[#34D399] hover:underline flex items-center gap-1">
+        <span class="material-icons-outlined text-sm">add</span>
+        Create New Tag
+      </button>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeEventTypeTagSelector()" class="px-6 py-2 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+      <button onclick="confirmEventTypeTagSelection()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Confirm
+      </button>
+    </div>
+  </div>
+
+  <!-- View/Edit Contact Modal -->
+  <div id="view-edit-contact-modal" class="fixed inset-0 z-[70] hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-[#1E3A34] rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-[#2C4A43]">
+          <div class="flex items-center gap-3">
+            <span class="material-icons-outlined text-2xl text-[#34D399]">person</span>
+            <div>
+              <h2 class="text-xl font-bold text-white">Contact Details</h2>
+              <p class="text-[#A3B3AF] text-sm">View and edit contact information</p>
+            </div>
+          </div>
+          <button onclick="closeViewEditContactModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+            <span class="material-icons-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <!-- Mode Toggle -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-[#A3B3AF] text-sm font-medium">Mode:</span>
+              <button id="view-mode-btn" onclick="setContactModalMode('view')" class="px-3 py-1 rounded-lg text-sm font-medium bg-[#34D399] text-[#1A2E29]">View</button>
+              <button id="edit-mode-btn" onclick="setContactModalMode('edit')" class="px-3 py-1 rounded-lg text-sm font-medium bg-[#19342e] text-[#A3B3AF] hover:text-white transition-colors">Edit</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="favorite-toggle-btn" onclick="toggleContactFavorite()" class="text-[#A3B3AF] hover:text-[#34D399] transition-colors">
+                <span class="material-icons-outlined">star_border</span>
+              </button>
+              <button onclick="bookContactFromModal()" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold text-sm flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">event</span>
+                Book Meeting
+              </button>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Basic Information -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">info</span>
+                Basic Information
+              </h3>
+              
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Full Name</label>
+                <input type="text" id="modal-contact-name" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter full name" disabled>
+              </div>
+              
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Email Address</label>
+                <input type="email" id="modal-contact-email" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter email address" disabled>
+              </div>
+              
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Phone Number</label>
+                <input type="tel" id="modal-contact-phone" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter phone number" disabled>
+              </div>
+              
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Company</label>
+                <input type="text" id="modal-contact-company" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors" placeholder="Enter company name" disabled>
+              </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">more_horiz</span>
+                Additional Information
+              </h3>
+              
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Notes</label>
+                <textarea id="modal-contact-notes" rows="4" class="w-full bg-[#19342e] border border-[#2C4A43] text-[#E0E0E0] rounded-lg px-4 py-3 focus:border-[#34D399] focus:ring-2 focus:ring-[#34D399] transition-colors resize-none" placeholder="Add notes about this contact" disabled></textarea>
+              </div>
+              
+              <div>
+                <label class="block text-[#A3B3AF] text-sm font-medium mb-2">Tags</label>
+                <div class="space-y-3">
+                  <div id="modal-contact-selected-tags" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-[#19342e] border border-[#2C4A43] rounded-lg">
+                    <!-- Selected tags will appear here -->
+                  </div>
+                  <div class="flex gap-2">
+                    <button type="button" onclick="openModalContactTagSelector()" class="flex-1 bg-[#2C4A43] text-[#E0E0E0] px-4 py-2 rounded-lg hover:bg-[#34D399] hover:text-[#1A2E29] transition-colors font-medium flex items-center justify-center gap-2" disabled>
+                      <span class="material-icons-outlined text-sm">add</span>
+                      Add Tags
+                    </button>
+                    <button type="button" onclick="openCreateTagModal()" class="bg-[#34D399] text-[#1A2E29] px-4 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center justify-center gap-2" disabled>
+                      <span class="material-icons-outlined text-sm">add</span>
+                      Create Tag
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Section (Expandable) -->
+          <div class="mt-8 border-t border-[#2C4A43] pt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">history</span>
+                Activity History
+              </h3>
+              <button onclick="toggleActivitySection()" class="text-[#A3B3AF] hover:text-white transition-colors">
+                <span id="activity-toggle-icon" class="material-icons-outlined">expand_more</span>
+              </button>
+            </div>
+            <div id="activity-section" class="hidden space-y-3">
+              <div class="bg-[#19342e] rounded-lg p-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 bg-[#34D399] rounded-full"></div>
+                  <div class="flex-1">
+                    <p class="text-[#E0E0E0] text-sm">Contact created</p>
+                    <p class="text-[#A3B3AF] text-xs" id="contact-created-date">Loading...</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-[#19342e] rounded-lg p-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 bg-[#34D399] rounded-full"></div>
+                  <div class="flex-1">
+                    <p class="text-[#E0E0E0] text-sm">Last updated</p>
+                    <p class="text-[#A3B3AF] text-xs" id="contact-updated-date">Loading...</p>
+                  </div>
+                </div>
+              </div>
+              <!-- Future: Add meeting history, email interactions, etc. -->
+              <div class="text-center py-4">
+                <p class="text-[#A3B3AF] text-sm">More activity features coming soon...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Section (Expandable) -->
+          <div class="mt-6 border-t border-[#2C4A43] pt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">flash_on</span>
+                Quick Actions
+              </h3>
+              <button onclick="toggleQuickActionsSection()" class="text-[#A3B3AF] hover:text-white transition-colors">
+                <span id="quick-actions-toggle-icon" class="material-icons-outlined">expand_more</span>
+              </button>
+            </div>
+            <div id="quick-actions-section" class="hidden grid grid-cols-2 gap-3">
+              <button onclick="copyContactEmail()" class="bg-[#19342e] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">content_copy</span>
+                <span class="text-sm">Copy Email</span>
+              </button>
+              <button onclick="copyContactPhone()" class="bg-[#19342e] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">phone</span>
+                <span class="text-sm">Copy Phone</span>
+              </button>
+              <button onclick="sendEmailToContact()" class="bg-[#19342e] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">email</span>
+                <span class="text-sm">Send Email</span>
+              </button>
+              <button onclick="duplicateContact()" class="bg-[#19342e] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex items-center gap-2">
+                <span class="material-icons-outlined text-[#34D399]">content_copy</span>
+                <span class="text-sm">Duplicate</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between p-6 border-t border-[#2C4A43]">
+          <div class="flex items-center gap-2">
+            <span class="text-[#A3B3AF] text-sm">Contact ID:</span>
+            <span id="modal-contact-id" class="text-[#E0E0E0] text-sm font-mono">Loading...</span>
+          </div>
+          <div class="flex gap-3">
+            <button onclick="closeViewEditContactModal()" class="px-6 py-3 text-[#A3B3AF] hover:text-white transition-colors font-medium">Close</button>
+            <button id="save-contact-btn" onclick="saveContactChanges()" class="bg-[#34D399] text-[#1A2E29] px-6 py-3 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold hidden">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Contact Tag Selector -->
+  <div id="modal-contact-tag-selector" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-[80] hidden" style="min-width:400px; max-width:500px; max-height:80vh;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">local_offer</span>
+        <h3 class="text-lg font-bold text-white">Select Tags</h3>
+      </div>
+      <button onclick="closeModalContactTagSelector()" class="text-[#A3B3AF] hover:text-white transition-colors">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div id="modal-contact-tag-selector-list" class="max-h-60 overflow-y-auto mb-6 space-y-2 pr-2" style="scrollbar-width: thin; scrollbar-color: #2C4A43 #1E3A34;">
+      <!-- Available tags will be populated here -->
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeModalContactTagSelector()" class="px-6 py-2 text-[#A3B3AF] hover:text-white transition-colors font-medium">Cancel</button>
+      <button onclick="confirmModalContactTagSelection()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold">
+        Confirm
+      </button>
+    </div>
+  </div>
+
+  <!-- Contact View Modal -->
+  <div id="contact-view-modal" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1E3A34] rounded-xl p-8 z-50 hidden" style="min-width:600px; max-width:800px; max-height:90vh; overflow-y:auto;">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-2xl text-[#34D399]">person</span>
+        <h3 id="contact-view-title" class="text-xl font-bold text-white">Contact Details</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="edit-contact-btn" onclick="toggleContactEditMode()" class="text-[#34D399] hover:text-white transition-colors">
+          <span class="material-icons-outlined">edit</span>
+        </button>
+        <button onclick="closeContactViewModal()" class="text-[#A3B3AF] hover:text-white transition-colors">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+    </div>
+    
+    <div id="contact-view-content" class="space-y-6">
+      <!-- Contact details will be populated here -->
+    </div>
+    
+    <!-- Quick Actions Section -->
+    <div id="contact-quick-actions" class="bg-[#19342e] rounded-lg p-4 border border-[#2C4A43] mt-6">
+      <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+        <span class="material-icons-outlined text-[#34D399]">flash_on</span>
+        Quick Actions
+      </h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button onclick="copyContactEmail()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">content_copy</span>
+          <span class="text-xs">Copy Email</span>
+        </button>
+        <button onclick="copyContactPhone()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">phone</span>
+          <span class="text-xs">Copy Phone</span>
+        </button>
+        <button onclick="sendEmailToContact()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">email</span>
+          <span class="text-xs">Send Email</span>
+        </button>
+        <button onclick="duplicateContact()" class="bg-[#223c36] hover:bg-[#2C4A43] text-[#E0E0E0] p-3 rounded-lg transition-colors flex flex-col items-center gap-2">
+          <span class="material-icons-outlined text-[#34D399]">content_copy</span>
+          <span class="text-xs">Duplicate</span>
+        </button>
+      </div>
+      
+      <!-- Save Button (Hidden by default) -->
+      <div id="contact-save-section" class="hidden mt-4 pt-4 border-t border-[#2C4A43]">
+        <div class="flex gap-3 justify-center">
+          <button onclick="saveContactChanges()" class="bg-[#34D399] text-[#1A2E29] px-6 py-2 rounded-lg hover:bg-[#2C4A43] transition-colors font-bold flex items-center gap-2">
+            <span class="material-icons-outlined">save</span>
+            Save Changes
+          </button>
+          <button onclick="cancelContactEdit()" class="bg-[#EF4444] text-white px-6 py-2 rounded-lg hover:bg-[#DC2626] transition-colors font-bold flex items-center gap-2">
+            <span class="material-icons-outlined">cancel</span>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-end pt-6 border-t border-[#2C4A43]">
+      <button onclick="closeContactViewModal()" class="px-6 py-2 text-[#A3B3AF] hover:text-white transition-colors font-medium">Close</button>
+    </div>
+  </div>
+
+</body>
+</html>
+

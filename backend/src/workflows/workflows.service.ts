@@ -27,7 +27,28 @@ export class WorkflowsService {
   constructor(private prisma: PrismaService) {}
 
   private format(raw: any): Workflow {
-    const data = raw.data || {};
+    const source = raw.data || {};
+    // Assign stable node ids for frontend rendering if missing
+    const data = (() => {
+      try {
+        const cloned: any = typeof source === 'object' ? JSON.parse(JSON.stringify(source)) : {};
+        // Ensure trigger dom id present
+        if (!cloned.triggerDomId) cloned.triggerDomId = 'node-1';
+        // Ensure step ids present (node-2, node-3, ... in stored order)
+        if (Array.isArray(cloned.steps)) {
+          cloned.steps = cloned.steps.map((step: any, idx: number) => {
+            const s = step && typeof step === 'object' ? step : {};
+            if (!s.id && !s.domId) {
+              s.id = `node-${idx + 2}`;
+            }
+            return s;
+          });
+        }
+        return cloned;
+      } catch {
+        return source || {};
+      }
+    })();
     return {
       id: raw.id,
       userId: raw.user_id,

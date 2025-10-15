@@ -1,12 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   console.log('[SERVER DEBUG] Starting NestJS application...');
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' });
+  app.use(cookieParser());
+  app.enableCors({
+    origin: (origin, cb) => cb(null, origin || true),
+    credentials: true,
+    methods: ['GET','POST','PATCH','PUT','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization'],
+  });
 
   const config = new DocumentBuilder().setTitle('API').setVersion('1').build();
   const document = SwaggerModule.createDocument(app, config);

@@ -1,0 +1,233 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String   @unique
+  display_name String? @unique
+  name        String?
+  password    String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  event_types EventType[]
+  bookings    Booking[]
+  availability_rules   AvailabilityRule[]
+  availability_overrides AvailabilityOverride[]
+  external_calendars ExternalCalendar[]
+  user_state  UserState?
+  tags        Tag[]
+  contacts    Contact[]
+  workflows   Workflow[]
+  workflowRuns WorkflowRun[]
+  workflowDrafts WorkflowDraft[]
+}
+
+model EventType {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  slug        String   @unique
+  title       String
+  description String?
+  duration    Int
+  buffer_before Int @default(0)
+  buffer_after  Int @default(0)
+  advance_notice Int @default(0)
+  slot_interval Int @default(30) // Interval between slots in minutes (required, defaults to 30)
+  questions   Json?
+  required_fields Json?
+  confirmation_message String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  bookings    Booking[]
+}
+
+model AvailabilityRule {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  day_of_week  Int
+  start_minute Int
+  end_minute   Int
+}
+
+model AvailabilityOverride {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  date         DateTime
+  start_minute Int?
+  end_minute   Int?
+  is_busy      Boolean  @default(false)
+}
+
+model ExternalCalendar {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user          User     @relation(fields: [user_id], references: [id])
+  user_id       String   @db.Uuid
+  provider      String
+  external_id   String
+  access_token  String?
+  refresh_token String?
+  password      String?
+  selected_calendar String?
+  selected_calendars Json? // Array of selected calendar URLs for Apple Calendar
+}
+
+model Booking {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type   EventType @relation(fields: [event_type_id], references: [id])
+  event_type_id String   @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  name         String
+  email        String
+  starts_at    DateTime
+  ends_at      DateTime
+  zoom_link    String?  // Store Zoom meeting link when created
+  google_meet_link String?  // Store Google Meet link when created
+  notes        BookingNote[]
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id, starts_at, ends_at])
+}
+
+model BookingNote {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking    Booking  @relation(fields: [booking_id], references: [id])
+  booking_id String   @db.Uuid
+  note       String
+  created_at DateTime @default(now())
+}
+
+model UserState {
+  user_id String @id @db.Uuid
+  data    Json?
+  user    User  @relation(fields: [user_id], references: [id])
+}
+
+model Tag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  name        String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  contacts    ContactTag[]
+
+  @@unique([user_id, name])
+}
+
+model Contact {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  name        String
+  email       String
+  phone       String?
+  company     String?
+  notes       String?
+  favorite    Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  tags        ContactTag[]
+
+  @@unique([user_id, email])
+}
+
+model ContactTag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contact     Contact  @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  contact_id  String   @db.Uuid
+  tag         Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  tag_id      String   @db.Uuid
+  created_at  DateTime @default(now())
+
+  @@unique([contact_id, tag_id])
+}
+
+model Workflow {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String   @db.Uuid
+  name        String
+  description String?
+  data        Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  runs        WorkflowRun[]
+  drafts      WorkflowDraft[]
+
+  @@index([user_id])
+}
+
+// Draft snapshots for workflows (branch-able, versioned)
+model WorkflowDraft {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String   @db.Uuid
+  workflow     Workflow @relation(fields: [workflow_id], references: [id], onDelete: Cascade)
+  workflow_id  String   @db.Uuid
+  branch       String   @default("draft")
+  version      Int      @default(autoincrement())
+  name         String?  // optional human label for the snapshot
+  data         Json
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id, workflow_id, branch, updated_at])
+  @@unique([workflow_id, branch, version])
+}
+
+// Execution history (persistent)
+
+enum WorkflowRunStatus {
+  running
+  success
+  failed
+  partial
+}
+
+enum WorkflowStepStatus {
+  running
+  success
+  failed
+}
+
+model WorkflowRun {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user         User              @relation(fields: [user_id], references: [id])
+  user_id      String            @db.Uuid
+  workflow     Workflow          @relation(fields: [workflow_id], references: [id])
+  workflow_id  String            @db.Uuid
+  status       WorkflowRunStatus @default(running)
+  trigger      String?
+  context      Json?
+  started_at   DateTime          @default(now())
+  finished_at  DateTime?
+  steps        WorkflowStepRun[]
+
+  @@index([user_id, workflow_id, started_at])
+}
+
+model WorkflowStepRun {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  run              WorkflowRun        @relation(fields: [workflow_run_id], references: [id], onDelete: Cascade)
+  workflow_run_id  String             @db.Uuid
+  index            Int
+  type             String
+  status           WorkflowStepStatus @default(running)
+  message          String?
+  error_stack      String?
+  started_at       DateTime           @default(now())
+  finished_at      DateTime?
+
+  @@index([workflow_run_id, index])
+}

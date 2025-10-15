@@ -1,0 +1,9 @@
+
+# Development files to reduce file watchers
+*.log
+*.tmp
+*.temp
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
