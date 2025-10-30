@@ -2946,6 +2946,12 @@
         
         // Add orbs at connection midpoints
         try { WorkflowManager.addInsertOrbsForConnections(); } catch (e) {}
+        // Also add source-anchored orbs under sources that feed a join
+        try {
+          WorkflowManager.connections.forEach((connection) => {
+            try { WorkflowManager.createSourceInsertOrb(connection); } catch {}
+          });
+        } catch {}
         // Place big orbs strictly at branch ends
         this.placePathEndOrbs(sortedNodes);
         
@@ -2967,6 +2973,12 @@
               StructureManager.placePathEndOrbs(sortedForOrbs);
               // Remove stale insert orbs and then position all orbs
               WorkflowManager.cleanupStaleInsertOrbs();
+              // Ensure source-anchored orbs exist and are positioned
+              try {
+                WorkflowManager.connections.forEach((connection) => {
+                  try { WorkflowManager.createSourceInsertOrb(connection); WorkflowManager.updateSourceInsertOrbPosition(connection); } catch {}
+                });
+              } catch {}
               OrbManager.updateAllOrbPositions();
             } catch {}
           } catch (e) {
