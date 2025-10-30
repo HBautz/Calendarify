@@ -3,12 +3,17 @@ async function apiRequest(path, data) {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const text = await res.text();
-    console.error(`API error: ${text}`);
-    throw new Error(text || res.statusText);
+    let message = res.statusText;
+    try {
+      const text = await res.text();
+      try { const j = JSON.parse(text); message = j?.message || message; } catch { message = text || message; }
+      console.error('API error:', text);
+    } catch {}
+    throw new Error(message || 'Request failed');
   }
   const result = await res.json();
   return result;
@@ -66,11 +71,15 @@ function logout() {
 }
 
 async function loadUserState(token) {
-  // Remove surrounding quotes if they exist
-  const cleanToken = token.replace(/^"|"$/g, '');
-  
+  // Support cookie-based auth; only attach Authorization if token provided
+  const headers = { };
+  if (token) {
+    const cleanToken = String(token).replace(/^"|"$/g, '');
+    headers.Authorization = `Bearer ${cleanToken}`;
+  }
   const res = await fetch(`${API_URL}/users/me/state`, {
-    headers: { Authorization: `Bearer ${cleanToken}` },
+    headers,
+    credentials: 'include',
   });
   if (res.ok) {
     const data = await res.json();
@@ -106,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await register({ name, email, password });
         const { access_token } = await login({ email, password });
         const remember = signupForm.querySelector('#signup-remember').checked;
-        storeToken(access_token, remember);
+        if (access_token) storeToken(access_token, remember);
         await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {
@@ -127,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { access_token } = await login({ email, password });
         const rememberCheckbox = loginForm.querySelector('#login-remember');
         const remember = rememberCheckbox.checked;
-        storeToken(access_token, remember);
+        if (access_token) storeToken(access_token, remember);
         await loadUserState(access_token);
         window.location.href = '/dashboard';
       } catch (e) {

@@ -13,7 +13,9 @@ export class AuthService {
   async register(data: RegisterDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
-      throw new UnauthorizedException('Email already registered');
+      // Use 409 Conflict for already-registered emails
+      const { ConflictException } = await import('@nestjs/common');
+      throw new ConflictException('Email already registered');
     }
     const password = await bcrypt.hash(data.password, 10);
     const displaySource = data.displayName || data.name || data.email;

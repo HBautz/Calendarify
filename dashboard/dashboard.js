@@ -571,19 +571,25 @@
     }
 
     async function openCreateEventTypeModal() {
-      document.getElementById('modal-backdrop').classList.remove('hidden');
-      document.getElementById('create-event-type-modal').classList.remove('hidden');
-      document.getElementById('create-menu').classList.add('hidden');
+      const backdrop = document.getElementById('modal-backdrop');
+      const modal = document.getElementById('create-event-type-modal');
+      const menu = document.getElementById('create-menu');
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (modal) modal.classList.remove('hidden');
+      if (menu) menu.classList.add('hidden');
       // Update location gates when create modal is opened
-      await updateLocationGates();
+      try { await updateLocationGates(); } catch {}
     }
 
     function closeCreateEventTypeModal() {
-      document.getElementById('modal-backdrop').classList.add('hidden');
-      document.getElementById('create-event-type-modal').classList.add('hidden');
+      const backdrop = document.getElementById('modal-backdrop');
+      const modal = document.getElementById('create-event-type-modal');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (modal) modal.classList.add('hidden');
       // Clear questions container
-      document.getElementById('questions-container').innerHTML = '';
-      questionCounter = 0;
+      const qc = document.getElementById('questions-container');
+      if (qc) qc.innerHTML = '';
+      if (typeof questionCounter !== 'undefined') questionCounter = 0;
     }
 
     async function saveOverride() {
@@ -2351,9 +2357,19 @@
     }
 
     async function saveEventType() {
-      const name = document.getElementById('event-type-name').value.trim();
-      const duration = document.getElementById('event-type-duration').value;
-      const description = document.getElementById('event-type-description').value.trim();
+      // Safe access helpers
+      const val = (id) => {
+        const el = document.getElementById(id);
+        return (el && typeof el.value !== 'undefined') ? String(el.value).trim() : '';
+      };
+      const numVal = (id) => {
+        const v = parseInt(val(id), 10);
+        return Number.isFinite(v) ? v : 0;
+      };
+
+      const name = val('event-type-name');
+      const duration = val('event-type-duration');
+      const description = val('event-type-description');
       // Collect locations
       const locations = [];
       if (document.getElementById('loc-zoom')?.checked) locations.push('zoom');
@@ -2361,21 +2377,21 @@
       if (document.getElementById('loc-phone')?.checked) locations.push('phone');
       if (document.getElementById('loc-office')?.checked) locations.push('office');
       if (document.getElementById('loc-custom')?.checked) locations.push('custom');
-      const customLocation = document.getElementById('event-type-custom-location').value.trim();
-      const link = document.getElementById('event-type-link').value.trim();
-      const color = document.getElementById('event-type-color').value;
+      const customLocation = val('event-type-custom-location');
+      const link = val('event-type-link');
+      const color = val('event-type-color') || '#34D399';
       // Handle buffer times with new structure
-      const bufferBeforeValue = parseInt(document.getElementById('event-type-buffer-before-value').value) || 0;
-      const bufferBeforeUnit = document.getElementById('event-type-buffer-before-unit').value;
+      const bufferBeforeValue = numVal('event-type-buffer-before-value');
+      const bufferBeforeUnit = val('event-type-buffer-before-unit') || 'minutes';
       const bufferBefore = bufferBeforeUnit === 'hours' ? bufferBeforeValue * 60 : bufferBeforeValue;
       
-      const bufferAfterValue = parseInt(document.getElementById('event-type-buffer-after-value').value) || 0;
-      const bufferAfterUnit = document.getElementById('event-type-buffer-after-unit').value;
+      const bufferAfterValue = numVal('event-type-buffer-after-value');
+      const bufferAfterUnit = val('event-type-buffer-after-unit') || 'minutes';
       const bufferAfter = bufferAfterUnit === 'hours' ? bufferAfterValue * 60 : bufferAfterValue;
       
       // Handle advance notice with new structure
-      const advanceNoticeValue = parseInt(document.getElementById('event-type-advance-notice-value').value) || 0;
-      const advanceNoticeUnit = document.getElementById('event-type-advance-notice-unit').value;
+      const advanceNoticeValue = numVal('event-type-advance-notice-value');
+      const advanceNoticeUnit = val('event-type-advance-notice-unit') || '0';
       let advanceNotice = 0;
       
       if (advanceNoticeUnit === 'days') {
@@ -2388,8 +2404,8 @@
       // If unit is '0', advanceNotice remains 0 (no minimum)
       
       // Handle booking limit with new structure
-      const bookingLimitValue = parseInt(document.getElementById('event-type-booking-limit-value').value) || 0;
-      const bookingLimitUnit = document.getElementById('event-type-booking-limit-unit').value;
+      const bookingLimitValue = numVal('event-type-booking-limit-value');
+      const bookingLimitUnit = val('event-type-booking-limit-unit') || '0';
       let bookingLimit = 0;
       
       if (bookingLimitUnit === 'per_day') {
@@ -2399,15 +2415,15 @@
       } else if (bookingLimitUnit === '0') {
         bookingLimit = 0; // No limit
       }
-      const confirmationMessage = document.getElementById('event-type-confirmation-message').value.trim();
+      const confirmationMessage = val('event-type-confirmation-message');
       const questions = getQuestionsData('questions-container');
-      const availability = document.getElementById('event-type-availability').checked;
-      const reminders = document.getElementById('event-type-reminders').checked;
-      const followUp = document.getElementById('event-type-follow-up').checked;
+      const availability = document.getElementById('event-type-availability')?.checked || false;
+      const reminders = document.getElementById('event-type-reminders')?.checked || false;
+      const followUp = document.getElementById('event-type-follow-up')?.checked || false;
 
-      const rescheduleNotification = document.getElementById('event-type-reschedule-notification').checked;
-      const secret = document.getElementById('event-type-secret').value;
-      const priority = document.getElementById('event-type-priority').value;
+      const rescheduleNotification = document.getElementById('event-type-reschedule-notification')?.checked || false;
+      const secret = val('event-type-secret');
+      const priority = val('event-type-priority');
       const tags = getEventTypeSelectedTags();
       const addToContacts = document.getElementById('event-type-add-to-contacts')?.checked || false;
 
@@ -2435,7 +2451,8 @@
           const clean = token.replace(/^"|"$/g, '');
           const res = await fetch(`${API_URL}/event-types`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+            headers: Object.assign({ 'Content-Type': 'application/json' }, (clean ? { Authorization: `Bearer ${clean}` } : {})),
+            credentials: 'include',
             body: JSON.stringify({ 
               title: name, 
               slug: generateSlug(name, freshEventTypes || []), 
@@ -2473,7 +2490,8 @@
             // Save to UserState
             await fetch(`${API_URL}/users/me/state`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+              headers: Object.assign({ 'Content-Type': 'application/json' }, (clean ? { Authorization: `Bearer ${clean}` } : {})),
+              credentials: 'include',
               body: JSON.stringify({
                 [`event-type-settings-${savedEventType.id}`]: additionalSettings
               })
@@ -2485,7 +2503,9 @@
             showNotification('Event type created successfully!');
             closeCreateEventTypeModal();
           } else {
-            showNotification('Failed to create event type');
+            let message = 'Failed to create event type';
+            try { const text = await res.text(); try { const j = JSON.parse(text); message = j?.message || message; } catch { if (text) message = text; } } catch {}
+            showNotification(message);
           }
         }
       } catch (e) {
@@ -4133,10 +4153,12 @@
         }
         
         tags.forEach(tag => {
-          const id = 'tag-option-' + tag.replace(/\s+/g, '-');
+          const name = (typeof tag === 'string') ? tag : (tag?.name || '');
+          if (!name) return;
+          const id = 'tag-option-' + name.replace(/\s+/g, '-');
           container.innerHTML += `<label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" value="${tag}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
-              <span class="text-[#E0E0E0] text-sm">${tag}</span>
+              <input type="checkbox" value="${name}" class="w-4 h-4 text-[#34D399] bg-[#19342e] border-[#2C4A43] rounded focus:ring-[#34D399] focus:ring-2">
+              <span class="text-[#E0E0E0] text-sm">${name}</span>
             </label>`;
         });
       } catch (error) {

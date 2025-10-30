@@ -992,7 +992,7 @@
       };
     }
     
-    // Client no longer reads tokens; backend authenticates via HttpOnly cookies
+    // Client does not manage tokens; backend authenticates via HttpOnly cookies
     function getAnyToken() { return null; }
     
     // Centralized unauthorized handling: clear tokens and redirect to login
@@ -1010,16 +1010,8 @@
         window.fetch = async (input, init = {}) => {
           try {
             const headers = new Headers(init.headers || {});
-            // Primary path: rely on HttpOnly cookie
+            // Always rely on cookie-based auth; no local storage/token reads
             init = Object.assign({}, init, { headers, credentials: 'include' });
-            // Fallback: if a legacy token exists (from dashboard), attach once to seed cookie
-            try {
-              const legacy = (sessionStorage.getItem('calendarify-token') || localStorage.getItem('calendarify-token'));
-              if (legacy && !headers.has('Authorization')) {
-                const clean = legacy.replace(/^"|"$/g, '');
-                headers.set('Authorization', `Bearer ${clean}`);
-              }
-            } catch {}
           } catch {}
           const res = await originalFetch(input, init);
           if (res && res.status === 401) {
@@ -1037,6 +1029,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('workflow') || null;
     }
+    
+    // Note: No local storage usage for editor state unless absolutely necessary
     
     // Set workflow ID in URL instead of localStorage
     function setCurrentWorkflowId(workflowId) {
@@ -1067,14 +1061,18 @@
     }
     
     // Order tracking
+    if (typeof window.__DEBUG_ORDERS__ === 'undefined') window.__DEBUG_ORDERS__ = true;
     let orderCounter = 0;
     function logOrder(event) {
-      if (window.__DEBUG_ORDERS__) console.log(`[ORDER-${++orderCounter}] ${event}`);
+      if (!window.__DEBUG_ORDERS__) return;
+      const t = (typeof performance !== 'undefined' && performance.now) ? performance.now().toFixed(1) : Date.now();
+      console.log(`[ORDER-${++orderCounter}] t=${t} ${event}`);
     }
 
     // Global variables
     let currentWorkflow = null;
     let currentNodeId = 0;
+    let availableNodeIds = new Set();
     let nodes = [];
     let isDragging = false;
     let dragStart = { x: 0, y: 0 };
@@ -1094,6 +1092,7 @@
       svg: null,
       // Helper: create midpoint insert orbs for all valid connections
       addInsertOrbsForConnections() {
+        logOrder('WorkflowManager.addInsertOrbsForConnections begin');
         try {
           for (const connection of this.connections.values()) {
             const fromNode = connection.from;
@@ -1120,8 +1119,15 @@
             } catch {}
             // Otherwise add midpoint insert orb
             this.createInsertOrb(connection);
+            // Additionally, for connections into a join, add a source-anchored orb right under the source node
+            try {
+              const toData = nodes.find(n => n.element === toNode)?.data || {};
+              const isJoinTarget = !!(toData && toData.properties && toData.properties.joinForIfId) || (this.toNodeIsImplicitJoin && this.toNodeIsImplicitJoin(connection));
+              if (isJoinTarget) this.createSourceInsertOrb(connection);
+            } catch {}
           }
         } catch (e) { console.warn('addInsertOrbsForConnections failed:', e); }
+        logOrder('WorkflowManager.addInsertOrbsForConnections end');
       },
 
       
@@ -1151,7 +1157,7 @@
       
       // Create a connection between two nodes
       createConnection(fromNode, toNode, createInsertOrb = true) {
-        logOrder(`WorkflowManager.createConnection: ${fromNode?.id} -> ${toNode?.id}`);
+        logOrder(`WorkflowManager.createConnection start ${fromNode?.id} -> ${toNode?.id}`);
         if (!this.isValidConnection(fromNode, toNode)) {
           logOrder(`WorkflowManager.createConnection invalid: ${fromNode?.id} -> ${toNode?.id}`);
           return null;
@@ -1187,6 +1193,7 @@
           }
         }
         
+        logOrder(`WorkflowManager.createConnection end id=${connectionId}`);
         return connection;
       },
       
@@ -1267,6 +1274,8 @@
         
         // Position the insert orb
         this.updateInsertOrbPosition(connection);
+        // Also ensure a source-anchored orb exists and is positioned for join connections
+        try { this.createSourceInsertOrb(connection); this.updateSourceInsertOrbPosition(connection); } catch {}
         
         // Animate in (preserve centering transform)
         requestAnimationFrame(() => {
@@ -1278,6 +1287,7 @@
       
       // Remove any orbs whose connection no longer exists
       cleanupStaleInsertOrbs() {
+        logOrder('WorkflowManager.cleanupStaleInsertOrbs begin');
         try {
           const validIds = new Set(Array.from(this.connections.keys()));
           // Remove DOM nodes not tied to an active connection
@@ -1296,6 +1306,7 @@
             }
           }
         } catch {}
+        logOrder('WorkflowManager.cleanupStaleInsertOrbs end');
       },
       
       // Update insert orb position
@@ -1383,6 +1394,7 @@
         }
         
         try {
+          logOrder(`updateConnectionPosition start from=${connection.from?.id} to=${connection.to?.id}`);
           const fromRect = connection.from.getBoundingClientRect();
           const toRect = connection.to.getBoundingClientRect();
           const containerRect = container.getBoundingClientRect();
@@ -1415,13 +1427,31 @@
           
           // Handle True/False to join connections first (specific case); also treat implicit joins as joins
           if ((fromType === 'True' || fromType === 'False') && this.toNodeHasJoin(toType, connection)) {
-            // True/False to join action: use orthogonal path similar to If->True/False
-            // but account for different vertical positions by extending the line appropriately
-            // Calculate appropriate midY based on the vertical distance between source and target
-            const verticalDistance = Math.abs(toY - fromY);
-            const minDrop = 120; // doubled minimum drop for longer vertical lines with orbs
-            const maxDrop = 240; // doubled maximum drop for longer vertical lines with orbs
-            const midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+            // Compute a common turn-in level (midY) for all inbound connections to this join target
+            const minDrop = 120;
+            let midY;
+            try {
+              const inbound = Array.from(WorkflowManager.connections.values()).filter(c => c && c.to === connection.to);
+              if (inbound.length >= 2) {
+                let maxFromY = fromY;
+                for (const c of inbound) {
+                  if (!c.from) continue;
+                  const fr = c.from.getBoundingClientRect();
+                  if (!fr) continue;
+                  const fy = Math.round(fr.bottom - containerRect.top - 1);
+                  if (fy > maxFromY) maxFromY = fy;
+                }
+                midY = Math.min(toY - 12 - 10, maxFromY + minDrop);
+              } else {
+                const verticalDistance = Math.abs(toY - fromY);
+                const maxDrop = 240;
+                midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+              }
+            } catch {
+              const verticalDistance = Math.abs(toY - fromY);
+              const maxDrop = 240;
+              midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+            }
             const dir = (toX >= fromX) ? 1 : -1;
             d = `M ${fromX} ${fromY}`;
             d += ` L ${fromX} ${midY - r}`;
@@ -1435,11 +1465,31 @@
             connection.line.setAttribute('stroke-linecap', 'round');
             connection.line.setAttribute('stroke-linejoin', 'round');
           } else if (this.toNodeIsImplicitJoin(connection)) {
-            // Handle branch actions to join node (implicit join detection)
-            const verticalDistance = Math.abs(toY - fromY);
-            const minDrop = 120; // doubled minimum drop for longer vertical lines with orbs
-            const maxDrop = 240; // doubled maximum drop for longer vertical lines with orbs
-            const midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+            // Handle branch actions to implicit join node with aligned turn-in level
+            const minDrop = 120;
+            let midY;
+            try {
+              const inbound = Array.from(WorkflowManager.connections.values()).filter(c => c && c.to === connection.to);
+              if (inbound.length >= 2) {
+                let maxFromY = fromY;
+                for (const c of inbound) {
+                  if (!c.from) continue;
+                  const fr = c.from.getBoundingClientRect();
+                  if (!fr) continue;
+                  const fy = Math.round(fr.bottom - containerRect.top - 1);
+                  if (fy > maxFromY) maxFromY = fy;
+                }
+                midY = Math.min(toY - 12 - 10, maxFromY + minDrop);
+              } else {
+                const verticalDistance = Math.abs(toY - fromY);
+                const maxDrop = 240;
+                midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+              }
+            } catch {
+              const verticalDistance = Math.abs(toY - fromY);
+              const maxDrop = 240;
+              midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+            }
             const dir = (toX >= fromX) ? 1 : -1;
             d = `M ${fromX} ${fromY}`;
             d += ` L ${fromX} ${midY - r}`;
@@ -1488,7 +1538,7 @@
             // Vertical down to target
             d += ` L ${toX} ${toY}`;
           } else if ((fromType === 'True' || fromType === 'False')) {
-            if (!(toType === 'True' || toType === 'False')) {
+              if (!(toType === 'True' || toType === 'False')) {
               // From branch header to first branch node: orthogonal with side offset to avoid vertical-only
               const side = (fromType === 'True') ? -1 : 1; // push outward from center
               const hOffset = 40;
@@ -1512,6 +1562,7 @@
           }
 
           connection.line.setAttribute('d', d);
+          logOrder(`updateConnectionPosition end from=${connection.from?.id} to=${connection.to?.id}`);
           connection.line.style.display = 'block';
           if (DEBUG_LINE_PATHS) {
             const fromId = connection.from.id;
@@ -1523,10 +1574,87 @@
           
           // Update insert orb position
           this.updateInsertOrbPosition(connection);
+          // Update source-anchored orb position if present
+          try { this.updateSourceInsertOrbPosition(connection); } catch {}
           
         } catch (error) {
           console.error('Error updating connection position:', error);
         }
+      },
+
+      // Create a source-anchored insert orb directly under the source node for join connections (idempotent)
+      createSourceInsertOrb(connection) {
+        try {
+          if (!connection || !connection.from || !connection.to) return;
+          const toData = (connection.to.__nodeData && connection.to.__nodeData.data) || (nodes.find(n => n.element === connection.to)?.data) || null;
+          const isJoinTarget = !!(toData && toData.properties && toData.properties.joinForIfId) || (this.toNodeIsImplicitJoin && this.toNodeIsImplicitJoin(connection));
+          if (!isJoinTarget) return;
+
+          const id = connection.id;
+          // Remove any existing source orb for this connection to keep idempotent
+          try {
+            const existing = container.querySelector(`.insert-action-orb[data-connection-id="${id}"][data-role="source"]`);
+            if (existing) existing.remove();
+          } catch {}
+
+          const orb = document.createElement('div');
+          orb.className = 'insert-action-orb';
+          orb.dataset.connectionId = id;
+          orb.dataset.role = 'source';
+          orb.style.position = 'absolute';
+          orb.style.width = '32px';
+          orb.style.height = '32px';
+          orb.style.background = 'linear-gradient(135deg, #34D399 0%, #10B981 100%)';
+          orb.style.borderRadius = '50%';
+          orb.style.display = 'flex';
+          orb.style.alignItems = 'center';
+          orb.style.justifyContent = 'center';
+          orb.style.cursor = 'pointer';
+          orb.style.zIndex = '25';
+          orb.style.opacity = '0';
+          orb.style.transform = 'translate(-50%, -50%) scale(0.8)';
+          orb.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+          orb.style.boxShadow = '0 3px 8px rgba(52, 211, 153, 0.3)';
+          orb.style.border = '2px solid rgba(255, 255, 255, 0.1)';
+          orb.innerHTML = '<span class="material-icons-outlined" style="color:#1A2E29;font-size:1rem;">add</span>';
+
+          orb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            try { WorkflowManager.handleInsertOrbClick(connection); } catch {}
+          });
+
+          // Hover effects to match midpoint orbs
+          orb.addEventListener('mouseenter', () => {
+            orb.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            orb.style.boxShadow = '0 4px 12px rgba(52, 211, 153, 0.5)';
+          });
+          orb.addEventListener('mouseleave', () => {
+            orb.style.transform = 'translate(-50%, -50%) scale(1)';
+            orb.style.boxShadow = '0 3px 8px rgba(52, 211, 153, 0.3)';
+          });
+
+          container.appendChild(orb);
+          // Position now and fade/scale in next frame
+          this.updateSourceInsertOrbPosition(connection);
+          requestAnimationFrame(() => { try { orb.style.opacity = '1'; orb.style.transform = 'translate(-50%, -50%) scale(1)'; } catch {} });
+        } catch {}
+      },
+
+      // Update position for source-anchored insert orb
+      updateSourceInsertOrbPosition(connection) {
+        try {
+          const id = connection?.id;
+          if (!id) return;
+          const orb = container.querySelector(`.insert-action-orb[data-connection-id="${id}"][data-role="source"]`);
+          if (!orb) return;
+          const fromRect = connection.from.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const x = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          const y = Math.round(fromRect.bottom - containerRect.top + 24); // 24px below the node bottom
+          orb.style.left = `${x}px`;
+          orb.style.top = `${y}px`;
+          orb.style.transform = 'translate(-50%, -50%)';
+        } catch {}
       },
 
       // helper: detect join target
@@ -1535,6 +1663,7 @@
           if (!connection || !connection.to) return false;
           const toData = (connection.to.__nodeData && connection.to.__nodeData.data) || (nodes.find(n => n.element === connection.to)?.data) || null;
           const hasJoin = !!(toData && toData.properties && toData.properties.joinForIfId);
+          logOrder(`toNodeHasJoin check to=${connection.to?.id} result=${hasJoin}`);
           if (DEBUG_LINE_PATHS) {
             console.log(`toNodeHasJoin: toData=`, toData, `hasJoin=${hasJoin}`);
           }
@@ -1548,6 +1677,7 @@
         try {
           if (!connection || !connection.to) return false;
           const targetEl = connection.to;
+          logOrder(`toNodeIsImplicitJoin check start to=${targetEl?.id}`);
           let parentIfIdToBranches = new Map();
           for (const c of this.connections.values()) {
             if (!c || c.to !== targetEl || !c.from) continue;
@@ -1574,9 +1704,11 @@
               if (DEBUG_LINE_PATHS) {
                 console.log('Implicit join detected for target', targetEl?.id, 'parentIfId', pid);
               }
+              logOrder(`toNodeIsImplicitJoin true to=${targetEl?.id} ifId=${pid}`);
               return true;
             }
           }
+          logOrder(`toNodeIsImplicitJoin false to=${targetEl?.id}`);
           return false;
         } catch { return false; }
       },
@@ -1590,6 +1722,7 @@
       
       // Remove a specific connection
       removeConnection(connectionId) {
+        logOrder(`WorkflowManager.removeConnection start id=${connectionId}`);
         const connection = this.connections.get(connectionId);
         if (connection) {
           if (connection.line && connection.line.parentNode) {
@@ -1616,6 +1749,7 @@
           
           this.connections.delete(connectionId);
         }
+        logOrder(`WorkflowManager.removeConnection end id=${connectionId}`);
       },
       
       // Remove connection between two specific nodes
@@ -1643,9 +1777,11 @@
       
       // Update all connection positions
       updateAllConnections() {
+        logOrder(`WorkflowManager.updateAllConnections begin count=${this.connections.size}`);
         for (const connection of this.connections.values()) {
           this.updateConnectionPosition(connection);
         }
+        logOrder('WorkflowManager.updateAllConnections end');
       },
       
       // Validate if a connection is valid
@@ -1723,6 +1859,17 @@
           if (stepType === 'If' && position === 'bottom') {
             logOrder(`OrbManager.addOrb skip - If node bottom orb: ${node.id}`);
             return null;
+          }
+          // Also avoid adding a bottom orb if node currently has outgoing connections
+          if (position === 'bottom') {
+            try {
+              for (const c of WorkflowManager.connections.values()) {
+                if (c && c.from === domElement) {
+                  logOrder(`OrbManager.addOrb skip - node has outgoing: ${node.id}`);
+                  return null;
+                }
+              }
+            } catch {}
           }
         } catch {}
         
@@ -2046,8 +2193,10 @@
           e.preventDefault();
           e.stopPropagation();
           
-          dragStartX = e.clientX;
-          dragStartY = e.clientY;
+          // Start from the visual center of the orb
+          const orbRect = orb.getBoundingClientRect();
+          dragStartX = Math.round(orbRect.left + orbRect.width / 2);
+          dragStartY = Math.round(orbRect.top + orbRect.height / 2);
           
           // Find source node
           const sourceNode = nodes.find(n => n.id === nodeId);
@@ -2061,15 +2210,25 @@
           dragLine.setAttribute('fill', 'none');
           dragLine.style.pointerEvents = 'none';
           
+          if (!WorkflowManager.svg) {
+            try { WorkflowManager.init(); } catch {}
+          }
           if (WorkflowManager.svg) {
             WorkflowManager.svg.appendChild(dragLine);
           }
           
+          // Compute fixed start relative to SVG (or container) to avoid origin jumps
+          const baseRect = (WorkflowManager.svg && typeof WorkflowManager.svg.getBoundingClientRect === 'function')
+            ? WorkflowManager.svg.getBoundingClientRect()
+            : container.getBoundingClientRect();
+          const startXRel = dragStartX - baseRect.left;
+          const startYRel = dragStartY - baseRect.top;
+          
           // Save drag context
-          this.dragContext = { sourceNode, dragLine };
+          this.dragContext = { sourceNode, dragLine, startXRel, startYRel };
 
-          // Set initial line position
-          this.updateDragLine(e.clientX, e.clientY);
+          // Set initial line position at the orb center
+          this.updateDragLine(dragStartX, dragStartY);
           
           orb.style.cursor = 'grabbing';
         });
@@ -2114,13 +2273,21 @@
         if (!ctx || !ctx.dragLine || !ctx.sourceNode) return;
         
         try {
-          const containerRect = container.getBoundingClientRect();
-          const sourceRect = ctx.sourceNode.element.getBoundingClientRect();
-          
-          const startX = sourceRect.left + sourceRect.width / 2 - containerRect.left;
-          const startY = sourceRect.bottom - containerRect.top;
-          const endX = clientX - containerRect.left;
-          const endY = clientY - containerRect.top;
+          const baseRect = (WorkflowManager.svg && typeof WorkflowManager.svg.getBoundingClientRect === 'function')
+            ? WorkflowManager.svg.getBoundingClientRect()
+            : container.getBoundingClientRect();
+          // Always use fixed start relative to base rect
+          const startX = (typeof ctx.startXRel === 'number') ? ctx.startXRel : 0;
+          const startY = (typeof ctx.startYRel === 'number') ? ctx.startYRel : 0;
+          let endX = clientX - baseRect.left;
+          let endY = clientY - baseRect.top;
+          // Clamp end within bounds
+          const width = Math.max(0, (WorkflowManager.svg?.clientWidth || container.clientWidth || 0));
+          const height = Math.max(0, (WorkflowManager.svg?.clientHeight || container.clientHeight || 0));
+          if (width && height) {
+            endX = Math.max(0, Math.min(endX, width));
+            endY = Math.max(0, Math.min(endY, height));
+          }
           
           const path = `M ${startX} ${startY} L ${endX} ${endY}`;
           ctx.dragLine.setAttribute('d', path);
@@ -2378,16 +2545,83 @@
           }
         }
 
+        // Additionally remove any bottom orbs on nodes that now have outgoing connections
+        try {
+          for (const key of Array.from(OrbManager.orbs.keys())) {
+            if (!String(key).endsWith(':bottom')) continue;
+            const nodeId = String(key).replace(':bottom', '');
+            const node = nodes.find(n => n.element && n.element.id === nodeId);
+            if (!node || !node.element) continue;
+            const hasOutgoing = (() => {
+              try {
+                for (const c of WorkflowManager.connections.values()) {
+                  if (c && c.from === node.element) return true;
+                }
+              } catch {}
+              return false;
+            })();
+            if (hasOutgoing) {
+              try { OrbManager.removeOrbById(key); } catch {}
+            }
+          }
+        } catch {}
+
         // Add missing orbs (in desired set but not existing)
         for (const key of desiredOrbs) {
           if (!OrbManager.orbs.has(key)) {
             const nodeId = key.replace(':bottom', '');
             const node = nodes.find(n => n.element && n.element.id === nodeId);
             if (node && node.element) {
+              // Final guard: do not add if there are outgoing connections right now
+              let hasOutgoing = false;
+              try {
+                for (const c of WorkflowManager.connections.values()) {
+                  if (c && c.from === node.element) { hasOutgoing = true; break; }
+                }
+              } catch {}
+              if (hasOutgoing) continue;
               try { OrbManager.addOrb(node.element, 'bottom'); } catch {}
             }
           }
         }
+        
+        // Deterministic branch-end orbs for each If block:
+        // ensure a bottom orb exists for the last element of each True/False branch,
+        // or on the header if the branch is empty. This avoids race conditions with connections.
+        try {
+          const ifNodes = nodes.filter(n => n?.data?.type === 'If' && n?.data?.properties?.ifId);
+          const getTop = (n) => {
+            if (!n || !n.element) return 0;
+            if (n._layout && typeof n._layout.top === 'number') return n._layout.top;
+            const t = parseFloat(n.element.style.top || '0');
+            return Number.isFinite(t) ? t : 0;
+          };
+          for (const ifNode of ifNodes) {
+            const ifId = ifNode.data.properties.ifId;
+            // Collect branch members including headers
+            const branchNodes = nodes.filter(m => m?.data?.properties?.parentIfId === ifId);
+            const trueHeader = branchNodes.find(m => m?.data?.type === 'True');
+            const falseHeader = branchNodes.find(m => m?.data?.type === 'False');
+            const trueMembers = branchNodes.filter(m => m?.data?.properties?.branch === 'true' && m?.data?.type !== 'If');
+            const falseMembers = branchNodes.filter(m => m?.data?.properties?.branch === 'false' && m?.data?.type !== 'If');
+            const trueLast = (trueMembers.length ? trueMembers : (trueHeader ? [trueHeader] : []))
+              .slice().sort((a,b) => getTop(a) - getTop(b)).pop();
+            const falseLast = (falseMembers.length ? falseMembers : (falseHeader ? [falseHeader] : []))
+              .slice().sort((a,b) => getTop(a) - getTop(b)).pop();
+            if (trueLast && trueLast.element) {
+              const key = `${trueLast.element.id}:bottom`;
+              if (!OrbManager.orbs.has(key)) {
+                try { OrbManager.addOrb(trueLast.element, 'bottom'); } catch {}
+              }
+            }
+            if (falseLast && falseLast.element) {
+              const key = `${falseLast.element.id}:bottom`;
+              if (!OrbManager.orbs.has(key)) {
+                try { OrbManager.addOrb(falseLast.element, 'bottom'); } catch {}
+              }
+            }
+          }
+        } catch {}
       } catch (e) {
       }
     },
@@ -2418,15 +2652,19 @@
         try {
           // Don't rebuild if there are no nodes
           if (nodes.length === 0) {
+            logOrder('StructureManager.performRebuild no-nodes');
             safeCallback();
             return;
           }
 
           // Apply deterministic layout before wiring connections/orbs
+          logOrder('StructureManager.performRebuild before LayoutManager.apply');
           LayoutManager.apply();
+          logOrder('StructureManager.performRebuild after LayoutManager.apply');
 
         // If there's only a trigger, just add an orb below it
           if (nodes.length === 1) {
+          logOrder('StructureManager.performRebuild single-node path');
           
           // Clean up existing orbs first to prevent duplicates
           OrbManager.cleanup();
@@ -2440,6 +2678,7 @@
           }
         
         // Clean up existing structure
+        logOrder('StructureManager.performRebuild cleanup managers');
         WorkflowManager.cleanup();
         OrbManager.cleanup();
         
@@ -2449,9 +2688,11 @@
           const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0');
           return (at - bt);
         });
+        logOrder(`StructureManager.performRebuild sortedNodes=${sortedNodes.length}`);
         
         // Force create implicit join connections for any IF blocks
         try {
+          logOrder('StructureManager.performRebuild implicit-join pass begin');
           const ifNodes = sortedNodes.filter(n => n?.data?.type === 'If');
           for (const ifNode of ifNodes) {
             const ifId = ifNode.data?.properties?.ifId;
@@ -2504,6 +2745,7 @@
         } catch (e) {
           console.error('Error creating implicit join connections:', e);
         }
+        logOrder('StructureManager.performRebuild implicit-join pass end');
         
         // Also try to create connections manually if rebuild didn't work
         try {
@@ -2524,6 +2766,7 @@
         }
         
         // Rebuild connections honoring If branching with True/False headers
+        logOrder('StructureManager.performRebuild wiring pass begin');
         const isControl = (n) => !!(n && n.data && (n.data.type === 'True' || n.data.type === 'False'));
         const findIfHeaders = (startIdx) => {
           let trueIdx = -1, falseIdx = -1;
@@ -2699,6 +2942,7 @@
             }
           }
         }
+        logOrder('StructureManager.performRebuild wiring pass end');
         
         // Add orbs at connection midpoints
         try { WorkflowManager.addInsertOrbsForConnections(); } catch (e) {}
@@ -2759,6 +3003,7 @@
     // Deterministic layout manager for nodes (centers X and enforces vertical spacing)
     const LayoutManager = {
       apply() {
+        logOrder('LayoutManager.apply start');
         try {
           if (!container) return;
           const containerRect = container.getBoundingClientRect();
@@ -3103,6 +3348,65 @@
           setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
         }, durationMs);
       }
+
+// Force a full line rebuild using the base renderer to ensure identical paths as initial build
+function forceFullLineRebuild(callback) {
+  logOrder('FORCE_FULL_LINE_REBUILD start');
+  // Begin: block refresh RAFs, ensure base renderer, and wait for DOM/styles to settle
+  window.__STRUCT_REBUILDING = true;
+  try {
+    if (typeof PositionManager !== 'undefined' && PositionManager.originalUpdateConnectionPosition) {
+      WorkflowManager.updateConnectionPosition = PositionManager.originalUpdateConnectionPosition;
+    }
+  } catch {}
+  // Two RAFs to allow any style/DOM measurements to stabilize before rebuild
+  requestAnimationFrame(() => {
+    logOrder('FORCE_FULL_LINE_REBUILD raf1');
+    requestAnimationFrame(() => {
+      logOrder('FORCE_FULL_LINE_REBUILD raf2');
+      try {
+        logOrder('FORCE_FULL_LINE_REBUILD performRebuild');
+        StructureManager.performRebuild(() => {
+          logOrder('FORCE_FULL_LINE_REBUILD callback');
+          try { WorkflowManager.updateAllConnections(); OrbManager.updateAllOrbPositions(); } catch {}
+          // Re-enable stable positioning after the rebuild paths are drawn
+          try {
+            if (typeof PositionManager !== 'undefined' && typeof PositionManager.setupStablePositioning === 'function') {
+              PositionManager.setupStablePositioning();
+            }
+          } catch {}
+          window.__STRUCT_REBUILDING = false;
+          logOrder('FORCE_FULL_LINE_REBUILD done');
+          if (typeof callback === 'function') { try { callback(); } catch {} }
+        });
+      } catch (e) {
+        logOrder('FORCE_FULL_LINE_REBUILD fallback');
+        try { LayoutManager.apply(); WorkflowManager.updateAllConnections(); OrbManager.updateAllOrbPositions(); } catch {}
+        window.__STRUCT_REBUILDING = false;
+        if (typeof callback === 'function') { try { callback(); } catch {} }
+      }
+    });
+  });
+}
+
+// Centralized immediate full rebuild for any structural change (nodes/lines)
+function triggerFullStructureRebuild(callback) {
+  logOrder('TRIGGER_FULL_STRUCTURE_REBUILD start');
+  try {
+    // Run the exact same wiring/path logic as initial build
+    StructureManager.performRebuild(() => {
+      logOrder('TRIGGER_FULL_STRUCTURE_REBUILD callback');
+      try { WorkflowManager.updateAllConnections(); } catch {}
+      try { OrbManager.updateAllOrbPositions(); } catch {}
+      if (typeof callback === 'function') { try { callback(); } catch {} }
+    });
+  } catch (e) {
+    logOrder('TRIGGER_FULL_STRUCTURE_REBUILD fallback');
+    // Fallback if performRebuild throws
+    try { LayoutManager.apply(); WorkflowManager.updateAllConnections(); OrbManager.updateAllOrbPositions(); } catch {}
+    if (typeof callback === 'function') { try { callback(); } catch {} }
+  }
+      }
     }
 
     // Ensure If steps always have branch headers persisted in data snapshots
@@ -3167,10 +3471,15 @@
 
     // Throttled refresh for connections/orbs to keep offscreen lines in sync on pan/scroll
     let _refreshRafPending = false;
+    // Global gate to prevent refresh churn during full structural rebuilds
+    if (typeof window.__STRUCT_REBUILDING === 'undefined') window.__STRUCT_REBUILDING = false;
     function scheduleConnectionRefresh() {
-      if (_refreshRafPending) return;
+      logOrder('SCHED_CONN_REFRESH requested');
+      if (_refreshRafPending) { logOrder('SCHED_CONN_REFRESH skipped: raf pending'); return; }
+      if (window.__STRUCT_REBUILDING) { logOrder('SCHED_CONN_REFRESH skipped: rebuilding'); return; }
       _refreshRafPending = true;
       requestAnimationFrame(() => {
+        logOrder('SCHED_CONN_REFRESH run begin');
         try {
           WorkflowManager.updateAllConnections();
           // Ensure big orbs exist for current view/state before positioning
@@ -3178,6 +3487,7 @@
           OrbManager.updateAllOrbPositions();
         } catch {}
         _refreshRafPending = false;
+        logOrder('SCHED_CONN_REFRESH run end');
       });
     }
 
@@ -3453,7 +3763,7 @@
               });
               nodes = [];
               // Reset DOM id counter so ids don't keep increasing across branch switches
-              try { currentNodeId = 0; } catch {}
+              try { currentNodeId = 0; availableNodeIds = new Set(); } catch {}
               
               // Clear all orbs
               const existingOrbs = container.querySelectorAll('.add-action-orb, .insert-action-orb');
@@ -3643,56 +3953,8 @@
       container.appendChild(helpText);
     }
 
-    // Deterministically renumber node ids so trigger is node-1 and others are left→right, then top
-    function renumberNodesDeterministically() {
-      try {
-        if (!Array.isArray(nodes) || nodes.length === 0) return;
-        const oldToNew = new Map();
-        // Find trigger first
-        const trigger = nodes.find(n => n.type === 'trigger');
-        let counter = 1;
-        if (trigger && trigger.element) {
-          const oldId = trigger.id;
-          const newId = `node-${counter}`;
-          if (oldId !== newId) {
-            oldToNew.set(oldId, newId);
-            trigger.id = newId;
-            try { trigger.element.id = newId; } catch {}
-          }
-        }
-        // Sort remaining by DOM position: left asc, then top asc
-        const others = nodes.filter(n => n !== trigger && n && n.element);
-        others.sort((a, b) => {
-          try {
-            const ra = a.element.getBoundingClientRect();
-            const rb = b.element.getBoundingClientRect();
-            if (ra.left !== rb.left) return ra.left - rb.left;
-            return ra.top - rb.top;
-          } catch { return 0; }
-        });
-        for (const n of others) {
-          counter += 1;
-          const oldId = n.id;
-          const newId = `node-${counter}`;
-          if (oldId !== newId) {
-            oldToNew.set(oldId, newId);
-            n.id = newId;
-            try { n.element.id = newId; } catch {}
-          }
-        }
-        if (oldToNew.size === 0) return;
-        // Update references in node properties that may point to DOM ids
-        nodes.forEach(n => {
-          try {
-            if (n && n.data && n.data.properties) {
-              if (n.data.properties.ifDomId && oldToNew.has(n.data.properties.ifDomId)) {
-                n.data.properties.ifDomId = oldToNew.get(n.data.properties.ifDomId);
-              }
-            }
-          } catch {}
-        });
-      } catch {}
-    }
+    // Remove deterministic renumbering to avoid duplicate DOM ids and broken references
+    function renumberNodesDeterministically() { /* no-op */ }
 
     // Remove all guide texts/tooltips when workflow is configured
     function removeGuidesIfConfigured() {
@@ -3730,10 +3992,53 @@
       const node = document.createElement('div');
       node.className = `flowchart-node ${type}`;
       try {
-        const assignedId = explicitId && String(explicitId).trim() ? String(explicitId).trim() : `node-${++currentNodeId}`;
-        node.id = assignedId;
+        // Helper to claim next reusable or new id
+        const claimNextId = () => {
+          // Prefer a freed id if available (smallest numeric)
+          if (availableNodeIds && availableNodeIds.size > 0) {
+            const sorted = Array.from(availableNodeIds).sort((a, b) => a - b);
+            for (const n of sorted) {
+              const candidate = `node-${n}`;
+              if (!document.getElementById(candidate)) {
+                availableNodeIds.delete(n);
+                return candidate;
+              } else {
+                // If somehow exists, skip this freed id
+                availableNodeIds.delete(n);
+              }
+            }
+          }
+          // Fallback to incrementing the counter until a free id is found
+          let next = `node-${++currentNodeId}`;
+          while (document.getElementById(next)) {
+            currentNodeId += 1;
+            next = `node-${currentNodeId}`;
+          }
+          return next;
+        };
+
+        const assignedId = explicitId && String(explicitId).trim() ? String(explicitId).trim() : claimNextId();
+        // Ensure uniqueness if an explicit id was requested
+        let finalId = assignedId;
+        if (document.getElementById(finalId)) {
+          finalId = claimNextId();
+        }
+        node.id = finalId;
       } catch {
-      node.id = `node-${++currentNodeId}`;
+      // Worst-case fallback
+      let fallbackId;
+      if (availableNodeIds && availableNodeIds.size > 0) {
+        const sorted = Array.from(availableNodeIds).sort((a, b) => a - b);
+        fallbackId = `node-${sorted[0]}`;
+        availableNodeIds.delete(sorted[0]);
+      } else {
+        fallbackId = `node-${++currentNodeId}`;
+      }
+      while (document.getElementById(fallbackId)) {
+        currentNodeId += 1;
+        fallbackId = `node-${currentNodeId}`;
+      }
+      node.id = fallbackId;
       }
       node.dataset.stepType = type;
       // Consistent horizontal centering for all nodes
@@ -3786,6 +4091,20 @@
       try { const label = node.querySelector('.node-id-label'); if (label) label.textContent = node.id; } catch {}
       
       return node;
+    }
+
+    function parseNodeNumericId(id) {
+      try {
+        const m = String(id || '').match(/^node-(\d+)$/);
+        return m ? parseInt(m[1], 10) : null;
+      } catch { return null; }
+    }
+
+    function releaseNodeIdByString(id) {
+      const n = parseNodeNumericId(id);
+      if (n != null) {
+        availableNodeIds.add(n);
+      }
     }
     
     function selectNode(node) {
@@ -3896,6 +4215,7 @@
             if (first) actionSelect.value = first.value;
           }
         } catch {}
+        logOrder('LayoutManager.apply end');
       }
       
       // Check if we're editing an existing action
@@ -4693,12 +5013,10 @@
         return;
       }
       try {
-        const token = getAnyToken();
-        if (!token) throw new Error('No token');
-        const clean = token.replace(/^"|"$/g, '');
         const res = await fetch(`${API_URL}/tags`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${clean}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ name })
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -5379,6 +5697,20 @@
       // Rebuild the entire workflow structure to ensure consistency
       StructureManager.rebuild();
 
+      // Ensure big orbs reflect new structure immediately (no pan required)
+      requestAnimationFrame(() => {
+        try {
+          const sortedForOrbs = [...nodes].sort((a, b) => {
+            const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0');
+            const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0');
+            return (at - bt);
+          });
+          StructureManager.placePathEndOrbs(sortedForOrbs);
+          OrbManager.updateAllOrbPositions();
+          WorkflowManager.updateAllConnections();
+        } catch {}
+      });
+
       // If we just added an IF, auto-create True/False headers
       if (actionData.type === 'If') {
         // If loading from persisted data that already includes True/False, do not auto-create
@@ -5407,6 +5739,7 @@
     }
 
     function insertActionBetween(actionData, connection) {
+      logOrder(`insertActionBetween start from=${connection?.from?.id || 'el'} to=${connection?.to?.id || 'el'}`);
       
       // Create the new action node
       // Determine if this insertion is intended to join True/False branches of the same IF
@@ -5477,6 +5810,7 @@
       }
       
       container.appendChild(actionNode);
+      logOrder(`insertActionBetween node created id=${actionNode.id}`);
       
       const nodeData = { 
         id: actionNode.id, 
@@ -5498,22 +5832,72 @@
         nodes.push(nodeData);
       }
       
-        // Rebuild the entire workflow structure
-        StructureManager.rebuild();
+       // Remove existing connection between the original endpoints if present
+      try {
+        for (const [connId, conn] of WorkflowManager.connections.entries()) {
+          if (conn.from === connection.from && conn.to === connection.to) {
+            WorkflowManager.removeConnection(connId);
+             logOrder(`insertActionBetween removed old connection id=${connId}`);
+             break;
+          }
+        }
+      } catch {}
+
+       // Create new connections: from -> inserted -> to
+      try {
+        WorkflowManager.createConnection(connection.from, actionNode, false);
+        WorkflowManager.createConnection(actionNode, connection.to, false);
+          logOrder('insertActionBetween created 2 connections');
+        } catch {}
+
+       // Unify with initial build by running an immediate rebuild (no debounce) so path logic is identical
+       logOrder('insertActionBetween forceFullLineRebuild');
+       forceFullLineRebuild();
+      // Also ensure orbs reflect new structure immediately
+      requestAnimationFrame(() => {
+        try {
+          const sortedForOrbs = [...nodes].sort((a, b) => {
+            const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0');
+            const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0');
+            return (at - bt);
+          });
+          StructureManager.placePathEndOrbs(sortedForOrbs);
+          OrbManager.updateAllOrbPositions();
+        } catch {}
+      });
       
       // Add movement listeners
       addNodeMovementListeners();
       
     try { HistoryManager.recordSnapshot('insertActionBetween'); } catch {}
+    logOrder('insertActionBetween end');
       return nodeData;
     }
     
     function insertActionBetweenOrbs(actionData, sourceNode, targetNode) {
+      logOrder(`insertActionBetweenOrbs start src=${sourceNode?.id || sourceNode?.element?.id} tgt=${targetNode?.id || targetNode?.element?.id}`);
       
       // Ensure properties exist for the action
       if (!actionData.properties) {
         actionData.properties = {};
       }
+      
+      // Detect upfront if this insertion is a branch-join between True/False of the same IF
+      let isJoin = false;
+      let joinForIfId = null;
+      try {
+        const sData = sourceNode.data || nodes.find(n => n.element === sourceNode.element)?.data;
+        const tData = targetNode.data || nodes.find(n => n.element === targetNode.element)?.data;
+        const sIf = sData?.properties?.parentIfId || null;
+        const tIf = tData?.properties?.parentIfId || null;
+        const sBranch = sData?.properties?.branch || (sData?.type === 'True' ? 'true' : (sData?.type === 'False' ? 'false' : null));
+        const tBranch = tData?.properties?.branch || (tData?.type === 'True' ? 'true' : (tData?.type === 'False' ? 'false' : null));
+        if (sIf && tIf && sIf === tIf && sBranch && tBranch && sBranch !== tBranch) {
+          joinForIfId = sIf;
+          isJoin = true;
+          actionData.properties.joinForIfId = joinForIfId;
+        }
+      } catch {}
       
       // Set default properties based on action type
       if (actionData.type === 'Add Tag' && !actionData.properties.tag) {
@@ -5548,6 +5932,7 @@
       
       // Add the node to the DOM first
       container.appendChild(actionNode);
+      logOrder(`insertActionBetweenOrbs node created id=${actionNode.id}`);
       
       // Add the node to the workflow
       const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: actionData };
@@ -5561,25 +5946,51 @@
         for (const [connId, conn] of WorkflowManager.connections.entries()) {
           if (conn.from === sourceNode.element && conn.to === targetNode.element) {
             WorkflowManager.removeConnection(connId);
+            logOrder(`insertActionBetweenOrbs removed old connection id=${connId}`);
             break;
           }
         }
       } catch {}
       
-      // Create connections: source -> new node -> target
-      
-      const conn1 = WorkflowManager.createConnection(sourceNode.element, actionNode.element, false);
-      const conn2 = WorkflowManager.createConnection(actionNode.element, targetNode.element, false);
+      // Create connections
+      // If this is a branch-join, feed both branch ends INTO the new node (source -> new, target -> new)
+      // Otherwise, insert normally (source -> new -> target)
+      let conn1 = null, conn2 = null;
+      if (isJoin) {
+        conn1 = WorkflowManager.createConnection(sourceNode.element, actionNode, false);
+        conn2 = WorkflowManager.createConnection(targetNode.element, actionNode, false);
+        // Create source-anchored orbs under both branch sources immediately
+        try { if (conn1) { WorkflowManager.createSourceInsertOrb(conn1); WorkflowManager.updateSourceInsertOrbPosition(conn1); } } catch {}
+        try { if (conn2) { WorkflowManager.createSourceInsertOrb(conn2); WorkflowManager.updateSourceInsertOrbPosition(conn2); } } catch {}
+      } else {
+        conn1 = WorkflowManager.createConnection(sourceNode.element, actionNode, false);
+        conn2 = WorkflowManager.createConnection(actionNode, targetNode.element, false);
+      }
+      logOrder(`insertActionBetweenOrbs created conn1=${!!conn1} conn2=${!!conn2}`);
       
       
       // Apply layout immediately to position the node at its final correct position
       try { LayoutManager.apply(); } catch {}
+      logOrder('insertActionBetweenOrbs layout applied');
       
       // Update connections AFTER layout is applied to ensure correct positioning
       WorkflowManager.updateAllConnections();
-      
-      // Create implicit join connections if this is a combining action
+      logOrder('insertActionBetweenOrbs connections updated');
+      // Ensure orbs reflect new structure immediately for non-join inserts too
       try {
+        WorkflowManager.addInsertOrbsForConnections();
+        const sortedForOrbs = [...nodes].sort((a, b) => {
+          const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0');
+          const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0');
+          return (at - bt);
+        });
+        StructureManager.placePathEndOrbs(sortedForOrbs);
+        WorkflowManager.cleanupStaleInsertOrbs();
+        OrbManager.updateAllOrbPositions();
+      } catch {}
+      
+      // Create implicit join connections if this is a combining action (only if not already treated as a join)
+      if (!isJoin) try {
         // Check if the source and target are from different branches of the same IF
         const sourceData = sourceNode.data || nodes.find(n => n.element === sourceNode.element)?.data;
         const targetData = targetNode.data || nodes.find(n => n.element === targetNode.element)?.data;
@@ -5618,6 +6029,7 @@
             
             // Update connections again and refresh orbs to position the new ones correctly
             WorkflowManager.updateAllConnections();
+            logOrder('insertActionBetweenOrbs implicit join connections created + updated');
             try {
               // Ensure insert orbs exist/are positioned for the new connections
               WorkflowManager.addInsertOrbsForConnections();
@@ -5630,6 +6042,9 @@
               });
               StructureManager.placePathEndOrbs(sortedForOrbs);
               OrbManager.updateAllOrbPositions();
+              // Force a connection refresh on next frame to ensure immediate paint
+              try { scheduleConnectionRefresh && scheduleConnectionRefresh(); } catch {}
+              requestAnimationFrame(() => { try { WorkflowManager.updateAllConnections(); OrbManager.updateAllOrbPositions(); } catch {} });
             } catch {}
           }
         }
@@ -5641,13 +6056,18 @@
       const allConnections = Array.from(WorkflowManager.connections.values());
       const ourConnections = allConnections.filter(conn => 
         (conn.from === sourceNode.element && conn.to === actionNode) ||
-        (conn.from === actionNode && conn.to === targetNode.element)
+        (conn.from === actionNode && conn.to === targetNode.element) ||
+        (conn.from === targetNode.element && conn.to === actionNode)
       );
       
       try { updateWorkflowFromNodes(); } catch {}
       
       // Record history
       try { HistoryManager.recordSnapshot('insertActionBetweenOrbs'); } catch {}
+  // Ensure lines mirror initial build immediately
+  logOrder('insertActionBetweenOrbs triggerFullStructureRebuild');
+  try { triggerFullStructureRebuild(); } catch {}
+  logOrder('insertActionBetweenOrbs end');
       
       return nodeData;
     }
@@ -5782,6 +6202,7 @@
             toRemove.forEach(n => {
               try { WorkflowManager.removeNodeConnections(n.element); } catch {}
               try { OrbManager.removeOrb(n.element); } catch {}
+              try { if (n.element && n.element.id) releaseNodeIdByString(n.element.id); } catch {}
               if (n.element && n.element.parentNode) {
                 n.element.remove();
               }
@@ -5810,6 +6231,9 @@
       if (index > -1) {
         nodes.splice(index, 1);
       }
+
+      // Free up this node's id for reuse
+      try { if (actionNode && actionNode.id) releaseNodeIdByString(actionNode.id); } catch {}
       
       // Rebuild the entire workflow structure
       StructureManager.rebuild();
@@ -5898,7 +6322,7 @@
     // Save workflow is deprecated in favor of autosave drafts + Apply to Main
     async function saveWorkflow() {
       const workflowNameInput = document.getElementById('workflow-name');
-      const name = workflowNameInput.value.trim() || 'Untitled Workflow';
+      const name = workflowNameInput.value.trim() || `Untitled Workflow`;
       
       if (nodes.length === 0) {
         alert('Please configure at least a trigger for your workflow');
@@ -5932,7 +6356,8 @@
         triggerTags: triggerNode.data.properties?.tags || [],
         steps: steps, // Include trigger in steps for consistency
         status: true,
-        contextSpec: contextSpec || getDefaultContextSpec()
+        contextSpec: contextSpec || getDefaultContextSpec(),
+        // No editorDraftUUID persisted; avoid local storage
       };
       
       // Update currentWorkflow.data to match what we're saving
@@ -5942,15 +6367,6 @@
       
       
       try {
-                const token = getAnyToken();
-      if (!token) {
-          console.error('No token found');
-          alert('Please log in to save workflows');
-        return;
-      }
-      
-        const clean = token.replace(/^"|"$/g, '');
-        
         if (currentWorkflow) {
           // Update existing workflow
           const updateData = {
@@ -5962,6 +6378,7 @@
           const res = await fetch(`${API_URL}/workflows/${currentWorkflow.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(updateData)
           });
           
@@ -6133,10 +6550,30 @@
             const r = 12;
             // Handle True/False to join connections first (specific case)
             if ((fromType === 'True' || fromType === 'False') && WorkflowManager.toNodeHasJoin && WorkflowManager.toNodeHasJoin(toType, connection)) {
-              const verticalDistance = Math.abs(toY - fromY);
-              const minDrop = 120; // doubled minimum drop for longer vertical lines with orbs
-              const maxDrop = 240; // doubled maximum drop for longer vertical lines with orbs
-              const midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+              const minDrop = 120;
+              let midY;
+              try {
+                const inbound = Array.from(WorkflowManager.connections.values()).filter(c => c && c.to === connection.to);
+                if (inbound.length >= 2) {
+                  let maxFromY = fromY;
+                  for (const c of inbound) {
+                    if (!c.from) continue;
+                    const fr = c.from.getBoundingClientRect();
+                    if (!fr) continue;
+                    const fy = Math.round(fr.bottom - containerRect.top - 1);
+                    if (fy > maxFromY) maxFromY = fy;
+                  }
+                  midY = Math.min(toY - 12 - 10, maxFromY + minDrop);
+                } else {
+                  const verticalDistance = Math.abs(toY - fromY);
+                  const maxDrop = 240;
+                  midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+                }
+              } catch {
+                const verticalDistance = Math.abs(toY - fromY);
+                const maxDrop = 240;
+                midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+              }
               const dir = (toX >= fromX) ? 1 : -1;
               d = `M ${fromX} ${fromY}`;
               d += ` L ${fromX} ${midY - r}`;
@@ -6150,10 +6587,30 @@
               el.setAttribute('stroke-linejoin', 'round');
             // Handle branch actions to join node (implicit join detection)
             } else if (WorkflowManager.toNodeIsImplicitJoin && WorkflowManager.toNodeIsImplicitJoin(connection)) {
-              const verticalDistance = Math.abs(toY - fromY);
-              const minDrop = 120; // doubled minimum drop for longer vertical lines with orbs
-              const maxDrop = 240; // doubled maximum drop for longer vertical lines with orbs
-              const midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+              const minDrop = 120;
+              let midY;
+              try {
+                const inbound = Array.from(WorkflowManager.connections.values()).filter(c => c && c.to === connection.to);
+                if (inbound.length >= 2) {
+                  let maxFromY = fromY;
+                  for (const c of inbound) {
+                    if (!c.from) continue;
+                    const fr = c.from.getBoundingClientRect();
+                    if (!fr) continue;
+                    const fy = Math.round(fr.bottom - containerRect.top - 1);
+                    if (fy > maxFromY) maxFromY = fy;
+                  }
+                  midY = Math.min(toY - 12 - 10, maxFromY + minDrop);
+                } else {
+                  const verticalDistance = Math.abs(toY - fromY);
+                  const maxDrop = 240;
+                  midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+                }
+              } catch {
+                const verticalDistance = Math.abs(toY - fromY);
+                const maxDrop = 240;
+                midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
+              }
               const dir = (toX >= fromX) ? 1 : -1;
               d = `M ${fromX} ${fromY}`;
               d += ` L ${fromX} ${midY - r}`;
@@ -6199,7 +6656,7 @@
                 d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
                 d += ` L ${toX} ${toY}`;
               } else if (!(toType === 'True' || toType === 'False')) {
-                // Keep legacy gentle orthogonal for header->first action in refresh
+                // Legacy gentle orthogonal used in refresh renderer
                 const ctrlY = fromY + 20;
                 d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
               } else {
@@ -6223,7 +6680,7 @@
                 d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
                 d += ` L ${toX} ${toY}`;
               } else {
-                d = `M ${fromX} ${fromY} L ${fromX} ${toY}`;
+              d = `M ${fromX} ${fromY} L ${fromX} ${toY}`;
               }
             }
             el.setAttribute('d', d);
@@ -6441,7 +6898,7 @@
         } catch {}
 
         // Reset DOM id counter before recreating nodes to avoid id growth across applies
-        try { currentNodeId = 0; } catch {}
+        try { currentNodeId = 0; availableNodeIds = new Set(); } catch {}
         // Recreate trigger
         if (snapshot.trigger) {
           updateTriggerNode(snapshot.trigger);
@@ -6728,21 +7185,58 @@
         });
         del.addEventListener('click', async (e) => {
           e.stopPropagation();
-          const branch = name;
+          // Use the actual branch id, not the display name
+          const branch = row?.dataset?.branch || branchId;
           const ok = await themedConfirm(`Delete draft branch "${branch}"? This cannot be undone.`, 'Delete Draft');
           if (!ok) return;
           const originalAutosave = DraftManager.autosaveDraft; DraftManager.autosaveDraft = async () => {};
           try {
             const id = getCurrentWorkflowId();
-            if (!id) return;
+            if (!id) { console.error('[DRAFT][DELETE] missing workflow id'); showNotification('No workflow selected', 'error'); return; }
             const token = getAnyToken();
-            if (!token) return;
+            if (!token) { console.error('[DRAFT][DELETE] missing auth token'); showNotification('Not authenticated', 'error'); return; }
             
             const clean = token.replace(/^"|"$/g, '');
-            const res = await fetch(`${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`, { 
+            const deleteUrl = `${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`;
+            console.debug('[DRAFT][DELETE] request', { deleteUrl, id, branch });
+            let res = await fetch(deleteUrl, { 
               method: 'DELETE',
               credentials: 'include'
             });
+            console.debug('[DRAFT][DELETE] response', { ok: res?.ok, status: res?.status });
+            if (!res.ok) {
+              // Fallback: delete each draft snapshot in the branch individually
+              try {
+                const listUrl = `${API_URL}/workflows/${id}/drafts?branch=${encodeURIComponent(branch)}`;
+                console.debug('[DRAFT][DELETE] fallback list', { listUrl });
+                const listRes = await fetch(listUrl, { credentials: 'include', cache: 'no-store' });
+                if (listRes.ok) {
+                  const drafts = await listRes.json();
+                  console.debug('[DRAFT][DELETE] fallback drafts', { count: Array.isArray(drafts) ? drafts.length : 0 });
+                  if (Array.isArray(drafts) && drafts.length) {
+                    let allOk = true;
+                    for (const d of drafts) {
+                      try {
+                        const delOneUrl = `${API_URL}/workflows/${id}/drafts/${d.id}`;
+                        console.debug('[DRAFT][DELETE] deleting draft', { delOneUrl, draftId: d.id });
+                        const delOne = await fetch(delOneUrl, { method: 'DELETE', credentials: 'include' });
+                        console.debug('[DRAFT][DELETE] delete one response', { ok: delOne?.ok, status: delOne?.status, draftId: d.id });
+                        if (!delOne.ok) {
+                          allOk = false;
+                          try { const txt = await delOne.text(); console.error('[DRAFT][DELETE] delete one error body', txt); } catch {}
+                        }
+                      } catch { allOk = false; }
+                    }
+                    if (allOk) {
+                      // Simulate success
+                      res = { ok: true };
+                    }
+                  }
+                } else {
+                  console.error('[DRAFT][DELETE] fallback list failed', { status: listRes?.status });
+                }
+              } catch {}
+            }
             if (res.ok) {
               showNotification('Draft branch deleted');
               row.remove();
@@ -6751,9 +7245,29 @@
                 if (currentLabel) currentLabel.textContent = 'Main';
                 await loadWorkflow();
               }
+              // Refresh branches list to reflect deletion
+              try {
+                const listBranchesUrl = `${API_URL}/workflows/${id}/draft-branches`;
+                console.debug('[DRAFT][DELETE] refresh branches', { listBranchesUrl });
+                const resB = await fetch(listBranchesUrl, { credentials: 'include', cache: 'no-store' });
+                const branches = resB.ok ? await resB.json() : [];
+                console.debug('[DRAFT][DELETE] refreshed branches', { count: Array.isArray(branches) ? branches.length : 0 });
+                refreshBranchMenu(branches);
+              } catch {}
             } else {
+              try {
+                const errText = await res.text();
+                console.error('[DRAFT][DELETE] failed', { status: res?.status, body: errText });
+                let msg = 'Failed to delete draft branch';
+                try { const err = JSON.parse(errText); if (err && err.message) msg = err.message; } catch {}
+                showNotification(msg, 'error');
+              } catch {
               showNotification('Failed to delete draft branch', 'error');
             }
+            }
+          } catch (e) {
+            console.error('[DRAFT][DELETE] exception', e);
+            showNotification('Draft deletion error', 'error');
           } finally { DraftManager.autosaveDraft = originalAutosave; }
         });
         row.addEventListener('click', async () => {
@@ -6985,7 +7499,7 @@
         // Initialize canvas
         initializeCanvas();
         
-        // Load existing workflow if editing; if none, immediately create an empty Untitled workflow on the server
+        // Load existing workflow if editing; if none, reuse a stable per-user empty draft or create one
         await loadWorkflow();
         if (!getCurrentWorkflowId()) {
           try {
@@ -7144,6 +7658,23 @@
       } catch (e) {
         console.warn('Failed to load workflow errors', e);
         return [];
+  }
+
+  // Insert an action between an existing connection's from/to nodes (triggered by small insert orb)
+  function insertActionBetween(actionData, connection) {
+    try {
+      if (!connection || !connection.from || !connection.to) return null;
+      // Resolve node objects from DOM elements
+      const sourceNode = nodes.find(n => n.element === connection.from);
+      const targetNode = nodes.find(n => n.element === connection.to);
+      if (!sourceNode || !targetNode) return null;
+      // Delegate to the same logic used for orb-connect insertions
+      const inserted = insertActionBetweenOrbs(actionData, sourceNode, targetNode);
+      return inserted;
+    } catch (e) {
+      try { console.warn('insertActionBetween failed:', e); } catch {}
+      return null;
+    }
   }
 
   // Branch helpers (defined after DOM and utils)

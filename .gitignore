@@ -1,10 +1,11 @@
-node_modules
-package-lock.json
-.env
-dist
-coverage
-.yarn/
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
+# Ignore backup data and secrets
+backend/data/**
+
+# Common
+node_modules/
+*.log
+
+# Local env and OS
+.env*
+.DS_Store
+backend/data/**

@@ -1,0 +1,51 @@
+import { PrismaService } from '../prisma.service';
+import 'dotenv/config';
+export declare function buildOutlookAuthUrl(state: string): string;
+export declare class IntegrationsService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    private zoomLog;
+    private outlookLog;
+    private env;
+    private oauthClient;
+    private createStatePayload;
+    private decodeStatePayload;
+    private generateCodeVerifier;
+    private computeCodeChallenge;
+    private createState;
+    private decodeState;
+    generateGoogleAuthUrl(userId: string): string;
+    handleGoogleCallback(code: string, state: string): Promise<void>;
+    private getGoogleCalendar;
+    listGoogleEvents(userId: string, timeMin?: string, timeMax?: string): Promise<import("googleapis").calendar_v3.Schema$Event[]>;
+    disconnectGoogle(userId: string): Promise<void>;
+    isGoogleConnected(userId: string): Promise<boolean>;
+    refreshGoogleToken(userId: string): Promise<boolean>;
+    connectGoogleMeet(data: any): {
+        message: string;
+        data: any;
+    };
+    handleZoomCallback(code: string, state: string): Promise<void>;
+    isZoomConnected(userId: string): Promise<boolean>;
+    refreshZoomToken(userId: string): Promise<boolean>;
+    disconnectZoom(userId: string): Promise<void>;
+    generateOutlookAuthUrl(userId: string): string;
+    handleOutlookCallback(code: string, state: string): Promise<void>;
+    isOutlookConnected(userId: string): Promise<boolean>;
+    refreshOutlookToken(userId: string): Promise<boolean>;
+    disconnectOutlook(userId: string): Promise<void>;
+    private verifyAppleCredentials;
+    connectAppleCalendar(userId: string, email: string, password: string): Promise<void>;
+    isAppleConnected(userId: string): Promise<boolean>;
+    disconnectAppleCalendar(userId: string): Promise<void>;
+    getAppleCalendars(userId: string): Promise<{
+        href: string;
+        name: string;
+    }[]>;
+    private getApplePrincipalUrl;
+    private getAppleCalendarHomeUrl;
+    private listAppleCalendars;
+    updateAppleCalendarSelection(userId: string, selectedCalendars: string[]): Promise<void>;
+    private fetchAppleCalendars;
+    generateZoomAuthUrl(userId: string): string;
+}
