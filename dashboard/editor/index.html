@@ -1060,13 +1060,74 @@
       window.history.replaceState({}, '', url);
     }
     
-    // Order tracking
-    if (typeof window.__DEBUG_ORDERS__ === 'undefined') window.__DEBUG_ORDERS__ = true;
+    // Order tracking (disabled - legacy)
+    if (typeof window.__DEBUG_ORDERS__ === 'undefined') window.__DEBUG_ORDERS__ = false;
     let orderCounter = 0;
-    function logOrder(event) {
-      if (!window.__DEBUG_ORDERS__) return;
-      const t = (typeof performance !== 'undefined' && performance.now) ? performance.now().toFixed(1) : Date.now();
-      console.log(`[ORDER-${++orderCounter}] t=${t} ${event}`);
+    function logOrder(event) { return; }
+
+    // Debug helper: dump node positions (id, type, left, top) with a label
+    function debugDumpNodePositions(label) {
+      try {
+        if (!window.__DEBUG_EDITOR__) return;
+        const containerRect = container.getBoundingClientRect();
+        const items = nodes.map(n => {
+          try {
+            const r = n.element.getBoundingClientRect();
+            return {
+              id: n.id,
+              type: (n.data && n.data.type) || n.type || '',
+              left: Math.round(r.left - containerRect.left),
+              top: Math.round(r.top - containerRect.top)
+            };
+          } catch { return { id: n.id, type: (n.data && n.data.type) || n.type || '', left: null, top: null }; }
+        });
+        console.log(`[POS][${label}]`, items);
+      } catch {}
+    }
+
+    // Renumber nodes deterministically by visual layout (top, then left) – for initial load
+    function renumberNodesByLayout() {
+      try {
+        const containerRect = container.getBoundingClientRect();
+        const sortable = nodes.map(n => {
+          try {
+            const r = n.element.getBoundingClientRect();
+            return { node: n, top: Math.round(r.top - containerRect.top), left: Math.round(r.left - containerRect.left) };
+          } catch {
+            // Fallback to style values if rect fails
+            const top = parseFloat(n.element?.style?.top || '0') || 0;
+            const left = parseFloat(n.element?.style?.left || '0') || 0;
+            return { node: n, top, left };
+          }
+        });
+        // Sort by top ascending, then left ascending
+        sortable.sort((a, b) => (a.top - b.top) || (a.left - b.left));
+        // Two-pass to avoid id collisions
+        const mapping = new Map();
+        for (let i = 0; i < sortable.length; i++) {
+          const n = sortable[i].node;
+          const newId = `node-${i + 1}`;
+          mapping.set(n.id, newId);
+          if (n.element && n.element.id) n.element.id = `__renum_${n.element.id}`;
+          n.id = `__renum_${n.id}`;
+        }
+        for (const n of nodes) {
+          const oldTmp = n.id;
+          const old = oldTmp.replace(/^__renum_/, '');
+          const target = mapping.get(old) || old;
+          n.id = target;
+          if (n.element) {
+            n.element.id = target;
+            try {
+              const label = n.element.querySelector('.node-id-label');
+              if (label) label.textContent = target;
+            } catch {}
+          }
+        }
+        // Reset counters/pools consistently
+        availableNodeIds = new Set();
+        currentNodeId = sortable.length;
+      } catch {}
     }
 
     // Global variables
@@ -1384,6 +1445,7 @@
       handleInsertOrbClick(connection) {
         // Store the connection info for insertion
         window.insertConnection = connection;
+        try { window.insertConnectionRole = connection && connection.__insertRole ? connection.__insertRole : undefined; } catch {}
         openActionModal('insert');
       },
       
@@ -1620,7 +1682,11 @@
 
           orb.addEventListener('click', (e) => {
             e.stopPropagation();
-            try { WorkflowManager.handleInsertOrbClick(connection); } catch {}
+            try {
+              // Mark this connection as source-anchored for positioning
+              connection.__insertRole = 'source';
+              WorkflowManager.handleInsertOrbClick(connection);
+            } catch {}
           });
 
           // Hover effects to match midpoint orbs
@@ -2747,26 +2813,10 @@
         }
         logOrder('StructureManager.performRebuild implicit-join pass end');
         
-        // Also try to create connections manually if rebuild didn't work
-        try {
-          const node6 = nodes.find(n => n.element?.id === 'node-6');
-          const node5 = nodes.find(n => n.element?.id === 'node-5');
-          const node8 = nodes.find(n => n.element?.id === 'node-8');
-          
-          if (node6 && node8) {
-            console.log('[MANUAL JOIN] Creating node-6 -> node-8');
-            WorkflowManager.createConnection(node6.element, node8.element, false);
-          }
-          if (node5 && node8) {
-            console.log('[MANUAL JOIN] Creating node-5 -> node-8');
-            WorkflowManager.createConnection(node5.element, node8.element, false);
-          }
-        } catch (e) {
-          console.error('Error creating manual join connections:', e);
-        }
+        // Remove legacy manual join by hard-coded IDs; joins are created deterministically above
         
         // Rebuild connections honoring If branching with True/False headers
-        logOrder('StructureManager.performRebuild wiring pass begin');
+        
         const isControl = (n) => !!(n && n.data && (n.data.type === 'True' || n.data.type === 'False'));
         const findIfHeaders = (startIdx) => {
           let trueIdx = -1, falseIdx = -1;
@@ -2789,9 +2839,9 @@
           const type = node?.data?.type || '';
           // Handle If block with two branches
           if (type === 'If') {
-            console.debug('[IF][REBUILD] processing IF', { index: i, id: node.id });
+            if (window.__DEBUG_EDITOR__) console.debug('[IF][REBUILD] processing IF', { index: i, id: node.id });
             const { trueIdx, falseIdx } = findIfHeaders(i);
-            console.debug('[IF][REBUILD] headers', { trueIdx, falseIdx });
+            if (window.__DEBUG_EDITOR__) console.debug('[IF][REBUILD] headers', { trueIdx, falseIdx });
             // Force-place True/False headers below IF using live DOM rects
             try {
               const ifEl = node.element;
@@ -2960,6 +3010,8 @@
         // Update all connection positions and orbs after layout is complete to ensure correct rendering
         requestAnimationFrame(() => {
           try {
+            // Ensure IDs reflect the final visual order before we place orbs/update lines
+            try { renumberNodesByLayout(); } catch {}
             WorkflowManager.connections.forEach((connection) => {
               WorkflowManager.updateConnectionPosition(connection);
             });
@@ -2980,6 +3032,17 @@
                 });
               } catch {}
               OrbManager.updateAllOrbPositions();
+              try { debugDumpNodePositions('after-rebuild'); } catch {}
+              // Normalize currentNodeId to prevent new nodes from getting lower ids than existing ones
+              try {
+                let maxNumeric = 0;
+                for (const n of nodes) {
+                  if (!n || !n.id) continue;
+                  const m = String(n.id).match(/^node-(\d+)$/);
+                  if (m) { const num = parseInt(m[1], 10); if (Number.isFinite(num) && num > maxNumeric) maxNumeric = num; }
+                }
+                if (currentNodeId < maxNumeric) currentNodeId = maxNumeric;
+              } catch {}
             } catch {}
           } catch (e) {
             console.warn('[STRUCT] Error updating connection positions:', e);
@@ -4004,6 +4067,16 @@ function triggerFullStructureRebuild(callback) {
       const node = document.createElement('div');
       node.className = `flowchart-node ${type}`;
       try {
+        // Ensure the counter is at least the current max numeric id to avoid surprising low ids
+        try {
+          let maxNumeric = 0;
+          for (const n of nodes) {
+            if (!n || !n.id) continue;
+            const m = String(n.id).match(/^node-(\d+)$/);
+            if (m) { const num = parseInt(m[1], 10); if (Number.isFinite(num) && num > maxNumeric) maxNumeric = num; }
+          }
+          if (currentNodeId < maxNumeric) currentNodeId = maxNumeric;
+        } catch {}
         // Helper to claim next reusable or new id
         const claimNextId = () => {
           // Prefer a freed id if available (smallest numeric)
@@ -5712,6 +5785,9 @@ function triggerFullStructureRebuild(callback) {
       // Ensure big orbs reflect new structure immediately (no pan required)
       requestAnimationFrame(() => {
         try {
+          // Renumber based on final layout before placing orbs/lines
+          try { renumberNodesByLayout(); } catch {}
+          try { debugDumpNodePositions(`after-add:${actionNode.id}`); } catch {}
           const sortedForOrbs = [...nodes].sort((a, b) => {
             const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0');
             const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0');
@@ -5720,6 +5796,7 @@ function triggerFullStructureRebuild(callback) {
           StructureManager.placePathEndOrbs(sortedForOrbs);
           OrbManager.updateAllOrbPositions();
           WorkflowManager.updateAllConnections();
+          try { debugDumpNodePositions(`after-add:${actionNode.id}`); } catch {}
         } catch {}
       });
 
@@ -5775,7 +5852,49 @@ function triggerFullStructureRebuild(callback) {
       } catch {}
       
       const containerRect = container.getBoundingClientRect();
-      if (joinForIfId) {
+
+      // Detect source-anchored small-orb insertion
+      const isSourceAnchored = !!(window.insertConnectionRole === 'source' || (connection && connection.__insertRole === 'source'));
+
+      if (isSourceAnchored) {
+        // Anchor X to the source branch column when available
+        let anchorX = null;
+        try {
+          const fromNodeData = nodes.find(n => n.element === connection.from);
+          const sData = fromNodeData?.data;
+          const pIf = sData?.properties?.parentIfId;
+          const br = sData?.properties?.branch || (sData?.type === 'True' ? 'true' : (sData?.type === 'False' ? 'false' : undefined));
+          if (pIf && br) {
+            if (!actionData.properties) actionData.properties = {};
+            actionData.properties.parentIfId = pIf;
+            actionData.properties.branch = br;
+            try {
+              const anchors = ifHeaderCenters.get(pIf);
+              if (anchors) anchorX = br === 'true' ? anchors.trueX : anchors.falseX;
+            } catch {}
+            if (typeof anchorX !== 'number') {
+              const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
+              const baseOffset = 380;
+              anchorX = br === 'true' ? (baseCenter - baseOffset) : (baseCenter + baseOffset);
+            }
+          }
+        } catch {}
+
+        const fromRect = connection.from.getBoundingClientRect();
+        const fromBottom = Math.round(fromRect.bottom - containerRect.top);
+        if (typeof anchorX === 'number') {
+          actionNode.style.left = `${anchorX}px`;
+        } else {
+          const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
+          actionNode.style.left = `${fromX}px`;
+        }
+        actionNode.style.transform = 'translateX(-50%)';
+        actionNode.style.top = `${fromBottom + 120}px`;
+
+        // Clear hint after using it
+        try { if (connection) delete connection.__insertRole; window.insertConnectionRole = undefined; } catch {}
+
+      } else if (joinForIfId) {
         // Place centered horizontally and below the deeper of the two branches
         const centerX = containerRect.width / 2;
         // Find deepest Y among true/false branch nodes for this IF
@@ -5812,17 +5931,22 @@ function triggerFullStructureRebuild(callback) {
           });
         } catch {}
       } else {
-        // Default: position the action node in the middle of the connection
-        const fromRect = connection.from.getBoundingClientRect();
-        const toRect = connection.to.getBoundingClientRect();
-        const middleX = (fromRect.left + toRect.left) / 2 - containerRect.left;
-        const middleY = (fromRect.bottom + toRect.top) / 2 - containerRect.top;
-        actionNode.style.left = `${middleX - 100}px`; // 100 is half of node width
-        actionNode.style.top = `${middleY - 25}px`; // 25 is half of node height
+        // Default: inherit lane from target if present and let layout perform the restructure
+        try {
+          const toNodeData = nodes.find(n => n.element === connection.to)?.data || {};
+          const pIf = toNodeData?.properties?.parentIfId;
+          const br = toNodeData?.properties?.branch;
+          if (pIf && br) {
+            if (!actionData.properties) actionData.properties = {};
+            actionData.properties.parentIfId = pIf;
+            actionData.properties.branch = br;
+          }
+        } catch {}
+        // Do not force position here; the next rebuild will place correctly and push lower nodes down
       }
       
       container.appendChild(actionNode);
-      logOrder(`insertActionBetween node created id=${actionNode.id}`);
+      try { debugDumpNodePositions(`after-add:${actionNode.id}`); } catch {}
       
       const nodeData = { 
         id: actionNode.id, 
@@ -5863,11 +5987,21 @@ function triggerFullStructureRebuild(callback) {
         } catch {}
 
        // Unify with initial build by running an immediate rebuild (no debounce) so path logic is identical
-       logOrder('insertActionBetween forceFullLineRebuild');
-       forceFullLineRebuild();
+       // Trigger full structure rebuild; positions will be dumped at rebuild end
+       try { triggerFullStructureRebuild(); } catch {}
       // Also ensure orbs reflect new structure immediately
       requestAnimationFrame(() => {
         try {
+          // Rebuild small orbs after insertion (midpoint + source-anchored) and cleanup
+          try {
+            WorkflowManager.addInsertOrbsForConnections();
+            WorkflowManager.connections.forEach((connection) => {
+              try { WorkflowManager.createSourceInsertOrb(connection); WorkflowManager.updateSourceInsertOrbPosition(connection); } catch {}
+            });
+            WorkflowManager.cleanupStaleInsertOrbs();
+          } catch {}
+          // Renumber based on final layout before placing orbs/lines
+          try { renumberNodesByLayout(); } catch {}
           const sortedForOrbs = [...nodes].sort((a, b) => {
             const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0');
             const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0');
@@ -5919,32 +6053,64 @@ function triggerFullStructureRebuild(callback) {
       // Create the new action node
       const actionNode = createNode(actionData.type, actionData.type, 'settings', getActionContent(actionData));
       
-      // Position the new node between the source and target
+      // Position the new node: if this was a source-anchored orb click, place directly under the source;
+      // otherwise, default to the midpoint behavior
       const containerRect = container.getBoundingClientRect();
       const sourceRect = sourceNode.element.getBoundingClientRect();
       const targetRect = targetNode.element.getBoundingClientRect();
       
-      // Calculate position - horizontally between the two nodes, vertically below the lowest one
+      const isSourceAnchored = !!(window.insertConnectionRole === 'source' || (window.insertConnection && window.insertConnection.__insertRole === 'source'));
+      if (isSourceAnchored) {
+        // If source is in a branch, carry branch context so layout/rewire honors the branch
+        let anchorX = null;
+        try {
+          const sData = sourceNode.data || nodes.find(n => n.element === sourceNode.element)?.data;
+          const pIf = sData?.properties?.parentIfId;
+          const br = sData?.properties?.branch || (sData?.type === 'True' ? 'true' : (sData?.type === 'False' ? 'false' : undefined));
+          if (pIf && br) {
+            if (!actionData.properties) actionData.properties = {};
+            actionData.properties.parentIfId = pIf;
+            actionData.properties.branch = br;
+            // Try to lock X to the branch header anchor for consistent column alignment
+            try {
+              const anchors = ifHeaderCenters.get(pIf);
+              if (anchors) anchorX = br === 'true' ? anchors.trueX : anchors.falseX;
+            } catch {}
+            if (typeof anchorX !== 'number') {
+              const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
+              const baseOffset = 380;
+              anchorX = br === 'true' ? (baseCenter - baseOffset) : (baseCenter + baseOffset);
+            }
+          }
+        } catch {}
+        const fromBottom = Math.round(sourceRect.bottom - containerRect.top);
+        if (typeof anchorX === 'number') {
+          actionNode.style.left = `${anchorX}px`;
+        } else {
+          const fromX = Math.round(sourceRect.left - containerRect.left + sourceRect.width / 2);
+          actionNode.style.left = `${fromX}px`;
+        }
+        actionNode.style.transform = 'translateX(-50%)';
+        actionNode.style.top = `${fromBottom + 120}px`;
+      } else {
+        // Midpoint behavior
       const sourceX = sourceRect.left + sourceRect.width / 2 - containerRect.left;
       const targetX = targetRect.left + targetRect.width / 2 - containerRect.left;
       const midX = (sourceX + targetX) / 2;
-      
-      // Find the lowest (bottom-most) of the two nodes
       const sourceBottom = sourceRect.bottom - containerRect.top;
       const targetBottom = targetRect.bottom - containerRect.top;
       const lowestBottom = Math.max(sourceBottom, targetBottom);
-      
-      // Place the new node below the lowest node with some spacing
-      const midY = lowestBottom + 120; // 120px below the lowest node
-      
-      
+        const midY = lowestBottom + 120;
       actionNode.style.left = `${Math.round(midX)}px`;
       actionNode.style.transform = 'translateX(-50%)';
       actionNode.style.top = `${Math.round(midY)}px`;
+      }
+      // Clear hint after using it
+      try { if (window.insertConnection) delete window.insertConnection.__insertRole; window.insertConnectionRole = undefined; } catch {}
       
       // Add the node to the DOM first
       container.appendChild(actionNode);
-      logOrder(`insertActionBetweenOrbs node created id=${actionNode.id}`);
+      try { debugDumpNodePositions(`pre-reorder:${actionNode.id}`); } catch {}
       
       // Add the node to the workflow
       const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: actionData };
@@ -6079,6 +6245,15 @@ function triggerFullStructureRebuild(callback) {
   // Ensure lines mirror initial build immediately
   logOrder('insertActionBetweenOrbs triggerFullStructureRebuild');
   try { triggerFullStructureRebuild(); } catch {}
+  // Log positions after the rebuild+renumber completes (next two frames)
+  try {
+    const addedEl = actionNode;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try { debugDumpNodePositions(`after-add:${addedEl.id}`); } catch {}
+      });
+    });
+  } catch {}
   logOrder('insertActionBetweenOrbs end');
       
       return nodeData;
@@ -6931,6 +7106,8 @@ function triggerFullStructureRebuild(callback) {
                 addActionNode(step, idx);
               }
             });
+            // Renumber nodes deterministically by layout before the final rebuild
+            try { renumberNodesByLayout(); } catch {}
           } finally {
             isLoadingWorkflow = prevLoading;
             suspendRebuild = false;
@@ -6947,6 +7124,16 @@ function triggerFullStructureRebuild(callback) {
           StructureManager.rebuild();
         }
       } finally {
+        // Normalize currentNodeId to max numeric id after applying snapshot
+        try {
+          let maxNumeric = 0;
+          for (const n of nodes) {
+            if (!n || !n.id) continue;
+            const m = String(n.id).match(/^node-(\d+)$/);
+            if (m) { const num = parseInt(m[1], 10); if (Number.isFinite(num) && num > maxNumeric) maxNumeric = num; }
+          }
+          if (currentNodeId < maxNumeric) currentNodeId = maxNumeric;
+        } catch {}
         this.isApplying = false;
       }
     },
