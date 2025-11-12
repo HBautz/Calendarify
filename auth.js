@@ -138,7 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const remember = rememberCheckbox.checked;
         if (access_token) storeToken(access_token, remember);
         await loadUserState(access_token);
-        window.location.href = '/dashboard';
+        // Check for return URL, default to dashboard
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnUrl = urlParams.get('returnUrl') || '/dashboard';
+        window.location.href = returnUrl;
       } catch (e) {
         err.textContent = 'Invalid credentials';
       }
@@ -147,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function verifyToken(persistentOnly = false) {
+  // Check if we have a token in storage (for UI purposes)
   let token;
   if (persistentOnly) {
     token = localStorage.getItem('calendarify-token');
@@ -154,16 +158,16 @@ async function verifyToken(persistentOnly = false) {
     token = sessionStorage.getItem('calendarify-token');
   }
   
+  // If no token in storage, definitely not authenticated
   if (!token) {
     return false;
   }
   
-  // Remove surrounding quotes if they exist
-  const cleanToken = token.replace(/^"|"$/g, '');
-  
+  // Verify using cookie-based auth (which is what the API actually uses)
+  // Don't use Authorization header - rely on HttpOnly cookies
   try {
     const res = await fetch(`${API_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${cleanToken}` },
+      credentials: 'include', // Use cookies, not Authorization header
     });
     
     if (res.ok) {
@@ -172,7 +176,7 @@ async function verifyToken(persistentOnly = false) {
       // Additional check: verify user actually exists in database
       if (userData && userData.id) {
         console.log('Token verified successfully for user:', userData.email);
-      return true;
+        return true;
       } else {
         console.log('Token valid but user data missing, clearing token');
         clearToken();
@@ -180,15 +184,15 @@ async function verifyToken(persistentOnly = false) {
       }
     } else {
       console.log('Token validation failed with status:', res.status);
+      // Cookies are invalid, clear localStorage tokens too
+      clearToken();
+      return false;
     }
   } catch (error) {
     console.log('Token verification error:', error.message);
+    clearToken();
+    return false;
   }
-  
-  // Clear all tokens when verification fails
-  console.log('Clearing invalid tokens');
-  clearToken();
-  return false;
 }
 
 async function requireAuth() {

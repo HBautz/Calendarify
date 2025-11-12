@@ -3,7 +3,15 @@ INCOMING: GET /
 OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
 INCOMING: GET /
 OUTGOING: 200 / (/Users/heinebautz/portfolio-github/Calendarify/index.html)
-INCOMING: GET /dashboard/editor?workflow=b032f69b-571e-442e-9185-8a118b6b1f6c&branch=draft-1761728111527-qgop25
-OUTGOING: 200 /dashboard/editor?workflow=b032f69b-571e-442e-9185-8a118b6b1f6c&branch=draft-1761728111527-qgop25 (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
+INCOMING: GET /dashboard/editor?workflow=d358f146-03ae-40ec-8def-2eda9c4cc2ec&branch=draft-1762869868148-w1b51s
+OUTGOING: 200 /dashboard/editor?workflow=d358f146-03ae-40ec-8def-2eda9c4cc2ec&branch=draft-1762869868148-w1b51s (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
+INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
+OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
+INCOMING: GET /dashboard/editor?workflow=d358f146-03ae-40ec-8def-2eda9c4cc2ec&branch=draft-1762869868148-w1b51s
+OUTGOING: 200 /dashboard/editor?workflow=d358f146-03ae-40ec-8def-2eda9c4cc2ec&branch=draft-1762869868148-w1b51s (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
+INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
+OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)
+INCOMING: GET /dashboard/editor?workflow=d358f146-03ae-40ec-8def-2eda9c4cc2ec&branch=draft-1762869868148-w1b51s
+OUTGOING: 200 /dashboard/editor?workflow=d358f146-03ae-40ec-8def-2eda9c4cc2ec&branch=draft-1762869868148-w1b51s (/Users/heinebautz/portfolio-github/Calendarify/dashboard/editor/index.html)
 INCOMING: GET /.well-known/appspecific/com.chrome.devtools.json
 OUTGOING: 404 /.well-known/appspecific/com.chrome.devtools.json (/Users/heinebautz/portfolio-github/Calendarify/.well-known/appspecific/com.chrome.devtools.json)

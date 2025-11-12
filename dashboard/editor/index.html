@@ -745,6 +745,7 @@
         <div id="zoom-level" style="color:#E0E0E0; align-self:center; min-width:54px; text-align:center;">100%</div>
         <button id="zoom-in" class="context-btn" title="Zoom in" style="padding:6px 10px">+</button>
         <button id="zoom-reset" class="context-btn" title="Reset" style="padding:6px 10px">Reset</button>
+        <button id="recenter" class="context-btn" title="Recenter on Trigger" style="padding:6px 10px">Recenter</button>
       </div>
       
       <!-- Errors Drawer -->
@@ -928,7 +929,9 @@
     // Constants and utilities
     const API_URL = 'http://localhost:3001/api';
     const NODE_WIDTH = 320;          // px, matches .flowchart-node width
-    const VERTICAL_SPACING = 120;    // px vertical spacing between nodes
+    const VERTICAL_SPACING = 200;    // px vertical spacing between nodes (top-to-top)
+    const TOP_STEP = 200;            // exact top-to-top distance between consecutive nodes
+    const LEFT_STEP = 400;           // px horizontal grid step for columns
     const ORB_SIZE = 40;             // px, action orb size
     const INSERT_ORB_SIZE = 32;      // px, insert orb size
     const DEBUG_LINE_PATHS = false;  // reduce noise; enable on demand
@@ -995,10 +998,33 @@
     // Client does not manage tokens; backend authenticates via HttpOnly cookies
     function getAnyToken() { return null; }
     
+    // Helper to clear tokens (since auth.js may not be loaded)
+    function clearTokens() {
+      try {
+        sessionStorage.removeItem('calendarify-token');
+        localStorage.removeItem('calendarify-token');
+        if (window.clearToken) window.clearToken();
+      } catch {}
+    }
+    
     // Centralized unauthorized handling: clear tokens and redirect to login
     function handleUnauthorizedRedirect() {
+      // Prevent redirect loops - if we're already redirecting, don't do it again
+      if (sessionStorage.getItem('__redirecting_to_login')) {
+        console.warn('Already redirecting to login, preventing loop');
+        return;
+      }
+      
+      // Mark that we're redirecting
+      sessionStorage.setItem('__redirecting_to_login', '1');
+      
+      // Clear tokens since cookies are invalid
+      clearTokens();
+      
       const url = new URL(window.location.origin + '/log-in');
       url.searchParams.set('notification', 'Session expired, please log in');
+      // Preserve the current URL so user can return after login
+      url.searchParams.set('returnUrl', window.location.pathname + window.location.search);
       window.location.href = url.toString();
     }
     
@@ -1013,6 +1039,8 @@
             // Always rely on cookie-based auth; no local storage/token reads
             init = Object.assign({}, init, { headers, credentials: 'include' });
           } catch {}
+
+          
           const res = await originalFetch(input, init);
           if (res && res.status === 401) {
             // Proactively redirect to login on unauthorized
@@ -1060,6 +1088,8 @@
       window.history.replaceState({}, '', url);
     }
     
+    // Enable editor debug logs by default
+    if (typeof window.__DEBUG_EDITOR__ === 'undefined') window.__DEBUG_EDITOR__ = true;
     // Order tracking (disabled - legacy)
     if (typeof window.__DEBUG_ORDERS__ === 'undefined') window.__DEBUG_ORDERS__ = false;
     let orderCounter = 0;
@@ -1081,7 +1111,7 @@
             };
           } catch { return { id: n.id, type: (n.data && n.data.type) || n.type || '', left: null, top: null }; }
         });
-        console.log(`[POS][${label}]`, items);
+        console.log(`[POS][${label}]`, JSON.stringify(items, null, 2));
       } catch {}
     }
 
@@ -1140,6 +1170,32 @@
     let canvasOffset = { x: 0, y: 0 };
     let selectedNode = null;
     let didFirstPanRefresh = false;
+    let didAutoCenter = false;
+    function centerOnTrigger() {
+      try {
+        const canvas = document.getElementById('flowchart-canvas');
+        const container = document.getElementById('flowchart-container');
+        if (!canvas || !container) { console.debug('[RECENTER] missing canvas/container', { hasCanvas: !!canvas, hasContainer: !!container }); return; }
+        const trigger = nodes.find(n => n.type === 'trigger');
+        const el = trigger?.element;
+        if (!el) { console.debug('[RECENTER] trigger element not found'); return; }
+        console.debug('[RECENTER] starting', { canvas, container, triggerId: el.id });
+        // Pan via container transform so trigger is centered in canvas viewport
+        const cRect = canvas.getBoundingClientRect();
+        const tRect = el.getBoundingClientRect();
+        const canvasCenterX = Math.round(cRect.left + cRect.width / 2);
+        const canvasCenterY = Math.round(cRect.top + cRect.height / 2);
+        const triggerCenterX = Math.round(tRect.left + tRect.width / 2);
+        const triggerCenterY = Math.round(tRect.top + tRect.height / 2);
+        const deltaX = canvasCenterX - triggerCenterX;
+        const deltaY = canvasCenterY - triggerCenterY;
+        // Update pan offsets and re-apply transform
+        canvasOffset.x += deltaX;
+        canvasOffset.y += deltaY;
+        console.debug('[RECENTER] pan', { deltaX, deltaY, newOffset: { x: canvasOffset.x, y: canvasOffset.y } });
+        try { applyZoom(); } catch {}
+      } catch {}
+    }
     let isLoadingWorkflow = false;
     let currentLoadSteps = null;
     // Gate to prevent mid-stream rebuilds while bulk-applying snapshots/loads
@@ -1398,6 +1454,12 @@
           const fromY = toLocalY(fromRect.bottom);
           const toX = toLocalX(toRect.left + toRect.width / 2);
           const toY = toLocalY(toRect.top);
+          if (window.__DEBUG_EDITOR__) {
+            try {
+              const fid = connection.from?.id, tid = connection.to?.id;
+              console.debug('[ORBS][midpoint] from/to', { fid, tid, fromX, fromY, toX, toY });
+            } catch {}
+          }
           
           // Check if this is a True/False to join connection
           const fromData = connection.from.__nodeData || nodes.find(n => n.element === connection.from)?.data;
@@ -1429,6 +1491,11 @@
             // For regular connections, use geometric midpoint
             middleX = (fromX + toX) / 2;
             middleY = (fromY + toY) / 2;
+          }
+          if (window.__DEBUG_EDITOR__) {
+            try {
+              console.debug('[ORBS][midpoint] placed', { middleX: Math.round(middleX), middleY: Math.round(middleY) });
+            } catch {}
           }
           
           // Lock to calculated position
@@ -1465,175 +1532,64 @@
             return;
           }
           
-          // Calculate anchor points: center bottom of from, center top of to
+          // Calculate anchor points: center bottom of from, top Y of to
           const fromX = Math.round(fromRect.left - containerRect.left + fromRect.width / 2);
           const fromY = Math.round(fromRect.bottom - containerRect.top - 1);
           const toX = Math.round(toRect.left - containerRect.left + toRect.width / 2);
           const toY = Math.round(toRect.top - containerRect.top + 1);
-
-          // Determine orthogonal path for branch headers; smooth curve for others
           const fromType = (connection.from.__nodeData && connection.from.__nodeData.data?.type) || nodes.find(n=>n.element===connection.from)?.data?.type || '';
           const toType = (connection.to.__nodeData && connection.to.__nodeData.data?.type) || nodes.find(n=>n.element===connection.to)?.data?.type || '';
-          
-          if (DEBUG_LINE_PATHS) {
-            console.log(`Connection types: fromType=${fromType}, toType=${toType}`);
+          // Align SVG path coordinates with SVG's left shift (used to cover container left padding)
+          // When container has padding-left > 0, the SVG is positioned at negative left to cover it.
+          // Adjust X coordinates into the SVG's local coordinate system so lines align with nodes.
+          const __svgLeft = (this.svg && this.svg.style && this.svg.style.left) ? parseFloat(this.svg.style.left) : 0;
+          const __xAdjust = isFinite(__svgLeft) ? -__svgLeft : 0; // svg.style.left is typically negative paddingLeft
+          const _fromX = fromX + __xAdjust;
+          const _toX = toX + __xAdjust;
+          if (window.__DEBUG_EDITOR__) {
+            try {
+              console.debug('[LINES] anchors', { from: connection.from?.id, to: connection.to?.id, fromType, toType, fromX: _fromX, fromY, toX: _toX, toY });
+            } catch {}
           }
 
-          // Attach node data refs to DOM once for quicker lookup
-          connection.from.__nodeData = nodes.find(n => n.element === connection.from) || connection.from.__nodeData || null;
-          connection.to.__nodeData = nodes.find(n => n.element === connection.to) || connection.to.__nodeData || null;
-
+          // Draw orthogonal paths for IF -> True/False and from True/False headers; otherwise vertical
           let d = '';
-          const vDrop = 30; // vertical drop from source (default)
-          const r = 12; // corner radius
-          
-          // Handle True/False to join connections first (specific case); also treat implicit joins as joins
-          if ((fromType === 'True' || fromType === 'False') && this.toNodeHasJoin(toType, connection)) {
-            // Compute a common turn-in level (midY) for all inbound connections to this join target
-            const minDrop = 120;
-            let midY;
-            try {
-              const inbound = Array.from(WorkflowManager.connections.values()).filter(c => c && c.to === connection.to);
-              if (inbound.length >= 2) {
-                let maxFromY = fromY;
-                for (const c of inbound) {
-                  if (!c.from) continue;
-                  const fr = c.from.getBoundingClientRect();
-                  if (!fr) continue;
-                  const fy = Math.round(fr.bottom - containerRect.top - 1);
-                  if (fy > maxFromY) maxFromY = fy;
-                }
-                midY = Math.min(toY - 12 - 10, maxFromY + minDrop);
-              } else {
-                const verticalDistance = Math.abs(toY - fromY);
-                const maxDrop = 240;
-                midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
-              }
-            } catch {
-              const verticalDistance = Math.abs(toY - fromY);
-              const maxDrop = 240;
-              midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
-            }
-            const dir = (toX >= fromX) ? 1 : -1;
-            d = `M ${fromX} ${fromY}`;
-            d += ` L ${fromX} ${midY - r}`;
-            d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-            d += ` L ${toX - dir * r} ${midY}`;
-            d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-            d += ` L ${toX} ${toY}`;
-            
-            // Note: Orbs are created once when connection is first made, not on every update
-            // Ensure DOM path reflects rounded corners
-            connection.line.setAttribute('stroke-linecap', 'round');
-            connection.line.setAttribute('stroke-linejoin', 'round');
-          } else if (this.toNodeIsImplicitJoin(connection)) {
-            // Handle branch actions to implicit join node with aligned turn-in level
-            const minDrop = 120;
-            let midY;
-            try {
-              const inbound = Array.from(WorkflowManager.connections.values()).filter(c => c && c.to === connection.to);
-              if (inbound.length >= 2) {
-                let maxFromY = fromY;
-                for (const c of inbound) {
-                  if (!c.from) continue;
-                  const fr = c.from.getBoundingClientRect();
-                  if (!fr) continue;
-                  const fy = Math.round(fr.bottom - containerRect.top - 1);
-                  if (fy > maxFromY) maxFromY = fy;
-                }
-                midY = Math.min(toY - 12 - 10, maxFromY + minDrop);
-              } else {
-                const verticalDistance = Math.abs(toY - fromY);
-                const maxDrop = 240;
-                midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
-              }
-            } catch {
-              const verticalDistance = Math.abs(toY - fromY);
-              const maxDrop = 240;
-              midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
-            }
-            const dir = (toX >= fromX) ? 1 : -1;
-            d = `M ${fromX} ${fromY}`;
-            d += ` L ${fromX} ${midY - r}`;
-            d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-            d += ` L ${toX - dir * r} ${midY}`;
-            d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-            d += ` L ${toX} ${toY}`;
-            
-            // Note: Orbs are created once when connection is first made, not on every update
-            connection.line.setAttribute('stroke-linecap', 'round');
-            connection.line.setAttribute('stroke-linejoin', 'round');
-          } else if (this.toNodeHasJoin(toType, connection)) {
-            // For other join targets, drop further and shorten approach more to center visually
-            const vDropJoin = 28; // halved to account for longer lines with orbs
-            const approachShorten = 14;
-            const midY = fromY + vDropJoin;
-            const dir = (toX >= fromX) ? 1 : -1;
-            d += `M ${fromX} ${fromY}`;
-            d += ` L ${fromX} ${midY - r}`;
-            d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-            d += ` L ${toX - dir * (r + approachShorten)} ${midY}`;
-            d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-            d += ` L ${toX} ${toY}`;
-            // Ensure DOM path reflects rounded corners
-            connection.line.setAttribute('stroke-linecap', 'round');
-            connection.line.setAttribute('stroke-linejoin', 'round');
-          } else if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
-            const midY = fromY + vDrop;
-            // Horizontal toward destination x
-            const hx1 = fromX;
-            const hy1 = midY;
-            const hx2 = toX;
-            const hy2 = midY;
-            // Build path with rounded corners using quadratic curves
-            // Start
-            d += `M ${fromX} ${fromY}`;
-            // Vertical down to just before corner
-            d += ` L ${fromX} ${hy1 - r}`;
-            // Corner: down->right (or down->left)
-            const dir = (toX >= fromX) ? 1 : -1;
-            d += ` Q ${fromX} ${hy1} ${fromX + dir * r} ${hy1}`;
-            // Horizontal toward near the destination x
-            d += ` L ${hx2 - dir * r} ${hy2}`;
-            // Corner: right/left -> down
-            d += ` Q ${hx2} ${hy2} ${hx2} ${hy2 + r}`;
-            // Vertical down to target
-            d += ` L ${toX} ${toY}`;
+          const r = 12;
+          // If X coordinates are the same (or very close), always use a straight vertical line
+          if (Math.abs(_toX - _fromX) < 2) {
+            d = `M ${_fromX} ${fromY} L ${_fromX} ${toY}`;
+          } else if ((fromType === 'If' && (toType === 'True' || toType === 'False'))) {
+            const midY = fromY + 30;
+            const dir = (_toX >= _fromX) ? 1 : -1;
+            d += `M ${_fromX} ${fromY}`;
+            d += ` L ${_fromX} ${midY - r}`;
+            d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+            d += ` L ${_toX - dir * r} ${midY}`;
+            d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+            d += ` L ${_toX} ${toY}`;
           } else if ((fromType === 'True' || fromType === 'False')) {
-              if (!(toType === 'True' || toType === 'False')) {
-              // From branch header to first branch node: orthogonal with side offset to avoid vertical-only
-              const side = (fromType === 'True') ? -1 : 1; // push outward from center
-              const hOffset = 40;
-              const midY = fromY + 36;
-              const hx1 = fromX + side * hOffset;
-              const hx2 = Math.abs(toX - fromX) < 2 ? (toX - side * hOffset) : toX;
-              d = `M ${fromX} ${fromY}`;
-              d += ` L ${fromX} ${midY - r}`;
-              d += ` Q ${fromX} ${midY} ${hx1} ${midY}`;
-              d += ` L ${hx2} ${midY}`;
-              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-              d += ` L ${toX} ${toY}`;
-            } else {
-              // Fallback generic curve
-              const mx = Math.round((fromX + toX) / 2);
-              d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
-            }
+            const midY = fromY + 30;
+            const dir = (_toX >= _fromX) ? 1 : -1;
+            d += `M ${_fromX} ${fromY}`;
+            d += ` L ${_fromX} ${midY - r}`;
+            d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+            d += ` L ${_toX - dir * r} ${midY}`;
+            d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+            d += ` L ${_toX} ${toY}`;
           } else {
-            // Generic vertical line for non-IF connections to keep visuals stable
-            d = `M ${fromX} ${fromY} L ${fromX} ${toY}`;
+            // Standardized vertical
+            d = `M ${_fromX} ${fromY} L ${_fromX} ${toY}`;
           }
-
+          if (window.__DEBUG_EDITOR__) {
+            try { console.debug('[LINES] path', d); } catch {}
+          }
           connection.line.setAttribute('d', d);
+          connection.line.setAttribute('stroke-linecap', 'round');
+          connection.line.setAttribute('stroke-linejoin', 'round');
+          
           logOrder(`updateConnectionPosition end from=${connection.from?.id} to=${connection.to?.id}`);
           connection.line.style.display = 'block';
-          if (DEBUG_LINE_PATHS) {
-            const fromId = connection.from.id;
-            const toId = connection.to.id;
-            const hasJoin = this.toNodeHasJoin(toType, connection) || this.toNodeIsImplicitJoin(connection);
-            console.log(`Connection ${fromId}->${toId}: fromType=${fromType}, toType=${toType}, hasJoin=${hasJoin}, path=${d}`);
-          }
 
-          
           // Update insert orb position
           this.updateInsertOrbPosition(connection);
           // Update source-anchored orb position if present
@@ -1720,6 +1676,9 @@
           orb.style.left = `${x}px`;
           orb.style.top = `${y}px`;
           orb.style.transform = 'translate(-50%, -50%)';
+          if (window.__DEBUG_EDITOR__) {
+            try { console.debug('[ORBS][source] placed', { id, x, y }); } catch {}
+          }
         } catch {}
       },
 
@@ -2073,6 +2032,9 @@
           const nodeBottom = Math.round(nodeRect.bottom - containerRect.top);
           const nodeWidth = nodeRect.width;
           const nodeHeight = nodeRect.height;
+          if (window.__DEBUG_EDITOR__) {
+            try { console.debug('[ORBS][node] rect', { nodeId: node.id || node?.dataset?.nodeId, nodeLeft, nodeTop, nodeRight, nodeBottom, nodeWidth, nodeHeight }); } catch {}
+          }
           
           // Calculate position based on placement (in local space)
           let left, top, transform;
@@ -2118,9 +2080,13 @@
           const containerPadding = 20;
           const maxLeft = containerRect.width - containerPadding;
           const maxTop = containerRect.height - containerPadding;
-          
-          left = Math.max(containerPadding, Math.min(Math.round(left), maxLeft));
+          const unclampedLeft = Math.round(left);
+          // Allow negative left freely; only cap at the right edge
+          left = Math.min(unclampedLeft, maxLeft);
           top = Math.max(containerPadding, Math.min(Math.round(top), maxTop));
+          if (window.__DEBUG_EDITOR__) {
+            try { console.debug('[ORBS][node] place', { position, unclampedLeft, left, top, maxLeft, maxTop }); } catch {}
+          }
           
           // Apply positioning
           orb.style.left = `${left}px`;
@@ -2347,11 +2313,14 @@
           const startY = (typeof ctx.startYRel === 'number') ? ctx.startYRel : 0;
           let endX = clientX - baseRect.left;
           let endY = clientY - baseRect.top;
-          // Clamp end within bounds
+          // Clamp end within bounds, allowing negative X equal to left padding space
           const width = Math.max(0, (WorkflowManager.svg?.clientWidth || container.clientWidth || 0));
           const height = Math.max(0, (WorkflowManager.svg?.clientHeight || container.clientHeight || 0));
+          const leftPadPx = parseFloat(getComputedStyle(container).paddingLeft || '0') || 0;
+          const minX = -leftPadPx;
           if (width && height) {
-            endX = Math.max(0, Math.min(endX, width));
+            // Allow negative X freely; only cap the maximum to width, and Y between 0..height
+            endX = Math.min(endX, width);
             endY = Math.max(0, Math.min(endY, height));
           }
           
@@ -2512,7 +2481,8 @@
             // Snap to integer pixels to avoid subpixel jitter when panning/zooming
             left = Math.round(left);
             top = Math.round(top);
-                left = Math.max(pad, Math.min(left, maxLeft));
+                // Allow left edge to reach 0 so orbs can sit directly under leftmost nodes
+                left = Math.min(left, maxLeft);
                 top = Math.max(pad, Math.min(top, maxTop));
                 const leftPx = `${left}px`;
                 const topPx = `${top}px`;
@@ -2737,7 +2707,10 @@
           
           const triggerNode = nodes[0];
           if (triggerNode && triggerNode.element) {
-            OrbManager.addOrb(triggerNode, 'bottom');
+            const isConfigured = !!(triggerNode.data && triggerNode.data.type);
+            if (isConfigured) {
+              OrbManager.addOrb(triggerNode, 'bottom');
+            }
           }
             safeCallback();
             return;
@@ -2792,12 +2765,7 @@
                 const lastTrue = trueActions[trueActions.length - 1];
                 const lastFalse = falseActions[falseActions.length - 1];
                 
-                console.log(`[FORCE JOIN] Creating connections:`, {
-                  lastTrue: lastTrue?.element?.id,
-                  lastFalse: lastFalse?.element?.id,
-                  combiningAction: combiningAction?.element?.id,
-                  ifId: ifId
-                });
+                console.log(`[FORCE JOIN] Creating connections: lastTrue=${lastTrue?.element?.id}, lastFalse=${lastFalse?.element?.id}, combiningAction=${combiningAction?.element?.id}, ifId=${ifId}`);
                 
                 if (lastTrue?.element) {
                   WorkflowManager.createConnection(lastTrue.element, combiningAction.element, false);
@@ -2818,13 +2786,19 @@
         // Rebuild connections honoring If branching with True/False headers
         
         const isControl = (n) => !!(n && n.data && (n.data.type === 'True' || n.data.type === 'False'));
-        const findIfHeaders = (startIdx) => {
+        const findIfHeaders = (startIdx, ifId) => {
           let trueIdx = -1, falseIdx = -1;
           for (let j = startIdx + 1; j < sortedNodes.length; j++) {
-            const t = sortedNodes[j]?.data?.type;
+            const node = sortedNodes[j];
+            const t = node?.data?.type;
             if (t === 'If') break; // stop at next IF block
-            if (t === 'True' && trueIdx === -1) trueIdx = j;
-            if (t === 'False' && falseIdx === -1) falseIdx = j;
+            // Only match headers that belong to this IF
+            if (t === 'True' && trueIdx === -1 && node?.data?.properties?.parentIfId === ifId) {
+              trueIdx = j;
+            }
+            if (t === 'False' && falseIdx === -1 && node?.data?.properties?.parentIfId === ifId) {
+              falseIdx = j;
+            }
             if (trueIdx !== -1 && falseIdx !== -1) break;
           }
           return { trueIdx, falseIdx };
@@ -2840,24 +2814,32 @@
           // Handle If block with two branches
           if (type === 'If') {
             if (window.__DEBUG_EDITOR__) console.debug('[IF][REBUILD] processing IF', { index: i, id: node.id });
-            const { trueIdx, falseIdx } = findIfHeaders(i);
+            const ifId = node?.data?.properties?.ifId;
+            const { trueIdx, falseIdx } = findIfHeaders(i, ifId);
             if (window.__DEBUG_EDITOR__) console.debug('[IF][REBUILD] headers', { trueIdx, falseIdx });
-            // Force-place True/False headers below IF using live DOM rects
+            // Force-place True/False headers exactly one TOP_STEP below IF top
             try {
               const ifEl = node.element;
               const cRect = container.getBoundingClientRect();
               const ifRect = ifEl.getBoundingClientRect();
-              const ifBottomLocal = ifRect.bottom - cRect.top;
-              const headerGap = 80;
+              const ifTopLocal = ifRect.top - cRect.top;
+              const desiredTop = Math.round(ifTopLocal + TOP_STEP);
+              const anchors = ifId ? ifHeaderCenters.get(ifId) : null;
               if (trueIdx !== -1) {
                 const hEl = sortedNodes[trueIdx].element;
-                hEl.style.top = `${Math.round(ifBottomLocal + headerGap)}px`;
-                hEl.style.transform = 'translateX(-50%)';
+                hEl.style.top = `${desiredTop}px`;
+                if (anchors && typeof anchors.trueX === 'number') {
+                  hEl.style.left = `${Math.round(anchors.trueX)}px`;
+                  hEl.style.transform = '';
+                }
               }
               if (falseIdx !== -1) {
                 const hEl = sortedNodes[falseIdx].element;
-                hEl.style.top = `${Math.round(ifBottomLocal + headerGap)}px`;
-                hEl.style.transform = 'translateX(-50%)';
+                hEl.style.top = `${desiredTop}px`;
+                if (anchors && typeof anchors.falseX === 'number') {
+                  hEl.style.left = `${Math.round(anchors.falseX)}px`;
+                  hEl.style.transform = '';
+                }
               }
             } catch {}
             // Connect If -> True/False headers when present
@@ -2869,7 +2851,6 @@
             }
 
             // Chain within branches: find actions tagged with this IF
-            const ifId = node.data?.properties?.ifId;
             if (ifId) {
               const trueBranch = [];
               const falseBranch = [];
@@ -2937,12 +2918,7 @@
                       ? sortedNodes[falseBranch[falseBranch.length - 1]].element
                       : (falseIdx !== -1 ? sortedNodes[falseIdx].element : null);
                     const targetEl = sortedNodes[targetIdx].element;
-                    console.log(`[IMPLICIT JOIN] Creating connections:`, {
-                      lastTrueEl: lastTrueEl?.id,
-                      lastFalseEl: lastFalseEl?.id,
-                      targetEl: targetEl?.id,
-                      ifId: ifId
-                    });
+                    console.log(`[IMPLICIT JOIN] Creating connections: lastTrueEl=${lastTrueEl?.id}, lastFalseEl=${lastFalseEl?.id}, targetEl=${targetEl?.id}, ifId=${ifId}`);
                     if (lastTrueEl) WorkflowManager.createConnection(lastTrueEl, targetEl, false);
                     if (lastFalseEl) WorkflowManager.createConnection(lastFalseEl, targetEl, false);
                   } else {
@@ -3049,6 +3025,109 @@
           }
         });
         
+        // Post-pass: Ensure all IF-to-header connections exist and create missing headers
+        // This is a safety net to catch any headers that might have been missed
+        // Process in reverse order to avoid stealing headers from later IFs
+        try {
+          const ifNodes = sortedNodes.filter(n => n?.data?.type === 'If');
+          console.log(`[POST_REBUILD_CHECK] Found ${ifNodes.length} IF nodes in sortedNodes (total: ${sortedNodes.length})`);
+          
+          // Build a map of which headers belong to which IFs (to prevent stealing)
+          const headerOwnership = new Map();
+          for (const n of sortedNodes) {
+            if (n?.data?.type === 'True' || n?.data?.type === 'False') {
+              const parentIfId = n?.data?.properties?.parentIfId;
+              if (parentIfId) {
+                const key = `${n.data.type}-${parentIfId}`;
+                headerOwnership.set(key, n);
+              }
+            }
+          }
+          console.log(`[POST_REBUILD_CHECK] Header ownership map:`, Array.from(headerOwnership.entries()).map(([k, v]) => ({ key: k, nodeId: v.id, elementId: v.element?.id })));
+          
+          // Process IFs in reverse order to avoid conflicts
+          for (let i = ifNodes.length - 1; i >= 0; i--) {
+            const ifNode = ifNodes[i];
+            const ifId = ifNode?.data?.properties?.ifId;
+            if (!ifId || !ifNode.element) {
+              console.log(`[POST_REBUILD_CHECK] Skipping IF - missing ifId or element: ifId=${ifId}, hasElement=${!!ifNode.element}`);
+              continue;
+            }
+            
+            console.log(`[POST_REBUILD_CHECK] Processing IF ${ifId} (${ifNode.element.id})`);
+            
+            // Find headers for this IF
+            let trueHeader = sortedNodes.find(n => 
+              n?.data?.type === 'True' && 
+              n?.data?.properties?.parentIfId === ifId
+            );
+            let falseHeader = sortedNodes.find(n => 
+              n?.data?.type === 'False' && 
+              n?.data?.properties?.parentIfId === ifId
+            );
+            
+            console.log(`[POST_REBUILD_CHECK] IF ${ifId}: found True=${!!trueHeader} (${trueHeader?.id || 'none'}), False=${!!falseHeader} (${falseHeader?.id || 'none'})`);
+            
+            // Only create missing headers - don't try to fix/reassign existing ones
+            // This prevents stealing headers from other IFs
+            if (!trueHeader) {
+              console.log(`[POST_REBUILD_CHECK] Creating missing True header for IF ${ifId}`);
+              try {
+                trueHeader = addControlNodeAfterElement(ifNode.element, 'True', true);
+                if (trueHeader && trueHeader.element) {
+                  trueHeader.data = { type: 'True', properties: { parentIfId: ifId, ifDomId: ifNode.element.id, branch: 'true' } };
+                  sortedNodes.push(trueHeader);
+                  headerOwnership.set(`True-${ifId}`, trueHeader);
+                  console.log(`[POST_REBUILD_CHECK] Created True header: id=${trueHeader.id}, elementId=${trueHeader.element.id}`);
+                } else {
+                  console.warn(`[POST_REBUILD_CHECK] Failed to create True header for IF ${ifId} - addControlNodeAfterElement returned null`);
+                }
+              } catch (e) {
+                console.warn('[STRUCT] Failed to create missing True header:', e);
+              }
+            }
+            if (!falseHeader) {
+              console.log(`[POST_REBUILD_CHECK] Creating missing False header for IF ${ifId}`);
+              try {
+                falseHeader = addControlNodeAfterElement(ifNode.element, 'False', true);
+                if (falseHeader && falseHeader.element) {
+                  falseHeader.data = { type: 'False', properties: { parentIfId: ifId, ifDomId: ifNode.element.id, branch: 'false' } };
+                  sortedNodes.push(falseHeader);
+                  headerOwnership.set(`False-${ifId}`, falseHeader);
+                  console.log(`[POST_REBUILD_CHECK] Created False header: id=${falseHeader.id}, elementId=${falseHeader.element.id}`);
+                } else {
+                  console.warn(`[POST_REBUILD_CHECK] Failed to create False header for IF ${ifId} - addControlNodeAfterElement returned null`);
+                }
+              } catch (e) {
+                console.warn('[STRUCT] Failed to create missing False header:', e);
+              }
+            }
+            
+            // Ensure connections exist
+            if (trueHeader && trueHeader.element && ifNode.element) {
+              const hasConnection = Array.from(WorkflowManager.connections.values()).some(c => 
+                c.from === ifNode.element && c.to === trueHeader.element
+              );
+              if (!hasConnection) {
+                console.log(`[POST_REBUILD_CHECK] Creating connection from IF ${ifId} to True header`);
+                WorkflowManager.createConnection(ifNode.element, trueHeader.element, false);
+              }
+            }
+            if (falseHeader && falseHeader.element && ifNode.element) {
+              const hasConnection = Array.from(WorkflowManager.connections.values()).some(c => 
+                c.from === ifNode.element && c.to === falseHeader.element
+              );
+              if (!hasConnection) {
+                console.log(`[POST_REBUILD_CHECK] Creating connection from IF ${ifId} to False header`);
+                WorkflowManager.createConnection(ifNode.element, falseHeader.element, false);
+              }
+            }
+          }
+          console.log(`[POST_REBUILD_CHECK] After post-pass, total nodes in sortedNodes: ${sortedNodes.length}, total nodes in nodes array: ${nodes.length}`);
+        } catch (e) {
+          console.warn('[STRUCT] Error ensuring IF-to-header connections:', e);
+        }
+        
           // Call callback if provided
           safeCallback();
         } catch (e) {
@@ -3094,27 +3173,43 @@
           // Reset anchors each layout pass
           try { ifCenters.clear(); ifHeaderCenters.clear(); } catch {}
 
-          // Place trigger node (keep its configured top, center X)
+          // Place trigger node at (0,0)
           const trigger = nodes.find(n => n.type === 'trigger');
           if (!trigger || !trigger.element) return;
 
           const triggerEl = trigger.element;
-          // Lock trigger to pixel-based container center to match other nodes
-          if (rootCenterLockX == null) {
-            rootCenterLockX = Math.round((containerRect.width / _scale) / 2);
-          }
-          const containerCenterLocalX = rootCenterLockX;
-          triggerEl.style.left = `${containerCenterLocalX}px`;
-          triggerEl.style.transform = 'translateX(-50%)';
+          triggerEl.style.left = `0px`;
+          triggerEl.style.top = `0px`;
+          triggerEl.style.transform = '';
 
           // Read trigger rect after possible CSS/layout changes
           const trigRect = triggerEl.getBoundingClientRect();
+          // Reposition guide text (if present) directly under the trigger
+          try {
+            const guide = container.querySelector('#editor-guide-text');
+            if (guide && trigRect) {
+              const guideLeft = Math.round(toLocalX(trigRect.left + trigRect.width / 2));
+              const guideTop = Math.round(toLocalY(trigRect.bottom) + 20);
+              guide.style.left = `${guideLeft}px`;
+              guide.style.top = `${guideTop}px`;
+              guide.style.transform = 'translateX(-50%)';
+            }
+          } catch {}
+          // Auto-center on trigger once per load after a tick to ensure layout is final
+          try {
+            if (!didAutoCenter) {
+              requestAnimationFrame(() => {
+                console.debug('[RECENTER][auto] attempting auto-center after layout');
+                try { centerOnTrigger(); didAutoCenter = true; } catch (e) { console.debug('[RECENTER][auto] failed', e); }
+              });
+            }
+          } catch (e) { console.debug('[RECENTER][auto] scheduling failed', e); }
 
           // Position action nodes with support for horizontal If branching
           const actions = nodes.filter(n => n.type !== 'trigger');
-          let currentTop = Math.round(toLocalY(trigRect.bottom) + VERTICAL_SPACING);
-          // Root center is locked to rootCenterLockX to prevent post-click drift
-          const rootCenterX = rootCenterLockX != null ? rootCenterLockX : Math.round(toLocalX(trigRect.left + (trigRect.width / 2)));
+          let currentTop = 0 + TOP_STEP;
+          // Root center: snap to 0 for standardized 400px columns
+          const rootCenterX = 0;
 
           const CONTROL_TYPES = new Set(['True', 'False']);
           const idxOf = (el) => nodes.findIndex(n => n.element === el);
@@ -3138,37 +3233,113 @@
             if (!el) continue;
             const t = n.data?.type || '';
 
+            
+
             if (t === 'If') {
-              // Nest-aware IF placement: center under enclosing branch path if any
+              // Grid-aligned IF placement (400px LEFT_STEP columns)
               const props = n.data?.properties || {};
-              // Root centering based on trigger's center in container-local coordinates
-              const baseCenter = rootCenterX;
-              const NEST_STEP = 220; // widening per nest level
-              // Compute nesting depth by walking parentIfId chain
-              let depth = 0;
-              let pid = props.parentIfId || null;
-              while (pid) {
-                const anc = nodes.find(x => x?.data?.type === 'If' && x?.data?.properties?.ifId === pid);
-                if (!anc) break;
-                depth += 1;
-                pid = anc?.data?.properties?.parentIfId || null;
+              const nodeId = el.id || 'unknown';
+              if (!props.parentIfId && !props.joinForIfId) {
+                console.log(`[LAYOUT][IF] Plain IF: ${nodeId}, currentTop: ${currentTop}`);
               }
-              let center = baseCenter;
+              let ifGridLeft = 0; // default grid-left for IF
               if (props.parentIfId && props.branch) {
-                // Prefer locking to recorded parent branch header X if available
                 const parentAnchors = ifHeaderCenters.get(props.parentIfId);
                 if (parentAnchors) {
-                  center = (props.branch === 'true') ? parentAnchors.trueX : parentAnchors.falseX;
+                  // parentAnchors.trueX and falseX are already left positions (not center X)
+                  const parentTrueLeft = Math.round(parentAnchors.trueX);
+                  const parentFalseLeft = Math.round(parentAnchors.falseX);
+                  ifGridLeft = (props.branch === 'true') ? parentTrueLeft : parentFalseLeft;
                 } else {
-                  const dir = props.branch === 'true' ? -1 : +1; // left for true, right for false
-                  center = baseCenter + (dir * (NEST_STEP * depth));
+                  ifGridLeft = (props.branch === 'true') ? 0 : LEFT_STEP;
                 }
               }
-              el.style.left = `${center}px`;
-              el.style.transform = 'translateX(-50%)';
-              el.style.top = `${currentTop}px`;
-              const ifHeight = getHeight(el);
-              const startY = currentTop + ifHeight + 80; // lower branch headers a bit
+              const centerX = ifGridLeft + NODE_WIDTH / 2;
+              el.style.left = `${ifGridLeft}px`;
+              el.style.transform = '';
+              
+              // For IF nodes in branches, let branch placement logic handle positioning
+              let ifTop = currentTop;
+              if (props.parentIfId && props.branch) {
+                // IF node in a branch - don't set position here, let branch placement handle it
+                // But we still need ifTop for calculating startY, so use current position or inbound
+                const currentTopStyle = parseFloat(el.style.top || '0') || 0;
+                // Check for inbound connections to determine position
+                let maxInboundTop = -Infinity;
+                for (const c of WorkflowManager.connections.values()) {
+                  if (!c || c.to !== el || !c.from) continue;
+                  const srcNode = nodes.find(n => n.element === c.from);
+                  if (!srcNode || !srcNode.element) continue;
+                  let srcTopLocal = parseFloat(srcNode.element.style.top || '0') || 0;
+                  if (srcTopLocal <= 0) {
+                    try {
+                      const srcRect = srcNode.element.getBoundingClientRect();
+                      srcTopLocal = Math.round(toLocalY(srcRect.top));
+                    } catch {}
+                  }
+                  if (srcTopLocal > maxInboundTop) maxInboundTop = srcTopLocal;
+                }
+                if (Number.isFinite(maxInboundTop) && maxInboundTop >= 0) {
+                  ifTop = maxInboundTop + TOP_STEP;
+                } else if (currentTopStyle >= TOP_STEP && Math.abs(currentTopStyle % TOP_STEP) < 10) {
+                  ifTop = currentTopStyle;
+                }
+                // Don't set position here - branch placement will handle it
+                console.log(`[LAYOUT][IF] ${nodeId}: in branch, will be placed by branch logic at: ${ifTop}`);
+              } else if (!props.parentIfId && !props.joinForIfId) {
+                // Read the node's current position (prefer style.top as it's more reliable than getBoundingClientRect)
+                const currentTopStyle = parseFloat(el.style.top || '0') || 0;
+                let currentTopLocal = currentTopStyle;
+                // Also try getBoundingClientRect as fallback if style.top is 0 or invalid
+                if (currentTopStyle <= 0) {
+                  try {
+                    currentTopLocal = Math.round(toLocalY(el.getBoundingClientRect().top));
+                  } catch {
+                    currentTopLocal = currentTopStyle;
+                  }
+                }
+                
+                // Check for inbound connections (may not exist yet since layout runs before connections are created)
+                let maxInboundTop = -Infinity;
+                let connectionCount = 0;
+                for (const c of WorkflowManager.connections.values()) {
+                  if (!c || c.to !== el || !c.from) continue;
+                  const srcNode = nodes.find(n => n.element === c.from);
+                  if (!srcNode || !srcNode.element) continue;
+                  // Prefer style.top, fallback to getBoundingClientRect
+                  let srcTopLocal = parseFloat(srcNode.element.style.top || '0') || 0;
+                  if (srcTopLocal <= 0) {
+                    try {
+                      const srcRect = srcNode.element.getBoundingClientRect();
+                      srcTopLocal = Math.round(toLocalY(srcRect.top));
+                    } catch {}
+                  }
+                  connectionCount++;
+                  if (srcTopLocal > maxInboundTop) maxInboundTop = srcTopLocal;
+                }
+                
+                if (Number.isFinite(maxInboundTop) && maxInboundTop >= 0) {
+                  // Use inbound source position + TOP_STEP directly (don't enforce currentTop minimum)
+                  // The source node at 1000 should result in IF at 1200, regardless of currentTop
+                  ifTop = maxInboundTop + TOP_STEP;
+                  console.log(`[LAYOUT][IF] ${nodeId}: ${connectionCount} inbound, source top: ${maxInboundTop}, IF top: ${ifTop}`);
+                } else if (currentTopLocal >= TOP_STEP && Math.abs(currentTopLocal % TOP_STEP) < 10) {
+                  // If no inbound connection found but node already has a grid-aligned position (likely from initial placement),
+                  // use that instead of currentTop to preserve the correct placement
+                  // This handles the case where layout runs before connections are created
+                  ifTop = currentTopLocal;
+                  console.log(`[LAYOUT][IF] ${nodeId}: no inbound, using grid-aligned: ${currentTopLocal}`);
+                } else {
+                  console.log(`[LAYOUT][IF] ${nodeId}: no inbound, falling back to currentTop: ${currentTop}`);
+                }
+              }
+              
+              // Only set position for IF nodes not in branches (branch placement handles branch IFs)
+              if (!props.parentIfId || !props.branch) {
+                el.style.top = `${ifTop}px`;
+              }
+              // Start branches exactly one step under the IF node top
+              const startY = ifTop + TOP_STEP;
 
               // Locate True/False headers for this IF
               const globalIfIdx = idxOf(el);
@@ -3181,100 +3352,290 @@
                 if (trueIdx !== -1 && falseIdx !== -1) break;
               }
 
-              // Layout branches: left column for TRUE, right column for FALSE
+            // Layout branches: TRUE at IF column, FALSE at IF column + LEFT_STEP
               let yTrue = startY;
               let yFalse = startY;
-              const COLUMN_OFFSET = 280; // px from center
-              // Branch columns relative to this IF's center with widening logic
-              const centerX = center;
-              const baseOffset = 380; // px from center (base gap)
-              // Compute nested depths for this IF's branches to widen spacing
+              
+              // Recursively calculate how much extra space each branch needs based on nested IFs
               const thisIfId = nodes[globalIfIdx]?.data?.properties?.ifId;
-              const nestedDepthFor = (branchVal) => {
-                let maxD = 0;
+              
+              // Helper to calculate how much a nested IF's branch extends in a given direction
+              // Returns the number of LEFT_STEPs the nested IF's branch extends
+              // Only counts extension if there are actually nested IFs in that branch
+              // When a nested IF is found, counts 1 step for it, plus 1 step if it has a branch header in that direction
+              const calculateNestedBranchExtension = (nestedIfId, extensionDirection, visited = new Set()) => {
+                if (!nestedIfId || visited.has(nestedIfId)) return 0;
+                visited.add(nestedIfId);
+                
+                const branchName = extensionDirection < 0 ? 'true' : 'false';
+                const headerType = extensionDirection < 0 ? 'True' : 'False';
+                
+                // Find the nested IF's position in the nodes array
+                let nestedIfIdx = -1;
+                for (let i = 0; i < nodes.length; i++) {
+                  if (nodes[i]?.data?.properties?.ifId === nestedIfId && nodes[i]?.data?.type === 'If') {
+                    nestedIfIdx = i;
+                    break;
+                  }
+                }
+                if (nestedIfIdx === -1) return 0;
+                
+                let extension = 0;
+                
+                // Check if there are deeper nested IFs in the specified branch, starting from after the nested IF
+                for (let j = nestedIfIdx + 1; j < nodes.length; j++) {
+                  const d = nodes[j]?.data;
+                  if (!d) continue;
+                  // Stop if we hit an IF that's not a child of the nested IF (or its descendants)
+                  if (d.type === 'If') {
+                    const dParentIfId = d.properties?.parentIfId;
+                    // If this IF is a direct child of the nested IF in the branch we're checking, process it
+                    if (dParentIfId === nestedIfId && d.properties?.branch === branchName) {
+                      const deeperIfId = d.properties?.ifId;
+                      if (deeperIfId) {
+                        // Found a nested IF in this branch - add 1 step for it
+                        extension = 1;
+                        // Check if this deeper IF has a branch header in the extension direction
+                        const hasBranchHeader = nodes.some(n => n.data?.type === headerType && n.data?.properties?.parentIfId === deeperIfId);
+                        if (hasBranchHeader) {
+                          // The nested IF has a branch header, so add 1 more step
+                          extension = 2;
+                        }
+                        // Recursively check if this deeper IF extends further
+                        const deeperExtension = calculateNestedBranchExtension(deeperIfId, extensionDirection, new Set(visited));
+                        if (deeperExtension > 0) {
+                          extension = Math.max(extension, 1 + deeperExtension);
+                        }
+                        break; // Only need to find the first nested IF to determine extension
+                      }
+                    } else if (dParentIfId && dParentIfId !== nestedIfId) {
+                      // This IF belongs to a different parent - check if it's still within the nested IF's scope
+                      // by checking if its parent is a descendant of the nested IF
+                      let isDescendant = false;
+                      let currentParentId = dParentIfId;
+                      let depth = 0;
+                      while (currentParentId && depth < 10) { // Limit depth to prevent infinite loops
+                        if (currentParentId === nestedIfId) {
+                          isDescendant = true;
+                          break;
+                        }
+                        const parentNode = nodes.find(n => n.data?.properties?.ifId === currentParentId);
+                        currentParentId = parentNode?.data?.properties?.parentIfId;
+                        depth++;
+                      }
+                      if (!isDescendant) {
+                        // We've moved outside the nested IF's scope, stop searching
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                return extension;
+              };
+              
+              // Helper to calculate the total shift needed for a branch based on nested IFs
+              // Returns the number of additional LEFT_STEPs needed (beyond the base 1 step)
+              // When a nested IF is in a branch, the parent branch needs to shift to accommodate
+              // the nested IF's opposite branch extensions
+              const calculateBranchShift = (parentIfId, branchName, shiftDirection, visited = new Set()) => {
+                if (!parentIfId || visited.has(parentIfId)) return 0;
+                visited.add(parentIfId);
+                let maxShift = 0;
+                
                 for (let j = globalIfIdx + 1; j < nodes.length; j++) {
                   const d = nodes[j]?.data;
                   if (!d) continue;
-                  if (d.type === 'True' || d.type === 'False') continue;
-                  // Only consider nodes that belong to this IF's branches
-                  if (!d.properties || d.properties.parentIfId == null) continue;
-                  let p = d.properties.parentIfId;
-                  let depth = 0;
-                  let firstBranch = d.properties?.branch || null;
-                  while (p) {
-                    const anc = nodes.find(x => x?.data?.type === 'If' && x?.data?.properties?.ifId === p);
-                    if (!anc) break;
-                    if (p === thisIfId) {
-                      // Count immediate nested IF as 1 layer
-                      const depthVal = depth + 1;
-                      if (firstBranch === branchVal) maxD = Math.max(maxD, depthVal);
-                      break;
+                  // Stop at next top-level IF block
+                  if (d.type === 'If' && d.properties?.parentIfId !== parentIfId) break;
+                  // Check if this is a nested IF in the branch we're checking
+                  if (d.type === 'If' && d.properties?.parentIfId === parentIfId && d.properties?.branch === branchName) {
+                    const nestedIfId = d.properties?.ifId;
+                    if (nestedIfId) {
+                      // Found a nested IF - base shift is 1 step for the IF itself
+                      let nestedShift = 1;
+                      
+                      // Calculate how much the nested IF's branches extend
+                      // The nested IF's True branch extends left, False branch extends right
+                      // When nested IF is in parent's branch, check how much the nested IF's opposite branch extends
+                      // This determines how much the parent branch needs to shift
+                      const nestedTrueExtension = calculateNestedBranchExtension(nestedIfId, -1, new Set(visited));
+                      const nestedFalseExtension = calculateNestedBranchExtension(nestedIfId, 1, new Set(visited));
+                      
+                      // For parent's True branch (shiftDirection < 0, extends left):
+                      //   - Nested IF's True branch also extends left (same direction) - add its extension
+                      // For parent's False branch (shiftDirection > 0, extends right):
+                      //   - Nested IF's True branch extends left (opposite direction) - add its extension
+                      //   - This is what requires the parent False branch to shift right more
+                      // Always use the True branch extension because it extends opposite to False branches
+                      // Only add extension if there are actually nested IFs in that branch
+                      // (The branch header existing alone doesn't count - only nested IFs do)
+                      nestedShift += nestedTrueExtension;
+                      
+                      maxShift = Math.max(maxShift, nestedShift);
                     }
-                    depth += 1;
-                    firstBranch = anc?.data?.properties?.branch || firstBranch;
-                    p = anc?.data?.properties?.parentIfId || null;
                   }
                 }
-                return maxD;
+                return maxShift;
               };
-              const widenTrue = nestedDepthFor('true');
-              const widenFalse = nestedDepthFor('false');
-              // Symmetric widening: keep workflow centered by using the max depth across both branches
-              // Only widen for true nested IFs under this IF (nodes with type==='If' and parentIfId===thisIfId)
-              const widenIfDepth = (() => {
-                const countDepth = (branchVal) => {
-                  let maxD = 0;
-                  for (let j = globalIfIdx + 1; j < nodes.length; j++) {
-                    const d = nodes[j]?.data;
-                    if (!d) continue;
-                    if (d.type !== 'If') continue;
-                    if (!d.properties || d.properties.parentIfId !== thisIfId) continue;
-                    // depth 1 for immediate nested IF under this IF
-                    if (d.properties.branch === branchVal) maxD = Math.max(maxD, 1);
-                  }
-                  return maxD;
-                };
-                return Math.max(countDepth('true'), countDepth('false'));
-              })();
-              const offset = baseOffset * (1 + widenIfDepth);
-              const trueX = centerX - offset;
-              const falseX = centerX + offset;
-
-              // Save centers so deeper IFs can attach under the branch path
+              
+              let trueExtraShift = 0;
+              let falseExtraShift = 0;
               if (thisIfId) {
-                ifCenters.set(thisIfId, centerX);
-                ifHeaderCenters.set(thisIfId, { trueX, falseX });
+                // Calculate extra shifts needed (beyond base 1 step)
+                // This calculates how much the branch needs to shift to accommodate nested IFs
+                trueExtraShift = calculateBranchShift(thisIfId, 'true', -1);
+                falseExtraShift = calculateBranchShift(thisIfId, 'false', 1);
+                console.log(`[LAYOUT] IF ${thisIfId}: trueExtraShift=${trueExtraShift}, falseExtraShift=${falseExtraShift}`);
+              }
+              
+              // Adjust branch positions: base position + extra shifts for nested IFs
+              let trueLeft = ifGridLeft - LEFT_STEP;
+              let falseLeft = ifGridLeft + LEFT_STEP;
+              if (trueExtraShift > 0) {
+                trueLeft = ifGridLeft - (LEFT_STEP * (1 + trueExtraShift));
+              }
+              if (falseExtraShift > 0) {
+                falseLeft = ifGridLeft + (LEFT_STEP * (1 + falseExtraShift));
+              }
+              if (thisIfId) {
+                console.log(`[LAYOUT] IF ${thisIfId}: trueLeft=${trueLeft}, falseLeft=${falseLeft}, ifGridLeft=${ifGridLeft}`);
+              }
+              
+              const trueX = trueLeft + NODE_WIDTH / 2;
+              const falseX = falseLeft + NODE_WIDTH / 2;
+
+          // Save centers so deeper IFs can attach under the branch path
+              // Persist anchors for this IF
+              if (thisIfId) {
+                ifCenters.set(thisIfId, ifGridLeft);
+                // Store top-lefts in anchors map under existing keys
+                ifHeaderCenters.set(thisIfId, { trueX: trueLeft, falseX: falseLeft });
               }
 
               const place = (node, side, y) => {
                 const e = node.element;
-                const cx = side === 'left' ? trueX : falseX;
-                e.style.left = `${cx}px`;
-                e.style.transform = 'translateX(-50%)';
+                const leftVal = side === 'left' ? trueLeft : falseLeft;
+                e.style.left = `${leftVal}px`;
+                e.style.transform = '';
                 e.style.top = `${y}px`;
-                return y + getHeight(e) + VERTICAL_SPACING;
+                return y + TOP_STEP;
               };
               // Place headers if present
               if (trueIdx !== -1) yTrue = place(nodes[trueIdx], 'left', yTrue);
               if (falseIdx !== -1) yFalse = place(nodes[falseIdx], 'right', yFalse);
 
-              // Place branch actions by matching parentIfId
+              // Resolve missing branch metadata using inbound connections from this IF's branches
               const ifId = nodes[globalIfIdx]?.data?.properties?.ifId;
               if (ifId) {
+                // Helper: try to assign parentIfId/branch to nodes without it based on inbound connections
+                const tryAssignBranchFromInbound = (idx) => {
+                  try {
+                    const targetEl = nodes[idx]?.element; if (!targetEl) return;
+                    const d = nodes[idx]?.data || {}; if (!d) return;
+                    // Never assign branch to explicit join nodes
+                    if (d.properties && d.properties.joinForIfId) return;
+                    // Skip if already assigned
+                    if (d.properties && d.properties.parentIfId === ifId && (d.properties.branch === 'true' || d.properties.branch === 'false')) return;
+
+                    let inferred = null;
+                    for (const c of WorkflowManager.connections.values()) {
+                      if (!c || c.to !== targetEl) continue;
+                      const fromData = nodes.find(n => n.element === c.from)?.data || {};
+                      if (!fromData) continue;
+                      // From True/False header of this IF
+                      if ((fromData.type === 'True' || fromData.type === 'False') && fromData.properties?.parentIfId === ifId) {
+                        inferred = (fromData.type === 'True') ? 'true' : 'false';
+                        break;
+                      }
+                      // From an action already assigned to this IF's branch
+                      if (fromData.properties && fromData.properties.parentIfId === ifId && (fromData.properties.branch === 'true' || fromData.properties.branch === 'false')) {
+                        inferred = fromData.properties.branch;
+                        break;
+                      }
+                    }
+                    if (inferred) {
+                      if (!nodes[idx].data) nodes[idx].data = {};
+                      if (!nodes[idx].data.properties) nodes[idx].data.properties = {};
+                      nodes[idx].data.properties.parentIfId = ifId;
+                      nodes[idx].data.properties.branch = inferred;
+                    }
+                  } catch {}
+                };
+                // First pass: assign missing branch info based on inbound connections
+                for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+                  const d = nodes[j]?.data; if (!d) continue;
+                  if (d.type === 'If') break; // stop at next IF block
+                  if (d.type === 'True' || d.type === 'False') continue;
+                  tryAssignBranchFromInbound(j);
+                }
+
+                // Place branch actions by matching (possibly inferred) parentIfId
                 for (let j = globalIfIdx + 1; j < nodes.length; j++) {
                   const d = nodes[j]?.data;
                   if (!d) continue;
-                  if (d.type === 'If') break; // next block
+                  // Break if we hit an IF that's not part of this branch (next IF block)
+                  if (d.type === 'If' && (!d.properties || d.properties.parentIfId !== ifId)) break;
                   if (d.type === 'True' || d.type === 'False') continue;
-                  if (d.properties && d.properties.parentIfId === ifId) {
-                    if (d.properties.branch === 'true') yTrue = place(nodes[j], 'left', yTrue);
-                    else if (d.properties.branch === 'false') yFalse = place(nodes[j], 'right', yFalse);
+                  if (d.properties && d.properties.parentIfId === ifId && !d.properties.joinForIfId) {
+                    let br = d.properties.branch;
+                    if (br !== 'true' && br !== 'false') {
+                      // Infer branch by current X vs center, then persist to stabilize future passes
+                      try {
+                        const rr = nodes[j].element.getBoundingClientRect();
+                        const cxLocal = Math.round(rr.left - containerRect.left + rr.width / 2);
+                        br = (cxLocal < centerX) ? 'true' : 'false';
+                        nodes[j].data.properties.branch = br;
+                      } catch { br = 'true'; }
+                    }
+                    if (br === 'true') yTrue = place(nodes[j], 'left', yTrue);
+                    else if (br === 'false') yFalse = place(nodes[j], 'right', yFalse);
                   }
                 }
               }
 
-              // Advance currentTop to below the deeper branch end
-              currentTop = Math.max(yTrue, yFalse) + 20;
+              // Place any explicit join nodes for this IF centered below the deeper branch end
+              const endYBase = Math.max(yTrue, yFalse);
+              let blockEndY = endYBase; // next standardized slot starts here
+              try {
+                const joinNodes = [];
+                for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+                  const d = nodes[j]?.data; if (!d) continue;
+                  if (d.type === 'If') break; // limit to this block
+                  if (d.properties && d.properties.joinForIfId === ifId) joinNodes.push(nodes[j]);
+                }
+                if (joinNodes.length > 0 && !props.parentIfId && !props.joinForIfId) {
+                  // Place join exactly at the next slot under the deeper branch, snap X to grid between branches
+                  // Join should be one grid row below the deepest branch (endYBase + TOP_STEP)
+                  let joinTop = endYBase + TOP_STEP;
+                  const trueGridLeft = Math.round(trueX - NODE_WIDTH / 2);
+                  const falseGridLeft = Math.round(falseX - NODE_WIDTH / 2);
+                  const midGridLeft = Math.round(((trueGridLeft + falseGridLeft) / 2) / LEFT_STEP) * LEFT_STEP;
+                  const snappedJoinCenter = midGridLeft + NODE_WIDTH / 2;
+                  for (const jn of joinNodes) {
+                    const e = jn.element; if (!e) continue;
+                    // Use top-left grid position for joins
+                    const snappedJoinLeft = midGridLeft;
+                    e.style.left = `${snappedJoinLeft}px`;
+                    e.style.transform = '';
+                    e.style.top = `${joinTop}px`;
+                    // blockEndY is the position of the last join (before incrementing for next join)
+                    blockEndY = joinTop;
+                    // Each subsequent join is one grid row below the previous
+                    joinTop += TOP_STEP;
+                  }
+                  console.log(`[LAYOUT][IF] ${nodeId}: ${joinNodes.length} join(s), endYBase: ${endYBase}, blockEndY: ${blockEndY}`);
+                }
+              } catch (e) {
+                console.error(`[LAYOUT][IF] Error placing joins:`, e);
+              }
+
+              // Advance currentTop: set to next standardized slot after branch group / joins
+              const oldCurrentTop = currentTop;
+              currentTop = blockEndY + TOP_STEP;
+              if (!props.parentIfId && !props.joinForIfId) {
+                console.log(`[LAYOUT][IF] ${nodeId}: currentTop ${oldCurrentTop} -> ${currentTop} (blockEndY: ${blockEndY})`);
+              }
               
               continue;
             }
@@ -3282,15 +3643,57 @@
             // Non-IF nodes: if already inside an IF block, don't override branch placement
             const gIdx = idxOf(el);
             if (inIfBlock(gIdx)) {
-              // Move currentTop down to not overlap whatever was positioned by branches
-              const r = el.getBoundingClientRect();
-              currentTop = Math.max(currentTop, Math.round(toLocalY(r.bottom)) + VERTICAL_SPACING);
+              // Within IF blocks, placement handled above; do not adjust
             } else {
-              // Centered linear placement under root center
-              el.style.left = `${rootCenterX}px`;
-              el.style.transform = 'translateX(-50%)';
-              el.style.top = `${currentTop}px`;
-              currentTop += getHeight(el) + VERTICAL_SPACING;
+              // Linear placement in column 0 (grid-left = 0)
+              // Check for inbound connections to place after the source node
+              const nodeId = el.id || 'unknown';
+              let nodeTop = currentTop;
+              
+              // Check for inbound connections (may not exist yet since layout runs before connections are created)
+              let maxInboundTop = -Infinity;
+              let connectionCount = 0;
+              for (const c of WorkflowManager.connections.values()) {
+                if (!c || c.to !== el || !c.from) continue;
+                const srcNode = nodes.find(n => n.element === c.from);
+                if (!srcNode || !srcNode.element) continue;
+                // Prefer style.top, fallback to getBoundingClientRect
+                let srcTopLocal = parseFloat(srcNode.element.style.top || '0') || 0;
+                if (srcTopLocal <= 0) {
+                  try {
+                    const srcRect = srcNode.element.getBoundingClientRect();
+                    srcTopLocal = Math.round(toLocalY(srcRect.top));
+                  } catch {}
+                }
+                connectionCount++;
+                if (srcTopLocal > maxInboundTop) maxInboundTop = srcTopLocal;
+              }
+              
+              // Read current position (from initial placement)
+              const currentTopStyle = parseFloat(el.style.top || '0') || 0;
+              let currentTopLocal = currentTopStyle;
+              if (currentTopStyle <= 0) {
+                try {
+                  currentTopLocal = Math.round(toLocalY(el.getBoundingClientRect().top));
+                } catch {
+                  currentTopLocal = currentTopStyle;
+                }
+              }
+              
+              if (Number.isFinite(maxInboundTop) && maxInboundTop >= 0) {
+                nodeTop = maxInboundTop + TOP_STEP;
+                console.log(`[LAYOUT][ACTION] ${nodeId}: ${connectionCount} inbound, source top: ${maxInboundTop}, action top: ${nodeTop}`);
+              } else if (currentTopLocal >= TOP_STEP && Math.abs(currentTopLocal % TOP_STEP) < 10) {
+                nodeTop = currentTopLocal;
+                console.log(`[LAYOUT][ACTION] ${nodeId}: no inbound, using grid-aligned: ${currentTopLocal}`);
+              } else {
+                console.log(`[LAYOUT][ACTION] ${nodeId}: no inbound, falling back to currentTop: ${currentTop}`);
+              }
+              
+              el.style.left = `0px`;
+              el.style.transform = '';
+              el.style.top = `${nodeTop}px`;
+              currentTop = Math.max(currentTop, nodeTop + TOP_STEP);
             }
           }
 
@@ -3321,17 +3724,15 @@
                   const anchors = ifHeaderCenters.get(pid);
                   if (anchors) px = (d.type === 'True') ? anchors.trueX : anchors.falseX;
                   else {
-                    const center = ifCenters.get(pid) ?? (rootCenterLockX != null ? rootCenterLockX : Math.round(containerRect.width / _scale / 2));
-                    const baseOffset = 380;
-                    px = (d.type === 'True') ? (center - baseOffset) : (center + baseOffset);
+                    const center = ifCenters.get(pid) ?? 0;
+                    px = (d.type === 'True') ? center : (center + LEFT_STEP);
                   }
                 } else {
-                  const center = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / _scale / 2);
-                  const baseOffset = 380;
-                  px = (d.type === 'True') ? (center - baseOffset) : (center + baseOffset);
+                  const center = 0;
+                  px = (d.type === 'True') ? center : (center + LEFT_STEP);
                 }
                 el.style.left = `${Math.round(px)}px`;
-                el.style.transform = 'translateX(-50%)';
+                el.style.transform = '';
               }
               // Vertical (Y) fix: force headers below their IF bottom by header gap
               try {
@@ -3352,20 +3753,43 @@
           } catch {}
 
           // Ensure container is tall/wide enough so SVG overlay can draw offscreen lines
-          let maxBottom = Math.round(toLocalY(trigRect.bottom));
+          // Also add left padding when any node has negative left so visuals (lines/orbs) are in-bounds
+          let maxBottom = currentTop;
           let maxRight = Math.round(toLocalX(trigRect.right));
+          let minLeftStyle = 0;
           for (const n of nodes) {
             if (!n?.element) continue;
             const r = n.element.getBoundingClientRect();
             maxBottom = Math.max(maxBottom, Math.round(toLocalY(r.bottom)));
             maxRight = Math.max(maxRight, Math.round(toLocalX(r.right)));
+            try {
+              const sLeft = parseFloat(n.element.style.left || '0');
+              if (!Number.isNaN(sLeft)) minLeftStyle = Math.min(minLeftStyle, Math.round(sLeft));
+            } catch {}
           }
           // Add safe margin
           const extra = 200;
           container.style.height = `${maxBottom + extra}px`;
+          // Add left padding so negative-x content is visible and extend SVG to the left
+          const leftPad = Math.max(0, -minLeftStyle);
+          try { container.style.paddingLeft = `${leftPad}px`; } catch {}
           // If very wide nested branches, grow container width minimally (convert viewport width to local units)
-          const minWidth = Math.max(Math.round(containerRect.width / _scale), maxRight + 200);
+          const minWidth = Math.max(Math.round(containerRect.width / _scale), maxRight + leftPad + 200);
           container.style.minWidth = `${minWidth}px`;
+          // Ensure SVG spans into the left padding so curves that go slightly left of the header center aren’t clipped
+          try {
+            const svg = container.querySelector('#connections-svg');
+            if (svg) {
+              svg.removeAttribute('viewBox');
+              svg.removeAttribute('preserveAspectRatio');
+              svg.setAttribute('width', '100%');
+              svg.setAttribute('height', '100%');
+              // Position SVG to cover the left padding: left at -leftPad so container-local x maps 1:1
+              svg.style.left = `${-leftPad}px`;
+              svg.style.top = '0';
+              svg.style.width = `calc(100% + ${leftPad}px)`;
+            }
+          } catch {}
 
           // Persist offscreen-safe layout snapshot for each node in container-local coordinates
           try {
@@ -3382,6 +3806,197 @@
               const centerY = Math.round(top + height / 2);
               n._layout = { left: Math.round(left), top: Math.round(top), right: Math.round(right), bottom: Math.round(bottom), width, height, centerX, centerY };
             }
+          } catch {}
+
+          // Final normalization: snap linear nodes (outside IF blocks) to the 200px grid
+          try {
+            // Build inbound map once (to detect downstream-of-join nodes)
+            const inboundByEl = new Map();
+            try {
+              for (const c of WorkflowManager.connections.values()) {
+                if (!c || !c.to || !c.from) continue;
+                const arr = inboundByEl.get(c.to) || [];
+                const fromData = (c.from.__nodeData && c.from.__nodeData.data) || (nodes.find(n => n.element === c.from)?.data) || null;
+                if (fromData) arr.push(fromData);
+                inboundByEl.set(c.to, arr);
+              }
+            } catch {}
+
+            // Helper: detect implicit join for a target element by seeing inbound from both true/false of same IF
+            const hasImplicitJoinInbound = (el, candidateParentIfId) => {
+              try {
+                const inbound = inboundByEl.get(el) || [];
+                const branchesByIf = new Map();
+                for (const fd of inbound) {
+                  if (!fd) continue;
+                  const t = fd.type || '';
+                  let pid = null;
+                  let branch = null;
+                  if (t === 'True' || t === 'False') {
+                    pid = fd.properties && fd.properties.parentIfId;
+                    branch = (t === 'True') ? 'true' : 'false';
+                  } else if (fd.properties && fd.properties.parentIfId && fd.properties.branch) {
+                    pid = fd.properties.parentIfId;
+                    branch = fd.properties.branch;
+                  }
+                  if (!pid || !branch) continue;
+                  const set = branchesByIf.get(pid) || new Set();
+                  set.add(branch);
+                  branchesByIf.set(pid, set);
+                }
+                for (const [pid, set] of branchesByIf.entries()) {
+                  if (set.has('true') && set.has('false')) {
+                    if (!candidateParentIfId || candidateParentIfId === pid) return true;
+                  }
+                }
+              } catch {}
+              return false;
+            };
+
+            const isLinearCandidate = (n) => {
+              if (!n || !n.element) return false;
+              const d = n.data || {};
+              const t = d.type || '';
+              // Never treat the trigger as linear
+              if (n.type === 'trigger' || t === 'trigger') return false;
+              // Allow plain IF nodes (not in a branch, not a join) to be snapped as linear
+              if (t === 'If') {
+                const pIf = d.properties && d.properties.parentIfId;
+                const isJoin = d.properties && d.properties.joinForIfId;
+                if (!pIf && !isJoin) return true;
+                return false;
+              }
+              if (!t || t === 'True' || t === 'False') return false;
+              const p = d.properties || {};
+              if (p.joinForIfId) return false; // joins themselves are not snapped here
+              if (!p.parentIfId) return true; // plain linear node
+              // If it has a parentIfId, consider it linear if it's downstream of that IF's join
+              const inbound = inboundByEl.get(n.element) || [];
+              const downstream = inbound.some(fd => (fd && fd.properties && fd.properties.joinForIfId === p.parentIfId));
+              const implicit = hasImplicitJoinInbound(n.element, p.parentIfId);
+              if (downstream || implicit) {
+                try {
+                  // Clear stale branch context to prevent future misclassification
+                  delete n.data.properties.parentIfId;
+                  delete n.data.properties.branch;
+                } catch {}
+              }
+              return downstream || implicit;
+            };
+
+            const linearNodes = nodes.filter(isLinearCandidate);
+            // Sort by current layout top to preserve sequence
+            linearNodes.sort((a, b) => {
+              const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0') || 0;
+              const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0') || 0;
+              return at - bt;
+            });
+            // Snap each node to its nearest grid row at or below its current row,
+            // and enforce strictly increasing rows to avoid collisions
+            let prevTop = 0;
+            for (const ln of linearNodes) {
+              const nodeId = ln.element?.id || 'unknown';
+              const ct = (ln && ln._layout && typeof ln._layout.top === 'number') ? ln._layout.top : parseFloat(ln?.element?.style?.top || '0') || 0;
+              let desired;
+              // If plain IF, base strictly on the highest inbound source row (ignore current ct and prevTop)
+              let didUseInbound = false;
+              try {
+                const d = ln.data || {};
+                if (d.type === 'If' && !(d.properties && (d.properties.parentIfId || d.properties.joinForIfId))) {
+                  let maxInboundTop = -Infinity;
+                  let connectionCount = 0;
+                  for (const c of WorkflowManager.connections.values()) {
+                    if (!c || c.to !== ln.element || !c.from) continue;
+                    const srcNode = nodes.find(n => n.element === c.from);
+                    if (!srcNode || !srcNode.element) continue;
+                    // Read the source node's current position directly from the DOM (zoom-safe)
+                    // This ensures we get the actual position even if _layout is stale
+                    const srcRect = srcNode.element.getBoundingClientRect();
+                    const srcTopLocal = Math.round(toLocalY(srcRect.top));
+                    connectionCount++;
+                    if (srcTopLocal > maxInboundTop) maxInboundTop = srcTopLocal;
+                  }
+                  if (Number.isFinite(maxInboundTop) && maxInboundTop >= 0) {
+                    // For IF nodes with inbound connections, use the source position directly
+                    // Don't use prevTop - the source node at 1000 should result in IF at 1200
+                    desired = maxInboundTop + TOP_STEP;
+                    didUseInbound = true;
+                    // Still ensure it's at least one row after prevTop to avoid collisions
+                    const beforeMonotonic = desired;
+                    desired = Math.max(desired, prevTop + TOP_STEP);
+                    console.log(`[NORMALIZE] ${nodeId}: ${connectionCount} inbound, source: ${maxInboundTop}, desired: ${desired}${desired !== beforeMonotonic ? ` (monotonic: ${beforeMonotonic}->${desired})` : ''}`);
+                  }
+                }
+              } catch (e) {
+                console.error(`[NORMALIZE] Error checking inbound:`, e);
+              }
+              if (!didUseInbound) {
+                // Start from the node's current grid row (ceiling - never move upwards)
+                desired = Math.max(TOP_STEP, Math.ceil(ct / TOP_STEP) * TOP_STEP);
+                // Enforce strictly increasing rows relative to previously placed linear node
+                const beforeMonotonic = desired;
+                desired = Math.max(desired, prevTop + TOP_STEP);
+                const nodeType = ln.data?.type || '';
+                if (nodeType === 'If' && desired !== beforeMonotonic) {
+                  console.log(`[NORMALIZE] ${nodeId}: ceil ${ct}->${beforeMonotonic}, monotonic->${desired}`);
+                }
+              }
+              ln.element.style.top = `${desired}px`;
+              prevTop = desired;
+            }
+          } catch {}
+
+          // Snap explicit join nodes (properties.joinForIfId) to next grid row below deepest branch element
+          try {
+            // Group joins by their parent IF id
+            const joinsByIf = new Map();
+            for (const n of nodes) {
+              const d = n && n.data;
+              if (!d || !d.properties || !d.properties.joinForIfId) continue;
+              const pid = d.properties.joinForIfId;
+              const arr = joinsByIf.get(pid) || [];
+              if (n.element) arr.push(n);
+              joinsByIf.set(pid, arr);
+            }
+            // For each IF, compute deepest branch top in local coords and place joins on grid rows
+            joinsByIf.forEach((joinNodes, ifId) => {
+              let deepestTop = 0;
+              try {
+                for (const n of nodes) {
+                  const d = n && n.data;
+                  if (!d) continue;
+                  if ((d.type === 'True' || d.type === 'False') && d.properties && d.properties.parentIfId === ifId) {
+                    const r = n.element.getBoundingClientRect();
+                    const topLocal = Math.round(toLocalY(r.top));
+                    deepestTop = Math.max(deepestTop, topLocal);
+                  }
+                  if (d.type !== 'If' && d.properties && d.properties.parentIfId === ifId && !d.properties.joinForIfId) {
+                    const r = n.element.getBoundingClientRect();
+                    const topLocal = Math.round(toLocalY(r.top));
+                    deepestTop = Math.max(deepestTop, topLocal);
+                  }
+                }
+              } catch (e) {
+                console.error(`[NORMALIZE][JOIN] Error computing deepestTop:`, e);
+              }
+              // First join sits exactly one grid row below deepest branch element
+              let placeTop = Math.round(deepestTop + TOP_STEP);
+              // Order joins by their current top to keep stable relative order
+              joinNodes.sort((a, b) => {
+                const at = parseFloat(a.element.style.top || '0') || 0;
+                const bt = parseFloat(b.element.style.top || '0') || 0;
+                return at - bt;
+              });
+              for (const jn of joinNodes) {
+                const joinId = jn.element?.id || 'unknown';
+                const oldTop = parseFloat(jn.element.style.top || '0') || 0;
+                jn.element.style.top = `${placeTop}px`;
+                if (oldTop !== placeTop) {
+                  console.log(`[NORMALIZE][JOIN] ${joinId}: ${oldTop} -> ${placeTop} (deepestTop: ${deepestTop})`);
+                }
+                placeTop += TOP_STEP;
+              }
+            });
           } catch {}
         } catch (e) {
           console.warn('LayoutManager.apply error:', e);
@@ -3488,35 +4103,96 @@ function triggerFullStructureRebuild(callback) {
     function normalizeWorkflowSteps(rawSteps) {
       try {
         const steps = Array.isArray(rawSteps) ? JSON.parse(JSON.stringify(rawSteps)) : [];
+        console.log(`[NORMALIZE] Normalizing ${steps.length} steps`);
         const withHeaders = [];
+        const usedIfIds = new Set();
+        const ifIdMap = new Map(); // Maps old ifId to new ifId for regenerated ones
+        
+        // First pass: collect all existing ifIds and detect duplicates
+        for (let i = 0; i < steps.length; i++) {
+          const step = steps[i];
+          if (step && step.type === 'If' && step.properties && step.properties.ifId) {
+            if (usedIfIds.has(step.properties.ifId)) {
+              const oldIfId = step.properties.ifId;
+              console.warn(`[NORMALIZE] Duplicate ifId detected: ${oldIfId} at index ${i}, will regenerate`);
+              // Generate new unique ID
+              let candidateId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+              while (usedIfIds.has(candidateId)) {
+                candidateId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+              }
+              // Map old to new
+              ifIdMap.set(oldIfId, candidateId);
+              step.properties.ifId = candidateId;
+              usedIfIds.add(candidateId);
+              console.log(`[NORMALIZE] Regenerated ifId: ${oldIfId} -> ${candidateId} at index ${i}`);
+            } else {
+              usedIfIds.add(step.properties.ifId);
+            }
+          }
+        }
+        
+        // Update all headers that reference regenerated ifIds
+        for (let i = 0; i < steps.length; i++) {
+          const step = steps[i];
+          if (step && (step.type === 'True' || step.type === 'False') && step.properties && step.properties.parentIfId) {
+            const newIfId = ifIdMap.get(step.properties.parentIfId);
+            if (newIfId) {
+              console.log(`[NORMALIZE] Updating header at index ${i}: parentIfId ${step.properties.parentIfId} -> ${newIfId}`);
+              step.properties.parentIfId = newIfId;
+            }
+          }
+        }
+        
+        // Second pass: process steps and ensure unique ifIds
         for (let i = 0; i < steps.length; i++) {
           const step = steps[i];
           withHeaders.push(step);
           if (step && step.type === 'If') {
-            // Ensure If has a stable id; use existing or derive from index
+            // Ensure If has a stable id; use existing or derive unique one
             if (!step.properties) step.properties = {};
-            if (!step.properties.ifId) step.properties.ifId = `if_${i}`;
+            if (!step.properties.ifId) {
+              // Generate unique ID
+              let candidateId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+              while (usedIfIds.has(candidateId)) {
+                candidateId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+              }
+              step.properties.ifId = candidateId;
+              usedIfIds.add(candidateId);
+              console.log(`[NORMALIZE] Generated new ifId for IF at index ${i}: ${candidateId}`);
+            }
             const ifId = step.properties.ifId;
+            console.log(`[NORMALIZE] Processing IF at index ${i}, ifId=${ifId}`);
             // Look ahead for existing True/False linked to this If
             let hasTrue = false, hasFalse = false;
             for (let j = i + 1; j < steps.length; j++) {
               const s = steps[j];
               if (!s) continue;
               if (s.type === 'If') break; // next block
-              if (s.type === 'True' && s.properties && s.properties.parentIfId === ifId) hasTrue = true;
-              if (s.type === 'False' && s.properties && s.properties.parentIfId === ifId) { hasFalse = true; break; }
+              if (s.type === 'True' && s.properties && s.properties.parentIfId === ifId) {
+                hasTrue = true;
+                console.log(`[NORMALIZE] Found existing True header for IF ${ifId} at index ${j}`);
+              }
+              if (s.type === 'False' && s.properties && s.properties.parentIfId === ifId) {
+                hasFalse = true;
+                console.log(`[NORMALIZE] Found existing False header for IF ${ifId} at index ${j}`);
+                break;
+              }
             }
             // Inject missing headers immediately after the If
             if (!hasTrue) {
+              console.log(`[NORMALIZE] Injecting missing True header for IF ${ifId}`);
               withHeaders.push({ type: 'True', properties: { parentIfId: ifId, branch: 'true' } });
             }
             if (!hasFalse) {
+              console.log(`[NORMALIZE] Injecting missing False header for IF ${ifId}`);
               withHeaders.push({ type: 'False', properties: { parentIfId: ifId, branch: 'false' } });
             }
           }
         }
+        console.log(`[NORMALIZE] Normalized to ${withHeaders.length} steps (added ${withHeaders.length - steps.length} headers)`);
         return withHeaders;
-      } catch {
+      } catch (e) {
+        console.warn('[NORMALIZE] Error normalizing steps:', e);
         return Array.isArray(rawSteps) ? rawSteps : [];
       }
     }
@@ -3678,7 +4354,7 @@ function triggerFullStructureRebuild(callback) {
         const btn = document.getElementById('debug-layout');
         if (btn) btn.addEventListener('click', () => {
           try {
-            const out = { meta: {}, nodes: [], connections: [], anchors: {} };
+            const out = { meta: {}, nodes: [], connections: [], anchors: {}, positions: {} };
             const containerRect = container.getBoundingClientRect();
             // Meta
             out.meta = {
@@ -3719,6 +4395,10 @@ function triggerFullStructureRebuild(callback) {
                 world: { x: zoomLevel ? Math.round(x / zoomLevel) : Math.round(x), y: zoomLevel ? Math.round(y / zoomLevel) : Math.round(y) },
                 data: n.data || null,
               });
+              // Compact positions map keyed by node id (prefer explicit style if set)
+              const sx = (styleLeft != null) ? Math.round(styleLeft) : Math.round(x);
+              const sy = (styleTop != null) ? Math.round(styleTop) : Math.round(y);
+              out.positions[n.id] = { left: sx, top: sy };
             }
             // Connections
             for (const c of WorkflowManager.connections.values()) {
@@ -3753,7 +4433,10 @@ function triggerFullStructureRebuild(callback) {
               const hdr = {}; ifHeaderCenters.forEach((v, k) => { hdr[k] = v; });
               out.anchors = { ifCenters: ifc, ifHeaderCenters: hdr };
             } catch {}
-            showNotification('Layout debug printed to console');
+            // Print the compact positions object first, then the full debug object
+            console.log('[POSITIONS]', JSON.stringify(out.positions, null, 2));
+            console.log('[LAYOUT_DEBUG]', JSON.stringify(out, null, 2));
+            showNotification('Positions + layout debug printed to console');
           } catch (e) {
             console.error('[DEBUG][LAYOUT] failed', e);
             showNotification('Failed to print debug', 'error');
@@ -3970,6 +4653,73 @@ function triggerFullStructureRebuild(callback) {
                       if (triggerNode) triggerNode.classList.add('configured');
                     }
                   } catch {}
+                  // Ensure all IFs have their True/False headers before rebuild
+                  // This prevents headers from disappearing on refresh
+                  try {
+                    const allIfNodes = nodes.filter(n => n?.data?.type === 'If');
+                    console.log(`[POST_LOAD_CHECK] Found ${allIfNodes.length} IF nodes, total nodes: ${nodes.length}`);
+                    for (const ifNode of allIfNodes) {
+                      const ifId = ifNode?.data?.properties?.ifId;
+                      if (!ifId || !ifNode.element) {
+                        console.log(`[POST_LOAD_CHECK] Skipping IF node - missing ifId or element: ifId=${ifId}, hasElement=${!!ifNode.element}`);
+                        continue;
+                      }
+                      
+                      // Check if headers exist
+                      const trueHeaders = nodes.filter(n => 
+                        n?.data?.type === 'True' && 
+                        n?.data?.properties?.parentIfId === ifId
+                      );
+                      const falseHeaders = nodes.filter(n => 
+                        n?.data?.type === 'False' && 
+                        n?.data?.properties?.parentIfId === ifId
+                      );
+                      
+                      console.log(`[POST_LOAD_CHECK] IF ${ifId} (${ifNode.element.id}): found ${trueHeaders.length} True headers, ${falseHeaders.length} False headers`);
+                      if (trueHeaders.length > 0) {
+                        console.log(`[POST_LOAD_CHECK] True headers for IF ${ifId}:`, trueHeaders.map(n => ({ id: n.id, elementId: n.element?.id, parentIfId: n.data?.properties?.parentIfId })));
+                      }
+                      if (falseHeaders.length > 0) {
+                        console.log(`[POST_LOAD_CHECK] False headers for IF ${ifId}:`, falseHeaders.map(n => ({ id: n.id, elementId: n.element?.id, parentIfId: n.data?.properties?.parentIfId })));
+                      }
+                      
+                      // Create missing headers
+                      if (trueHeaders.length === 0) {
+                        console.log(`[POST_LOAD_CHECK] Creating missing True header for IF ${ifId}`);
+                        const trueHeader = addControlNodeAfterElement(ifNode.element, 'True', true);
+                        if (trueHeader && trueHeader.element) {
+                          trueHeader.data = { type: 'True', properties: { parentIfId: ifId, ifDomId: ifNode.element.id, branch: 'true' } };
+                          console.log(`[POST_LOAD_CHECK] Created True header: id=${trueHeader.id}, elementId=${trueHeader.element.id}`);
+                        } else {
+                          console.warn(`[POST_LOAD_CHECK] Failed to create True header for IF ${ifId}`);
+                        }
+                      }
+                      if (falseHeaders.length === 0) {
+                        console.log(`[POST_LOAD_CHECK] Creating missing False header for IF ${ifId}`);
+                        const falseHeader = addControlNodeAfterElement(ifNode.element, 'False', true);
+                        if (falseHeader && falseHeader.element) {
+                          falseHeader.data = { type: 'False', properties: { parentIfId: ifId, ifDomId: ifNode.element.id, branch: 'false' } };
+                          console.log(`[POST_LOAD_CHECK] Created False header: id=${falseHeader.id}, elementId=${falseHeader.element.id}`);
+                        } else {
+                          console.warn(`[POST_LOAD_CHECK] Failed to create False header for IF ${ifId}`);
+                        }
+                      }
+                    }
+                    console.log(`[POST_LOAD_CHECK] After header check, total nodes: ${nodes.length}`);
+                    
+                    // Summary: log all headers that exist
+                    const allHeaders = nodes.filter(n => n?.data?.type === 'True' || n?.data?.type === 'False');
+                    console.log(`[POST_LOAD_CHECK] Summary: Found ${allHeaders.length} total headers:`, allHeaders.map(n => ({
+                      type: n.data?.type,
+                      id: n.id,
+                      elementId: n.element?.id,
+                      parentIfId: n.data?.properties?.parentIfId,
+                      branch: n.data?.properties?.branch
+                    })));
+                  } catch (e) {
+                    console.warn('[LOAD] Error ensuring IF headers:', e);
+                  }
+                  
                   logOrder('loadWorkflow: rebuild start');
                   StructureManager.rebuild(() => {
                     logOrder('loadWorkflow: rebuild complete');
@@ -4018,9 +4768,27 @@ function triggerFullStructureRebuild(callback) {
       const helpText = document.createElement('div');
       helpText.id = 'editor-guide-text';
       helpText.style.position = 'absolute';
-      helpText.style.left = '50%';
-      helpText.style.top = '200px';
-      helpText.style.transform = 'translateX(-50%)';
+      // Initial placement near trigger; LayoutManager will correct every pass
+      try {
+        const trig = nodes.find(n => n.type === 'trigger')?.element;
+        if (trig) {
+          const cRect = container.getBoundingClientRect();
+          const r = trig.getBoundingClientRect();
+          const left = Math.round(r.left - cRect.left + r.width / 2);
+          const top = Math.round(r.bottom - cRect.top + 20);
+          helpText.style.left = `${left}px`;
+          helpText.style.top = `${top}px`;
+          helpText.style.transform = 'translateX(-50%)';
+        } else {
+          helpText.style.left = '0px';
+          helpText.style.top = '200px';
+          helpText.style.transform = '';
+        }
+      } catch {
+        helpText.style.left = '0px';
+        helpText.style.top = '200px';
+        helpText.style.transform = '';
+      }
                   helpText.style.color = '#9ca3af';
       helpText.style.fontSize = '0.875rem';
       helpText.style.textAlign = 'center';
@@ -5424,6 +6192,91 @@ function triggerFullStructureRebuild(callback) {
         closeActionModal();
         return;
       }
+      // Helper function to recursively shift a branch and all parent branches
+      // When adding an IF to a branch, calculate how much parent needs to shift based on nested IF's branches
+      const shiftBranchAndParents = (ifId, branch, shiftDirection, nestedIfId = null, calculatedShiftAmount = null) => {
+        // shiftDirection: -1 for left (True), +1 for right (False)
+        // Calculate shift amount: base shift (1 step) + additional shift if nested IF has branches extending in same direction
+        let shiftAmount;
+        
+        if (calculatedShiftAmount !== null) {
+          // Use the pre-calculated shift amount (from parent recursive call)
+          shiftAmount = calculatedShiftAmount;
+        } else {
+          // Calculate shift amount for the initial call
+          shiftAmount = shiftDirection * LEFT_STEP;
+          
+          // If we have a nested IF, check its branch structure to determine additional shift needed
+          if (nestedIfId) {
+            const nestedIfNode = nodes.find(n => n.data?.properties?.ifId === nestedIfId);
+            if (nestedIfNode) {
+              // Check if nested IF has True/False headers (they exist if IF was just created)
+              const nestedTrueHeader = nodes.find(n => n.data?.type === 'True' && n.data?.properties?.parentIfId === nestedIfId);
+              const nestedFalseHeader = nodes.find(n => n.data?.type === 'False' && n.data?.properties?.parentIfId === nestedIfId);
+              
+              // If nested IF has a True branch and we're shifting left (True branch), add one more step
+              if (shiftDirection < 0 && nestedTrueHeader) {
+                shiftAmount -= LEFT_STEP; // Additional step left
+              }
+              // If nested IF has a False branch and we're shifting right (False branch), add one more step
+              if (shiftDirection > 0 && nestedFalseHeader) {
+                shiftAmount += LEFT_STEP; // Additional step right
+              }
+            }
+          }
+        }
+        
+        // Find the IF node and its branch header
+        const ifNode = nodes.find(n => n.data?.properties?.ifId === ifId);
+        if (!ifNode) return;
+        
+        const headerType = branch === 'true' ? 'True' : 'False';
+        const headerNode = nodes.find(n => n.data?.type === headerType && n.data?.properties?.parentIfId === ifId);
+        if (!headerNode || !headerNode.element) return;
+        
+        const headerEl = headerNode.element;
+        const currentLeft = parseFloat(headerEl.style.left || '0') || 0;
+        const newLeft = currentLeft + shiftAmount;
+        
+        // Move the header
+        headerEl.style.left = `${newLeft}px`;
+        
+        // Move all nodes in this branch
+        for (let i = 0; i < nodes.length; i++) {
+          const d = nodes[i]?.data;
+          if (d && d.properties && d.properties.parentIfId === ifId && d.properties.branch === branch) {
+            const nodeEl = nodes[i].element;
+            if (nodeEl && nodeEl !== headerEl) {
+              const nodeLeft = parseFloat(nodeEl.style.left || '0') || 0;
+              nodeEl.style.left = `${nodeLeft + shiftAmount}px`;
+            }
+          }
+        }
+        
+        // Update the ifHeaderCenters map
+        const anchors = ifHeaderCenters.get(ifId);
+        if (anchors) {
+          if (branch === 'true') {
+            anchors.trueX = newLeft;
+          } else {
+            anchors.falseX = newLeft;
+          }
+          ifHeaderCenters.set(ifId, anchors);
+        }
+        
+        // Recursively shift parent branches with the same shift amount but opposite direction
+        const ifNodeProps = ifNode.data?.properties || {};
+        if (ifNodeProps.parentIfId && ifNodeProps.branch) {
+          // The current IF is itself in a branch, so shift the parent's branch
+          // The parent needs to shift by the same absolute amount but opposite direction to accommodate
+          // If child branch moves left (negative), parent branch moves right (positive) to give space
+          // If child branch moves right (positive), parent branch moves left (negative) to give space
+          const parentShiftDirection = shiftDirection > 0 ? -1 : 1; // Opposite direction
+          const parentShiftAmount = -shiftAmount; // Opposite sign
+          shiftBranchAndParents(ifNodeProps.parentIfId, ifNodeProps.branch, parentShiftDirection, null, parentShiftAmount);
+        }
+      };
+      
       // Branch insertions from IF node (True / False columns)
       if (parentNodeId && parentNodeId.startsWith('branch-true-')) {
         const ifId = parentNodeId.replace('branch-true-', '');
@@ -5434,7 +6287,8 @@ function triggerFullStructureRebuild(callback) {
         try {
           const anchors = ifHeaderCenters.get(nodes[ifIndex]?.data?.properties?.ifId);
           if (anchors && typeof anchors.trueX === 'number') {
-            actionNode.style.left = `${anchors.trueX}px`;
+            // anchors.trueX is already the left position, so set left to that and center with transform
+            actionNode.style.left = `${anchors.trueX + NODE_WIDTH / 2}px`;
           } else {
             const containerRect = container.getBoundingClientRect();
             const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
@@ -5450,21 +6304,61 @@ function triggerFullStructureRebuild(callback) {
         actionNode.style.transform = 'translateX(-50%)';
         const trueEl = nodes[trueIndex].element;
         const containerRect = container.getBoundingClientRect();
-        let y = trueEl.getBoundingClientRect().bottom - containerRect.top + 60;
+        // Use zoom-safe local coordinates and snap to grid
+        let _scale = 1;
+        try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scale = parseFloat(m[1]) || 1; } catch {}
+        const toLocalY = (vy) => (vy - containerRect.top) / _scale;
+        // Find the deepest node in this branch (zoom-safe)
+        let maxTopLocal = -Infinity;
+        const trueElRect = trueEl.getBoundingClientRect();
+        const trueTopLocal = Math.round(toLocalY(trueElRect.top));
+        maxTopLocal = Math.max(maxTopLocal, trueTopLocal);
         const ifStepId = nodes[ifIndex]?.data?.properties?.ifId;
         for (let i = 0; i < nodes.length; i++) {
           const d = nodes[i]?.data;
           if (d && d.properties && d.properties.parentIfId === ifStepId && d.properties.branch === 'true') {
             const r = nodes[i].element.getBoundingClientRect();
-            y = Math.max(y, r.bottom - containerRect.top + 60);
+            const topLocal = Math.round(toLocalY(r.top));
+            maxTopLocal = Math.max(maxTopLocal, topLocal);
           }
+        }
+        // Snap to next grid row
+        const y = maxTopLocal + TOP_STEP;
+        if (actionType === 'If') {
+          console.log(`[PLACEMENT][branch-true] IF node, maxTopLocal: ${maxTopLocal}, y: ${y}`);
         }
         actionNode.style.top = `${y}px`;
         container.appendChild(actionNode);
-        // Ensure a visible path from header to a newly added IF immediately
-        try { if (actionType === 'If') WorkflowManager.createConnection(trueEl, actionNode, false); } catch {}
+        
+        // If adding an IF, set ifId and create headers immediately
+        let newIfId = null;
+        if (actionType === 'If') {
+          if (!properties) properties = {};
+          if (!properties.ifId) properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          newIfId = properties.ifId;
+          // Create True/False headers immediately so shiftBranchAndParents can check for them
+          const trueHeaderNode = addControlNodeAfterElement(actionNode, 'True', true);
+          const falseHeaderNode = addControlNodeAfterElement(actionNode, 'False', true);
+          if (trueHeaderNode && trueHeaderNode.element) {
+            trueHeaderNode.data = { type: 'True', properties: { parentIfId: newIfId, ifDomId: actionNode.id, branch: 'true' } };
+          }
+          if (falseHeaderNode && falseHeaderNode.element) {
+            falseHeaderNode.data = { type: 'False', properties: { parentIfId: newIfId, ifDomId: actionNode.id, branch: 'false' } };
+          }
+        }
+        
         const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'true' } } };
         nodes.push(nodeData);
+        
+        // Ensure a visible path from header to a newly added IF immediately
+        try { if (actionType === 'If') WorkflowManager.createConnection(trueEl, actionNode, false); } catch {}
+        
+        // If adding an IF to a branch, shift the branch header and all nodes in that branch one grid step away from center
+        // Also recursively shift all parent branches
+        if (actionType === 'If') {
+          shiftBranchAndParents(ifStepId, 'true', -1, newIfId); // -1 = left (True branch)
+        }
+        
         StructureManager.rebuild();
         try { HistoryManager.recordSnapshot('branch-true-insert'); } catch {}
         closeActionModal();
@@ -5479,7 +6373,8 @@ function triggerFullStructureRebuild(callback) {
         try {
           const anchors = ifHeaderCenters.get(nodes[ifIndex]?.data?.properties?.ifId);
           if (anchors && typeof anchors.falseX === 'number') {
-            actionNode.style.left = `${anchors.falseX}px`;
+            // anchors.falseX is already the left position, so set left to that and center with transform
+            actionNode.style.left = `${anchors.falseX + NODE_WIDTH / 2}px`;
           } else {
             const containerRect = container.getBoundingClientRect();
             const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
@@ -5495,21 +6390,61 @@ function triggerFullStructureRebuild(callback) {
         actionNode.style.transform = 'translateX(-50%)';
         const falseEl = nodes[falseIndex].element;
         const containerRect = container.getBoundingClientRect();
-        let y = falseEl.getBoundingClientRect().bottom - containerRect.top + 60;
+        // Use zoom-safe local coordinates and snap to grid
+        let _scale = 1;
+        try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scale = parseFloat(m[1]) || 1; } catch {}
+        const toLocalY = (vy) => (vy - containerRect.top) / _scale;
+        // Find the deepest node in this branch (zoom-safe)
+        let maxTopLocal = -Infinity;
+        const falseElRect = falseEl.getBoundingClientRect();
+        const falseTopLocal = Math.round(toLocalY(falseElRect.top));
+        maxTopLocal = Math.max(maxTopLocal, falseTopLocal);
         const ifStepId = nodes[ifIndex]?.data?.properties?.ifId;
         for (let i = 0; i < nodes.length; i++) {
           const d = nodes[i]?.data;
           if (d && d.properties && d.properties.parentIfId === ifStepId && d.properties.branch === 'false') {
             const r = nodes[i].element.getBoundingClientRect();
-            y = Math.max(y, r.bottom - containerRect.top + 60);
+            const topLocal = Math.round(toLocalY(r.top));
+            maxTopLocal = Math.max(maxTopLocal, topLocal);
           }
+        }
+        // Snap to next grid row
+        const y = maxTopLocal + TOP_STEP;
+        if (actionType === 'If') {
+          console.log(`[PLACEMENT][branch-false] IF node, maxTopLocal: ${maxTopLocal}, y: ${y}`);
         }
         actionNode.style.top = `${y}px`;
         container.appendChild(actionNode);
-        // Ensure a visible path from header to a newly added IF immediately
-        try { if (actionType === 'If') WorkflowManager.createConnection(falseEl, actionNode, false); } catch {}
+        
+        // If adding an IF, set ifId and create headers immediately
+        let newIfId = null;
+        if (actionType === 'If') {
+          if (!properties) properties = {};
+          if (!properties.ifId) properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          newIfId = properties.ifId;
+          // Create True/False headers immediately so shiftBranchAndParents can check for them
+          const trueHeaderNode = addControlNodeAfterElement(actionNode, 'True', true);
+          const falseHeaderNode = addControlNodeAfterElement(actionNode, 'False', true);
+          if (trueHeaderNode && trueHeaderNode.element) {
+            trueHeaderNode.data = { type: 'True', properties: { parentIfId: newIfId, ifDomId: actionNode.id, branch: 'true' } };
+          }
+          if (falseHeaderNode && falseHeaderNode.element) {
+            falseHeaderNode.data = { type: 'False', properties: { parentIfId: newIfId, ifDomId: actionNode.id, branch: 'false' } };
+          }
+        }
+        
         const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type: actionType, properties: { ...properties, parentIfId: ifStepId, ifDomId: ifId, branch: 'false' } } };
         nodes.push(nodeData);
+        
+        // Ensure a visible path from header to a newly added IF immediately
+        try { if (actionType === 'If') WorkflowManager.createConnection(falseEl, actionNode, false); } catch {}
+        
+        // If adding an IF to a branch, shift the branch header and all nodes in that branch one grid step away from center
+        // Also recursively shift all parent branches
+        if (actionType === 'If') {
+          shiftBranchAndParents(ifStepId, 'false', 1, newIfId); // 1 = right (False branch)
+        }
+        
         StructureManager.rebuild();
         try { HistoryManager.recordSnapshot('branch-false-insert'); } catch {}
         closeActionModal();
@@ -5548,7 +6483,7 @@ function triggerFullStructureRebuild(callback) {
           try {
             const anchors = ifHeaderCenters.get(branchCtx.parentIfId);
             if (anchors) {
-              anchorX = branchCtx.branch === 'true' ? anchors.trueX : anchors.falseX;
+              anchorX = (branchCtx.branch === 'true' ? anchors.trueX : anchors.falseX) + NODE_WIDTH / 2;
             }
           } catch {}
           if (typeof anchorX === 'number') {
@@ -5558,33 +6493,54 @@ function triggerFullStructureRebuild(callback) {
             actionNode.style.left = columnLeft;
           }
           actionNode.style.transform = 'translateX(-50%)';
-          // Place below the last item in this branch
-          let y;
+          // Place below the last item in this branch (zoom-safe, grid-aligned)
+          let _scaleBA = 1;
+          try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scaleBA = parseFloat(m[1]) || 1; } catch {}
+          const toLocalYBA = (vy) => (vy - containerRect.top) / _scaleBA;
+          // Find the deepest node in this branch
+          let maxTopLocal = -Infinity;
           // Try to anchor from header if present
           const headerType = branchCtx.branch === 'true' ? 'True' : 'False';
           const header = nodes.find(n => n.data?.type === headerType && n.data?.properties?.parentIfId === branchCtx.parentIfId);
           if (header && header.element) {
             const headerRect = header.element.getBoundingClientRect();
-            y = headerRect.bottom - containerRect.top + 60;
-          } else {
-            const afterRect = afterNode.element.getBoundingClientRect();
-            y = afterRect.bottom - containerRect.top + 60;
+            const headerTopLocal = Math.round(toLocalYBA(headerRect.top));
+            maxTopLocal = Math.max(maxTopLocal, headerTopLocal);
           }
+          const afterRect = afterNode.element.getBoundingClientRect();
+          const afterTopLocal = Math.round(toLocalYBA(afterRect.top));
+          maxTopLocal = Math.max(maxTopLocal, afterTopLocal);
           for (const n of nodes) {
             const d = n.data;
             if (!d || d.type === 'If') continue;
             if (d.properties && d.properties.parentIfId === branchCtx.parentIfId && d.properties.branch === branchCtx.branch) {
               const r = n.element.getBoundingClientRect();
-              y = Math.max(y, r.bottom - containerRect.top + 60);
+              const topLocal = Math.round(toLocalYBA(r.top));
+              maxTopLocal = Math.max(maxTopLocal, topLocal);
             }
+          }
+          // Snap to next grid row
+          const y = maxTopLocal + TOP_STEP;
+          if (actionType === 'If') {
+            console.log(`[PLACEMENT][add-after-branch] IF node, maxTopLocal: ${maxTopLocal}, y: ${y}`);
           }
           actionNode.style.top = `${y}px`;
           // Merge branch context into properties so connections build correctly
           properties = { ...properties, ...branchCtx };
         } else {
-          // Not in a branch: position below the after node, centered
+          // Not in a branch: snap to the next grid row under the target node (zoom-safe)
+          if (actionType === 'If') {
+            console.log('[PLACEMENT][add-after] IF node after:', afterNodeId);
+          }
           const afterRect = afterNode.element.getBoundingClientRect();
-          const topPosition = afterRect.bottom - containerRect.top + 120;
+          let _scale = 1;
+          try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scale = parseFloat(m[1]) || 1; } catch {}
+          const toLocalY = (vy) => (vy - containerRect.top) / _scale;
+          const afterTopLocal = Math.round(toLocalY(afterRect.top));
+          const topPosition = afterTopLocal + TOP_STEP;
+          if (actionType === 'If') {
+            console.log('[PLACEMENT][add-after] afterTopLocal:', afterTopLocal, 'topPosition:', topPosition);
+          }
           actionNode.style.left = '50%';
           actionNode.style.top = `${topPosition}px`;
           actionNode.style.transform = 'translateX(-50%)';
@@ -5601,8 +6557,23 @@ function triggerFullStructureRebuild(callback) {
         };
         nodes.push(nodeData);
         
+        // If adding an IF to a branch, shift the branch header and all nodes in that branch one grid step away from center
+        // Also recursively shift all parent branches
+        if (actionType === 'If' && branchCtx && branchCtx.parentIfId) {
+          const shiftDirection = branchCtx.branch === 'true' ? -1 : 1; // -1 = left (True), 1 = right (False)
+          // Get the ifId of the newly created IF node
+          const newIfId = nodeData.data?.properties?.ifId;
+          shiftBranchAndParents(branchCtx.parentIfId, branchCtx.branch, shiftDirection, newIfId);
+        }
+        
         // Rebuild the entire workflow structure to ensure all connections are created
+        if (actionType === 'If') {
+          console.log(`[PLACEMENT][add-after] IF node ${actionNode.id} top before rebuild: ${actionNode.style.top}`);
+        }
         StructureManager.rebuild();
+        if (actionType === 'If') {
+          console.log(`[PLACEMENT][add-after] IF node ${actionNode.id} top after rebuild: ${actionNode.style.top}`);
+        }
         try { HistoryManager.recordSnapshot('add-after'); } catch {}
 
         // If IF, auto-create True/False headers
@@ -5615,6 +6586,7 @@ function triggerFullStructureRebuild(callback) {
           const falseNode = addControlNodeAfterElement(actionNode, 'False');
           if (trueNode && trueNode.element) trueNode.data = { type: 'True', properties: { parentIfId: properties.ifId, ifDomId: actionNode.id, branch: 'true' } };
           if (falseNode && falseNode.element) falseNode.data = { type: 'False', properties: { parentIfId: properties.ifId, ifDomId: actionNode.id, branch: 'false' } };
+          console.log(`[PLACEMENT][add-after] IF headers created, final IF node top: ${actionNode.style.top}`);
         }
         
         // Add movement listeners to the new node
@@ -5698,14 +6670,41 @@ function triggerFullStructureRebuild(callback) {
     function addActionNode(actionData, index) {
       
       // Avoid duplicating True/False branch headers on load or rebuild
+      // But during load, be more lenient - only skip if the exact same header (by element) exists
       if (actionData.type === 'True' || actionData.type === 'False') {
         const parentIfId = actionData.properties?.parentIfId;
         const branch = actionData.properties?.branch;
+        console.log(`[HEADER_LOAD] Attempting to load header: type=${actionData.type}, parentIfId=${parentIfId}, branch=${branch}, isLoadingWorkflow=${isLoadingWorkflow}`);
         if (parentIfId && branch) {
-          const exists = nodes.some(n => n.data?.type === actionData.type && n.data?.properties?.parentIfId === parentIfId && n.data?.properties?.branch === branch);
-          if (exists) {
-            return;
+          // During load, check if header exists by element (more reliable)
+          // During normal operation, check by type/parentIfId/branch
+          if (isLoadingWorkflow) {
+            // During load: check if we have a header with the same explicit ID
+            const explicitId = actionData.domId || actionData.id;
+            if (explicitId) {
+              const exists = nodes.some(n => n.element && (n.element.id === explicitId || n.id === explicitId));
+              if (exists) {
+                console.log(`[HEADER_LOAD] Skipping header - exists by explicitId: ${explicitId}`);
+                return; // Skip - this exact header already exists
+              }
+            }
+            // Also check by type/parentIfId/branch as fallback
+            const existingByProps = nodes.filter(n => n.data?.type === actionData.type && n.data?.properties?.parentIfId === parentIfId && n.data?.properties?.branch === branch);
+            if (existingByProps.length > 0) {
+              console.log(`[HEADER_LOAD] Skipping header - exists by props. Found ${existingByProps.length} existing headers:`, existingByProps.map(n => ({ id: n.id, elementId: n.element?.id, parentIfId: n.data?.properties?.parentIfId })));
+              return;
+            }
+            console.log(`[HEADER_LOAD] Header not found, will create: type=${actionData.type}, parentIfId=${parentIfId}`);
+          } else {
+            // Normal operation: check by type/parentIfId/branch
+            const exists = nodes.some(n => n.data?.type === actionData.type && n.data?.properties?.parentIfId === parentIfId && n.data?.properties?.branch === branch);
+            if (exists) {
+              console.log(`[HEADER_LOAD] Skipping header - exists (normal operation)`);
+              return;
+            }
           }
+        } else {
+          console.log(`[HEADER_LOAD] Warning: Header missing parentIfId or branch: parentIfId=${parentIfId}, branch=${branch}`);
         }
       }
       
@@ -5778,6 +6777,9 @@ function triggerFullStructureRebuild(callback) {
         data: actionData 
       };
       nodes.push(nodeData);
+      if (actionData.type === 'True' || actionData.type === 'False') {
+        console.log(`[HEADER_ADDED] Added header to nodes array: type=${actionData.type}, id=${nodeData.id}, elementId=${actionNode.id}, parentIfId=${actionData.properties?.parentIfId}, branch=${actionData.properties?.branch}, totalNodes=${nodes.length}`);
+      }
       
       // Rebuild the entire workflow structure to ensure consistency
       StructureManager.rebuild();
@@ -5810,8 +6812,8 @@ function triggerFullStructureRebuild(callback) {
         if (!actionData.properties) actionData.properties = {};
         if (!actionData.properties.ifId) actionData.properties.ifId = `if_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         nodeData.data = actionData;
-        const trueNode = addControlNodeAfterElement(actionNode, 'True');
-        const falseNode = addControlNodeAfterElement(actionNode, 'False');
+        const trueNode = addControlNodeAfterElement(actionNode, 'True', true);
+        const falseNode = addControlNodeAfterElement(actionNode, 'False', true);
         if (trueNode && trueNode.element) trueNode.data = { type: 'True', properties: { parentIfId: actionData.properties.ifId, ifDomId: actionNode.id, branch: 'true' } };
         if (falseNode && falseNode.element) falseNode.data = { type: 'False', properties: { parentIfId: actionData.properties.ifId, ifDomId: actionNode.id, branch: 'false' } };
         try {
@@ -5870,7 +6872,7 @@ function triggerFullStructureRebuild(callback) {
             actionData.properties.branch = br;
             try {
               const anchors = ifHeaderCenters.get(pIf);
-              if (anchors) anchorX = br === 'true' ? anchors.trueX : anchors.falseX;
+              if (anchors) anchorX = (br === 'true' ? anchors.trueX : anchors.falseX) + NODE_WIDTH / 2;
             } catch {}
             if (typeof anchorX !== 'number') {
               const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
@@ -5881,7 +6883,11 @@ function triggerFullStructureRebuild(callback) {
         } catch {}
 
         const fromRect = connection.from.getBoundingClientRect();
-        const fromBottom = Math.round(fromRect.bottom - containerRect.top);
+        // Zoom-safe local Y helpers
+        let _scaleSA = 1;
+        try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scaleSA = parseFloat(m[1]) || 1; } catch {}
+        const toLocalYSA = (vy) => (vy - containerRect.top) / _scaleSA;
+        const fromTopLocal = Math.round(toLocalYSA(fromRect.top));
         if (typeof anchorX === 'number') {
           actionNode.style.left = `${anchorX}px`;
         } else {
@@ -5889,32 +6895,52 @@ function triggerFullStructureRebuild(callback) {
           actionNode.style.left = `${fromX}px`;
         }
         actionNode.style.transform = 'translateX(-50%)';
-        actionNode.style.top = `${fromBottom + 120}px`;
+        // Snap directly to the next grid row under the source
+        actionNode.style.top = `${fromTopLocal + TOP_STEP}px`;
 
         // Clear hint after using it
         try { if (connection) delete connection.__insertRole; window.insertConnectionRole = undefined; } catch {}
 
       } else if (joinForIfId) {
-        // Place centered horizontally and below the deeper of the two branches
-        const centerX = containerRect.width / 2;
-        // Find deepest Y among true/false branch nodes for this IF
-        let maxBottom = 0;
-        for (const n of nodes) {
-          const d = n.data;
-          if (!d || d.type === 'If' || d.type === 'True' || d.type === 'False') continue;
-          if (d.properties && d.properties.parentIfId === joinForIfId) {
-            const r = n.element.getBoundingClientRect();
-            maxBottom = Math.max(maxBottom, r.bottom - containerRect.top);
+        // Place under IF horizontally snapped to 400px grid and one slot below deeper branch end
+        let midGridLeft;
+        try {
+          const anchors = ifHeaderCenters.get(joinForIfId);
+          if (anchors && typeof anchors.trueX === 'number' && typeof anchors.falseX === 'number') {
+            const trueGridLeft = Math.round(anchors.trueX);
+            const falseGridLeft = Math.round(anchors.falseX);
+            midGridLeft = Math.round(((trueGridLeft + falseGridLeft) / 2) / LEFT_STEP) * LEFT_STEP;
+          } else {
+            const baseGridLeft = (typeof ifCenters.get(joinForIfId) === 'number') ? Math.round(ifCenters.get(joinForIfId)) : 0;
+            midGridLeft = baseGridLeft; // fallback to IF column
           }
-        }
-        // If no branch actions, anchor under headers
-        if (maxBottom === 0) {
-          const headers = nodes.filter(n => (n.data?.type === 'True' || n.data?.type === 'False') && n.data?.properties?.parentIfId === joinForIfId);
-          headers.forEach(h => { const r = h.element.getBoundingClientRect(); maxBottom = Math.max(maxBottom, r.bottom - containerRect.top); });
-        }
-        actionNode.style.left = `${centerX}px`;
-        actionNode.style.transform = 'translateX(-50%)';
-        actionNode.style.top = `${Math.round(maxBottom + 60)}px`;
+        } catch { midGridLeft = 0; }
+        // Compute next grid-aligned slot from actual tops of branch elements in container-local coords (account for zoom scale)
+        let _scaleJoin = 1;
+        try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scaleJoin = parseFloat(m[1]) || 1; } catch {}
+        const toLocalYJoin = (vy) => (vy - containerRect.top) / _scaleJoin;
+        let deepestTop = 0;
+        try {
+          for (const n of nodes) {
+            const d = n.data;
+            if (!d) continue;
+            if ((d.type === 'True' || d.type === 'False') && d.properties?.parentIfId === joinForIfId) {
+              const r = n.element.getBoundingClientRect();
+              const topLocal = Math.round(toLocalYJoin(r.top));
+              deepestTop = Math.max(deepestTop, topLocal);
+            }
+            if (d.type !== 'If' && d.properties && d.properties.parentIfId === joinForIfId && !d.properties.joinForIfId) {
+              const r = n.element.getBoundingClientRect();
+              const topLocal = Math.round(toLocalYJoin(r.top));
+              deepestTop = Math.max(deepestTop, topLocal);
+            }
+          }
+        } catch {}
+        // Next slot exactly one TOP_STEP below deepestTop (already in local units)
+        const joinTop = deepestTop + TOP_STEP;
+        actionNode.style.left = `${midGridLeft}px`;
+        actionNode.style.transform = '';
+        actionNode.style.top = `${joinTop}px`;
         // Mark as join node (do not set branch) so rebuild can wire both branches to it;
         // also remove any existing midpoint orbs for this IF block
         actionData.properties = { ...(actionData.properties || {}), joinForIfId: joinForIfId };
@@ -5931,7 +6957,14 @@ function triggerFullStructureRebuild(callback) {
           });
         } catch {}
       } else {
-        // Default: inherit lane from target if present and let layout perform the restructure
+        // Default: inherit lane from target and place the inserted action exactly where the target was (zoom-safe)
+        const containerRect2 = container.getBoundingClientRect();
+        const toRect0 = connection.to.getBoundingClientRect();
+        let _scaleDF = 1;
+        try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scaleDF = parseFloat(m[1]) || 1; } catch {}
+        const toLocalYDF = (vy) => (vy - containerRect2.top) / _scaleDF;
+        const oldTargetTop0 = Math.round(toLocalYDF(toRect0.top));
+        let anchorX0 = null;
         try {
           const toNodeData = nodes.find(n => n.element === connection.to)?.data || {};
           const pIf = toNodeData?.properties?.parentIfId;
@@ -5940,9 +6973,24 @@ function triggerFullStructureRebuild(callback) {
             if (!actionData.properties) actionData.properties = {};
             actionData.properties.parentIfId = pIf;
             actionData.properties.branch = br;
+            const anchors = ifHeaderCenters.get(pIf);
+            if (anchors) anchorX0 = (br === 'true' ? anchors.trueX : anchors.falseX) + NODE_WIDTH / 2;
+            if (typeof anchorX0 !== 'number') {
+              const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect2.width / 2);
+              const baseOffset = 380;
+              anchorX0 = br === 'true' ? (baseCenter - baseOffset) : (baseCenter + baseOffset);
+            }
           }
         } catch {}
-        // Do not force position here; the next rebuild will place correctly and push lower nodes down
+        if (typeof anchorX0 === 'number') {
+          actionNode.style.left = `${anchorX0}px`;
+          actionNode.style.transform = 'translateX(-50%)';
+        } else {
+          const toX0 = Math.round(toRect0.left - containerRect2.left + toRect0.width / 2);
+          actionNode.style.left = `${toX0}px`;
+          actionNode.style.transform = 'translateX(-50%)';
+        }
+        actionNode.style.top = `${oldTargetTop0}px`;
       }
       
       container.appendChild(actionNode);
@@ -5985,6 +7033,19 @@ function triggerFullStructureRebuild(callback) {
         WorkflowManager.createConnection(actionNode, connection.to, false);
           logOrder('insertActionBetween created 2 connections');
         } catch {}
+
+      // STEP 1: Move the lower (target) node down by one grid row immediately (zoom-safe)
+      try {
+        const containerRect2 = container.getBoundingClientRect();
+        const toEl = connection.to;
+        const toRect = toEl.getBoundingClientRect();
+        let _scaleMV = 1;
+        try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scaleMV = parseFloat(m[1]) || 1; } catch {}
+        const toLocalYMV = (vy) => (vy - containerRect2.top) / _scaleMV;
+        const toTopLocal = Math.round(toLocalYMV(toRect.top));
+        const newTop = toTopLocal + TOP_STEP;
+        toEl.style.top = `${newTop}px`;
+      } catch {}
 
        // Unify with initial build by running an immediate rebuild (no debounce) so path logic is identical
        // Trigger full structure rebuild; positions will be dumped at rebuild end
@@ -6058,6 +7119,10 @@ function triggerFullStructureRebuild(callback) {
       const containerRect = container.getBoundingClientRect();
       const sourceRect = sourceNode.element.getBoundingClientRect();
       const targetRect = targetNode.element.getBoundingClientRect();
+      // Zoom-safe local Y helpers for grid alignment
+      let _scaleOB = 1;
+      try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scaleOB = parseFloat(m[1]) || 1; } catch {}
+      const toLocalYOB = (vy) => (vy - containerRect.top) / _scaleOB;
       
       const isSourceAnchored = !!(window.insertConnectionRole === 'source' || (window.insertConnection && window.insertConnection.__insertRole === 'source'));
       if (isSourceAnchored) {
@@ -6074,7 +7139,7 @@ function triggerFullStructureRebuild(callback) {
             // Try to lock X to the branch header anchor for consistent column alignment
             try {
               const anchors = ifHeaderCenters.get(pIf);
-              if (anchors) anchorX = br === 'true' ? anchors.trueX : anchors.falseX;
+              if (anchors) anchorX = (br === 'true' ? anchors.trueX : anchors.falseX) + NODE_WIDTH / 2;
             } catch {}
             if (typeof anchorX !== 'number') {
               const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
@@ -6083,7 +7148,7 @@ function triggerFullStructureRebuild(callback) {
             }
           }
         } catch {}
-        const fromBottom = Math.round(sourceRect.bottom - containerRect.top);
+        const fromTopLocal = Math.round(toLocalYOB(sourceRect.top));
         if (typeof anchorX === 'number') {
           actionNode.style.left = `${anchorX}px`;
         } else {
@@ -6091,19 +7156,110 @@ function triggerFullStructureRebuild(callback) {
           actionNode.style.left = `${fromX}px`;
         }
         actionNode.style.transform = 'translateX(-50%)';
-        actionNode.style.top = `${fromBottom + 120}px`;
+        // Snap to next grid row
+        actionNode.style.top = `${fromTopLocal + TOP_STEP}px`;
       } else {
-        // Midpoint behavior
-      const sourceX = sourceRect.left + sourceRect.width / 2 - containerRect.left;
-      const targetX = targetRect.left + targetRect.width / 2 - containerRect.left;
-      const midX = (sourceX + targetX) / 2;
-      const sourceBottom = sourceRect.bottom - containerRect.top;
-      const targetBottom = targetRect.bottom - containerRect.top;
-      const lowestBottom = Math.max(sourceBottom, targetBottom);
-        const midY = lowestBottom + 120;
-      actionNode.style.left = `${Math.round(midX)}px`;
-      actionNode.style.transform = 'translateX(-50%)';
-      actionNode.style.top = `${Math.round(midY)}px`;
+        // Default/midpoint behavior, with join-aware and branch-aware anchoring
+        const sourceTopLocal = Math.round(toLocalYOB(sourceRect.top));
+        const targetTopLocal = Math.round(toLocalYOB(targetRect.top));
+        const maxTopLocal = Math.max(sourceTopLocal, targetTopLocal);
+
+        // Handle joins first: center under the IF instead of a branch lane
+        if (isJoin && joinForIfId) {
+          let centerX;
+          try {
+            const c = ifCenters.get(joinForIfId);
+            if (typeof c === 'number') centerX = Math.round(c);
+            else {
+              const anchors = ifHeaderCenters.get(joinForIfId);
+              if (anchors && typeof anchors.trueX === 'number' && typeof anchors.falseX === 'number') {
+                centerX = Math.round((anchors.trueX + anchors.falseX) / 2);
+              } else {
+                centerX = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
+              }
+            }
+          } catch { centerX = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2); }
+          actionNode.style.left = `${centerX}px`;
+          actionNode.style.transform = 'translateX(-50%)';
+          actionNode.style.top = `${maxTopLocal + TOP_STEP}px`;
+        } else {
+        // Helper to derive branch context from a node (direct props, True/False type, or inbound connections)
+        const getBranchCtx = (nodeRef) => {
+          try {
+            const nd = nodeRef?.data || nodes.find(n => n.element === nodeRef?.element)?.data;
+            if (!nd) return null;
+            // From True/False header
+            if (nd.type === 'True' || nd.type === 'False') {
+              const pid = nd.properties?.parentIfId || null;
+              if (pid) return { parentIfId: pid, branch: nd.type === 'True' ? 'true' : 'false' };
+            }
+            // From explicit properties
+            if (nd.properties && nd.properties.parentIfId && (nd.properties.branch === 'true' || nd.properties.branch === 'false')) {
+              return { parentIfId: nd.properties.parentIfId, branch: nd.properties.branch };
+            }
+            // Infer from inbound connections
+            const targetEl = nodeRef?.element || null;
+            if (!targetEl) return null;
+            for (const c of WorkflowManager.connections.values()) {
+              if (!c || c.to !== targetEl) continue;
+              const fd = nodes.find(n => n.element === c.from)?.data;
+              if (!fd) continue;
+              if ((fd.type === 'True' || fd.type === 'False') && fd.properties?.parentIfId) {
+                return { parentIfId: fd.properties.parentIfId, branch: fd.type === 'True' ? 'true' : 'false' };
+              }
+              if (fd.properties && fd.properties.parentIfId && (fd.properties.branch === 'true' || fd.properties.branch === 'false')) {
+                return { parentIfId: fd.properties.parentIfId, branch: fd.properties.branch };
+              }
+            }
+          } catch {}
+          return null;
+        };
+
+        let placedByBranch = false;
+        try {
+          const sCtx = getBranchCtx(sourceNode);
+          const tCtx = getBranchCtx(targetNode);
+
+          // Prefer shared explicit context; otherwise inherit from whichever endpoint provides context
+          let ctx = null;
+          if (sCtx && tCtx && sCtx.parentIfId === tCtx.parentIfId && sCtx.branch === tCtx.branch) ctx = sCtx;
+          else if (sCtx && (!tCtx || sCtx.parentIfId === tCtx?.parentIfId)) ctx = sCtx;
+          else if (tCtx) ctx = tCtx;
+
+          if (ctx && ctx.parentIfId && (ctx.branch === 'true' || ctx.branch === 'false')) {
+            if (!actionData.properties) actionData.properties = {};
+            actionData.properties.parentIfId = ctx.parentIfId;
+            actionData.properties.branch = ctx.branch;
+            let anchorX = null;
+            try {
+              const anchors = ifHeaderCenters.get(ctx.parentIfId);
+              if (anchors) anchorX = (ctx.branch === 'true' ? anchors.trueX : anchors.falseX) + NODE_WIDTH / 2;
+            } catch {}
+            if (typeof anchorX !== 'number') {
+              const baseCenter = (rootCenterLockX != null) ? rootCenterLockX : Math.round(containerRect.width / 2);
+              const baseOffset = 380;
+              anchorX = ctx.branch === 'true' ? (baseCenter - baseOffset) : (baseCenter + baseOffset);
+            }
+            actionNode.style.left = `${Math.round(anchorX)}px`;
+            actionNode.style.transform = 'translateX(-50%)';
+            // Place exactly on the target's current grid row; layout will push target down next
+            const targetTopLocal2 = Math.round(toLocalYOB(targetRect.top));
+            actionNode.style.top = `${targetTopLocal2}px`;
+            placedByBranch = true;
+          }
+        } catch {}
+
+        if (!placedByBranch) {
+          // Fallback to pure midpoint placement
+          const sourceX = sourceRect.left + sourceRect.width / 2 - containerRect.left;
+          const targetX = targetRect.left + targetRect.width / 2 - containerRect.left;
+          const midX = (sourceX + targetX) / 2;
+          const nextRow = maxTopLocal + TOP_STEP;
+          actionNode.style.left = `${Math.round(midX)}px`;
+          actionNode.style.transform = 'translateX(-50%)';
+          actionNode.style.top = `${nextRow}px`;
+        }
+        }
       }
       // Clear hint after using it
       try { if (window.insertConnection) delete window.insertConnection.__insertRole; window.insertConnectionRole = undefined; } catch {}
@@ -6112,9 +7268,16 @@ function triggerFullStructureRebuild(callback) {
       container.appendChild(actionNode);
       try { debugDumpNodePositions(`pre-reorder:${actionNode.id}`); } catch {}
       
-      // Add the node to the workflow
+      // Add the node to the workflow at the correct position in the nodes array (between source and target)
       const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: actionData };
-      nodes.push(nodeData);
+      const fromIdx = nodes.findIndex(n => n.element === sourceNode.element);
+      const toIdx = nodes.findIndex(n => n.element === targetNode.element);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const insertIdx = Math.min(fromIdx, toIdx) + 1;
+        nodes.splice(insertIdx, 0, nodeData);
+      } else {
+        nodes.push(nodeData);
+      }
       
       // Add movement listeners
       addNodeMovementListeners();
@@ -6260,7 +7423,8 @@ function triggerFullStructureRebuild(callback) {
     }
 
     // Helper: add a lightweight branch header node (True/False) immediately after a given node element
-    function addControlNodeAfterElement(afterNodeElement, type) {
+    function addControlNodeAfterElement(afterNodeElement, type, skipRebuild = false) {
+      console.log(`[CREATE_HEADER] Creating ${type} header for IF element: ${afterNodeElement?.id}, skipRebuild=${skipRebuild}`);
       const content = type;
       const actionNode = createNode(type, type, 'settings', content);
       const afterRect = afterNodeElement.getBoundingClientRect();
@@ -6271,6 +7435,8 @@ function triggerFullStructureRebuild(callback) {
       const ifNode = nodes.find(n => n.element === afterNodeElement);
       const ifId = ifNode?.data?.properties?.ifId;
       const branch = type === 'True' ? 'true' : 'false';
+      
+      console.log(`[CREATE_HEADER] Found IF node: ifId=${ifId}, ifNodeId=${ifNode?.id}, elementId=${afterNodeElement?.id}`);
       
       // Get the IF node's center position
       const ifCenter = afterRect.left + (afterRect.width / 2) - containerRect.left;
@@ -6285,10 +7451,28 @@ function triggerFullStructureRebuild(callback) {
       const nodeData = { id: actionNode.id, type: 'action', element: actionNode, data: { type, properties: { parentIfId: ifId, ifDomId: afterNodeElement.id, branch } } };
       if (afterIndex >= 0) {
         nodes.splice(afterIndex + 1, 0, nodeData);
+        console.log(`[CREATE_HEADER] Inserted ${type} header at index ${afterIndex + 1}, total nodes: ${nodes.length}`);
       } else {
         nodes.push(nodeData);
+        console.log(`[CREATE_HEADER] Pushed ${type} header to end, total nodes: ${nodes.length}`);
       }
-      StructureManager.rebuild();
+      console.log(`[CREATE_HEADER] Created ${type} header: id=${nodeData.id}, elementId=${actionNode.id}, parentIfId=${ifId}, branch=${branch}`);
+      
+      // Always create connection from IF to header, even when skipping rebuild
+      // The rebuild will handle re-creating it if needed, but this ensures it exists
+      if (ifId && afterNodeElement) {
+        try {
+          WorkflowManager.createConnection(afterNodeElement, actionNode, false);
+          console.log(`[CREATE_HEADER] Created connection from IF ${ifId} to ${type} header`);
+        } catch (e) {
+          console.warn('Failed to create connection from IF to header:', e);
+        }
+      } else {
+        console.warn(`[CREATE_HEADER] Cannot create connection - missing ifId (${ifId}) or afterNodeElement (${!!afterNodeElement})`);
+      }
+      if (!skipRebuild) {
+        StructureManager.rebuild();
+      }
       addNodeMovementListeners();
       return nodeData;
     }
@@ -6387,6 +7571,10 @@ function triggerFullStructureRebuild(callback) {
               (n.data.properties && n.data.properties.parentIfId === ifId)
             ));
             toRemove.forEach(n => {
+              const nodeType = n.data?.type || 'unknown';
+              const nodeId = n.id || 'unknown';
+              const elementId = n.element?.id || 'unknown';
+              console.log(`[NODE_REMOVED] Removing node during IF cascade delete: type=${nodeType}, id=${nodeId}, elementId=${elementId}, parentIfId=${n.data?.properties?.parentIfId}`);
               try { WorkflowManager.removeNodeConnections(n.element); } catch {}
               try { OrbManager.removeOrb(n.element); } catch {}
               try { if (n.element && n.element.id) releaseNodeIdByString(n.element.id); } catch {}
@@ -6394,7 +7582,10 @@ function triggerFullStructureRebuild(callback) {
                 n.element.remove();
               }
               const idx = nodes.findIndex(x => x.id === n.id);
-              if (idx > -1) nodes.splice(idx, 1);
+              if (idx > -1) {
+                nodes.splice(idx, 1);
+                console.log(`[NODE_REMOVED] Removed from nodes array at index ${idx}, remaining nodes: ${nodes.length}`);
+              }
             });
           }
         }
@@ -6416,6 +7607,9 @@ function triggerFullStructureRebuild(callback) {
       // Remove from nodes array
       const index = nodes.findIndex(n => n.element === actionNode);
       if (index > -1) {
+        const nodeData = nodes[index];
+        const nodeType = nodeData?.data?.type || 'unknown';
+        console.log(`[NODE_REMOVED] Removing node from array: type=${nodeType}, id=${nodeData?.id}, elementId=${actionNode?.id}, index=${index}, remaining nodes: ${nodes.length - 1}`);
         nodes.splice(index, 1);
       }
 
@@ -6620,6 +7814,16 @@ function triggerFullStructureRebuild(callback) {
         }
       }
     });
+
+    // Recenter button
+    try {
+      const btn = document.getElementById('recenter');
+      if (btn) {
+        btn.addEventListener('click', () => { console.debug('[RECENTER] button clicked'); centerOnTrigger(); });
+      } else {
+        console.debug('[RECENTER] recenter button not found');
+      }
+    } catch (e) { console.debug('[RECENTER] wiring failed', e); }
     
     function deleteSelectedNode() {
       if (!selectedNode || selectedNode.type === 'trigger') return;
@@ -6732,11 +7936,23 @@ function triggerFullStructureRebuild(callback) {
             connection.from.__nodeData = nodes.find(n => n.element === connection.from) || connection.from.__nodeData || null;
             connection.to.__nodeData = nodes.find(n => n.element === connection.to) || connection.to.__nodeData || null;
 
+            // Align coordinates with SVG's shifted origin (covers container left padding)
+            let __xAdjust = 0;
+            try {
+              const __svgLeft = (WorkflowManager.svg && WorkflowManager.svg.style && WorkflowManager.svg.style.left) ? parseFloat(WorkflowManager.svg.style.left) : 0;
+              if (isFinite(__svgLeft)) __xAdjust = -__svgLeft;
+            } catch {}
+            const _fromX = fromX + __xAdjust;
+            const _toX = toX + __xAdjust;
+
             let d = '';
             const vDrop = 30;
             const r = 12;
+            // If X coordinates are the same (or very close), always use a straight vertical line
+            if (Math.abs(_toX - _fromX) < 2) {
+              d = `M ${_fromX} ${fromY} L ${_fromX} ${toY}`;
             // Handle True/False to join connections first (specific case)
-            if ((fromType === 'True' || fromType === 'False') && WorkflowManager.toNodeHasJoin && WorkflowManager.toNodeHasJoin(toType, connection)) {
+            } else if ((fromType === 'True' || fromType === 'False') && WorkflowManager.toNodeHasJoin && WorkflowManager.toNodeHasJoin(toType, connection)) {
               const minDrop = 120;
               let midY;
               try {
@@ -6761,19 +7977,19 @@ function triggerFullStructureRebuild(callback) {
                 const maxDrop = 240;
                 midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
               }
-              const dir = (toX >= fromX) ? 1 : -1;
-              d = `M ${fromX} ${fromY}`;
-              d += ` L ${fromX} ${midY - r}`;
-              d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-              d += ` L ${toX - dir * r} ${midY}`;
-              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-              d += ` L ${toX} ${toY}`;
+              const dir = (_toX >= _fromX) ? 1 : -1;
+              d = `M ${_fromX} ${fromY}`;
+              d += ` L ${_fromX} ${midY - r}`;
+              d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+              d += ` L ${_toX - dir * r} ${midY}`;
+              d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+              d += ` L ${_toX} ${toY}`;
               
               // Note: Orbs are created once when connection is first made, not on every update
               el.setAttribute('stroke-linecap', 'round');
               el.setAttribute('stroke-linejoin', 'round');
             // Handle branch actions to join node (implicit join detection)
-            } else if (WorkflowManager.toNodeIsImplicitJoin && WorkflowManager.toNodeIsImplicitJoin(connection)) {
+            } else if (Math.abs(_toX - _fromX) >= 2 && WorkflowManager.toNodeIsImplicitJoin && WorkflowManager.toNodeIsImplicitJoin(connection)) {
               const minDrop = 120;
               let midY;
               try {
@@ -6798,57 +8014,57 @@ function triggerFullStructureRebuild(callback) {
                 const maxDrop = 240;
                 midY = fromY + Math.min(Math.max(verticalDistance * 0.4, minDrop), maxDrop);
               }
-              const dir = (toX >= fromX) ? 1 : -1;
-              d = `M ${fromX} ${fromY}`;
-              d += ` L ${fromX} ${midY - r}`;
-              d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-              d += ` L ${toX - dir * r} ${midY}`;
-              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-              d += ` L ${toX} ${toY}`;
+              const dir = (_toX >= _fromX) ? 1 : -1;
+              d = `M ${_fromX} ${fromY}`;
+              d += ` L ${_fromX} ${midY - r}`;
+              d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+              d += ` L ${_toX - dir * r} ${midY}`;
+              d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+              d += ` L ${_toX} ${toY}`;
               
               // Note: Orbs are created once when connection is first made, not on every update
               el.setAttribute('stroke-linecap', 'round');
               el.setAttribute('stroke-linejoin', 'round');
             // Always render other lines targeting a join node with orthogonal rounded corners
-            } else if (WorkflowManager.toNodeHasJoin && WorkflowManager.toNodeHasJoin(toType, connection)) {
+            } else if (Math.abs(_toX - _fromX) >= 2 && WorkflowManager.toNodeHasJoin && WorkflowManager.toNodeHasJoin(toType, connection)) {
               const vDropJoin = 28; // halved to account for longer lines with orbs
               const approachShorten = 14;
               const midY = fromY + vDropJoin;
-              const dir = (toX >= fromX) ? 1 : -1;
-              d += `M ${fromX} ${fromY}`;
-              d += ` L ${fromX} ${midY - r}`;
-              d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-              d += ` L ${toX - dir * (r + approachShorten)} ${midY}`;
-              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-              d += ` L ${toX} ${toY}`;
+              const dir = (_toX >= _fromX) ? 1 : -1;
+              d += `M ${_fromX} ${fromY}`;
+              d += ` L ${_fromX} ${midY - r}`;
+              d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+              d += ` L ${_toX - dir * (r + approachShorten)} ${midY}`;
+              d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+              d += ` L ${_toX} ${toY}`;
               el.setAttribute('stroke-linecap', 'round');
               el.setAttribute('stroke-linejoin', 'round');
-            } else if (fromType === 'If' && (toType === 'True' || toType === 'False')) {
+            } else if (Math.abs(_toX - _fromX) >= 2 && fromType === 'If' && (toType === 'True' || toType === 'False')) {
               const midY = fromY + vDrop;
-              d += `M ${fromX} ${fromY}`;
-              d += ` L ${fromX} ${midY - r}`;
-              const dir = (toX >= fromX) ? 1 : -1;
-              d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-              d += ` L ${toX - dir * r} ${midY}`;
-              d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-              d += ` L ${toX} ${toY}`;
+              d += `M ${_fromX} ${fromY}`;
+              d += ` L ${_fromX} ${midY - r}`;
+              const dir = (_toX >= _fromX) ? 1 : -1;
+              d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+              d += ` L ${_toX - dir * r} ${midY}`;
+              d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+              d += ` L ${_toX} ${toY}`;
             } else if ((fromType === 'True' || fromType === 'False')) {
               if (WorkflowManager.isJoinNode && WorkflowManager.isJoinNode(connection.to)) {
                 const midY = fromY + vDrop;
-                const dir = (toX >= fromX) ? 1 : -1;
-                d += `M ${fromX} ${fromY}`;
-                d += ` L ${fromX} ${midY - r}`;
-                d += ` Q ${fromX} ${midY} ${fromX + dir * r} ${midY}`;
-                d += ` L ${toX - dir * r} ${midY}`;
-                d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-                d += ` L ${toX} ${toY}`;
+                const dir = (_toX >= _fromX) ? 1 : -1;
+                d += `M ${_fromX} ${fromY}`;
+                d += ` L ${_fromX} ${midY - r}`;
+                d += ` Q ${_fromX} ${midY} ${_fromX + dir * r} ${midY}`;
+                d += ` L ${_toX - dir * r} ${midY}`;
+                d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+                d += ` L ${_toX} ${toY}`;
               } else if (!(toType === 'True' || toType === 'False')) {
                 // Legacy gentle orthogonal used in refresh renderer
                 const ctrlY = fromY + 20;
-                d = `M ${fromX} ${fromY} Q ${fromX} ${ctrlY} ${fromX} ${ctrlY} L ${toX} ${ctrlY} Q ${toX} ${ctrlY} ${toX} ${toY}`;
+                d = `M ${_fromX} ${fromY} Q ${_fromX} ${ctrlY} ${_fromX} ${ctrlY} L ${_toX} ${ctrlY} Q ${_toX} ${ctrlY} ${_toX} ${toY}`;
               } else {
-                const mx = Math.round((fromX + toX) / 2);
-                d = `M ${fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${toX} ${toY}`;
+                const mx = Math.round((_fromX + _toX) / 2);
+                d = `M ${_fromX} ${fromY} C ${mx} ${fromY}, ${mx} ${toY}, ${_toX} ${toY}`;
               }
             } else {
               // Generic vertical line for non-IF connections to keep visuals stable
@@ -6858,16 +8074,16 @@ function triggerFullStructureRebuild(callback) {
                 const side = (fromType === 'True' || fromDataProps.branch === 'true') ? -1 : 1;
                 const hOffset = 32;
                 const midY = fromY + 28;
-                const hx1 = fromX + side * hOffset;
-                const hx2 = Math.abs(toX - fromX) < 2 ? (toX - side * hOffset) : toX;
-                d = `M ${fromX} ${fromY}`;
-                d += ` L ${fromX} ${midY - r}`;
-                d += ` Q ${fromX} ${midY} ${hx1} ${midY}`;
+                const hx1 = _fromX + side * hOffset;
+                const hx2 = Math.abs(_toX - _fromX) < 2 ? (_toX - side * hOffset) : _toX;
+                d = `M ${_fromX} ${fromY}`;
+                d += ` L ${_fromX} ${midY - r}`;
+                d += ` Q ${_fromX} ${midY} ${hx1} ${midY}`;
                 d += ` L ${hx2} ${midY}`;
-                d += ` Q ${toX} ${midY} ${toX} ${midY + r}`;
-                d += ` L ${toX} ${toY}`;
+                d += ` Q ${_toX} ${midY} ${_toX} ${midY + r}`;
+                d += ` L ${_toX} ${toY}`;
               } else {
-              d = `M ${fromX} ${fromY} L ${fromX} ${toY}`;
+                d = `M ${_fromX} ${fromY} L ${_fromX} ${toY}`;
               }
             }
             el.setAttribute('d', d);
@@ -6891,11 +8107,18 @@ function triggerFullStructureRebuild(callback) {
             }
           } else {
             // Legacy fallback (div line rotated)
-            const deltaX = toX - fromX;
+            let __xAdjust = 0;
+            try {
+              const __svgLeft = (WorkflowManager.svg && WorkflowManager.svg.style && WorkflowManager.svg.style.left) ? parseFloat(WorkflowManager.svg.style.left) : 0;
+              if (isFinite(__svgLeft)) __xAdjust = -__svgLeft;
+            } catch {}
+            const _fromX = fromX + __xAdjust;
+            const _toX = toX + __xAdjust;
+            const deltaX = _toX - _fromX;
             const deltaY = toY - fromY;
             const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             const angle = Math.atan2(deltaY, deltaX);
-            el.style.left = `${fromX}px`;
+            el.style.left = `${_fromX}px`;
             el.style.top = `${fromY}px`;
             el.style.width = `${length}px`;
             el.style.transform = `rotate(${angle}rad)`;
@@ -6905,7 +8128,12 @@ function triggerFullStructureRebuild(callback) {
           
           // Update insert orb position if it exists using identical center math (no extra rounding jitter)
           if (connection.insertOrb) {
-            const midX = (fromX + toX) / 2;
+            let __xAdjust2 = 0;
+            try {
+              const __svgLeft2 = (WorkflowManager.svg && WorkflowManager.svg.style && WorkflowManager.svg.style.left) ? parseFloat(WorkflowManager.svg.style.left) : 0;
+              if (isFinite(__svgLeft2)) __xAdjust2 = -__svgLeft2;
+            } catch {}
+            const midX = (fromX + toX) / 2 + __xAdjust2;
             const midY = (fromY + toY) / 2;
             connection.insertOrb.style.left = `${midX}px`;
             connection.insertOrb.style.top = `${midY}px`;

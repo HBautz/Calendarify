@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Extracted Placement Code</title>
+</head>
+<body>
+  <!-- Constants used for grid placement -->
+  <pre>
+const NODE_WIDTH = 320;          // px, matches .flowchart-node width
+const VERTICAL_SPACING = 200;    // px vertical spacing between nodes (top-to-top)
+const TOP_STEP = 200;            // exact top-to-top distance between consecutive nodes
+const LEFT_STEP = 400;           // px horizontal grid step for columns
+  </pre>
+
+  <!-- LayoutManager.apply: baseline placement (IF blocks, non-IF linear), header fixes, final normalization & join snap -->
+  <pre>
+const LayoutManager = {
+  apply() {
+    logOrder('LayoutManager.apply start');
+    try {
+      if (!container) return;
+      const containerRect = container.getBoundingClientRect();
+      if (!containerRect) return;
+      let _scale = 1;
+      try {
+        const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/);
+        if (m) _scale = parseFloat(m[1]) || 1;
+      } catch {}
+      const toLocalX = (vx) => (vx - containerRect.left) / _scale;
+      const toLocalY = (vy) => (vy - containerRect.top) / _scale;
+      try { ifCenters.clear(); ifHeaderCenters.clear(); } catch {}
+
+      const trigger = nodes.find(n => n.type === 'trigger');
+      if (!trigger || !trigger.element) return;
+
+      const triggerEl = trigger.element;
+      triggerEl.style.left = `0px`;
+      triggerEl.style.top = `0px`;
+      triggerEl.style.transform = '';
+
+      const trigRect = triggerEl.getBoundingClientRect();
+      try {
+        const guide = container.querySelector('#editor-guide-text');
+        if (guide && trigRect) {
+          const guideLeft = Math.round(toLocalX(trigRect.left + trigRect.width / 2));
+          const guideTop = Math.round(toLocalY(trigRect.bottom) + 20);
+          guide.style.left = `${guideLeft}px`;
+          guide.style.top = `${guideTop}px`;
+          guide.style.transform = 'translateX(-50%)';
+        }
+      } catch {}
+
+      const actions = nodes.filter(n => n.type !== 'trigger');
+      let currentTop = 0 + TOP_STEP;
+      const rootCenterX = 0;
+
+      const CONTROL_TYPES = new Set(['True', 'False']);
+      const idxOf = (el) => nodes.findIndex(n => n.element === el);
+      const getHeight = (el) => {
+        const r = el.getBoundingClientRect();
+        return Math.max(1, Math.round(r.height / _scale));
+      };
+
+      const inIfBlock = (gIndex) => {
+        const d = nodes[gIndex]?.data;
+        if (!d) return false;
+        if (d.type === 'True' || d.type === 'False') return true;
+        if (d.properties && d.properties.parentIfId) return true;
+        return false;
+      };
+
+      for (let i = 0; i < actions.length; i++) {
+  const n = actions[i];
+        const el = n.element;
+        if (!el) continue;
+        const t = n.data?.type || '';
+
+        if (t === 'If') {
+          const props = n.data?.properties || {};
+          let ifGridLeft = 0;
+          if (props.parentIfId && props.branch) {
+            const parentAnchors = ifHeaderCenters.get(props.parentIfId);
+            if (parentAnchors) {
+              const parentTrueLeft = Math.round(parentAnchors.trueX - NODE_WIDTH / 2);
+              const parentFalseLeft = Math.round(parentAnchors.falseX - NODE_WIDTH / 2);
+              ifGridLeft = (props.branch === 'true') ? parentTrueLeft : parentFalseLeft;
+            } else {
+              ifGridLeft = (props.branch === 'true') ? 0 : LEFT_STEP;
+            }
+          }
+          const centerX = ifGridLeft + NODE_WIDTH / 2;
+          el.style.left = `${ifGridLeft}px`;
+          el.style.transform = '';
+          el.style.top = `${currentTop}px`;
+          const startY = currentTop + TOP_STEP;
+
+          const globalIfIdx = idxOf(el);
+          let trueIdx = -1, falseIdx = -1;
+          for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+            const jt = nodes[j]?.data?.type;
+            if (jt === 'If') break;
+            if (jt === 'True' && trueIdx === -1) trueIdx = j;
+            if (jt === 'False' && falseIdx === -1) falseIdx = j;
+            if (trueIdx !== -1 && falseIdx !== -1) break;
+          }
+
+          let yTrue = startY;
+          let yFalse = startY;
+          const trueX = ifGridLeft - LEFT_STEP + NODE_WIDTH / 2;
+          const falseX = ifGridLeft + LEFT_STEP + NODE_WIDTH / 2;
+          const trueLeft = ifGridLeft - LEFT_STEP;
+          const falseLeft = ifGridLeft + LEFT_STEP;
+
+          const thisIfId = nodes[globalIfIdx]?.data?.properties?.ifId;
+          if (thisIfId) {
+            ifCenters.set(thisIfId, ifGridLeft);
+            ifHeaderCenters.set(thisIfId, { trueX: trueLeft, falseX: falseLeft });
+          }
+
+          const place = (node, side, y) => {
+            const e = node.element;
+            const leftVal = side === 'left' ? trueLeft : falseLeft;
+            e.style.left = `${leftVal}px`;
+            e.style.transform = '';
+            e.style.top = `${y}px`;
+            return y + TOP_STEP;
+          };
+          if (trueIdx !== -1) yTrue = place(nodes[trueIdx], 'left', yTrue);
+          if (falseIdx !== -1) yFalse = place(nodes[falseIdx], 'right', yFalse);
+
+          const ifId = nodes[globalIfIdx]?.data?.properties?.ifId;
+          if (ifId) {
+            const tryAssignBranchFromInbound = (idx) => {
+              try {
+                const targetEl = nodes[idx]?.element; if (!targetEl) return;
+                const d = nodes[idx]?.data || {}; if (!d) return;
+                if (d.properties && d.properties.joinForIfId) return;
+                if (d.properties && d.properties.parentIfId === ifId && (d.properties.branch === 'true' || d.properties.branch === 'false')) return;
+
+                let inferred = null;
+                for (const c of WorkflowManager.connections.values()) {
+                  if (!c || c.to !== targetEl) continue;
+                  const fromData = nodes.find(n => n.element === c.from)?.data || {};
+                  if (!fromData) continue;
+                  if ((fromData.type === 'True' || fromData.type === 'False') && fromData.properties?.parentIfId === ifId) {
+                    inferred = (fromData.type === 'True') ? 'true' : 'false';
+                    break;
+                  }
+                  if (fromData.properties && fromData.properties.parentIfId === ifId && (fromData.properties.branch === 'true' || fromData.properties.branch === 'false')) {
+                    inferred = fromData.properties.branch;
+                    break;
+                  }
+                }
+                if (inferred) {
+                  if (!nodes[idx].data) nodes[idx].data = {};
+                  if (!nodes[idx].data.properties) nodes[idx].data.properties = {};
+                  nodes[idx].data.properties.parentIfId = ifId;
+                  nodes[idx].data.properties.branch = inferred;
+                }
+              } catch {}
+            };
+            for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+              const d = nodes[j]?.data; if (!d) continue;
+              if (d.type === 'If') break;
+              if (d.type === 'True' || d.type === 'False') continue;
+              tryAssignBranchFromInbound(j);
+            }
+
+            for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+              const d = nodes[j]?.data;
+              if (!d) continue;
+              if (d.type === 'If') break;
+              if (d.type === 'True' || d.type === 'False') continue;
+              if (d.properties && d.properties.parentIfId === ifId && !d.properties.joinForIfId) {
+                let br = d.properties.branch;
+                if (br !== 'true' && br !== 'false') {
+                  try {
+                    const rr = nodes[j].element.getBoundingClientRect();
+                    const cxLocal = Math.round(rr.left - containerRect.left + rr.width / 2);
+                    br = (cxLocal < centerX) ? 'true' : 'false';
+                    nodes[j].data.properties.branch = br;
+                  } catch { br = 'true'; }
+                }
+                if (br === 'true') yTrue = place(nodes[j], 'left', yTrue);
+                else if (br === 'false') yFalse = place(nodes[j], 'right', yFalse);
+              }
+            }
+          }
+
+          const endYBase = Math.max(yTrue, yFalse);
+          let blockEndY = endYBase;
+          try {
+            const joinNodes = [];
+            for (let j = globalIfIdx + 1; j < nodes.length; j++) {
+              const d = nodes[j]?.data; if (!d) continue;
+              if (d.type === 'If') break;
+              if (d.properties && d.properties.joinForIfId === ifId) joinNodes.push(nodes[j]);
+            }
+            if (joinNodes.length > 0) {
+              blockEndY = endYBase;
+              const trueGridLeft = Math.round(trueX - NODE_WIDTH / 2);
+              const falseGridLeft = Math.round(falseX - NODE_WIDTH / 2);
+              const midGridLeft = Math.round(((trueGridLeft + falseGridLeft) / 2) / LEFT_STEP) * LEFT_STEP;
+              const snappedJoinCenter = midGridLeft + NODE_WIDTH / 2;
+              for (const jn of joinNodes) {
+                const e = jn.element; if (!e) continue;
+                const snappedJoinLeft = midGridLeft;
+                e.style.left = `${snappedJoinLeft}px`;
+                e.style.transform = '';
+                e.style.top = `${blockEndY}px`;
+                blockEndY += getHeight(e) + VERTICAL_SPACING;
+              }
+            }
+          } catch {}
+
+          currentTop = blockEndY + TOP_STEP;
+          continue;
+        }
+
+        const gIdx = idxOf(el);
+        if (inIfBlock(gIdx)) {
+          // do not adjust
+        } else {
+          el.style.left = `0px`;
+          el.style.transform = '';
+          el.style.top = `${currentTop}px`;
+          currentTop += TOP_STEP;
+        }
+      }
+
+      try {
+        const ifBottomById = new Map();
+        for (const n of nodes) {
+          const d = n?.data;
+          if (!d || d.type !== 'If') continue;
+          const ifId = d.properties?.ifId;
+          if (!ifId || !n.element) continue;
+          const r = n.element.getBoundingClientRect();
+          const bottomLocal = toLocalY(r.bottom);
+          ifBottomById.set(ifId, bottomLocal);
+        }
+
+        for (const n of nodes) {
+          const d = n?.data;
+          if (!d || (d.type !== 'True' && d.type !== 'False')) continue;
+          const el = n.element; if (!el) continue;
+          const ls = el.style.left || '';
+          if (!ls || ls.includes('%') || ls.startsWith('calc')) {
+            const pid = d.properties?.parentIfId || null;
+            let px = null;
+            if (pid) {
+              const anchors = ifHeaderCenters.get(pid);
+              if (anchors) px = (d.type === 'True') ? anchors.trueX : anchors.falseX;
+              else {
+                const center = ifCenters.get(pid) ?? 0;
+                px = (d.type === 'True') ? center : (center + LEFT_STEP);
+              }
+            } else {
+              const center = 0;
+              px = (d.type === 'True') ? center : (center + LEFT_STEP);
+            }
+            el.style.left = `${Math.round(px)}px`;
+            el.style.transform = '';
+          }
+          try {
+            const pid = d.properties?.parentIfId || null;
+            const ifBottom = pid ? ifBottomById.get(pid) : null;
+            if (typeof ifBottom === 'number') {
+              const headerGap = 80;
+              const desiredTop = Math.round(ifBottom + headerGap);
+              const rr = el.getBoundingClientRect();
+              const currentTopLocal = toLocalY(rr.top);
+              if (!el.style.top || Math.abs(currentTopLocal - desiredTop) < 2 || currentTopLocal <= desiredTop) {
+                el.style.top = `${desiredTop}px`;
+              }
+            }
+          } catch {}
+        }
+      } catch {}
+
+      let maxBottom = currentTop;
+      let maxRight = Math.round(toLocalX(trigRect.right));
+      let minLeftStyle = 0;
+      for (const n of nodes) {
+        if (!n?.element) continue;
+        const r = n.element.getBoundingClientRect();
+        maxBottom = Math.max(maxBottom, Math.round(toLocalY(r.bottom)));
+        maxRight = Math.max(maxRight, Math.round(toLocalX(r.right)));
+        try {
+          const sLeft = parseFloat(n.element.style.left || '0');
+          if (!Number.isNaN(sLeft)) minLeftStyle = Math.min(minLeftStyle, Math.round(sLeft));
+        } catch {}
+      }
+      const extra = 200;
+      container.style.height = `${maxBottom + extra}px`;
+      const leftPad = Math.max(0, -minLeftStyle);
+      try { container.style.paddingLeft = `${leftPad}px`; } catch {}
+      const minWidth = Math.max(Math.round(containerRect.width / _scale), maxRight + leftPad + 200);
+      container.style.minWidth = `${minWidth}px`;
+      try {
+        const svg = container.querySelector('#connections-svg');
+        if (svg) {
+          svg.removeAttribute('viewBox');
+          svg.removeAttribute('preserveAspectRatio');
+          svg.setAttribute('width', '100%');
+          svg.setAttribute('height', '100%');
+          svg.style.left = `${-leftPad}px`;
+          svg.style.top = '0';
+          svg.style.width = `calc(100% + ${leftPad}px)`;
+        }
+      } catch {}
+
+      try {
+        for (const n of nodes) {
+          if (!n?.element) continue;
+          const r = n.element.getBoundingClientRect();
+          const left = toLocalX(r.left);
+          const top = toLocalY(r.top);
+          const right = toLocalX(r.right);
+          const bottom = toLocalY(r.bottom);
+          const width = Math.max(1, Math.round(r.width / _scale));
+          const height = Math.max(1, Math.round(r.height / _scale));
+          const centerX = Math.round(left + width / 2);
+          const centerY = Math.round(top + height / 2);
+          n._layout = { left: Math.round(left), top: Math.round(top), right: Math.round(right), bottom: Math.round(bottom), width, height, centerX, centerY };
+        }
+      } catch {}
+
+      try {
+        const inboundByEl = new Map();
+        try {
+          for (const c of WorkflowManager.connections.values()) {
+            if (!c || !c.to || !c.from) continue;
+            const arr = inboundByEl.get(c.to) || [];
+            const fromData = (c.from.__nodeData && c.from.__nodeData.data) || (nodes.find(n => n.element === c.from)?.data) || null;
+            if (fromData) arr.push(fromData);
+            inboundByEl.set(c.to, arr);
+          }
+        } catch {}
+
+        const hasImplicitJoinInbound = (el, candidateParentIfId) => {
+          try {
+            const inbound = inboundByEl.get(el) || [];
+            const branchesByIf = new Map();
+            for (const fd of inbound) {
+              if (!fd) continue;
+              const t = fd.type || '';
+              let pid = null;
+              let branch = null;
+              if (t === 'True' || t === 'False') {
+                pid = fd.properties and fd.properties.parentIfId;
+                branch = (t === 'True') ? 'true' : 'false';
+              } else if (fd.properties && fd.properties.parentIfId && fd.properties.branch) {
+                pid = fd.properties.parentIfId;
+                branch = fd.properties.branch;
+              }
+              if (!pid || !branch) continue;
+              const set = branchesByIf.get(pid) || new Set();
+              set.add(branch);
+              branchesByIf.set(pid, set);
+            }
+            for (const [pid, set] of branchesByIf.entries()) {
+              if (set.has('true') && set.has('false')) {
+                if (!candidateParentIfId || candidateParentIfId === pid) return true;
+              }
+            }
+          } catch {}
+          return false;
+        };
+
+        const isLinearCandidate = (n) => {
+          if (!n || !n.element) return false;
+          const d = n.data || {};
+          const t = d.type || '';
+          if (n.type === 'trigger' || t === 'trigger') return false;
+          if (t === 'If') {
+            const pIf = d.properties && d.properties.parentIfId;
+            const isJoin = d.properties and d.properties.joinForIfId;
+            if (!pIf && !isJoin) return true;
+            return false;
+          }
+          if (!t || t === 'True' || t === 'False') return false;
+          const p = d.properties || {};
+          if (p.joinForIfId) return false;
+          if (!p.parentIfId) return true;
+          const inbound = inboundByEl.get(n.element) || [];
+          const downstream = inbound.some(fd => (fd && fd.properties && fd.properties.joinForIfId === p.parentIfId));
+          const implicit = hasImplicitJoinInbound(n.element, p.parentIfId);
+          if (downstream || implicit) {
+            try {
+              delete n.data.properties.parentIfId;
+              delete n.data.properties.branch;
+            } catch {}
+          }
+          return downstream || implicit;
+        };
+
+        const linearNodes = nodes.filter(isLinearCandidate);
+        linearNodes.sort((a, b) => {
+          const at = (a && a._layout && typeof a._layout.top === 'number') ? a._layout.top : parseFloat(a?.element?.style?.top || '0') || 0;
+          const bt = (b && b._layout && typeof b._layout.top === 'number') ? b._layout.top : parseFloat(b?.element?.style?.top || '0') || 0;
+          return at - bt;
+        });
+        let prevTop = 0;
+        for (const ln of linearNodes) {
+          const ct = (ln and ln._layout and typeof ln._layout.top === 'number') ? ln._layout.top : parseFloat(ln?.element?.style?.top || '0') || 0;
+          let desired;
+          let didUseInbound = false;
+          try {
+            const d = ln.data || {};
+            if (d.type === 'If' && !(d.properties && (d.properties.parentIfId || d.properties.joinForIfId))) {
+              let maxInboundTop = -Infinity;
+              for (const c of WorkflowManager.connections.values()) {
+                if (!c || c.to !== ln.element || !c.from) continue;
+                const srcNode = nodes.find(n => n.element === c.from);
+                if (!srcNode) continue;
+                const st = (srcNode && srcNode._layout && typeof srcNode._layout.top === 'number') ? srcNode._layout.top : parseFloat(srcNode?.element?.style?.top || '0') || 0;
+                if (st > maxInboundTop) maxInboundTop = st;
+              }
+              if (Number.isFinite(maxInboundTop) and maxInboundTop >= 0) {
+                desired = maxInboundTop + TOP_STEP;
+                didUseInbound = true;
+              }
+            }
+          } catch {}
+          if (!didUseInbound) {
+            desired = Math.max(TOP_STEP, Math.ceil(ct / TOP_STEP) * TOP_STEP);
+          }
+          desired = Math.max(desired, prevTop + TOP_STEP);
+          ln.element.style.top = `${desired}px`;
+          prevTop = desired;
+        }
+      } catch {}
+
+      try {
+        const joinsByIf = new Map();
+        for (const n of nodes) {
+          const d = n and n.data;
+          if (!d || !d.properties || !d.properties.joinForIfId) continue;
+          const pid = d.properties.joinForIfId;
+          const arr = joinsByIf.get(pid) || [];
+          if (n.element) arr.push(n);
+          joinsByIf.set(pid, arr);
+        }
+        joinsByIf.forEach((joinNodes, ifId) => {
+          let deepestTop = 0;
+          try {
+            for (const n of nodes) {
+              const d = n and n.data;
+              if (!d) continue;
+              if ((d.type === 'True' || d.type === 'False') and d.properties and d.properties.parentIfId === ifId) {
+                const r = n.element.getBoundingClientRect();
+                const topLocal = Math.round(toLocalY(r.top));
+                deepestTop = Math.max(deepestTop, topLocal);
+              }
+              if (d.type !== 'If' and d.properties and d.properties.parentIfId === ifId and !d.properties.joinForIfId) {
+                const r = n.element.getBoundingClientRect();
+                const topLocal = Math.round(toLocalY(r.top));
+                deepestTop = Math.max(deepestTop, topLocal);
+              }
+            }
+          } catch {}
+          let placeTop = Math.round(deepestTop + TOP_STEP);
+          joinNodes.sort((a, b) => {
+            const at = parseFloat(a.element.style.top || '0') || 0;
+            const bt = parseFloat(b.element.style.top || '0') || 0;
+            return at - bt;
+          });
+          for (const jn of joinNodes) {
+            jn.element.style.top = `${placeTop}px`;
+            placeTop += TOP_STEP;
+          }
+        });
+      } catch {}
+    } catch (e) {
+      console.warn('LayoutManager.apply error:', e);
+    }
+  }
+};
+  </pre>
+
+  <!-- saveAction(): branch-true/branch-false insertion and add-after (non-branch) snapping -->
+  <pre>
+// Branch insertions from IF node (True / False columns)
+if (parentNodeId && parentNodeId.startsWith('branch-true-')) {
+  // ...
+  actionNode.style.left = `${anchors.trueX + NODE_WIDTH / 2}px`;
+  // ...
+  let y = trueEl.getBoundingClientRect().bottom - containerRect.top + 60;
+  // ...
+  actionNode.style.top = `${y}px`;
+}
+if (parentNodeId && parentNodeId.startsWith('branch-false-')) {
+  // ...
+  actionNode.style.left = `${anchors.falseX + NODE_WIDTH / 2}px`;
+  // ...
+  let y = falseEl.getBoundingClientRect().bottom - containerRect.top + 60;
+  // ...
+  actionNode.style.top = `${y}px`;
+}
+
+// Not in a branch: snap to the next grid row under the target node (zoom-safe)
+const afterRect = afterNode.element.getBoundingClientRect();
+let _scale = 1;
+try { const m = (container.style.transform || '').match(/scale\(([-\d.]+)\)/); if (m) _scale = parseFloat(m[1]) || 1; } catch {}
+const toLocalY = (vy) => (vy - containerRect.top) / _scale;
+const afterTopLocal = Math.round(toLocalY(afterRect.top));
+const topPosition = afterTopLocal + TOP_STEP;
+actionNode.style.left = '50%';
+actionNode.style.top = `${topPosition}px`;
+actionNode.style.transform = 'translateX(-50%)';
+  </pre>
+
+  <!-- insertActionBetween(): join placement, source-anchored snapping, default path, and moving target down one row -->
+  <pre>
+function insertActionBetween(actionData, connection) {
+  // joinForIfId detection...
+  if (isSourceAnchored) {
+    // anchorX to branch header center
+    const fromRect = connection.from.getBoundingClientRect();
+    let _scaleSA = 1; /* ... */
+    const toLocalYSA = (vy) => (vy - containerRect.top) / _scaleSA;
+    const fromTopLocal = Math.round(toLocalYSA(fromRect.top));
+    actionNode.style.transform = 'translateX(-50%)';
+    actionNode.style.top = `${fromTopLocal + TOP_STEP}px`;
+  } else if (joinForIfId) {
+    // compute midGridLeft and joinTop (deepestTop + TOP_STEP) in local units
+    actionNode.style.left = `${midGridLeft}px`;
+    actionNode.style.transform = '';
+    actionNode.style.top = `${joinTop}px`;
+  } else {
+    // default: inherit lane from target, exact row of target (local Y)
+    const oldTargetTop0 = Math.round(toLocalYDF(toRect0.top));
+    actionNode.style.left = `${anchorX0OrTargetCenter}px`;
+    actionNode.style.transform = 'translateX(-50%)';
+    actionNode.style.top = `${oldTargetTop0}px`;
+  }
+
+  // Move the target down by one grid row
+  const toTopLocal = Math.round(toLocalYMV(toRect.top));
+  const newTop = toTopLocal + TOP_STEP;
+  toEl.style.top = `${newTop}px`;
+}
+  </pre>
+
+  <!-- insertActionBetweenOrbs(): source-anchored grid snap, join-aware center, branch-aware target row, midpoint row -->
+  <pre>
+function insertActionBetweenOrbs(actionData, sourceNode, targetNode) {
+  // Zoom-safe helpers to local Y
+  const toLocalYOB = (vy) => (vy - containerRect.top) / _scaleOB;
+
+  if (isSourceAnchored) {
+    // X anchored to branch header center if available
+    const fromTopLocal = Math.round(toLocalYOB(sourceRect.top));
+    actionNode.style.transform = 'translateX(-50%)';
+    actionNode.style.top = `${fromTopLocal + TOP_STEP}px`;
+  } else {
+    const sourceTopLocal = Math.round(toLocalYOB(sourceRect.top));
+    const targetTopLocal = Math.round(toLocalYOB(targetRect.top));
+    const maxTopLocal = Math.max(sourceTopLocal, targetTopLocal);
+
+    if (isJoin && joinForIfId) {
+      actionNode.style.left = `${centerX}px`;
+      actionNode.style.transform = 'translateX(-50%)';
+      actionNode.style.top = `${maxTopLocal + TOP_STEP}px`;
+    } else {
+      // Branch-aware target row or midpoint fallback on next row
+      // ... (branch ctx detection) ...
+      // targetTopLocal row placement
+      actionNode.style.left = `${Math.round(anchorX)}px`;
+      actionNode.style.transform = 'translateX(-50%)';
+      actionNode.style.top = `${targetTopLocal2}px`;
+      // or midpoint fallback
+      const nextRow = maxTopLocal + TOP_STEP;
+      actionNode.style.left = `${Math.round(midX)}px`;
+      actionNode.style.transform = 'translateX(-50%)';
+      actionNode.style.top = `${nextRow}px`;
+    }
+  }
+}
+  </pre>
+
+  <!-- addControlNodeAfterElement(): create True/False headers under an IF -->
+  <pre>
+function addControlNodeAfterElement(afterNodeElement, type) {
+  const afterRect = afterNodeElement.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  const topPosition = afterRect.bottom - containerRect.top + 80;
+  const ifCenter = afterRect.left + (afterRect.width / 2) - containerRect.left;
+  const baseOffset = 380;
+  const leftPosition = type === 'True' ? (ifCenter - baseOffset) : (ifCenter + baseOffset);
+  actionNode.style.left = `${leftPosition}px`;
+  actionNode.style.top = `${topPosition}px`;
+  actionNode.style.transform = 'translateX(-50%)';
+}
+  </pre>
+</body>
+</html>
