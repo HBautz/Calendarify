@@ -1,168 +1,174 @@
 #!/bin/bash
+# Simple dev runner with auto-restart on CODE file changes after calm period.
 
-# 🚀 Simple Calendarify Startup Script
-# This script starts the services in a simple, reliable way
+set -euo pipefail
+set +m   # Disable job-control termination messages
 
-set -e
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BACKEND_PORT=3001
+FRONTEND_PORT=3000
+CALM_SECONDS=10
+CHECK_INTERVAL=2
 
-echo "🚀 Starting Calendarify Services..."
-echo "=================================="
+BACKEND_PID=""
+FRONTEND_PID=""
 
-# Function to cleanup on exit
-cleanup() {
-    echo "🧹 Cleaning up..."
-    pkill -f "npm run start:dev" 2>/dev/null || true
-    pkill -f "node server.js" 2>/dev/null || true
-    lsof -ti:3000,3001 | xargs kill -9 2>/dev/null || true
-    echo "✅ Cleanup completed"
+CODE_EXTENSIONS_REGEX='\.(sh|js|jsx|ts|tsx|json|html|css|scss|md|yml|yaml)$'
+
+log() {
+  echo "[$(date '+%H:%M:%S')] $*"
 }
 
-# Set up signal handlers
-trap cleanup EXIT
-trap cleanup SIGINT
-trap cleanup SIGTERM
+cleanup() {
+  log "🧹 Cleaning up..."
+  pkill -f "npm run start:dev" 2>/dev/null || true
+  pkill -f "node server.js" 2>/dev/null || true
+  lsof -ti:${BACKEND_PORT},${FRONTEND_PORT} | xargs kill -9 2>/dev/null || true
+  log "✅ Cleanup completed"
+}
+trap cleanup EXIT INT TERM
 
-# Kill any existing processes
-echo "🔧 Cleaning up existing processes..."
-pkill -f "npm run start:dev" 2>/dev/null || true
-pkill -f "node server.js" 2>/dev/null || true
-lsof -ti:3000,3001 | xargs kill -9 2>/dev/null || true
-sleep 3
-
-# Check if ports are free
-echo "🔍 Checking ports..."
-if lsof -i:3000 >/dev/null 2>&1; then
-    echo "❌ Port 3000 is still in use"
-    exit 1
-fi
-if lsof -i:3001 >/dev/null 2>&1; then
-    echo "❌ Port 3001 is still in use"
-    exit 1
-fi
-echo "✅ Ports are free"
-
-# Start backend
-echo "🚀 Starting backend server..."
-cd backend
-npm run start:dev > ../backend.log 2>&1 &
-BACKEND_PID=$!
-cd ..
-
-# Wait for backend to be fully ready (up to 10 minutes)
-echo "⏳ Waiting for backend to start (this may take several minutes)..."
-BACKEND_READY=false
-for i in {1..60}; do
-    if curl -s http://localhost:3001/api >/dev/null 2>&1; then
-        echo "✅ Backend is running on http://localhost:3001"
-        BACKEND_READY=true
-        break
+ensure_ports_free() {
+  for p in $BACKEND_PORT $FRONTEND_PORT; do
+    if lsof -i:$p >/dev/null 2>&1; then
+      log "❌ Port $p is in use"
+      exit 1
     fi
-    
-    # Check if backend process is still running
-    if ! kill -0 $BACKEND_PID 2>/dev/null; then
-        echo "❌ Backend process died unexpectedly"
-        echo "📋 Backend logs:"
-        tail -20 backend.log
-        exit 1
+  done
+  log "✅ Ports are free"
+}
+
+wait_for_health() {
+  for i in {1..60}; do
+    if curl -s "http://localhost:${BACKEND_PORT}/api" >/dev/null 2>&1; then
+      log "✅ Backend ready on ${BACKEND_PORT}"
+      break
     fi
-    
-    if [ $((i % 10)) -eq 0 ]; then
-        echo "⏳ Still waiting for backend... ($((i * 10))s elapsed)"
+    sleep 1
+    if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+      log "❌ Backend died"
+      tail -20 "$ROOT_DIR/backend.log"
+      exit 1
     fi
-    
-    sleep 10
-done
-
-if [ "$BACKEND_READY" = false ]; then
-    echo "❌ Backend failed to start within 10 minutes"
-    echo "📋 Backend logs:"
-    tail -50 backend.log
-    exit 1
-fi
-
-# Start frontend
-echo "🚀 Starting frontend server..."
-node server.js > frontend.log 2>&1 &
-FRONTEND_PID=$!
-
-# Wait for frontend to be ready (up to 2 minutes)
-echo "⏳ Waiting for frontend to start..."
-FRONTEND_READY=false
-for i in {1..12}; do
-    if curl -s http://localhost:3000 >/dev/null 2>&1; then
-        echo "✅ Frontend is running on http://localhost:3000"
-        FRONTEND_READY=true
-        break
+    if [ "$i" -eq 60 ]; then
+      log "❌ Backend not ready"
+      tail -50 "$ROOT_DIR/backend.log"
+      exit 1
     fi
-    
-    # Check if frontend process is still running
-    if ! kill -0 $FRONTEND_PID 2>/dev/null; then
-        echo "❌ Frontend process died unexpectedly"
-        echo "📋 Frontend logs:"
-        tail -20 frontend.log
-        exit 1
+  done
+
+  for i in {1..30}; do
+    if curl -s "http://localhost:${FRONTEND_PORT}" >/dev/null 2>&1; then
+      log "✅ Frontend ready on ${FRONTEND_PORT}"
+      break
     fi
-    
-    if [ $((i % 3)) -eq 0 ]; then
-        echo "⏳ Still waiting for frontend... ($((i * 10))s elapsed)"
+    sleep 1
+    if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+      log "❌ Frontend died"
+      tail -20 "$ROOT_DIR/frontend.log"
+      exit 1
     fi
-    
-    sleep 10
-done
+    if [ "$i" -eq 30 ]; then
+      log "❌ Frontend not ready"
+      tail -50 "$ROOT_DIR/frontend.log"
+      exit 1
+    fi
+  done
+}
 
-if [ "$FRONTEND_READY" = false ]; then
-    echo "❌ Frontend failed to start within 2 minutes"
-    echo "📋 Frontend logs:"
-    tail -50 frontend.log
-    exit 1
-fi
+hash_code_tree() {
+  if command -v git >/dev/null 2>&1 && [ -d "$ROOT_DIR/.git" ]; then
+    (
+      cd "$ROOT_DIR"
+      git ls-files \
+        | grep -E "$CODE_EXTENSIONS_REGEX" || true
+    ) \
+    | LC_ALL=C sort \
+    | xargs sha1sum 2>/dev/null || true \
+    | sha1sum \
+    | cut -d' ' -f1
+  else
+    find "$ROOT_DIR" \
+      \( -path "*/node_modules/*" \
+         -o -path "*/.git/*" \
+         -o -path "*/.next/*" \
+         -o -path "*/dist/*" \
+         -o -path "*/build/*" \
+         -o -path "*/coverage/*" \
+         -o -path "*/logs/*" \
+         -o -name "*.log" \
+         -o -name "*.tmp" \
+      \) -prune -o \
+      -type f \
+      | grep -E "$CODE_EXTENSIONS_REGEX" || true \
+      | LC_ALL=C sort \
+      | xargs sha1sum 2>/dev/null || true \
+      | sha1sum \
+      | cut -d' ' -f1
+  fi
+}
 
-# Final health check
-echo "🔍 Final health check..."
-sleep 5
+start_services() {
+  pre_start_hash=$(hash_code_tree)
 
-if curl -s http://localhost:3001/api >/dev/null 2>&1; then
-    echo "✅ Backend health check passed"
-else
-    echo "❌ Backend health check failed"
-    exit 1
-fi
+  log "🚀 Starting backend..."
+  (cd "$ROOT_DIR/backend" && npm run start:dev > "$ROOT_DIR/backend.log" 2>&1) &
+  BACKEND_PID=$!
 
-if curl -s http://localhost:3000 >/dev/null 2>&1; then
-    echo "✅ Frontend health check passed"
-else
-    echo "❌ Frontend health check failed"
-    exit 1
-fi
+  log "🚀 Starting frontend..."
+  (cd "$ROOT_DIR" && node server.js > "$ROOT_DIR/frontend.log" 2>&1) &
+  FRONTEND_PID=$!
 
-echo ""
-echo "🎉 All services started successfully!"
-echo "🌐 Frontend: http://localhost:3000"
-echo "🔧 Backend: http://localhost:3001"
-echo ""
-echo "📋 Logs:"
-echo "  Backend: tail -f backend.log"
-echo "  Frontend: tail -f frontend.log"
-echo ""
-echo "💡 Press Ctrl+C to stop all services"
-echo ""
+  wait_for_health
 
-# Keep the script running and monitor services
+  post_start_hash=$(hash_code_tree)
+  if [ "$pre_start_hash" != "$post_start_hash" ]; then
+    log "📌 Code changed during startup; scheduling restart after calm."
+    last_hash="$post_start_hash"
+    last_change_ts=$(date +%s)
+    change_pending=true
+  fi
+}
+
+restart_services() {
+  log "🔄 Restarting services after calm period..."
+  cleanup
+  ensure_ports_free
+  start_services
+}
+
+log "🚀 Starting Calendarify dev runner (code-only watcher, ${CALM_SECONDS}s calm)..."
+cleanup
+ensure_ports_free
+start_services
+
+last_hash=$(hash_code_tree)
+last_change_ts=0
+change_pending=false
+
+log "👀 Watching for *code* file changes only..."
+
 while true; do
-    # Check if processes are still running
-    if ! kill -0 $BACKEND_PID 2>/dev/null; then
-        echo "❌ Backend process died unexpectedly"
-        echo "📋 Backend logs:"
-        tail -20 backend.log
-        exit 1
+  sleep "$CHECK_INTERVAL"
+
+  new_hash=$(hash_code_tree)
+
+  if [ "$new_hash" != "$last_hash" ]; then
+    last_hash="$new_hash"
+    last_change_ts=$(date +%s)
+    change_pending=true
+    log "📌 Code change detected, waiting for calm..."
+    continue
+  fi
+
+  if $change_pending; then
+    now=$(date +%s)
+    if (( now - last_change_ts >= CALM_SECONDS )); then
+      restart_services
+      last_hash=$(hash_code_tree)
+      last_change_ts=0
+      change_pending=false
+      log "✅ Restart complete; resuming watch."
     fi
-    
-    if ! kill -0 $FRONTEND_PID 2>/dev/null; then
-        echo "❌ Frontend process died unexpectedly"
-        echo "📋 Frontend logs:"
-        tail -20 frontend.log
-        exit 1
-    fi
-    
-    sleep 30
+  fi
 done

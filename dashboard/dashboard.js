@@ -754,13 +754,28 @@
     }
 
     function createWorkflow() {
-      localStorage.removeItem('calendarify-current-workflow');
-      window.location.href = '/dashboard/editor';
+      try { localStorage.removeItem('calendarify-current-workflow'); } catch {}
+      const url = new URL('/dashboard/editor', window.location.origin);
+      window.location.href = url.toString();
     }
 
     function editWorkflow(id) {
-      localStorage.setItem('calendarify-current-workflow', id);
-      window.location.href = '/dashboard/editor';
+      // Preserve legacy key for any older code that still reads it
+      try { localStorage.setItem('calendarify-current-workflow', id); } catch {}
+      
+      // Prefer opening the editor with explicit workflow + last-selected branch in the URL.
+      // The editor reads both from URL params (see getCurrentWorkflowId/getCurrentBranch).
+      let lastBranch = null;
+      try {
+        lastBranch = localStorage.getItem(`calendarify-last-branch-${id}`) || null;
+      } catch {}
+      
+      const url = new URL('/dashboard/editor', window.location.origin);
+      url.searchParams.set('workflow', id);
+      if (lastBranch && typeof lastBranch === 'string') {
+        url.searchParams.set('branch', lastBranch);
+      }
+      window.location.href = url.toString();
     }
 
     async function cloneWorkflow(id) {
